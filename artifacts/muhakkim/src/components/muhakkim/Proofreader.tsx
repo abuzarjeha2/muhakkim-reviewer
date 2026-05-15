@@ -3,7 +3,7 @@ import { useLanguage } from "../../lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, CheckCircle2, Copy } from "lucide-react";
+import { AlertCircle, CheckCircle2, Copy, FileCheck2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
