@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Arabic:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover-border: hsl(var(--popover-border));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-border: var(--primary-border);
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary-border: var(--secondary-border);
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted-border: var(--muted-border);
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-border: var(--accent-border);
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive-border: var(--destructive-border);
+
+  --font-sans: var(--app-font-sans);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --app-font-sans: 'Inter', 'IBM Plex Arabic', sans-serif;
+  --radius: 0.5rem;
+
+  --background: 216 50% 12%;
+  --foreground: 215 36% 93%;
+  --border: 216 38% 27%;
+  --input: 216 38% 27%;
+  --ring: 44 55% 54%;
+
+  --card: 218 42% 15%;
+  --card-foreground: 215 36% 93%;
+  --card-border: 216 38% 27%;
+
+  --popover: 218 42% 15%;
+  --popover-foreground: 215 36% 93%;
+  --popover-border: 216 38% 27%;
+
+  --primary: 44 55% 54%;
+  --primary-foreground: 216 50% 12%;
+  
+  --secondary: 216 38% 27%;
+  --secondary-foreground: 215 36% 93%;
+
+  --muted: 216 38% 27%;
+  --muted-foreground: 213 23% 64%;
+
+  --accent: 44 55% 54%;
+  --accent-foreground: 216 50% 12%;
+
+  --destructive: 0 69% 60%;
+  --destructive-foreground: 0 0% 100%;
+}
+
+.dark {
+  --background: 216 50% 12%;
+  --foreground: 215 36% 93%;
+  --border: 216 38% 27%;
+  --input: 216 38% 27%;
+  --ring: 44 55% 54%;
+
+  --card: 218 42% 15%;
+  --card-foreground: 215 36% 93%;
+  --card-border: 216 38% 27%;
+
+  --popover: 218 42% 15%;
+  --popover-foreground: 215 36% 93%;
+  --popover-border: 216 38% 27%;
+
+  --primary: 44 55% 54%;
+  --primary-foreground: 216 50% 12%;
+  
+  --secondary: 216 38% 27%;
+  --secondary-foreground: 215 36% 93%;
+
+  --muted: 216 38% 27%;
+  --muted-foreground: 213 23% 64%;
+
+  --accent: 44 55% 54%;
+  --accent-foreground: 216 50% 12%;
+
+  --destructive: 0 69% 60%;
+  --destructive-foreground: 0 0% 100%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
