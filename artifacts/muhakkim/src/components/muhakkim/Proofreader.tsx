@@ -1,20 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLanguage } from "../../lib/i18n";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  AlertCircle, CheckCircle2, Copy, FileCheck2,
-  BookOpen, FlaskConical, BarChart2, Lightbulb,
-  AlignLeft, Printer, ChevronDown, ChevronUp
-} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-interface ProofreaderProps {
-  text: string;
-}
-
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface Issue {
   id: number;
   page: number;
@@ -31,7 +19,7 @@ interface SectionResult {
   key: string;
   labelAr: string;
   labelEn: string;
-  icon: React.ReactNode;
+  emoji: string;
   found: boolean;
   confidence: 'high' | 'medium' | 'low' | 'missing';
   excerpt: string;
@@ -41,6 +29,7 @@ interface SectionResult {
   fixesAr: string[];
 }
 
+// ─── Constants ─────────────────────────────────────────────────────────────────
 const WORDS_PER_PAGE = 270;
 
 function getPage(wordsBefore: number) {
@@ -58,11 +47,11 @@ const SECTION_PATTERNS: Record<string, { ar: string[]; en: string[] }> = {
   },
   methodology: {
     ar: ['المنهجية', 'منهجية البحث', 'منهج البحث', 'الطريقة', 'أسلوب البحث', 'المنهج', 'الإجراءات', 'مجتمع الدراسة', 'عينة الدراسة'],
-    en: ['methodology', 'research method', 'methods', 'research design', 'procedure', 'sample', 'participants', 'data collection'],
+    en: ['methodology', 'research method', 'methods', 'research design', 'procedure', 'sample', 'participants'],
   },
   results: {
     ar: ['النتائج', 'نتائج الدراسة', 'نتائج التحليل', 'المناقشة', 'نتائج البحث', 'عرض النتائج', 'تحليل البيانات'],
-    en: ['results', 'findings', 'analysis', 'discussion', 'outcomes', 'data analysis'],
+    en: ['results', 'findings', 'analysis', 'discussion', 'outcomes'],
   },
   recommendations: {
     ar: ['التوصيات', 'المقترحات', 'توصيات الدراسة', 'الخاتمة', 'الاستنتاجات', 'التوصية'],
@@ -92,80 +81,257 @@ function findSection(text: string, patterns: { ar: string[]; en: string[] }) {
 }
 
 function analyzeSection(text: string, key: string) {
-  const issues: string[] = [];
-  const issuesAr: string[] = [];
-  const fixes: string[] = [];
-  const fixesAr: string[] = [];
+  const issues: string[] = [], issuesAr: string[] = [], fixes: string[] = [], fixesAr: string[] = [];
   const wc = text.trim().split(/\s+/).filter(Boolean).length;
-
   if (key === 'abstract') {
-    if (wc < 100) {
-      issues.push('Abstract is short (< 100 words)');
-      issuesAr.push('المستخلص قصير جداً (أقل من 100 كلمة)');
-      fixes.push('Expand the abstract to cover objectives, method, results, and conclusions (150–300 words recommended).');
-      fixesAr.push('وسّع المستخلص ليشمل الأهداف والمنهج والنتائج والاستنتاجات (يُنصح بـ 150–300 كلمة).');
-    }
-    if (wc > 350) {
-      issues.push('Abstract is too long (> 350 words)');
-      issuesAr.push('المستخلص طويل جداً (أكثر من 350 كلمة)');
-      fixes.push('Trim the abstract to 150–300 words focusing on key points only.');
-      fixesAr.push('اختصر المستخلص إلى 150–300 كلمة مع التركيز على النقاط الجوهرية فقط.');
-    }
-    if (!/keyword|كلمات مفتاحية/i.test(text)) {
-      issues.push('No keywords section detected');
-      issuesAr.push('لا توجد كلمات مفتاحية');
-      fixes.push('Add 4–6 keywords after the abstract (e.g., "Keywords: peer review, research, methodology").');
-      fixesAr.push('أضف 4–6 كلمات مفتاحية بعد المستخلص (مثال: "كلمات مفتاحية: تحكيم، منهجية، بحث").');
-    }
+    if (wc < 100) { issues.push('Abstract < 100 words'); issuesAr.push('المستخلص أقل من 100 كلمة'); fixes.push('Expand to 150–300 words covering objectives, method, results.'); fixesAr.push('وسّع المستخلص ليشمل الأهداف والمنهج والنتائج (150–300 كلمة).'); }
+    if (wc > 350) { issues.push('Abstract > 350 words'); issuesAr.push('المستخلص أكثر من 350 كلمة'); fixes.push('Trim to 150–300 words.'); fixesAr.push('اختصر إلى 150–300 كلمة.'); }
+    if (!/keyword|كلمات مفتاحية/i.test(text)) { issues.push('No keywords found'); issuesAr.push('لا توجد كلمات مفتاحية'); fixes.push('Add 4–6 keywords after the abstract.'); fixesAr.push('أضف 4–6 كلمات مفتاحية بعد المستخلص.'); }
   }
   if (key === 'theoretical') {
-    if (wc < 200) {
-      issues.push('Theoretical framework appears brief');
-      issuesAr.push('الإطار النظري مقتضب');
-      fixes.push('Expand this section with more related theories, models, and literature citations.');
-      fixesAr.push('وسّع هذا القسم بإضافة مزيد من النظريات والنماذج والمراجع ذات الصلة.');
-    }
-    if (!/\(\d{4}\)|et al\.|وآخرون|هـ\)|م\)/.test(text)) {
-      issues.push('No citations detected in theoretical framework');
-      issuesAr.push('لا توجد استشهادات واضحة في الإطار النظري');
-      fixes.push('Add in-text citations in APA format, e.g., (Author, 2020) or (المؤلف، 2020هـ).');
-      fixesAr.push('أضف استشهادات داخل النص بصيغة APA مثل: (المؤلف، 2020) أو (Author, 2020).');
-    }
+    if (wc < 200) { issues.push('Framework too brief'); issuesAr.push('الإطار النظري مقتضب'); fixes.push('Add more theories, models, and citations.'); fixesAr.push('أضف نظريات ونماذج واستشهادات إضافية.'); }
+    if (!/\(\d{4}\)|et al\.|وآخرون/.test(text)) { issues.push('No citations detected'); issuesAr.push('لا توجد استشهادات'); fixes.push('Add APA citations, e.g., (Author, 2020).'); fixesAr.push('أضف استشهادات APA مثل: (المؤلف، 2020).'); }
   }
   if (key === 'methodology') {
-    if (!/sample|عينة|مجتمع|participants/i.test(text)) {
-      issues.push('No sample/population mentioned');
-      issuesAr.push('لم يُذكر مجتمع الدراسة أو العينة');
-      fixes.push('Clearly describe the study population, sample size, and selection method.');
-      fixesAr.push('صِف بوضوح مجتمع الدراسة وحجم العينة وطريقة اختيارها.');
-    }
-    if (!/instrument|أداة|questionnaire|استبيان|مقياس/i.test(text)) {
-      issues.push('No research instrument mentioned');
-      issuesAr.push('لم تُذكر أداة الدراسة');
-      fixes.push('Specify the data collection instrument (questionnaire, interview, observation, etc.) and its validity/reliability.');
-      fixesAr.push('حدّد أداة جمع البيانات (استبيان، مقابلة، ملاحظة، إلخ) مع ذكر صدقها وثباتها.');
-    }
+    if (!/sample|عينة|مجتمع|participants/i.test(text)) { issues.push('No sample mentioned'); issuesAr.push('لم يُذكر مجتمع الدراسة'); fixes.push('Describe population, sample size, and selection.'); fixesAr.push('صِف مجتمع الدراسة وحجم العينة وطريقة اختيارها.'); }
+    if (!/instrument|أداة|questionnaire|استبيان/i.test(text)) { issues.push('No instrument mentioned'); issuesAr.push('لم تُذكر أداة الدراسة'); fixes.push('Specify data collection instrument and its validity.'); fixesAr.push('حدّد أداة جمع البيانات مع ذكر صدقها وثباتها.'); }
   }
   if (key === 'results') {
-    if (!/table|جدول|figure|شكل|%|p\s*[=<>]|sig|دلالة/i.test(text)) {
-      issues.push('No tables, figures, or statistical output detected');
-      issuesAr.push('لا توجد جداول أو مخرجات إحصائية');
-      fixes.push('Present results using numbered tables or figures with statistical values (means, SD, p-values).');
-      fixesAr.push('اعرض النتائج باستخدام جداول أو أشكال مرقّمة تتضمن قيماً إحصائية (متوسطات، انحراف معياري، قيم p).');
-    }
+    if (!/table|جدول|figure|شكل|%|p\s*[=<>]/.test(text)) { issues.push('No tables or stats detected'); issuesAr.push('لا توجد جداول أو مخرجات إحصائية'); fixes.push('Present results using numbered tables with statistical values.'); fixesAr.push('اعرض النتائج في جداول مرقّمة بقيم إحصائية.'); }
   }
   if (key === 'recommendations') {
-    if (wc < 50) {
-      issues.push('Recommendations section is very short');
-      issuesAr.push('قسم التوصيات قصير جداً');
-      fixes.push('Add at least 3–5 specific, actionable recommendations based on the study findings.');
-      fixesAr.push('أضف 3–5 توصيات محددة وقابلة للتطبيق مستنبطة من نتائج الدراسة.');
-    }
+    if (wc < 50) { issues.push('Recommendations too short'); issuesAr.push('التوصيات قصيرة جداً'); fixes.push('Add 3–5 specific, actionable recommendations.'); fixesAr.push('أضف 3–5 توصيات محددة وقابلة للتطبيق.'); }
   }
   return { issues, issuesAr, fixes, fixesAr };
 }
 
-export default function Proofreader({ text: initialText }: ProofreaderProps) {
+function runLanguageCheck(body: string): Issue[] {
+  const paragraphs = body.split(/\n{1,}/);
+  const found: Issue[] = [];
+  let id = 1, wordsSoFar = 0;
+  const wordFreq: Record<string, number> = {};
+  body.toLowerCase().split(/\s+/).forEach(w => {
+    const clean = w.replace(/[^\u0600-\u06FFa-zA-Z]/g, '');
+    if (clean.length > 5) wordFreq[clean] = (wordFreq[clean] || 0) + 1;
+  });
+  const repeatedWords = new Set(Object.entries(wordFreq).filter(([, c]) => c > 6).map(([w]) => w));
+  const passiveAr = ['تم ', 'يتم ', 'كانت ', 'قد تم', 'سيتم'];
+  const passiveEn = [' was ', ' were ', ' has been ', ' have been ', ' had been '];
+  paragraphs.forEach(para => {
+    const trimmed = para.trim();
+    if (!trimmed || trimmed.length < 20) { wordsSoFar += trimmed.split(/\s+/).filter(Boolean).length; return; }
+    const paraWords = trimmed.split(/\s+/).filter(Boolean).length;
+    const page = getPage(wordsSoFar);
+    const sentences = trimmed.split(/(?<=[.!?؟])\s+(?=[^\d])/).filter(s => s.trim().length > 30);
+    sentences.forEach(sent => {
+      const wc = sent.trim().split(/\s+/).filter(Boolean).length;
+      if (wc > 50) found.push({ id: id++, page, category: 'style', type: 'Long sentence (>50 words)', typeAr: 'جملة طويلة (أكثر من 50 كلمة)', snippet: sent.trim().slice(0, 80) + '…', fix: 'Break into 2–3 shorter sentences.', fixAr: 'قسّم إلى 2–3 جمل أقصر.', severity: 'warning' });
+    });
+    passiveAr.forEach(p => {
+      if (trimmed.includes(p)) found.push({ id: id++, page, category: 'style', type: 'Arabic passive voice', typeAr: 'صيغة المبني للمجهول', snippet: trimmed.slice(0, 70) + '…', fix: 'Use active voice: "طبّق الباحث" instead of "تم تطبيق".', fixAr: 'استخدم المبني للمعلوم: "طبّق الباحث" بدلاً من "تم تطبيق".', severity: 'info' });
+    });
+    passiveEn.forEach(p => {
+      if (trimmed.toLowerCase().includes(p)) found.push({ id: id++, page, category: 'style', type: 'English passive voice', typeAr: 'مبني للمجهول (إنجليزي)', snippet: trimmed.slice(0, 70) + '…', fix: 'Prefer active voice.', fixAr: 'استخدم المبني للمعلوم.', severity: 'info' });
+    });
+    const paraWordList = trimmed.toLowerCase().split(/\s+/).map(w => w.replace(/[^\u0600-\u06FFa-zA-Z]/g, ''));
+    const paraFreq: Record<string, number> = {};
+    paraWordList.forEach(w => { if (repeatedWords.has(w)) paraFreq[w] = (paraFreq[w] || 0) + 1; });
+    const top = Object.entries(paraFreq).sort((a, b) => b[1] - a[1])[0];
+    if (top && top[1] >= 3) found.push({ id: id++, page, category: 'style', type: `Repeated: "${top[0]}" (${top[1]}×)`, typeAr: `تكرار: "${top[0]}" (${top[1]} مرات)`, snippet: trimmed.slice(0, 60) + '…', fix: `Replace some of "${top[0]}" with synonyms.`, fixAr: `استبدل بعض تكرارات "${top[0]}" بمترادفات.`, severity: 'info' });
+    if (paraWords >= 15 && !/[.!?؟،]$/.test(trimmed)) found.push({ id: id++, page, category: 'grammar', type: 'Missing end punctuation', typeAr: 'غياب علامة الترقيم', snippet: '…' + trimmed.slice(-50), fix: 'Add period at the end.', fixAr: 'أضف نقطة في النهاية.', severity: 'warning' });
+    wordsSoFar += paraWords;
+  });
+  return found;
+}
+
+function runStructureCheck(body: string): SectionResult[] {
+  const defs = [
+    { key: 'abstract',        labelAr: 'المستخلص',          labelEn: 'Abstract',              emoji: '📄' },
+    { key: 'theoretical',     labelAr: 'الإطار النظري',      labelEn: 'Theoretical Framework', emoji: '📚' },
+    { key: 'methodology',     labelAr: 'المنهجية',           labelEn: 'Methodology',           emoji: '🔬' },
+    { key: 'results',         labelAr: 'النتائج والتحليل',   labelEn: 'Results & Analysis',    emoji: '📊' },
+    { key: 'recommendations', labelAr: 'التوصيات',           labelEn: 'Recommendations',       emoji: '💡' },
+  ];
+  return defs.map(def => {
+    const { found, excerpt, confidence } = findSection(body, SECTION_PATTERNS[def.key]);
+    const { issues, issuesAr, fixes, fixesAr } = found ? analyzeSection(body, def.key) : { issues: [], issuesAr: [], fixes: [], fixesAr: [] };
+    return { ...def, found, confidence, excerpt, issues, issuesAr, fixes, fixesAr };
+  });
+}
+
+// ─── 3D Floating Orb Canvas ────────────────────────────────────────────────────
+function OrbCanvas({ score }: { score: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animRef = useRef<number>(0);
+  const tRef = useRef(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const W = canvas.width = 220;
+    const H = canvas.height = 220;
+    const cx = W / 2, cy = H / 2;
+
+    const color = score >= 80 ? ['#10b981', '#34d399', '#6ee7b7'] :
+                  score >= 50 ? ['#f59e0b', '#fbbf24', '#fde68a'] :
+                                ['#ef4444', '#f87171', '#fca5a5'];
+
+    function draw() {
+      tRef.current += 0.012;
+      const t = tRef.current;
+      ctx!.clearRect(0, 0, W, H);
+
+      const glow = ctx!.createRadialGradient(cx, cy, 20, cx, cy, 100);
+      glow.addColorStop(0, color[0] + '44');
+      glow.addColorStop(1, 'transparent');
+      ctx!.fillStyle = glow;
+      ctx!.beginPath();
+      ctx!.arc(cx, cy, 100, 0, Math.PI * 2);
+      ctx!.fill();
+
+      const r = 70 + Math.sin(t * 0.7) * 3;
+      const grad = ctx!.createRadialGradient(cx - 22, cy - 22, 5, cx, cy, r);
+      grad.addColorStop(0, '#ffffff88');
+      grad.addColorStop(0.3, color[1]);
+      grad.addColorStop(0.8, color[0]);
+      grad.addColorStop(1, '#00000066');
+      ctx!.beginPath();
+      ctx!.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx!.fillStyle = grad;
+      ctx!.shadowColor = color[0];
+      ctx!.shadowBlur = 30;
+      ctx!.fill();
+      ctx!.shadowBlur = 0;
+
+      for (let i = 0; i < 2; i++) {
+        const angle = t + i * Math.PI;
+        const rx = 90;
+        ctx!.save();
+        ctx!.translate(cx, cy);
+        ctx!.rotate(i * 0.6);
+        ctx!.scale(1, 0.3);
+        ctx!.beginPath();
+        ctx!.arc(0, 0, rx, 0, Math.PI * 2);
+        ctx!.strokeStyle = color[2] + '66';
+        ctx!.lineWidth = 2;
+        ctx!.stroke();
+        const dx = Math.cos(angle) * rx;
+        const dy = Math.sin(angle) * rx * 0.3;
+        ctx!.scale(1, 1 / 0.3);
+        ctx!.beginPath();
+        ctx!.arc(dx, dy, 5, 0, Math.PI * 2);
+        ctx!.fillStyle = color[2];
+        ctx!.fill();
+        ctx!.restore();
+      }
+
+      ctx!.save();
+      ctx!.font = 'bold 36px system-ui';
+      ctx!.fillStyle = '#ffffff';
+      ctx!.textAlign = 'center';
+      ctx!.textBaseline = 'middle';
+      ctx!.shadowColor = '#000';
+      ctx!.shadowBlur = 8;
+      ctx!.fillText(`${score}`, cx, cy - 6);
+      ctx!.font = '12px system-ui';
+      ctx!.fillStyle = '#ffffffaa';
+      ctx!.fillText(score >= 80 ? 'ممتاز' : score >= 50 ? 'جيد' : 'يحتاج تحسين', cx, cy + 20);
+      ctx!.restore();
+
+      animRef.current = requestAnimationFrame(draw);
+    }
+    draw();
+    return () => cancelAnimationFrame(animRef.current);
+  }, [score]);
+
+  return <canvas ref={canvasRef} style={{ width: 220, height: 220 }} />;
+}
+
+// ─── Animated Progress Ring ────────────────────────────────────────────────────
+function ProgressRing({ value, max, color, label }: { value: number; max: number; color: string; label: string }) {
+  const r = 28, circ = 2 * Math.PI * r;
+  const pct = max ? value / max : 0;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+      <svg width={72} height={72}>
+        <circle cx={36} cy={36} r={r} fill="none" stroke="#ffffff15" strokeWidth={5} />
+        <circle cx={36} cy={36} r={r} fill="none" stroke={color} strokeWidth={5}
+          strokeDasharray={circ} strokeDashoffset={circ * (1 - pct)}
+          strokeLinecap="round" transform="rotate(-90 36 36)"
+          style={{ transition: 'stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)' }} />
+        <text x={36} y={40} textAnchor="middle" fill="#fff" fontSize={14} fontWeight="bold">{value}</text>
+      </svg>
+      <span style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', maxWidth: 70 }}>{label}</span>
+    </div>
+  );
+}
+
+// ─── Particle Field Background ─────────────────────────────────────────────────
+function ParticleField() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animRef = useRef<number>(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    const W = canvas.width, H = canvas.height;
+
+    const particles = Array.from({ length: 35 }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 1.5 + 0.5, opacity: Math.random() * 0.4 + 0.1,
+    }));
+
+    function draw() {
+      ctx!.clearRect(0, 0, W, H);
+      particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+        if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+        ctx!.beginPath();
+        ctx!.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx!.fillStyle = `rgba(201,168,76,${p.opacity})`;
+        ctx!.fill();
+      });
+      particles.forEach((p, i) => {
+        for (let j = i + 1; j < particles.length; j++) {
+          const d = Math.hypot(p.x - particles[j].x, p.y - particles[j].y);
+          if (d < 80) {
+            ctx!.beginPath();
+            ctx!.moveTo(p.x, p.y);
+            ctx!.lineTo(particles[j].x, particles[j].y);
+            ctx!.strokeStyle = `rgba(201,168,76,${0.12 * (1 - d / 80)})`;
+            ctx!.lineWidth = 0.5;
+            ctx!.stroke();
+          }
+        }
+      });
+      animRef.current = requestAnimationFrame(draw);
+    }
+    draw();
+    return () => cancelAnimationFrame(animRef.current);
+  }, []);
+
+  return (
+    <canvas ref={canvasRef} style={{
+      position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none',
+    }} />
+  );
+}
+
+// ─── Main Component ────────────────────────────────────────────────────────────
+interface ProofreaderProps {
+  text?: string;
+}
+
+export default function Proofreader({ text: initialText = '' }: ProofreaderProps) {
   const { lang } = useLanguage();
   const { toast } = useToast();
   const [text, setText] = useState(initialText);
@@ -173,157 +339,34 @@ export default function Proofreader({ text: initialText }: ProofreaderProps) {
   const [sections, setSections] = useState<SectionResult[]>([]);
   const [hasRun, setHasRun] = useState(false);
   const [activeTab, setActiveTab] = useState<'language' | 'structure' | 'report'>('language');
-  const [expandedIssues, setExpandedIssues] = useState<Set<number>>(new Set());
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (initialText && !hasRun) setText(initialText);
   }, [initialText, hasRun]);
 
-  const toggleExpand = (id: number) => {
-    setExpandedIssues(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
+  const score = (() => {
+    if (!hasRun) return 50;
+    const w = issues.filter(i => i.severity === 'warning').length;
+    const missing = sections.filter(s => !s.found).length;
+    const total = w + missing * 2;
+    if (total === 0) return 95;
+    if (total <= 4) return 72;
+    return 38;
+  })();
 
-  const runAnalysis = () => {
+  const runAnalysis = useCallback(() => {
     if (!text.trim()) return;
-    const langIssues = runLanguageCheck(text);
-    const secResults = runStructureCheck(text);
-    setIssues(langIssues);
-    setSections(secResults);
-    setHasRun(true);
-    setActiveTab('language');
-  };
-
-  const runLanguageCheck = (body: string): Issue[] => {
-    const paragraphs = body.split(/\n{1,}/);
-    const found: Issue[] = [];
-    let id = 1;
-    let wordsSoFar = 0;
-
-    // Word frequency for repetition detection
-    const wordFreq: Record<string, number> = {};
-    body.toLowerCase().split(/\s+/).forEach(w => {
-      const clean = w.replace(/[^\u0600-\u06FFa-zA-Z]/g, '');
-      if (clean.length > 5) wordFreq[clean] = (wordFreq[clean] || 0) + 1;
-    });
-    const repeatedWords = new Set(
-      Object.entries(wordFreq).filter(([, c]) => c > 6).map(([w]) => w)
-    );
-
-    const passiveAr = ['تم ', 'يتم ', 'كانت ', 'قد تم', 'سيتم'];
-    const passiveEn = [' was ', ' were ', ' has been ', ' have been ', ' had been '];
-
-    paragraphs.forEach(para => {
-      const trimmed = para.trim();
-      if (!trimmed || trimmed.length < 20) {
-        wordsSoFar += trimmed.split(/\s+/).filter(Boolean).length;
-        return;
-      }
-
-      const paraWords = trimmed.split(/\s+/).filter(Boolean).length;
-      const page = getPage(wordsSoFar);
-
-      // — Long sentences: split by sentence-ending punctuation
-      const sentences = trimmed.split(/(?<=[.!?؟])\s+(?=[^\d])/).filter(s => s.trim().length > 30);
-      sentences.forEach(sent => {
-        const wc = sent.trim().split(/\s+/).filter(Boolean).length;
-        if (wc > 50) {
-          found.push({
-            id: id++, page, category: 'style',
-            type: 'Long sentence (>50 words)',
-            typeAr: 'جملة طويلة (أكثر من 50 كلمة)',
-            snippet: sent.trim().slice(0, 80) + (sent.length > 80 ? '…' : ''),
-            fix: 'Break this sentence into 2–3 shorter sentences, each expressing one idea clearly.',
-            fixAr: 'قسّم هذه الجملة إلى 2–3 جمل أقصر، كل جملة تعبّر عن فكرة واحدة بوضوح.',
-            severity: 'warning',
-          });
-        }
-      });
-
-      // — Passive voice Arabic
-      passiveAr.forEach(p => {
-        if (trimmed.includes(p) && !found.some(i => i.page === page && i.typeAr === 'صيغة المبني للمجهول' && i.snippet === trimmed.slice(0, 60))) {
-          found.push({
-            id: id++, page, category: 'style',
-            type: 'Arabic passive voice',
-            typeAr: 'صيغة المبني للمجهول',
-            snippet: trimmed.slice(0, 70) + '…',
-            fix: 'Convert passive constructions to active voice to improve readability (e.g., "تم تطبيق الاختبار" → "طبّق الباحث الاختبار").',
-            fixAr: 'حوّل الجمل من المبني للمجهول إلى المبني للمعلوم لتحسين الوضوح (مثال: "تم تطبيق الاختبار" → "طبّق الباحث الاختبار").',
-            severity: 'info',
-          });
-        }
-      });
-
-      // — Passive voice English
-      passiveEn.forEach(p => {
-        if (trimmed.toLowerCase().includes(p)) {
-          found.push({
-            id: id++, page, category: 'style',
-            type: 'English passive voice',
-            typeAr: 'مبني للمجهول (إنجليزي)',
-            snippet: trimmed.slice(0, 70) + '…',
-            fix: 'Prefer active voice: instead of "was conducted", write "the researcher conducted".',
-            fixAr: 'استخدم المبني للمعلوم: بدلاً من "was conducted" اكتب "the researcher conducted".',
-            severity: 'info',
-          });
-        }
-      });
-
-      // — Repeated words (once per paragraph, most frequent repeated word)
-      const paraWordList = trimmed.toLowerCase().split(/\s+/).map(w => w.replace(/[^\u0600-\u06FFa-zA-Z]/g, ''));
-      const paraFreq: Record<string, number> = {};
-      paraWordList.forEach(w => { if (repeatedWords.has(w)) paraFreq[w] = (paraFreq[w] || 0) + 1; });
-      const topRepeated = Object.entries(paraFreq).sort((a, b) => b[1] - a[1])[0];
-      if (topRepeated && topRepeated[1] >= 3) {
-        found.push({
-          id: id++, page, category: 'style',
-          type: `Repeated word: "${topRepeated[0]}" (${topRepeated[1]}×)`,
-          typeAr: `تكرار الكلمة: "${topRepeated[0]}" (${topRepeated[1]} مرات)`,
-          snippet: trimmed.slice(0, 60) + '…',
-          fix: `Replace some occurrences of "${topRepeated[0]}" with synonyms to avoid repetition.`,
-          fixAr: `استبدل بعض تكرارات كلمة "${topRepeated[0]}" بمترادفات لتجنب الإعادة.`,
-          severity: 'info',
-        });
-      }
-
-      // — Missing sentence-end punctuation: only for long paragraphs (≥15 words) not ending with punctuation
-      if (paraWords >= 15 && !/[.!?؟،]$/.test(trimmed)) {
-        found.push({
-          id: id++, page, category: 'grammar',
-          type: 'Missing end punctuation',
-          typeAr: 'غياب علامة الترقيم في نهاية الفقرة',
-          snippet: '…' + trimmed.slice(-50),
-          fix: 'Add a period or appropriate punctuation mark at the end of this paragraph.',
-          fixAr: 'أضف نقطة أو علامة ترقيم مناسبة في نهاية هذه الفقرة.',
-          severity: 'warning',
-        });
-      }
-
-      wordsSoFar += paraWords;
-    });
-
-    return found;
-  };
-
-  const runStructureCheck = (body: string): SectionResult[] => {
-    const defs = [
-      { key: 'abstract',         labelAr: 'المستخلص',          labelEn: 'Abstract',              icon: <AlignLeft className="w-4 h-4" /> },
-      { key: 'theoretical',      labelAr: 'الإطار النظري',      labelEn: 'Theoretical Framework', icon: <BookOpen className="w-4 h-4" /> },
-      { key: 'methodology',      labelAr: 'المنهجية',           labelEn: 'Methodology',           icon: <FlaskConical className="w-4 h-4" /> },
-      { key: 'results',          labelAr: 'نتائج التحليل',      labelEn: 'Results & Analysis',    icon: <BarChart2 className="w-4 h-4" /> },
-      { key: 'recommendations',  labelAr: 'التوصيات',           labelEn: 'Recommendations',       icon: <Lightbulb className="w-4 h-4" /> },
-    ];
-    return defs.map(def => {
-      const { found, excerpt, confidence } = findSection(body, SECTION_PATTERNS[def.key]);
-      const { issues, issuesAr, fixes, fixesAr } = found ? analyzeSection(body, def.key) : { issues: [], issuesAr: [], fixes: [], fixesAr: [] };
-      return { ...def, found, confidence, excerpt, issues, issuesAr, fixes, fixesAr };
-    });
-  };
+    setIsAnalyzing(true);
+    setTimeout(() => {
+      setIssues(runLanguageCheck(text));
+      setSections(runStructureCheck(text));
+      setHasRun(true);
+      setIsAnalyzing(false);
+    }, 900);
+  }, [text]);
 
   const copyText = () => {
     navigator.clipboard.writeText(text);
@@ -331,164 +374,233 @@ export default function Proofreader({ text: initialText }: ProofreaderProps) {
   };
 
   const printReport = () => {
-    if (reportRef.current) {
-      const win = window.open('', '_blank');
-      if (!win) return;
-      win.document.write(`
-        <html dir="${lang === 'ar' ? 'rtl' : 'ltr'}">
-        <head>
-          <meta charset="utf-8"/>
-          <title>${lang === 'ar' ? 'تقرير التدقيق — محكّم' : 'Proofreading Report — Muhakkim'}</title>
-          <style>
-            body { font-family: 'Segoe UI', Arial, sans-serif; direction: ${lang === 'ar' ? 'rtl' : 'ltr'}; padding: 30px; color: #1a1a2e; font-size: 13px; }
-            h1 { font-size: 20px; border-bottom: 2px solid #C9A84C; padding-bottom: 8px; margin-bottom: 4px; }
-            .meta { color: #555; font-size: 12px; margin-bottom: 20px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-            th { background: #0F1B2D; color: #C9A84C; padding: 8px 10px; text-align: ${lang === 'ar' ? 'right' : 'left'}; font-size: 12px; }
-            td { padding: 8px 10px; border-bottom: 1px solid #ddd; vertical-align: top; font-size: 12px; }
-            tr:nth-child(even) { background: #f9f9f9; }
-            .badge-warning { background:#f59e0b; color:#fff; border-radius:4px; padding:1px 6px; font-size:11px; }
-            .badge-info { background:#3b82f6; color:#fff; border-radius:4px; padding:1px 6px; font-size:11px; }
-            .badge-error { background:#ef4444; color:#fff; border-radius:4px; padding:1px 6px; font-size:11px; }
-            .section-title { font-size:15px; font-weight:bold; margin-top:24px; margin-bottom:8px; border-bottom:1px solid #C9A84C; padding-bottom:4px; color:#0F1B2D; }
-            .found { color: #16a34a; font-weight: bold; }
-            .missing { color: #dc2626; font-weight: bold; }
-            .fix { color: #1d4ed8; font-style: italic; }
-            @media print { button { display:none; } }
-          </style>
-        </head>
-        <body>
-          ${reportRef.current.innerHTML}
-          <script>window.print();<\/script>
-        </body>
-        </html>`);
-      win.document.close();
-    }
-  };
-
-  const score = (() => {
-    if (!hasRun) return null;
-    const w = issues.filter(i => i.severity === 'warning').length;
-    const missing = sections.filter(s => !s.found).length;
-    const total = w + missing * 2;
-    if (total === 0) return { label: lang === 'ar' ? 'ممتاز' : 'Excellent', color: 'bg-green-600 text-white' };
-    if (total <= 4)  return { label: lang === 'ar' ? 'جيد' : 'Good', color: 'bg-primary text-primary-foreground' };
-    return { label: lang === 'ar' ? 'يحتاج تحسين' : 'Needs Improvement', color: 'bg-amber-600 text-white' };
-  })();
-
-  const severityStyle = {
-    error:   { card: 'border-red-500/40 bg-red-500/5',    badge: 'bg-red-600 text-white' },
-    warning: { card: 'border-amber-500/40 bg-amber-500/5', badge: 'bg-amber-600 text-white' },
-    info:    { card: 'border-blue-500/40 bg-blue-500/5',   badge: 'bg-blue-700 text-white' },
-  };
-
-  const confidenceLabel: Record<string, { ar: string; en: string; color: string }> = {
-    high:    { ar: 'موجود',      en: 'Found',         color: 'bg-green-600 text-white' },
-    medium:  { ar: 'محتمل',     en: 'Likely found',  color: 'bg-primary text-primary-foreground' },
-    low:     { ar: 'جزئي',      en: 'Partial',       color: 'bg-amber-600 text-white' },
-    missing: { ar: 'غير موجود', en: 'Not detected',  color: 'bg-red-600 text-white' },
+    if (!reportRef.current) return;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(`<html dir="rtl"><head><meta charset="utf-8"/><title>تقرير محكّم</title>
+    <style>body{font-family:Arial,sans-serif;padding:30px;direction:rtl;color:#1a1a2e}h1{border-bottom:2px solid #C9A84C;padding-bottom:8px}table{width:100%;border-collapse:collapse;margin-top:16px}th{background:#0F1B2D;color:#C9A84C;padding:8px}td{padding:8px;border-bottom:1px solid #ddd}@media print{button{display:none}}</style>
+    </head><body>${reportRef.current.innerHTML}<script>window.print();<\/script></body></html>`);
+    win.document.close();
   };
 
   const today = new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-GB');
   const totalPages = Math.max(1, getPage(text.trim().split(/\s+/).filter(Boolean).length));
+  const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+
+  const severityColor: Record<string, string> = { error: '#ef4444', warning: '#f59e0b', info: '#60a5fa' };
+  const confidenceMeta: Record<string, { ar: string; en: string; color: string }> = {
+    high:    { ar: 'موجود ✓',    en: 'Found ✓',       color: '#10b981' },
+    medium:  { ar: 'محتمل',      en: 'Likely',        color: '#3b82f6' },
+    low:     { ar: 'جزئي',       en: 'Partial',       color: '#f59e0b' },
+    missing: { ar: 'غير موجود',  en: 'Not detected',  color: '#ef4444' },
+  };
+
+  const S: Record<string, React.CSSProperties> = {
+    root: { fontFamily: "'Tajawal', 'Segoe UI', sans-serif", direction: lang === 'ar' ? 'rtl' : 'ltr', background: 'linear-gradient(135deg, #0a0f1e 0%, #0d1527 50%, #0a1020 100%)', borderRadius: 20, color: '#e2e8f0', padding: '0 0 40px', overflow: 'hidden' },
+    hero: { position: 'relative', overflow: 'hidden', padding: '40px 28px 28px', background: 'linear-gradient(180deg, #0f1b2d 0%, transparent 100%)', borderBottom: '1px solid #ffffff08' },
+    heroTitle: { fontSize: 'clamp(20px,3.5vw,32px)', fontWeight: 900, background: 'linear-gradient(135deg, #C9A84C 0%, #f5d78e 50%, #C9A84C 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0, lineHeight: 1.1 },
+    heroSub: { color: '#64748b', fontSize: 13, marginTop: 6, marginBottom: 0 },
+    container: { maxWidth: 860, margin: '0 auto', padding: '0 20px' },
+    card: { background: 'linear-gradient(145deg, #0f1b2dcc, #0a1120cc)', backdropFilter: 'blur(20px)', border: '1px solid #ffffff12', borderRadius: 18, padding: 24, marginTop: 20 },
+    textarea: { width: '100%', minHeight: 180, background: '#060d1a', border: '1px solid #ffffff15', borderRadius: 12, color: '#e2e8f0', fontSize: 14, padding: '14px', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.8, outline: 'none', boxSizing: 'border-box', transition: 'border-color .2s' },
+    btnPrimary: { background: 'linear-gradient(135deg, #C9A84C, #f5d78e)', color: '#0a0f1e', border: 'none', borderRadius: 12, padding: '12px 24px', fontWeight: 800, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'inherit', transition: 'transform .15s, box-shadow .15s', boxShadow: '0 4px 20px #C9A84C44' },
+    btnOutline: { background: 'transparent', color: '#C9A84C', border: '1px solid #C9A84C44', borderRadius: 12, padding: '12px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', transition: 'background .2s' },
+    tabBar: { display: 'flex', gap: 6, marginTop: 20, background: '#060d1a', borderRadius: 12, padding: 5, border: '1px solid #ffffff08' },
+    statGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginTop: 16 },
+    statCard: { background: 'linear-gradient(145deg, #0f1b2d, #060d1a)', border: '1px solid #ffffff10', borderRadius: 14, padding: '16px 12px', textAlign: 'center' },
+    spinner: { width: 18, height: 18, border: '2px solid #0a0f1e44', borderTop: '2px solid #0a0f1e', borderRadius: '50%', animation: 'mhk-spin 0.8s linear infinite' },
+  };
+
+  const tab = (active: boolean): React.CSSProperties => ({
+    flex: 1, background: active ? 'linear-gradient(135deg, #C9A84C22, #f5d78e11)' : 'transparent',
+    border: active ? '1px solid #C9A84C44' : '1px solid transparent',
+    borderRadius: 9, padding: '9px 10px', color: active ? '#C9A84C' : '#64748b',
+    fontWeight: active ? 700 : 500, fontSize: 12, cursor: 'pointer',
+    transition: 'all .2s', fontFamily: 'inherit', textAlign: 'center',
+  });
+
+  const issueCard = (sev: string, exp: boolean): React.CSSProperties => ({
+    background: exp ? '#0a1525' : '#060d1a',
+    border: `1px solid ${(severityColor[sev] ?? '#ffffff') + '33'}`,
+    borderRadius: 12, overflow: 'hidden', transition: 'all .25s', cursor: 'pointer', marginBottom: 8,
+  });
+
+  const badge = (color: string): React.CSSProperties => ({
+    background: color + '22', color, border: `1px solid ${color}44`,
+    borderRadius: 6, padding: '2px 10px', fontSize: 11, fontWeight: 700, display: 'inline-block',
+  });
+
+  const secCard = (found: boolean): React.CSSProperties => ({
+    background: found ? '#0a1f1544' : '#1f0a0a44',
+    border: `1px solid ${found ? '#10b98133' : '#ef444433'}`,
+    borderRadius: 14, padding: '16px 18px', transition: 'transform .2s', marginBottom: 8,
+  });
 
   return (
-    <div className="space-y-5">
-      <Textarea
-        className="min-h-[200px] resize-y font-sans text-sm p-4 leading-relaxed bg-card border-border text-foreground"
-        placeholder={lang === 'ar' ? 'الصق نص البحث هنا للتدقيق الشامل…' : 'Paste your research text here for full analysis…'}
-        value={text}
-        onChange={e => setText(e.target.value)}
-        data-testid="textarea-proofread"
-      />
+    <div style={S.root}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
+        @keyframes mhk-spin { to { transform: rotate(360deg); } }
+        @keyframes mhk-fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes mhk-pulse { 0%,100%{opacity:.6} 50%{opacity:1} }
+        .mhk-fade { animation: mhk-fadeUp .5s ease both; }
+        .mhk-btn-p:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 8px 30px #C9A84C55 !important; }
+        .mhk-btn-p:active { transform: scale(0.98); }
+        .mhk-btn-o:hover { background: #C9A84C11 !important; }
+        .mhk-issue:hover { border-color: #C9A84C55 !important; }
+        .mhk-sec:hover { transform: translateX(-3px); }
+        textarea:focus { border-color: #C9A84C66 !important; box-shadow: 0 0 0 3px #C9A84C11; }
+      `}</style>
 
-      <div className="flex gap-3">
-        <Button onClick={runAnalysis} className="flex-1" data-testid="btn-run-proofread">
-          <FileCheck2 className="w-4 h-4 me-2" />
-          {lang === 'ar' ? 'تشغيل التدقيق الشامل' : 'Run Full Analysis'}
-        </Button>
-        <Button variant="outline" onClick={copyText} data-testid="btn-copy-proofread">
-          <Copy className="w-4 h-4 me-2" />
-          {lang === 'ar' ? 'نسخ' : 'Copy'}
-        </Button>
+      {/* Hero */}
+      <div style={S.hero}>
+        <ParticleField />
+        <div style={{ ...S.container, position: 'relative', zIndex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 11, background: 'linear-gradient(135deg, #C9A84C, #f5d78e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>📝</div>
+                <h2 style={S.heroTitle}>{lang === 'ar' ? 'التدقيق الأكاديمي' : 'Academic Proofreader'}</h2>
+              </div>
+              <p style={S.heroSub}>{lang === 'ar' ? 'تحليل لغوي · بنية أكاديمية · تقرير مفصّل' : 'Language · Structure · Detailed Report'}</p>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                {(lang === 'ar'
+                  ? ['تحليل لغوي', 'بنية أكاديمية', 'تقرير مفصّل', 'ثنائي اللغة']
+                  : ['Language', 'Structure', 'Report', 'Bilingual']
+                ).map(tag => (
+                  <span key={tag} style={{ background: '#C9A84C15', border: '1px solid #C9A84C33', color: '#C9A84C', borderRadius: 20, padding: '3px 12px', fontSize: 11, fontWeight: 700 }}>{tag}</span>
+                ))}
+              </div>
+            </div>
+            {hasRun && (
+              <div style={{ animation: 'mhk-fadeUp .6s ease' }}>
+                <OrbCanvas score={score} />
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {hasRun && (
-        <>
-          {/* Tab bar + score */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button size="sm" variant={activeTab === 'language' ? 'default' : 'outline'} onClick={() => setActiveTab('language')} data-testid="tab-language">
-              <AlertCircle className="w-3.5 h-3.5 me-1.5" />
-              {lang === 'ar' ? `لغوي (${issues.length})` : `Language (${issues.length})`}
-            </Button>
-            <Button size="sm" variant={activeTab === 'structure' ? 'default' : 'outline'} onClick={() => setActiveTab('structure')} data-testid="tab-structure">
-              <BookOpen className="w-3.5 h-3.5 me-1.5" />
-              {lang === 'ar' ? 'البنية الأكاديمية' : 'Academic Structure'}
-            </Button>
-            <Button size="sm" variant={activeTab === 'report' ? 'default' : 'outline'} onClick={() => setActiveTab('report')} data-testid="tab-report">
-              <Printer className="w-3.5 h-3.5 me-1.5" />
-              {lang === 'ar' ? 'تقرير مفصّل' : 'Detailed Report'}
-            </Button>
-            {score && <Badge className={`ms-auto ${score.color} px-3 py-1`}>{score.label}</Badge>}
-          </div>
+      {/* Main */}
+      <div style={S.container}>
 
-          {/* ── Language tab ── */}
-          {activeTab === 'language' && (
-            <Card className="border-border bg-secondary/10">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-primary" />
-                  {lang === 'ar' ? 'الملاحظات اللغوية' : 'Language Observations'}
-                  <span className="text-muted-foreground text-sm font-normal">
-                    — {issues.length} {lang === 'ar' ? 'ملاحظة' : 'items'}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+        {/* Input Card */}
+        <div style={{ ...S.card, marginTop: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <span style={{ fontSize: 16 }}>✍️</span>
+            <span style={{ fontWeight: 700, fontSize: 14 }}>{lang === 'ar' ? 'النص البحثي' : 'Research Text'}</span>
+            {wordCount > 0 && (
+              <span style={{ marginInlineStart: 'auto', color: '#64748b', fontSize: 12 }}>
+                {lang === 'ar'
+                  ? `${wordCount.toLocaleString('ar')} كلمة · ~${totalPages} صفحة`
+                  : `${wordCount.toLocaleString()} words · ~${totalPages} pages`}
+              </span>
+            )}
+          </div>
+          <textarea
+            style={S.textarea}
+            placeholder={lang === 'ar' ? 'الصق نص البحث هنا للتدقيق الشامل…' : 'Paste your research text here for full analysis…'}
+            value={text}
+            onChange={e => setText(e.target.value)}
+            data-testid="textarea-proofread"
+          />
+          <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+            <button
+              className="mhk-btn-p"
+              style={{ ...S.btnPrimary, opacity: isAnalyzing || !text.trim() ? 0.7 : 1 }}
+              onClick={runAnalysis}
+              disabled={isAnalyzing || !text.trim()}
+              data-testid="btn-run-proofread"
+            >
+              {isAnalyzing
+                ? <><div style={S.spinner} />{lang === 'ar' ? ' جاري التحليل…' : ' Analyzing…'}</>
+                : <><span>🔍</span>{lang === 'ar' ? ' تشغيل التدقيق الشامل' : ' Run Full Analysis'}</>
+              }
+            </button>
+            <button className="mhk-btn-o" style={S.btnOutline} onClick={copyText}>
+              📋 {lang === 'ar' ? 'نسخ' : 'Copy'}
+            </button>
+            {hasRun && (
+              <button className="mhk-btn-o" style={{ ...S.btnOutline, marginInlineStart: 'auto' }} onClick={printReport}>
+                🖨️ {lang === 'ar' ? 'طباعة التقرير' : 'Print Report'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Stats Row */}
+        {hasRun && (
+          <div className="mhk-fade" style={S.statGrid}>
+            <div style={S.statCard}>
+              <ProgressRing value={issues.length} max={Math.max(issues.length, 10)} color="#f59e0b" label={lang === 'ar' ? 'ملاحظات لغوية' : 'Language issues'} />
+            </div>
+            <div style={S.statCard}>
+              <ProgressRing value={sections.filter(s => s.found).length} max={sections.length} color="#10b981" label={lang === 'ar' ? 'أقسام موجودة' : 'Sections found'} />
+            </div>
+            <div style={S.statCard}>
+              <ProgressRing value={issues.filter(i => i.severity === 'warning').length} max={Math.max(issues.length, 5)} color="#ef4444" label={lang === 'ar' ? 'تحذيرات' : 'Warnings'} />
+            </div>
+          </div>
+        )}
+
+        {/* Tabs */}
+        {hasRun && (
+          <>
+            <div style={S.tabBar}>
+              {[
+                { key: 'language',  label: `📝 ${lang === 'ar' ? `لغوي (${issues.length})` : `Language (${issues.length})`}` },
+                { key: 'structure', label: `🏛️ ${lang === 'ar' ? 'البنية الأكاديمية' : 'Academic Structure'}` },
+                { key: 'report',    label: `📋 ${lang === 'ar' ? 'التقرير المفصّل' : 'Detailed Report'}` },
+              ].map(t => (
+                <button key={t.key} style={tab(activeTab === t.key)} onClick={() => setActiveTab(t.key as typeof activeTab)}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Language Tab */}
+            {activeTab === 'language' && (
+              <div className="mhk-fade" style={{ marginTop: 16 }}>
                 {issues.length === 0 ? (
-                  <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
-                    <CheckCircle2 className="w-5 h-5 text-green-500" />
-                    <span>{lang === 'ar' ? 'لا توجد ملاحظات لغوية' : 'No language issues found!'}</span>
+                  <div style={{ ...S.card, textAlign: 'center', padding: 40 }}>
+                    <div style={{ fontSize: 44, marginBottom: 10 }}>✅</div>
+                    <p style={{ color: '#10b981', fontWeight: 700, fontSize: 15 }}>{lang === 'ar' ? 'لا توجد ملاحظات لغوية!' : 'No language issues!'}</p>
+                    <p style={{ color: '#64748b', fontSize: 12, marginTop: 4 }}>{lang === 'ar' ? 'النص خالٍ من المشكلات المكتشفة' : 'No issues detected in this text'}</p>
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-[500px] overflow-y-auto pe-1">
-                    {issues.map(issue => {
-                      const expanded = expandedIssues.has(issue.id);
-                      const s = severityStyle[issue.severity];
+                  <div style={{ maxHeight: 520, overflowY: 'auto', paddingLeft: 4 }}>
+                    {issues.map((issue, idx) => {
+                      const exp = expandedId === issue.id;
+                      const sc = severityColor[issue.severity] ?? '#ffffff';
                       return (
-                        <div key={issue.id} className={`border rounded-lg overflow-hidden ${s.card}`}>
-                          <button
-                            className="w-full text-start p-3 flex items-start gap-3"
-                            onClick={() => toggleExpand(issue.id)}
-                          >
-                            <span className="text-xs font-mono bg-background/60 px-2 py-0.5 rounded shrink-0 text-muted-foreground">
+                        <div
+                          key={issue.id}
+                          className="mhk-issue"
+                          style={{ ...issueCard(issue.severity, exp), animationDelay: `${idx * 40}ms` }}
+                          onClick={() => setExpandedId(exp ? null : issue.id)}
+                        >
+                          <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{ background: sc + '22', color: sc, borderRadius: 7, padding: '3px 9px', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
                               {lang === 'ar' ? `ص${issue.page}` : `P${issue.page}`}
                             </span>
-                            <div className="flex-1 min-w-0">
-                              <Badge className={`text-xs px-2 py-0 mb-1 ${s.badge}`}>
-                                {lang === 'ar' ? issue.typeAr : issue.type}
-                              </Badge>
-                              <p className="text-xs font-mono text-muted-foreground truncate">{issue.snippet}</p>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <span style={badge(sc)}>{lang === 'ar' ? issue.typeAr : issue.type}</span>
+                              <p style={{ fontSize: 12, color: '#475569', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>{issue.snippet}</p>
                             </div>
-                            <span className="text-muted-foreground shrink-0 mt-0.5">
-                              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                            </span>
-                          </button>
-                          {expanded && (
-                            <div className="px-3 pb-3 border-t border-border/30 bg-background/40">
-                              <p className="text-xs text-muted-foreground mt-2 mb-1 font-medium">
-                                {lang === 'ar' ? 'المشكلة:' : 'Issue:'}
-                              </p>
-                              <p className="text-xs text-foreground/80 mb-2">
-                                {lang === 'ar' ? issue.typeAr : issue.type}
-                                <span className="text-muted-foreground ms-2">({lang === 'ar' ? issue.type : issue.typeAr})</span>
-                              </p>
-                              <p className="text-xs font-medium text-green-400 mb-1">
-                                {lang === 'ar' ? 'طريقة الحل:' : 'How to fix:'}
-                              </p>
-                              <p className="text-xs text-foreground/80">
-                                {lang === 'ar' ? issue.fixAr : issue.fix}
-                              </p>
+                            <span style={{ color: '#475569', fontSize: 14, flexShrink: 0 }}>{exp ? '▲' : '▼'}</span>
+                          </div>
+                          {exp && (
+                            <div style={{ padding: '0 16px 14px', borderTop: '1px solid #ffffff08' }}>
+                              <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                                <div style={{ background: '#0a0f1e', borderRadius: 9, padding: 12, border: '1px solid #ef444422' }}>
+                                  <p style={{ fontSize: 11, color: '#ef4444', fontWeight: 700, marginBottom: 5 }}>🔴 {lang === 'ar' ? 'المشكلة' : 'Problem'}</p>
+                                  <p style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.7 }}>{lang === 'ar' ? issue.typeAr : issue.type}</p>
+                                </div>
+                                <div style={{ background: '#0a0f1e', borderRadius: 9, padding: 12, border: '1px solid #10b98122' }}>
+                                  <p style={{ fontSize: 11, color: '#10b981', fontWeight: 700, marginBottom: 5 }}>✅ {lang === 'ar' ? 'الحل المقترح' : 'Fix'}</p>
+                                  <p style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.7 }}>{lang === 'ar' ? issue.fixAr : issue.fix}</p>
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -496,217 +608,216 @@ export default function Proofreader({ text: initialText }: ProofreaderProps) {
                     })}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            )}
 
-          {/* ── Structure tab ── */}
-          {activeTab === 'structure' && (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                {lang === 'ar' ? 'فحص الأقسام الأكاديمية الأساسية في النص' : 'Checking required academic sections'}
-              </p>
-              {sections.map(sec => {
-                const cl = confidenceLabel[sec.confidence];
-                return (
-                  <Card key={sec.key} className={`border ${sec.found ? 'border-green-500/30' : 'border-red-500/40 bg-red-500/5'}`}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <div className="flex items-center gap-2">
-                          <span className="text-primary">{sec.icon}</span>
-                          <p className="font-semibold text-sm">
-                            {lang === 'ar' ? sec.labelAr : sec.labelEn}
-                            <span className="text-muted-foreground font-normal text-xs ms-2">
-                              {lang === 'ar' ? sec.labelEn : sec.labelAr}
-                            </span>
-                          </p>
+            {/* Structure Tab */}
+            {activeTab === 'structure' && (
+              <div className="mhk-fade" style={{ marginTop: 16 }}>
+                <p style={{ color: '#475569', fontSize: 13, marginBottom: 14 }}>
+                  {lang === 'ar' ? 'فحص الأقسام الأكاديمية الخمسة المطلوبة في البحث العلمي' : 'Checking 5 required academic sections'}
+                </p>
+                {sections.map((sec, idx) => {
+                  const cm = confidenceMeta[sec.confidence];
+                  return (
+                    <div key={sec.key} className="mhk-sec" style={{ ...secCard(sec.found), animationDelay: `${idx * 80}ms` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ width: 40, height: 40, borderRadius: 11, background: sec.found ? '#10b98122' : '#ef444422', border: `1px solid ${sec.found ? '#10b98144' : '#ef444444'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+                            {sec.emoji}
+                          </div>
+                          <div>
+                            <p style={{ fontWeight: 800, fontSize: 14, margin: 0 }}>{sec.labelAr}</p>
+                            <p style={{ color: '#475569', fontSize: 11, margin: '2px 0 0' }}>{sec.labelEn}</p>
+                          </div>
                         </div>
-                        <Badge className={`text-xs px-2 shrink-0 ${cl.color}`}>
-                          {lang === 'ar' ? cl.ar : cl.en}
-                        </Badge>
+                        <span style={badge(cm.color)}>{lang === 'ar' ? cm.ar : cm.en}</span>
                       </div>
                       {sec.found && sec.excerpt && (
-                        <p className="mt-2 text-xs text-muted-foreground bg-background/60 px-3 py-1.5 rounded font-mono truncate">{sec.excerpt}</p>
+                        <div style={{ marginTop: 10, background: '#060d1a', borderRadius: 7, padding: '9px 12px', border: '1px solid #ffffff08' }}>
+                          <p style={{ fontSize: 11, color: '#475569', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>{sec.excerpt}</p>
+                        </div>
                       )}
                       {!sec.found && (
-                        <p className="mt-2 text-xs text-red-400 flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3 shrink-0" />
-                          {lang === 'ar' ? `لم يُعثر على قسم "${sec.labelAr}"` : `"${sec.labelEn}" not detected`}
-                        </p>
+                        <div style={{ marginTop: 10, background: '#1f0a0a', borderRadius: 7, padding: '9px 12px', border: '1px solid #ef444422' }}>
+                          <p style={{ color: '#ef4444', fontSize: 12, margin: 0 }}>
+                            ⚠️ {lang === 'ar'
+                              ? `لم يُعثر على قسم "${sec.labelAr}" — أضف عنواناً واضحاً لهذا القسم`
+                              : `"${sec.labelEn}" not found — add a clear section heading`}
+                          </p>
+                        </div>
                       )}
                       {sec.issues.map((iss, i) => (
-                        <div key={i} className="mt-2">
-                          <p className="text-xs text-amber-400 flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3 shrink-0" />
-                            {lang === 'ar' ? sec.issuesAr[i] : iss}
-                          </p>
-                          <p className="text-xs text-green-400 ms-4 mt-0.5">
-                            ← {lang === 'ar' ? sec.fixesAr[i] : sec.fixes[i]}
-                          </p>
+                        <div key={i} style={{ marginTop: 8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                          <div style={{ background: '#1f0a0a', borderRadius: 7, padding: '9px 12px', border: '1px solid #f59e0b22' }}>
+                            <p style={{ color: '#f59e0b', fontSize: 11, fontWeight: 700, margin: '0 0 3px' }}>⚠️ {lang === 'ar' ? 'ملاحظة' : 'Note'}</p>
+                            <p style={{ color: '#94a3b8', fontSize: 12, margin: 0, lineHeight: 1.6 }}>{lang === 'ar' ? sec.issuesAr[i] : iss}</p>
+                          </div>
+                          <div style={{ background: '#0a1f15', borderRadius: 7, padding: '9px 12px', border: '1px solid #10b98122' }}>
+                            <p style={{ color: '#10b981', fontSize: 11, fontWeight: 700, margin: '0 0 3px' }}>✅ {lang === 'ar' ? 'الحل' : 'Fix'}</p>
+                            <p style={{ color: '#94a3b8', fontSize: 12, margin: 0, lineHeight: 1.6 }}>{lang === 'ar' ? sec.fixesAr[i] : sec.fixes[i]}</p>
+                          </div>
                         </div>
                       ))}
                       {sec.found && sec.issues.length === 0 && (
-                        <p className="mt-2 text-xs text-green-400 flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 shrink-0" />
-                          {lang === 'ar' ? 'القسم موجود ويبدو مكتملاً' : 'Section found and appears complete'}
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-              <Card className="border-border bg-secondary/10">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <span className="text-sm font-medium">{lang === 'ar' ? 'الأقسام المكتملة' : 'Sections found'}</span>
-                  <span className="text-xl font-bold text-primary">{sections.filter(s => s.found).length} / {sections.length}</span>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* ── Report tab ── */}
-          {activeTab === 'report' && (
-            <div className="space-y-4">
-              <div className="flex justify-end">
-                <Button variant="outline" size="sm" onClick={printReport} data-testid="btn-print-report">
-                  <Printer className="w-4 h-4 me-2" />
-                  {lang === 'ar' ? 'طباعة / تحميل التقرير' : 'Print / Download Report'}
-                </Button>
-              </div>
-
-              {/* Printable report area */}
-              <div ref={reportRef} className="bg-card border border-border rounded-xl p-6 space-y-6 text-sm">
-                {/* Header */}
-                <div className="border-b-2 pb-4" style={{ borderColor: 'hsl(var(--primary))' }}>
-                  <h2 className="text-xl font-bold text-foreground">
-                    {lang === 'ar' ? 'تقرير التدقيق الأكاديمي الشامل' : 'Comprehensive Academic Proofreading Report'}
-                  </h2>
-                  <p className="text-muted-foreground text-xs mt-1">
-                    {lang === 'ar' ? `التاريخ: ${today} | عدد الصفحات التقديري: ${totalPages} | عدد الملاحظات: ${issues.length + sections.filter(s => s.issues.length > 0 || !s.found).length}` : `Date: ${today} | Est. pages: ${totalPages} | Total items: ${issues.length + sections.filter(s => s.issues.length > 0 || !s.found).length}`}
-                  </p>
-                </div>
-
-                {/* Section A: Language */}
-                {issues.length > 0 && (
-                  <div>
-                    <h3 className="font-bold text-base mb-3 text-primary">
-                      {lang === 'ar' ? 'أولاً: الملاحظات اللغوية' : 'A. Language Observations'}
-                    </h3>
-                    <div className="space-y-3">
-                      {issues.map((issue, idx) => (
-                        <div key={issue.id} className="border border-border/50 rounded-lg p-4 bg-background/40">
-                          <div className="flex items-start gap-3 flex-wrap">
-                            <span className="font-bold text-primary shrink-0">#{idx + 1}</span>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 flex-wrap mb-2">
-                                <Badge className={`text-xs ${severityStyle[issue.severity].badge}`}>
-                                  {lang === 'ar' ? issue.typeAr : issue.type}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  {lang === 'ar' ? `الصفحة ${issue.page}` : `Page ${issue.page}`}
-                                </span>
-                              </div>
-                              <div className="space-y-1.5">
-                                <div>
-                                  <span className="text-xs font-semibold text-amber-400">{lang === 'ar' ? 'النص المُشار إليه: ' : 'Reference: '}</span>
-                                  <span className="text-xs font-mono text-muted-foreground">"{issue.snippet}"</span>
-                                </div>
-                                <div>
-                                  <span className="text-xs font-semibold text-red-400">{lang === 'ar' ? 'المشكلة: ' : 'Problem: '}</span>
-                                  <span className="text-xs text-foreground/80">{lang === 'ar' ? issue.typeAr : issue.type}</span>
-                                </div>
-                                <div>
-                                  <span className="text-xs font-semibold text-green-400">{lang === 'ar' ? 'طريقة الحل: ' : 'Fix: '}</span>
-                                  <span className="text-xs text-foreground/80">{lang === 'ar' ? issue.fixAr : issue.fix}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                        <div style={{ marginTop: 8, color: '#10b981', fontSize: 12 }}>
+                          ✓ {lang === 'ar' ? 'القسم موجود ويبدو مكتملاً' : 'Section found and complete'}
                         </div>
-                      ))}
+                      )}
+                    </div>
+                  );
+                })}
+                <div style={{ ...S.card, marginTop: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 22px' }}>
+                  <span style={{ fontWeight: 700, fontSize: 14 }}>{lang === 'ar' ? 'الأقسام المكتملة' : 'Sections found'}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {sections.map(s => (
+                      <div key={s.key} title={s.labelAr} style={{ width: 9, height: 9, borderRadius: '50%', background: s.found ? '#10b981' : '#ef4444' }} />
+                    ))}
+                    <span style={{ color: '#C9A84C', fontWeight: 900, fontSize: 20, marginInlineStart: 6 }}>
+                      {sections.filter(s => s.found).length}/{sections.length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Report Tab */}
+            {activeTab === 'report' && (
+              <div className="mhk-fade" style={{ marginTop: 16 }}>
+                <div ref={reportRef} style={{ ...S.card, lineHeight: 1.8 }}>
+                  <div style={{ borderBottom: '2px solid #C9A84C', paddingBottom: 16, marginBottom: 22 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 46, height: 46, borderRadius: 12, background: 'linear-gradient(135deg, #C9A84C, #f5d78e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>📝</div>
+                      <div>
+                        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#C9A84C' }}>
+                          {lang === 'ar' ? 'تقرير التدقيق الأكاديمي الشامل' : 'Comprehensive Proofreading Report'}
+                        </h2>
+                        <p style={{ margin: '3px 0 0', color: '#475569', fontSize: 11 }}>
+                          {lang === 'ar'
+                            ? `التاريخ: ${today} · الصفحات: ${totalPages} · الملاحظات: ${issues.length + sections.filter(s => s.issues.length > 0 || !s.found).length}`
+                            : `Date: ${today} · Pages: ${totalPages} · Issues: ${issues.length + sections.filter(s => s.issues.length > 0 || !s.found).length}`}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                )}
 
-                {/* Section B: Academic Structure */}
-                <div>
-                  <h3 className="font-bold text-base mb-3 text-primary">
-                    {lang === 'ar' ? 'ثانياً: البنية الأكاديمية' : 'B. Academic Structure'}
-                  </h3>
-                  <div className="space-y-3">
-                    {sections.map((sec, idx) => {
-                      const hasProblems = !sec.found || sec.issues.length > 0;
-                      if (!hasProblems) return (
-                        <div key={sec.key} className="border border-green-500/30 rounded-lg p-3 flex items-center gap-3 bg-green-500/5">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                          <span className="text-sm font-medium">{lang === 'ar' ? sec.labelAr : sec.labelEn}</span>
-                          <Badge className="ms-auto bg-green-600 text-white text-xs">{lang === 'ar' ? 'مكتمل' : 'Complete'}</Badge>
-                        </div>
-                      );
-                      return (
-                        <div key={sec.key} className="border border-amber-500/30 rounded-lg p-4 bg-background/40">
-                          <div className="flex items-center gap-2 mb-3 flex-wrap">
-                            <span className="font-bold text-primary">#{issues.length + idx + 1}</span>
-                            <span className="font-semibold">{lang === 'ar' ? sec.labelAr : sec.labelEn}</span>
-                            <Badge className={`ms-auto text-xs ${sec.found ? 'bg-amber-600 text-white' : 'bg-red-600 text-white'}`}>
-                              {sec.found ? (lang === 'ar' ? 'يحتاج تحسين' : 'Needs improvement') : (lang === 'ar' ? 'غير موجود' : 'Missing')}
-                            </Badge>
-                          </div>
-                          {!sec.found ? (
-                            <div className="space-y-1.5">
+                  {issues.length > 0 && (
+                    <div style={{ marginBottom: 26 }}>
+                      <h3 style={{ color: '#C9A84C', margin: '0 0 12px', fontSize: 15, display: 'flex', alignItems: 'center', gap: 7 }}>
+                        📝 {lang === 'ar' ? 'أولاً: الملاحظات اللغوية' : 'A. Language Observations'}
+                      </h3>
+                      <div style={{ display: 'grid', gap: 9 }}>
+                        {issues.map((issue, idx) => (
+                          <div key={issue.id} style={{ background: '#060d1a', border: '1px solid #ffffff10', borderRadius: 11, padding: '13px 16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 9, flexWrap: 'wrap' }}>
+                              <span style={{ color: '#C9A84C', fontWeight: 900 }}>#{idx + 1}</span>
+                              <span style={badge(severityColor[issue.severity] ?? '#fff')}>{lang === 'ar' ? issue.typeAr : issue.type}</span>
+                              <span style={{ color: '#475569', fontSize: 11 }}>{lang === 'ar' ? `الصفحة ${issue.page}` : `Page ${issue.page}`}</span>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
                               <div>
-                                <span className="text-xs font-semibold text-red-400">{lang === 'ar' ? 'المشكلة: ' : 'Problem: '}</span>
-                                <span className="text-xs text-foreground/80">
-                                  {lang === 'ar' ? `لم يُعثر على قسم "${sec.labelAr}" في النص` : `Section "${sec.labelEn}" was not detected`}
-                                </span>
+                                <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>{lang === 'ar' ? 'النص المُشار إليه:' : 'Reference:'}</span>
+                                <p style={{ fontSize: 12, color: '#475569', fontFamily: 'monospace', margin: '3px 0', background: '#0a0f1e', padding: '5px 9px', borderRadius: 5 }}>"{issue.snippet}"</p>
                               </div>
                               <div>
-                                <span className="text-xs font-semibold text-green-400">{lang === 'ar' ? 'طريقة الحل: ' : 'Fix: '}</span>
-                                <span className="text-xs text-foreground/80">
-                                  {lang === 'ar' ? `أضف قسم "${sec.labelAr}" مع عنوان واضح وبمحتوى كافٍ` : `Add a clearly labeled "${sec.labelEn}" section with adequate content`}
-                                </span>
+                                <span style={{ fontSize: 11, color: '#10b981', fontWeight: 700 }}>{lang === 'ar' ? 'الحل المقترح:' : 'Fix:'}</span>
+                                <p style={{ fontSize: 12, color: '#94a3b8', margin: '3px 0', lineHeight: 1.6 }}>{lang === 'ar' ? issue.fixAr : issue.fix}</p>
                               </div>
                             </div>
-                          ) : (
-                            <div className="space-y-2">
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ marginBottom: 26 }}>
+                    <h3 style={{ color: '#C9A84C', margin: '0 0 12px', fontSize: 15, display: 'flex', alignItems: 'center', gap: 7 }}>
+                      🏛️ {lang === 'ar' ? 'ثانياً: البنية الأكاديمية' : 'B. Academic Structure'}
+                    </h3>
+                    <div style={{ display: 'grid', gap: 9 }}>
+                      {sections.map((sec, idx) => {
+                        const ok = sec.found && sec.issues.length === 0;
+                        return (
+                          <div key={sec.key} style={{ background: '#060d1a', border: `1px solid ${ok ? '#10b98122' : '#f59e0b22'}`, borderRadius: 11, padding: '13px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                            <span style={{ fontSize: 22, flexShrink: 0 }}>{sec.emoji}</span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 5, flexWrap: 'wrap' }}>
+                                <span style={{ fontWeight: 800, fontSize: 13 }}>{sec.labelAr}</span>
+                                <span style={badge(ok ? '#10b981' : !sec.found ? '#ef4444' : '#f59e0b')}>
+                                  {ok
+                                    ? (lang === 'ar' ? 'مكتمل ✓' : 'Complete ✓')
+                                    : !sec.found
+                                      ? (lang === 'ar' ? 'غير موجود' : 'Missing')
+                                      : (lang === 'ar' ? 'يحتاج تحسين' : 'Needs improvement')}
+                                </span>
+                              </div>
+                              {!sec.found && (
+                                <p style={{ fontSize: 12, color: '#ef4444', margin: '0 0 3px' }}>
+                                  {lang === 'ar' ? `أضف قسم "${sec.labelAr}" مع عنوان واضح وبمحتوى كافٍ` : `Add "${sec.labelEn}" with a clear heading`}
+                                </p>
+                              )}
                               {sec.issues.map((iss, i) => (
-                                <div key={i}>
-                                  <div>
-                                    <span className="text-xs font-semibold text-red-400">{lang === 'ar' ? 'المشكلة: ' : 'Problem: '}</span>
-                                    <span className="text-xs text-foreground/80">{lang === 'ar' ? sec.issuesAr[i] : iss}</span>
-                                  </div>
-                                  <div>
-                                    <span className="text-xs font-semibold text-green-400">{lang === 'ar' ? 'طريقة الحل: ' : 'Fix: '}</span>
-                                    <span className="text-xs text-foreground/80">{lang === 'ar' ? sec.fixesAr[i] : sec.fixes[i]}</span>
-                                  </div>
+                                <div key={i} style={{ marginTop: 5 }}>
+                                  <p style={{ fontSize: 12, color: '#f59e0b', margin: '0 0 2px' }}>⚠️ {lang === 'ar' ? sec.issuesAr[i] : iss}</p>
+                                  <p style={{ fontSize: 12, color: '#10b981', margin: 0 }}>← {lang === 'ar' ? sec.fixesAr[i] : sec.fixes[i]}</p>
                                 </div>
                               ))}
+                              {ok && <p style={{ fontSize: 12, color: '#10b981', margin: 0 }}>{lang === 'ar' ? 'القسم موجود ويبدو مكتملاً' : 'Section found and complete'}</p>}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div style={{ borderTop: '1px solid #ffffff08', paddingTop: 18, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+                    {[
+                      { icon: '📝', label: lang === 'ar' ? 'الملاحظات اللغوية' : 'Language issues', value: issues.length, color: '#f59e0b' },
+                      { icon: '🏛️', label: lang === 'ar' ? 'الأقسام الموجودة' : 'Sections found', value: `${sections.filter(s => s.found).length}/${sections.length}`, color: '#10b981' },
+                      { icon: '⭐', label: lang === 'ar' ? 'التقييم العام' : 'Overall', value: score >= 80 ? (lang === 'ar' ? 'ممتاز' : 'Excellent') : score >= 50 ? (lang === 'ar' ? 'جيد' : 'Good') : (lang === 'ar' ? 'يحتاج تحسين' : 'Needs work'), color: '#C9A84C' },
+                    ].map(item => (
+                      <div key={item.label} style={{ background: '#060d1a', border: '1px solid #ffffff08', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 22, marginBottom: 5 }}>{item.icon}</div>
+                        <p style={{ fontSize: 20, fontWeight: 900, color: item.color, margin: '0 0 3px' }}>{item.value}</p>
+                        <p style={{ fontSize: 11, color: '#475569', margin: 0 }}>{item.label}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
-
-                {/* Summary */}
-                <div className="border-t border-border pt-4 grid grid-cols-3 gap-4 text-center">
-                  {[
-                    { label: lang === 'ar' ? 'الملاحظات اللغوية' : 'Language issues', value: issues.length },
-                    { label: lang === 'ar' ? 'الأقسام الموجودة' : 'Sections found', value: `${sections.filter(s => s.found).length}/${sections.length}` },
-                    { label: lang === 'ar' ? 'التقييم العام' : 'Overall', value: score?.label ?? '—' },
-                  ].map(item => (
-                    <div key={item.label} className="bg-secondary/30 rounded-lg p-3">
-                      <p className="text-xl font-bold text-primary">{item.value}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{item.label}</p>
-                    </div>
-                  ))}
-                </div>
               </div>
+            )}
+          </>
+        )}
+
+        {/* Empty State */}
+        {!hasRun && (
+          <div style={{ ...S.card, textAlign: 'center', padding: '50px 22px', marginTop: 20 }}>
+            <div style={{ fontSize: 56, marginBottom: 14, animation: 'mhk-pulse 2s ease infinite' }}>🔬</div>
+            <h3 style={{ color: '#C9A84C', fontWeight: 800, fontSize: 18, margin: '0 0 8px' }}>
+              {lang === 'ar' ? 'جاهز للتدقيق الأكاديمي' : 'Ready for Academic Analysis'}
+            </h3>
+            <p style={{ color: '#475569', fontSize: 13, margin: 0, lineHeight: 1.8 }}>
+              {lang === 'ar'
+                ? 'الصق نص بحثك في الحقل أعلاه · سيحلّل محكّم: اللغة · البنية · الجودة الأكاديمية'
+                : 'Paste your text above · Muhakkim will analyze: Language · Structure · Academic Quality'}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginTop: 24, flexWrap: 'wrap' }}>
+              {[
+                ['📄', 'المستخلص',      'Abstract'],
+                ['📚', 'الإطار النظري', 'Framework'],
+                ['🔬', 'المنهجية',      'Methodology'],
+                ['📊', 'النتائج',       'Results'],
+                ['💡', 'التوصيات',      'Recommendations'],
+              ].map(([emoji, ar, en]) => (
+                <div key={ar} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 11, background: '#C9A84C15', border: '1px solid #C9A84C33', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{emoji}</div>
+                  <span style={{ fontSize: 11, color: '#475569' }}>{lang === 'ar' ? ar : en}</span>
+                </div>
+              ))}
             </div>
-          )}
-        </>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
