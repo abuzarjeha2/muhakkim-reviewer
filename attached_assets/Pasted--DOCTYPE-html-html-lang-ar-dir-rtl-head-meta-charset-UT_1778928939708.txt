@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>محكّم | Muhakkim — لوحة المناقشة</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0d1117;
+    --bg-card: #161b22;
+    --bg-hover: #1c2230;
+    --gold: #c9a84c;
+    --gold-light: #e2c06e;
+    --gold-dim: #8a6f30;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --border: #21262d;
+    --green: #3fb950;
+    --red: #f85149;
+    --blue: #58a6ff;
+    --orange: #d29922;
+    --purple: #bc8cff;
+    --radius: 10px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: 'Cairo', 'Tajawal', sans-serif;
+    min-height: 100vh;
+    direction: rtl;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--gold);
+    letter-spacing: 1px;
+  }
+  .logo span { color: var(--text-primary); font-weight: 300; }
+
+  .header-tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .header-tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    color: var(--text-secondary);
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    background: none;
+    font-family: inherit;
+  }
+  .tab:hover { color: var(--text-primary); background: var(--bg-hover); }
+  .tab.active {
+    color: var(--gold);
+    border-color: var(--gold-dim);
+    background: rgba(201,168,76,0.08);
+  }
+
+  .role-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+  }
+  .role-select {
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    padding: 5px 10px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  /* ─── LAYOUT ─── */
+  .app {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 0;
+    height: calc(100vh - 60px);
+  }
+
+  .main-panel {
+    overflow-y: auto;
+    padding: 20px;
+    border-left: 1px solid var(--border);
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .side-panel {
+    overflow-y: auto;
+    padding: 16px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+    background: var(--bg-card);
+  }
+
+  /* ─── SECTION VIEWS ─── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ─── CARDS ─── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 14px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--gold-dim); }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--gold);
+  }
+
+  /* ─── 1. PARAGRAPH ANNOTATION ─── */
+  .thesis-text {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+    line-height: 2;
+    font-size: 14px;
+    color: var(--text-primary);
+  }
+
+  .paragraph {
+    position: relative;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-bottom: 6px;
+    border-right: 3px solid transparent;
+  }
+  .paragraph:hover {
+    background: rgba(201,168,76,0.06);
+    border-right-color: var(--gold-dim);
+  }
+  .paragraph.has-comment {
+    border-right-color: var(--blue);
+    background: rgba(88,166,255,0.04);
+  }
+  .paragraph.selected {
+    background: rgba(201,168,76,0.1);
+    border-right-color: var(--gold);
+  }
+
+  .para-num {
+    font-size: 10px;
+    color: var(--text-secondary);
+    position: absolute;
+    top: 10px;
+    left: 8px;
+  }
+
+  .comment-bubble {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(88,166,255,0.15);
+    border: 1px solid rgba(88,166,255,0.3);
+    border-radius: 20px;
+    padding: 2px 8px;
+    font-size: 11px;
+    color: var(--blue);
+    margin-right: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .comment-bubble:hover { background: rgba(88,166,255,0.25); }
+
+  .comment-input-box {
+    display: none;
+    margin-top: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--gold-dim);
+    border-radius: 8px;
+    padding: 12px;
+    animation: slideDown 0.2s ease;
+  }
+  .comment-input-box.open { display: block; }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  textarea {
+    width: 100%;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    padding: 10px;
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 70px;
+    direction: rtl;
+  }
+  textarea:focus { outline: none; border-color: var(--gold-dim); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .btn-gold {
+    background: var(--gold);
+    color: #0d1117;
+  }
+  .btn-gold:hover { background: var(--gold-light); }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+  .btn-ghost:hover { border-color: var(--text-secondary); color: var(--text-primary); }
+  .btn-danger {
+    background: rgba(248,81,73,0.15);
+    border: 1px solid rgba(248,81,73,0.3);
+    color: var(--red);
+  }
+  .btn-danger:hover { background: rgba(248,81,73,0.25); }
+
+  /* ─── 2. EXAMINER REPORT ─── */
+  .report-header {
+    text-align: center;
+    padding: 20px;
+    border: 2px solid var(--gold-dim);
+    border-radius: 10px;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, rgba(201,168,76,0.05), transparent);
+  }
+
+  .report-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+  .report-subtitle { font-size: 13px; color: var(--text-secondary); }
+
+  .criteria-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .criteria-label { font-size: 14px; }
+  .criteria-desc { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+  .score-stars {
+    display: flex;
+    gap: 4px;
+    direction: ltr;
+  }
+  .star {
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--border);
+    transition: color 0.1s, transform 0.1s;
+    user-select: none;
+  }
+  .star:hover, .star.lit { color: var(--gold); }
+  .star:hover { transform: scale(1.2); }
+
+  .decision-box {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .decision-btn {
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    font-family: inherit;
+    background: var(--bg-deep);
+    color: var(--text-secondary);
+  }
+  .decision-btn:hover { border-color: var(--text-secondary); }
+  .decision-btn.accept { border-color: var(--green); color: var(--green); background: rgba(63,185,80,0.08); }
+  .decision-btn.minor { border-color: var(--orange); color: var(--orange); background: rgba(210,153,34,0.08); }
+  .decision-btn.reject { border-color: var(--red); color: var(--red); background: rgba(248,81,73,0.08); }
+
+  .print-bar {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    justify-content: flex-end;
+  }
+
+  /* ─── 3. PROGRESS TRACKER ─── */
+  .chapter-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .chapter-item {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    transition: border-color 0.2s;
+  }
+  .chapter-item:hover { border-color: var(--gold-dim); }
+
+  .chapter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .chapter-name { font-size: 14px; font-weight: 600; }
+  .chapter-pct {
+    font-size: 13px;
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  .progress-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .chapter-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .chip-pending {
+    background: rgba(139,148,158,0.15);
+    color: var(--text-secondary);
+  }
+  .chip-review {
+    background: rgba(210,153,34,0.15);
+    color: var(--orange);
+  }
+  .chip-approved {
+    background: rgba(63,185,80,0.15);
+    color: var(--green);
+  }
+
+  .overall-progress {
+    background: linear-gradient(135deg, rgba(201,168,76,0.08), rgba(201,168,76,0.02));
+    border: 1px solid var(--gold-dim);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .big-pct {
+    font-size: 48px;
+    font-weight: 800;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .big-label { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+  /* ─── 4. DISCUSSION QUESTIONS ─── */
+  .question-item {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    transition: border-color 0.2s;
+    cursor: grab;
+  }
+  .question-item:hover { border-color: var(--gold-dim); }
+  .question-item.done { opacity: 0.5; }
+
+  .q-drag { color: var(--text-secondary); font-size: 16px; cursor: grab; }
+  .q-priority {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .priority-high { background: rgba(248,81,73,0.2); color: var(--red); }
+  .priority-med  { background: rgba(210,153,34,0.2); color: var(--orange); }
+  .priority-low  { background: rgba(63,185,80,0.2);  color: var(--green); }
+
+  .q-content { flex: 1; }
+  .q-text { font-size: 14px; line-height: 1.6; }
+  .q-meta { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+
+  .q-check {
+    width: 20px; height: 20px;
+    border-radius: 4px;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    font-size: 12px;
+    background: transparent;
+    color: transparent;
+  }
+  .q-check.checked {
+    background: var(--green);
+    border-color: var(--green);
+    color: white;
+  }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar-section { margin-bottom: 20px; }
+  .sidebar-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .comment-card {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-right: 3px solid var(--blue);
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .comment-para { font-size: 11px; color: var(--blue); margin-bottom: 4px; font-weight: 600; }
+  .comment-text { font-size: 13px; line-height: 1.5; }
+  .comment-time { font-size: 10px; color: var(--text-secondary); margin-top: 6px; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .stat-box {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+  .stat-num { font-size: 24px; font-weight: 800; color: var(--gold); }
+  .stat-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+  /* ─── ADD QUESTION FORM ─── */
+  .add-q-form {
+    background: var(--bg-deep);
+    border: 1px dashed var(--gold-dim);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .form-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    align-items: center;
+  }
+  select {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    padding: 7px 10px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  /* ─── PRINT STYLES ─── */
+  @media print {
+    header, .side-panel, .header-tabs, .role-badge,
+    .btn, .print-bar, .add-q-form { display: none !important; }
+    .app { display: block; }
+    .main-panel { height: auto; overflow: visible; padding: 0; }
+    body { background: white; color: black; }
+    .card, .chapter-item, .question-item {
+      border: 1px solid #ccc;
+      page-break-inside: avoid;
+    }
+    .report-title { color: #8a6f30; }
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 768px) {
+    .app { grid-template-columns: 1fr; }
+    .side-panel { display: none; }
+    .decision-box { grid-template-columns: 1fr; }
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+  .empty-icon { font-size: 32px; margin-bottom: 8px; }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    margin-left: 4px;
+  }
+  .tag-blue { background: rgba(88,166,255,0.15); color: var(--blue); }
+  .tag-gold { background: rgba(201,168,76,0.15); color: var(--gold); }
+  .tag-green { background: rgba(63,185,80,0.15); color: var(--green); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">محكَّم <span>| Muhakkim</span></div>
+
+  <div class="header-tabs">
+    <button class="tab active" onclick="switchView('annotation')">💬 التعليق على الفقرات</button>
+    <button class="tab" onclick="switchView('report')">📄 تقرير المناقش</button>
+    <button class="tab" onclick="switchView('progress')">📊 تتبع الإنجاز</button>
+    <button class="tab" onclick="switchView('questions')">❓ أسئلة المناقشة</button>
+  </div>
+
+  <div class="role-badge">
+    <select class="role-select" onchange="setRole(this.value)">
+      <option value="supervisor">👨‍🏫 مشرف</option>
+      <option value="external">🔍 مناقش خارجي</option>
+      <option value="internal">👥 مناقش داخلي</option>
+    </select>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- ══════════════════ MAIN PANEL ══════════════════ -->
+  <div class="main-panel">
+
+    <!-- ── VIEW 1: PARAGRAPH ANNOTATION ── -->
+    <div id="view-annotation" class="view active">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span> نص الرسالة — انقر على فقرة للتعليق عليها</div>
+        <div class="thesis-text">
+
+          <div class="paragraph" id="p1" onclick="selectPara('p1', 'الفصل الأول: المقدمة')">
+            <span class="para-num">١</span>
+            <strong>الفصل الأول: المقدمة وإشكالية البحث</strong><br>
+            يتناول هذا البحث دراسة أثر التحول الرقمي على جودة الخدمات التعليمية في المؤسسات الجامعية السعودية خلال الفترة الممتدة من عام ٢٠١٩ إلى ٢٠٢٤، مع التركيز على قياس مؤشرات الأداء الأكاديمي قبل وبعد تبني منصات التعلم الإلكتروني.
+          </div>
+
+          <div class="paragraph has-comment" id="p2" onclick="selectPara('p2', 'الفصل الثاني: الإطار النظري')">
+            <span class="para-num">٢</span>
+            <span class="comment-bubble">💬 ١ تعليق</span>
+            <strong>الفصل الثاني: الإطار النظري والدراسات السابقة</strong><br>
+            استندت الدراسة إلى نظرية قبول التكنولوجيا (TAM) ونموذج ديلون ومكلين لنجاح نظم المعلومات، كما استعرضت ما يزيد على ٤٥ دراسة سابقة في مجال التعليم الإلكتروني والتحول الرقمي على المستويين المحلي والدولي.
+          </div>
+
+          <div class="paragraph" id="p3" onclick="selectPara('p3', 'الفصل الثالث: المنهجية')">
+            <span class="para-num">٣</span>
+            <strong>الفصل الثالث: منهجية البحث وأدواته</strong><br>
+            اعتمد البحث المنهج الوصفي التحليلي المختلط (Mixed Methods)، وشملت عينة الدراسة ٣٨٠ طالباً وطالبة من خمس جامعات حكومية سعودية تم اختيارها بالطريقة العشوائية الطبقية، فضلاً عن ٢٢ مقابلة معمقة مع أعضاء هيئة التدريس.
+          </div>
+
+          <div class="paragraph" id="p4" onclick="selectPara('p4', 'الفصل الرابع: النتائج')">
+            <span class="para-num">٤</span>
+            <strong>الفصل الرابع: نتائج الدراسة ومناقشتها</strong><br>
+            كشفت نتائج الدراسة عن وجود أثر إيجابي دال إحصائياً عند مستوى (α≤0.05) للتحول الرقمي على جودة الخدمات التعليمية بمعامل ارتباط بلغ (r=0.73)، كما أظهرت أن البنية التحتية التقنية تُعدّ أبرز متغير وسيط في هذه العلاقة.
+          </div>
+
+          <div class="paragraph" id="p5" onclick="selectPara('p5', 'الفصل الخامس: التوصيات')">
+            <span class="para-num">٥</span>
+            <strong>الفصل الخامس: الخلاصة والتوصيات</strong><br>
+            أوصت الدراسة بضرورة تبني استراتيجية وطنية شاملة للتحول الرقمي في قطاع التعليم العالي، وإنشاء مركز وطني لقياس جودة التعلم الإلكتروني، وتخصيص ميزانيات واضحة لبرامج التدريب المستمر لأعضاء هيئة التدريس.
+          </div>
+
+          <div id="comment-form" class="comment-input-box">
+            <div style="font-size:12px; color:var(--gold); margin-bottom:8px;" id="comment-para-label">تعليق على: —</div>
+            <textarea id="comment-text" placeholder="اكتب ملاحظتك أو سؤالك على هذه الفقرة..."></textarea>
+            <div class="form-row" style="justify-content:space-between; margin-top:8px;">
+              <select id="comment-type">
+                <option value="note">📝 ملاحظة</option>
+                <option value="question">❓ سؤال</option>
+                <option value="correction">✏️ تصحيح</option>
+                <option value="praise">✅ إشادة</option>
+              </select>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-ghost" onclick="closeComment()">إلغاء</button>
+                <button class="btn btn-gold" onclick="saveComment()">💾 حفظ التعليق</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VIEW 2: EXAMINER REPORT ── -->
+    <div id="view-report" class="view">
+      <div class="card">
+        <div class="report-header">
+          <div class="report-title">تقرير لجنة المناقشة والحكم</div>
+          <div class="report-subtitle">نموذج تقييم رسالة الدكتوراه / الماجستير — جامعة ___________</div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+          <div>
+            <label style="font-size:12px; color:var(--text-secondary);">عنوان الرسالة</label>
+            <input type="text" style="width:100%; background:var(--bg-deep); border:1px solid var(--border); border-radius:6px; color:var(--text-primary); padding:8px; font-family:inherit; margin-top:4px; font-size:13px;" placeholder="أثر التحول الرقمي على جودة الخدمات التعليمية...">
+          </div>
+          <div>
+            <label style="font-size:12px; color:var(--text-secondary);">اسم الطالب/ة</label>
+            <input type="text" style="width:100%; background:var(--bg-deep); border:1px solid var(--border); border-radius:6px; color:var(--text-primary); padding:8px; font-family:inherit; margin-top:4px; font-size:13px;" placeholder="اسم الطالب...">
+          </div>
+        </div>
+
+        <div class="card-title"><span class="dot"></span> معايير التقييم</div>
+
+        <div id="criteria-container">
+          <!-- Criteria rows injected by JS -->
+        </div>
+
+        <div style="margin-top:20px;">
+          <div class="card-title"><span class="dot"></span> ملاحظات المناقش العامة</div>
+          <textarea style="width:100%; min-height:100px;" placeholder="اكتب ملاحظاتك العامة على الرسالة..."></textarea>
+        </div>
+
+        <div style="margin-top:16px;">
+          <div class="card-title"><span class="dot"></span> قرار اللجنة</div>
+          <div class="decision-box">
+            <button class="decision-btn" onclick="setDecision(this,'accept')">✅ قبول بدون تعديل</button>
+            <button class="decision-btn" onclick="setDecision(this,'minor')">📝 قبول بتعديلات</button>
+            <button class="decision-btn" onclick="setDecision(this,'reject')">❌ إعادة للتعديل</button>
+          </div>
+        </div>
+
+        <div class="print-bar">
+          <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة التقرير</button>
+          <button class="btn btn-gold" onclick="exportReport()">📥 تصدير PDF</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VIEW 3: PROGRESS TRACKER ── -->
+    <div id="view-progress" class="view">
+      <div class="overall-progress">
+        <div class="big-pct" id="overall-pct">0%</div>
+        <div class="big-label">نسبة الإنجاز الكلية للرسالة</div>
+        <div class="progress-bar" style="margin-top:12px; height:8px;">
+          <div class="progress-fill" id="overall-bar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="card-title" style="padding:0 4px; margin-bottom:12px;"><span class="dot"></span> تفاصيل الفصول</div>
+      <div class="chapter-list" id="chapter-list"></div>
+    </div>
+
+    <!-- ── VIEW 4: DISCUSSION QUESTIONS ── -->
+    <div id="view-questions" class="view">
+      <div class="add-q-form">
+        <div style="font-size:13px; font-weight:600; margin-bottom:8px; color:var(--gold);">➕ إضافة سؤال مناقشة</div>
+        <textarea id="new-q-text" placeholder="اكتب سؤال المناقشة هنا..." style="min-height:60px;"></textarea>
+        <div class="form-row">
+          <select id="new-q-priority">
+            <option value="high">🔴 أولوية عالية</option>
+            <option value="med" selected>🟡 أولوية متوسطة</option>
+            <option value="low">🟢 أولوية منخفضة</option>
+          </select>
+          <select id="new-q-chapter">
+            <option value="منهجية">المنهجية</option>
+            <option value="نظري">الإطار النظري</option>
+            <option value="نتائج">النتائج</option>
+            <option value="توصيات">التوصيات</option>
+            <option value="عام">عام</option>
+          </select>
+          <button class="btn btn-gold" onclick="addQuestion()">إضافة</button>
+        </div>
+      </div>
+
+      <div id="questions-list"></div>
+    </div>
+
+  </div><!-- /main-panel -->
+
+  <!-- ══════════════════ SIDE PANEL ══════════════════ -->
+  <div class="side-panel">
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">📊 إحصائيات سريعة</div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-num" id="stat-comments">0</div>
+          <div class="stat-label">تعليقات</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="stat-questions">0</div>
+          <div class="stat-label">أسئلة</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="stat-approved">0</div>
+          <div class="stat-label">فصول مقبولة</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="stat-score">—</div>
+          <div class="stat-label">التقييم الكلي</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">💬 آخر التعليقات</div>
+      <div id="comments-sidebar">
+        <div class="empty-state">
+          <div class="empty-icon">💬</div>
+          لا توجد تعليقات بعد.<br>انقر على فقرة لإضافة تعليق.
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /side-panel -->
+
+</div><!-- /app -->
+
+<script>
+// ─────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────
+let comments = [
+  { id: 1, para: 'p2', paraLabel: 'الفصل الثاني: الإطار النظري', text: 'يُنصح بالتوسع في مناقشة نظرية TAM وربطها بالسياق المحلي السعودي بشكل أعمق.', type: 'note', time: 'منذ ٢ ساعة', role: 'external' }
+];
+
+let selectedPara = null;
+let currentRole = 'supervisor';
+
+const chapters = [
+  { id: 'ch1', name: 'الفصل الأول: المقدمة', pct: 100, status: 'approved' },
+  { id: 'ch2', name: 'الفصل الثاني: الإطار النظري', pct: 75, status: 'review' },
+  { id: 'ch3', name: 'الفصل الثالث: المنهجية', pct: 60, status: 'review' },
+  { id: 'ch4', name: 'الفصل الرابع: النتائج', pct: 40, status: 'pending' },
+  { id: 'ch5', name: 'الفصل الخامس: التوصيات', pct: 20, status: 'pending' },
+];
+
+let questions = [
+  { id: 1, text: 'كيف تم التحقق من صدق وثبات أداة الدراسة (الاستبانة)؟', priority: 'high', chapter: 'منهجية', done: false },
+  { id: 2, text: 'ما مبررات اختيار نظرية TAM دون غيرها من النظريات؟', priority: 'med', chapter: 'نظري', done: false },
+  { id: 3, text: 'هل تعميم النتائج على جميع الجامعات السعودية مبرر بحجم العينة؟', priority: 'high', chapter: 'نتائج', done: false },
+];
+
+const criteria = [
+  { key: 'originality', label: 'الأصالة والابتكار', desc: 'مدى إسهام البحث في إضافة معرفة جديدة' },
+  { key: 'methodology', label: 'سلامة المنهجية', desc: 'مناسبة المنهج وأدوات جمع البيانات' },
+  { key: 'literature', label: 'شمولية مراجعة الأدب', desc: 'استيعاب الدراسات السابقة ذات الصلة' },
+  { key: 'analysis', label: 'جودة التحليل الإحصائي', desc: 'دقة استخدام الأساليب الإحصائية' },
+  { key: 'writing', label: 'جودة الكتابة الأكاديمية', desc: 'الوضوح والدقة في التعبير العلمي' },
+];
+let scores = {};
+let qIdCounter = 4;
+
+// ─────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  renderCriteria();
+  renderChapters();
+  renderQuestions();
+  renderCommentsSidebar();
+  updateStats();
+});
+
+// ─────────────────────────────────────────
+//  NAVIGATION
+// ─────────────────────────────────────────
+function switchView(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function setRole(role) {
+  currentRole = role;
+}
+
+// ─────────────────────────────────────────
+//  ANNOTATION
+// ─────────────────────────────────────────
+function selectPara(paraId, label) {
+  if (selectedPara) {
+    document.getElementById(selectedPara).classList.remove('selected');
+  }
+  selectedPara = paraId;
+  document.getElementById(paraId).classList.add('selected');
+  document.getElementById('comment-para-label').textContent = 'تعليق على: ' + label;
+  const form = document.getElementById('comment-form');
+  form.classList.add('open');
+  document.getElementById(paraId).appendChild(form);
+  document.getElementById('comment-text').focus();
+}
+
+function closeComment() {
+  document.getElementById('comment-form').classList.remove('open');
+  if (selectedPara) {
+    document.getElementById(selectedPara).classList.remove('selected');
+    selectedPara = null;
+  }
+}
+
+function saveComment() {
+  const text = document.getElementById('comment-text').value.trim();
+  if (!text) return;
+  const type = document.getElementById('comment-type').value;
+  const paraLabel = document.getElementById('comment-para-label').textContent.replace('تعليق على: ', '');
+
+  const comment = {
+    id: Date.now(),
+    para: selectedPara,
+    paraLabel,
+    text,
+    type,
+    time: 'الآن',
+    role: currentRole
+  };
+  comments.push(comment);
+
+  // Mark paragraph as having comment
+  document.getElementById(selectedPara).classList.add('has-comment');
+  const existing = document.getElementById(selectedPara).querySelector('.comment-bubble');
+  if (existing) {
+    const count = parseInt(existing.textContent.match(/\d+/)[0]) + 1;
+    existing.textContent = `💬 ${count} تعليقات`;
+  } else {
+    const strong = document.getElementById(selectedPara).querySelector('strong');
+    const bubble = document.createElement('span');
+    bubble.className = 'comment-bubble';
+    bubble.textContent = '💬 ١ تعليق';
+    document.getElementById(selectedPara).insertBefore(bubble, strong);
+  }
+
+  document.getElementById('comment-text').value = '';
+  closeComment();
+  renderCommentsSidebar();
+  updateStats();
+}
+
+function renderCommentsSidebar() {
+  const container = document.getElementById('comments-sidebar');
+  if (comments.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">💬</div>لا توجد تعليقات بعد.</div>`;
+    return;
+  }
+  container.innerHTML = comments.slice().reverse().map(c => `
+    <div class="comment-card">
+      <div class="comment-para">${c.paraLabel}</div>
+      <div class="comment-text">${c.text}</div>
+      <div class="comment-time">${typeLabel(c.type)} · ${c.time}</div>
+    </div>
+  `).join('');
+}
+
+function typeLabel(t) {
+  return { note:'📝 ملاحظة', question:'❓ سؤال', correction:'✏️ تصحيح', praise:'✅ إشادة' }[t] || t;
+}
+
+// ─────────────────────────────────────────
+//  CRITERIA / REPORT
+// ─────────────────────────────────────────
+function renderCriteria() {
+  const container = document.getElementById('criteria-container');
+  container.innerHTML = criteria.map(c => `
+    <div class="criteria-row">
+      <div>
+        <div class="criteria-label">${c.label}</div>
+        <div class="criteria-desc">${c.desc}</div>
+      </div>
+      <div class="score-stars" id="stars-${c.key}">
+        ${[1,2,3,4,5].map(i => `<span class="star" onclick="setScore('${c.key}',${i})" data-val="${i}">★</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function setScore(key, val) {
+  scores[key] = val;
+  const container = document.getElementById('stars-' + key);
+  container.querySelectorAll('.star').forEach(s => {
+    s.classList.toggle('lit', parseInt(s.dataset.val) <= val);
+  });
+  updateStats();
+}
+
+function setDecision(btn, type) {
+  document.querySelectorAll('.decision-btn').forEach(b => b.className = 'decision-btn');
+  btn.classList.add(type);
+}
+
+function exportReport() {
+  alert('سيتم تصدير التقرير بصيغة PDF — يمكن ربطها بمكتبة jsPDF في مشروع Replit.');
+}
+
+// ─────────────────────────────────────────
+//  PROGRESS
+// ─────────────────────────────────────────
+function renderChapters() {
+  const list = document.getElementById('chapter-list');
+  list.innerHTML = chapters.map((ch, i) => `
+    <div class="chapter-item" id="${ch.id}">
+      <div class="chapter-header">
+        <div class="chapter-name">${ch.name}</div>
+        <div class="chapter-pct" id="pct-${ch.id}">${ch.pct}%</div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="bar-${ch.id}" style="width:${ch.pct}%"></div>
+      </div>
+      <div class="chapter-actions">
+        <input type="range" min="0" max="100" value="${ch.pct}"
+          style="flex:1; accent-color:var(--gold);"
+          oninput="updateChapterPct('${ch.id}',this.value)">
+        <button class="status-chip chip-${ch.status}" id="chip-${ch.id}" onclick="cycleStatus('${ch.id}')">
+          ${statusLabel(ch.status)}
+        </button>
+      </div>
+    </div>
+  `).join('');
+  updateOverall();
+}
+
+function updateChapterPct(id, val) {
+  const ch = chapters.find(c => c.id === id);
+  ch.pct = parseInt(val);
+  document.getElementById('pct-' + id).textContent = val + '%';
+  document.getElementById('bar-' + id).style.width = val + '%';
+  updateOverall();
+}
+
+function cycleStatus(id) {
+  const ch = chapters.find(c => c.id === id);
+  const order = ['pending','review','approved'];
+  ch.status = order[(order.indexOf(ch.status) + 1) % 3];
+  const chip = document.getElementById('chip-' + id);
+  chip.className = `status-chip chip-${ch.status}`;
+  chip.textContent = statusLabel(ch.status);
+  updateStats();
+}
+
+function statusLabel(s) {
+  return { pending:'⏳ قيد الانتظار', review:'🔄 تحت المراجعة', approved:'✅ مقبول' }[s];
+}
+
+function updateOverall() {
+  const avg = Math.round(chapters.reduce((a,c) => a + c.pct, 0) / chapters.length);
+  document.getElementById('overall-pct').textContent = avg + '%';
+  document.getElementById('overall-bar').style.width = avg + '%';
+}
+
+// ─────────────────────────────────────────
+//  QUESTIONS
+// ─────────────────────────────────────────
+function renderQuestions() {
+  const list = document.getElementById('questions-list');
+  if (questions.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">❓</div>لا توجد أسئلة بعد. أضف أول سؤال.</div>`;
+    return;
+  }
+  list.innerHTML = questions.map(q => `
+    <div class="question-item ${q.done ? 'done' : ''}" id="q-${q.id}">
+      <span class="q-drag">⠿</span>
+      <div class="q-priority priority-${q.priority}">${{'high':'↑','med':'→','low':'↓'}[q.priority]}</div>
+      <div class="q-content">
+        <div class="q-text">${q.text}</div>
+        <div class="q-meta">
+          <span class="tag tag-blue">${q.chapter}</span>
+          ${q.done ? '<span class="tag tag-green">✓ تمت المناقشة</span>' : ''}
+        </div>
+      </div>
+      <button class="q-check ${q.done ? 'checked' : ''}" onclick="toggleQuestion(${q.id})">✓</button>
+    </div>
+  `).join('');
+  updateStats();
+}
+
+function addQuestion() {
+  const text = document.getElementById('new-q-text').value.trim();
+  if (!text) return;
+  questions.push({
+    id: qIdCounter++,
+    text,
+    priority: document.getElementById('new-q-priority').value,
+    chapter: document.getElementById('new-q-chapter').value,
+    done: false
+  });
+  document.getElementById('new-q-text').value = '';
+  renderQuestions();
+}
+
+function toggleQuestion(id) {
+  const q = questions.find(q => q.id === id);
+  q.done = !q.done;
+  renderQuestions();
+}
+
+// ─────────────────────────────────────────
+//  STATS
+// ─────────────────────────────────────────
+function updateStats() {
+  document.getElementById('stat-comments').textContent = comments.length;
+  document.getElementById('stat-questions').textContent = questions.length;
+  document.getElementById('stat-approved').textContent = chapters.filter(c => c.status === 'approved').length;
+
+  const vals = Object.values(scores);
+  if (vals.length > 0) {
+    const avg = (vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(1);
+    document.getElementById('stat-score').textContent = avg + '/5';
+  }
+}
+</script>
+</body>
+</html>

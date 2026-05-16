@@ -11,6 +11,7 @@ import EquationChecker from "../components/muhakkim/EquationChecker";
 import QRGenerator from "../components/muhakkim/QRGenerator";
 import ReviewReport from "../components/muhakkim/ReviewReport";
 import About from "../components/muhakkim/About";
+import DiscussionPanel from "../components/muhakkim/DiscussionPanel";
 
 export default function Muhakkim() {
   const { lang, setLang, t } = useLanguage();
@@ -46,6 +47,7 @@ export default function Muhakkim() {
             <TabsTrigger value="qr" data-testid="tab-qr">{t("tab_qr")}</TabsTrigger>
             <TabsTrigger value="report" data-testid="tab-report">{t("tab_report")}</TabsTrigger>
             <TabsTrigger value="about" data-testid="tab-about">{t("tab_about")}</TabsTrigger>
+            <TabsTrigger value="discussion" data-testid="tab-discussion">{t("tab_discussion")}</TabsTrigger>
           </TabsList>
           
           <div className="p-6 min-h-[500px]">
@@ -69,6 +71,9 @@ export default function Muhakkim() {
             </TabsContent>
             <TabsContent value="about" className="m-0 mt-0">
               <About />
+            </TabsContent>
+            <TabsContent value="discussion" className="m-0 mt-0">
+              <DiscussionPanel />
             </TabsContent>
           </div>
         </Tabs>

@@ -45,6 +45,7 @@ const translations = {
     about_version: "الإصدار",
     about_features: "المميزات",
     about_link: "رابط التطبيق",
+    tab_discussion: "لوحة المناقشة",
   },
   en: {
     app_title: "محكّم | Muhakkim",
@@ -56,6 +57,7 @@ const translations = {
     tab_qr: "QR Code Generator",
     tab_report: "Review Report",
     tab_about: "About",
+    tab_discussion: "Discussion Panel",
     upload_drag: "Drag and drop file here or click to browse",
     upload_accept: "Accepts PDF, DOC, DOCX, TXT, HTML, RTF, ODT, MD files",
     upload_clear: "Clear",
