@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useLanguage } from "../../lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,7 +8,7 @@ import {
   MessageSquare, FileText, BarChart2, HelpCircle,
   Star, CheckCircle2, Clock, RotateCcw, ChevronUp,
   ChevronRight, ChevronDown, Plus, Printer, Upload,
-  Lightbulb, AlertCircle
+  Lightbulb, AlertCircle, Sparkles, Loader2
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────
@@ -272,6 +272,8 @@ export default function DiscussionPanel({ text = "", fileName = "" }: Discussion
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
   const [commentType, setCommentType] = useState<CommentType>("note");
+  const [aiLoading, setAiLoading] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Question form
   const [newQText, setNewQText] = useState("");
@@ -297,6 +299,56 @@ export default function DiscussionPanel({ text = "", fileName = "" }: Discussion
   const overallPct = chapters.length
     ? Math.round(chapters.reduce((a, c) => a + c.pct, 0) / chapters.length)
     : 0;
+
+  // ── AI suggestion ──
+  const aiSuggest = async (sec: ParsedSection) => {
+    if (aiLoading) {
+      abortRef.current?.abort();
+      return;
+    }
+    abortRef.current = new AbortController();
+    setAiLoading(true);
+    setCommentText("");
+    try {
+      const res = await fetch("/api/ai/suggest-comment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sectionTitle: ar ? sec.title : sec.titleEn,
+          sectionBody: sec.body,
+          commentType,
+          lang,
+        }),
+        signal: abortRef.current.signal,
+      });
+      if (!res.ok || !res.body) throw new Error("Request failed");
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const json = line.slice(6).trim();
+          if (!json) continue;
+          try {
+            const parsed = JSON.parse(json) as { content?: string; done?: boolean };
+            if (parsed.content) setCommentText(prev => prev + parsed.content);
+          } catch { /* ignore */ }
+        }
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name !== "AbortError") {
+        setCommentText(ar ? "⚠️ حدث خطأ أثناء الاتصال بالذكاء الاصطناعي." : "⚠️ AI request failed.");
+      }
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   // ── Annotation handlers ──
   const saveComment = () => {
@@ -484,16 +536,51 @@ export default function DiscussionPanel({ text = "", fileName = "" }: Discussion
                   {/* Comment form */}
                   {isSelected && (
                     <div className="border border-primary/40 rounded-b-lg bg-card/80 p-4 -mt-1 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                      <p className="text-xs text-primary font-semibold">
-                        {ar ? `تعليق على: ${sec.title}` : `Comment on: ${sec.titleEn}`}
-                      </p>
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <p className="text-xs text-primary font-semibold">
+                          {ar ? `تعليق على: ${sec.title}` : `Comment on: ${sec.titleEn}`}
+                        </p>
+                        {/* AI suggest button */}
+                        <button
+                          onClick={() => aiSuggest(sec)}
+                          data-testid="btn-ai-suggest"
+                          disabled={aiLoading}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                            aiLoading
+                              ? "border-primary/30 bg-primary/5 text-primary/60 cursor-wait"
+                              : "border-primary/50 bg-primary/10 text-primary hover:bg-primary/20"
+                          }`}
+                        >
+                          {aiLoading
+                            ? <><Loader2 className="w-3 h-3 animate-spin" /> {ar ? "جارٍ التوليد…" : "Generating…"}</>
+                            : <><Sparkles className="w-3 h-3" /> {ar ? "اقتراح بالذكاء الاصطناعي" : "AI Suggest"}</>
+                          }
+                        </button>
+                      </div>
+
+                      {/* Streaming indicator */}
+                      {aiLoading && (
+                        <div className="flex items-center gap-2 text-[10px] text-primary/60">
+                          <span className="inline-flex gap-0.5">
+                            <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                            <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                            <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                          </span>
+                          {ar ? "يحلّل الذكاء الاصطناعي الفقرة ويصوغ تعليقاً…" : "AI is analysing the section and composing a comment…"}
+                        </div>
+                      )}
+
                       <Textarea
                         value={commentText}
                         onChange={e => setCommentText(e.target.value)}
-                        placeholder={ar ? "اكتب ملاحظتك أو سؤالك على هذه الفقرة..." : "Write your note or question on this section..."}
-                        className="min-h-[70px] text-sm bg-background border-border"
+                        placeholder={ar
+                          ? "اكتب تعليقك هنا، أو اضغط «اقتراح بالذكاء الاصطناعي» لتوليد تعليق تلقائي…"
+                          : "Write your comment here, or press «AI Suggest» to auto-generate one…"}
+                        className={`min-h-[90px] text-sm bg-background border-border transition-all ${aiLoading ? "opacity-70" : ""}`}
                         data-testid="input-comment-text"
+                        readOnly={aiLoading}
                       />
+
                       <div className="flex items-center gap-2 flex-wrap">
                         <select
                           value={commentType}
@@ -505,11 +592,14 @@ export default function DiscussionPanel({ text = "", fileName = "" }: Discussion
                           <option value="correction">✏️ {ar ? "تصحيح" : "Correction"}</option>
                           <option value="praise">✅ {ar ? "إشادة" : "Praise"}</option>
                         </select>
+                        <p className="text-[10px] text-muted-foreground hidden sm:block">
+                          {ar ? "اختر النوع ثم اضغط «اقتراح» لتعليق مخصص" : "Select type then press «AI Suggest» for a tailored comment"}
+                        </p>
                         <div className="flex gap-2 ms-auto">
-                          <Button size="sm" variant="outline" onClick={() => setSelectedSection(null)}>
+                          <Button size="sm" variant="outline" onClick={() => { setSelectedSection(null); abortRef.current?.abort(); }}>
                             {ar ? "إلغاء" : "Cancel"}
                           </Button>
-                          <Button size="sm" onClick={saveComment} disabled={!commentText.trim()} data-testid="btn-save-comment">
+                          <Button size="sm" onClick={saveComment} disabled={!commentText.trim() || aiLoading} data-testid="btn-save-comment">
                             {ar ? "💾 حفظ" : "💾 Save"}
                           </Button>
                         </div>
