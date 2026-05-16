@@ -1,7 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLanguage } from "../lib/i18n";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 
 import FileUpload from "../components/muhakkim/FileUpload";
 import Proofreader from "../components/muhakkim/Proofreader";
@@ -12,79 +10,323 @@ import ReviewReport from "../components/muhakkim/ReviewReport";
 import About from "../components/muhakkim/About";
 import DiscussionPanel from "../components/muhakkim/DiscussionPanel";
 
-export default function Muhakkim() {
-  const { lang, setLang, t } = useLanguage();
-  const [extractedText, setExtractedText] = useState("");
-  const [fileInfo, setFileInfo] = useState<{ name: string; size: string } | null>(null);
+// ─── Particle Field ────────────────────────────────────────────────────────────
+function ParticleField() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animRef = useRef<number>(0);
 
-  const toggleLanguage = () => {
-    setLang(lang === "ar" ? "en" : "ar");
-  };
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    const W = canvas.width, H = canvas.height;
+
+    const particles = Array.from({ length: 45 }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.28, vy: (Math.random() - 0.5) * 0.28,
+      r: Math.random() * 1.6 + 0.4, opacity: Math.random() * 0.45 + 0.08,
+    }));
+
+    function draw() {
+      ctx!.clearRect(0, 0, W, H);
+      particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+        if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+        ctx!.beginPath();
+        ctx!.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx!.fillStyle = `rgba(201,168,76,${p.opacity})`;
+        ctx!.fill();
+      });
+      particles.forEach((p, i) => {
+        for (let j = i + 1; j < particles.length; j++) {
+          const d = Math.hypot(p.x - particles[j].x, p.y - particles[j].y);
+          if (d < 90) {
+            ctx!.beginPath();
+            ctx!.moveTo(p.x, p.y);
+            ctx!.lineTo(particles[j].x, particles[j].y);
+            ctx!.strokeStyle = `rgba(201,168,76,${0.1 * (1 - d / 90)})`;
+            ctx!.lineWidth = 0.5;
+            ctx!.stroke();
+          }
+        }
+      });
+      animRef.current = requestAnimationFrame(draw);
+    }
+    draw();
+    return () => cancelAnimationFrame(animRef.current);
+  }, []);
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8">
-      <header className="flex justify-between items-center mb-8 pb-4 border-b border-border">
-        <h1 className="text-3xl font-bold text-primary tracking-tight">
-          {t("app_title")}
-        </h1>
-        <Button 
-          variant="outline" 
-          onClick={toggleLanguage}
-          className="font-bold min-w-16"
-          data-testid="button-toggle-lang"
-        >
-          {t("toggle_lang")}
-        </Button>
+    <canvas ref={canvasRef} style={{
+      position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none",
+    }} />
+  );
+}
+
+// ─── Tab definitions ───────────────────────────────────────────────────────────
+const TABS_AR = [
+  { key: "upload",     icon: "📂", label: "رفع الملف" },
+  { key: "proofread",  icon: "📝", label: "التدقيق اللغوي" },
+  { key: "stats",      icon: "📊", label: "المخرجات الإحصائية" },
+  { key: "equations",  icon: "🔢", label: "فاحص المعادلات" },
+  { key: "qr",         icon: "📷", label: "مولّد QR" },
+  { key: "report",     icon: "📋", label: "تقرير التحكيم" },
+  { key: "discussion", icon: "💬", label: "لوحة المناقشة" },
+  { key: "about",      icon: "ℹ️",  label: "عن البرنامج" },
+];
+
+const TABS_EN = [
+  { key: "upload",     icon: "📂", label: "File Upload" },
+  { key: "proofread",  icon: "📝", label: "Proofreader" },
+  { key: "stats",      icon: "📊", label: "Stat Parser" },
+  { key: "equations",  icon: "🔢", label: "Equations" },
+  { key: "qr",         icon: "📷", label: "QR Code" },
+  { key: "report",     icon: "📋", label: "Review Report" },
+  { key: "discussion", icon: "💬", label: "Discussion" },
+  { key: "about",      icon: "ℹ️",  label: "About" },
+];
+
+// ─── Main Page ─────────────────────────────────────────────────────────────────
+export default function Muhakkim() {
+  const { lang, setLang } = useLanguage();
+  const [extractedText, setExtractedText] = useState("");
+  const [fileInfo, setFileInfo] = useState<{ name: string; size: string } | null>(null);
+  const [activeTab, setActiveTab] = useState("upload");
+
+  const tabs = lang === "ar" ? TABS_AR : TABS_EN;
+  const isAr = lang === "ar";
+
+  // ── Inline styles ──
+  const S: Record<string, React.CSSProperties> = {
+    root: {
+      fontFamily: "'Tajawal', 'Inter', 'Segoe UI', sans-serif",
+      direction: isAr ? "rtl" : "ltr",
+      background: "linear-gradient(160deg, #080d1a 0%, #0c1526 55%, #080d18 100%)",
+      minHeight: "100vh",
+      color: "#e2e8f0",
+    },
+    hero: {
+      position: "relative",
+      overflow: "hidden",
+      padding: "40px 32px 36px",
+      background: "linear-gradient(180deg, #0f1b2d 0%, transparent 100%)",
+      borderBottom: "1px solid #ffffff08",
+    },
+    heroInner: {
+      maxWidth: 1100,
+      margin: "0 auto",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 24,
+      position: "relative",
+      zIndex: 1,
+    },
+    logoBox: {
+      width: 52, height: 52, borderRadius: 14,
+      background: "linear-gradient(135deg, #C9A84C, #f5d78e)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: 28, flexShrink: 0,
+      boxShadow: "0 4px 24px #C9A84C44",
+    },
+    heroTitle: {
+      fontSize: "clamp(26px, 4vw, 42px)",
+      fontWeight: 900,
+      background: "linear-gradient(135deg, #C9A84C 0%, #f5d78e 45%, #C9A84C 100%)",
+      WebkitBackgroundClip: "text",
+      WebkitTextFillColor: "transparent",
+      margin: 0,
+      lineHeight: 1.1,
+    },
+    heroSub: {
+      color: "#64748b",
+      fontSize: 13,
+      marginTop: 6,
+      marginBottom: 0,
+      letterSpacing: "0.02em",
+    },
+    tag: {
+      background: "#C9A84C15",
+      border: "1px solid #C9A84C33",
+      color: "#C9A84C",
+      borderRadius: 20,
+      padding: "4px 14px",
+      fontSize: 12,
+      fontWeight: 700,
+    },
+    langBtn: {
+      background: "linear-gradient(135deg, #C9A84C22, #f5d78e11)",
+      border: "1px solid #C9A84C44",
+      color: "#C9A84C",
+      borderRadius: 10,
+      padding: "9px 20px",
+      fontWeight: 800,
+      fontSize: 14,
+      cursor: "pointer",
+      fontFamily: "inherit",
+      transition: "all .2s",
+      flexShrink: 0,
+    },
+    container: {
+      maxWidth: 1100,
+      margin: "0 auto",
+      padding: "0 20px 60px",
+    },
+    tabBar: {
+      display: "flex",
+      gap: 4,
+      marginTop: 24,
+      background: "#060d1a",
+      borderRadius: 14,
+      padding: 6,
+      border: "1px solid #ffffff08",
+      flexWrap: "wrap",
+    },
+    content: {
+      marginTop: 16,
+      background: "linear-gradient(145deg, #0f1b2dcc, #0a1120cc)",
+      backdropFilter: "blur(20px)",
+      border: "1px solid #ffffff10",
+      borderRadius: 20,
+      overflow: "hidden",
+    },
+  };
+
+  const tabStyle = (active: boolean): React.CSSProperties => ({
+    background: active ? "linear-gradient(135deg, #C9A84C22, #f5d78e11)" : "transparent",
+    border: active ? "1px solid #C9A84C44" : "1px solid transparent",
+    borderRadius: 10,
+    padding: "9px 14px",
+    color: active ? "#C9A84C" : "#64748b",
+    fontWeight: active ? 700 : 500,
+    fontSize: 12,
+    cursor: "pointer",
+    transition: "all .2s",
+    fontFamily: "inherit",
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    whiteSpace: "nowrap" as const,
+  });
+
+  return (
+    <div style={S.root}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
+        @keyframes mhk-main-fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+        .mhk-main-fade { animation: mhk-main-fadeUp .45s ease both; }
+        .mhk-lang-btn:hover { background: #C9A84C22 !important; }
+        .mhk-tab:hover { color: #C9A84C !important; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #0a0f1e; }
+        ::-webkit-scrollbar-thumb { background: #C9A84C44; border-radius: 4px; }
+      `}</style>
+
+      {/* ── Hero Header ── */}
+      <header style={S.hero}>
+        <ParticleField />
+        <div style={S.heroInner}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div style={S.logoBox}>م</div>
+            <div>
+              <h1 style={S.heroTitle}>محكّم</h1>
+              <p style={S.heroSub}>
+                {isAr
+                  ? "منصة التدقيق الأكاديمي الذكي · Muhakkim Al Proofreader"
+                  : "Academic Peer Review Platform · منصة التحكيم الأكاديمي"}
+              </p>
+              <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                {(isAr
+                  ? ["تحليل لغوي", "بنية أكاديمية", "تقرير مفصّل", "ثنائي اللغة"]
+                  : ["Language", "Structure", "Report", "Bilingual"]
+                ).map(tag => (
+                  <span key={tag} style={S.tag}>{tag}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <button
+            className="mhk-lang-btn"
+            style={S.langBtn}
+            onClick={() => setLang(lang === "ar" ? "en" : "ar")}
+            data-testid="button-toggle-lang"
+          >
+            {lang === "ar" ? "EN" : "AR"}
+          </button>
+        </div>
       </header>
 
-      <main className="bg-card rounded-xl border border-border shadow-lg shadow-black/20 overflow-hidden">
-        <Tabs defaultValue="upload" className="w-full">
-          <TabsList className="w-full justify-start p-2 h-auto flex-wrap gap-2 bg-card border-b border-border rounded-none">
-            <TabsTrigger value="upload" data-testid="tab-upload">{t("tab_upload")}</TabsTrigger>
-            <TabsTrigger value="proofread" data-testid="tab-proofread">{t("tab_proofread")}</TabsTrigger>
-            <TabsTrigger value="stats" data-testid="tab-stats">{t("tab_stats")}</TabsTrigger>
-            <TabsTrigger value="equations" data-testid="tab-equations">{t("tab_equations")}</TabsTrigger>
-            <TabsTrigger value="qr" data-testid="tab-qr">{t("tab_qr")}</TabsTrigger>
-            <TabsTrigger value="report" data-testid="tab-report">{t("tab_report")}</TabsTrigger>
-            <TabsTrigger value="about" data-testid="tab-about">{t("tab_about")}</TabsTrigger>
-            <TabsTrigger value="discussion" data-testid="tab-discussion">{t("tab_discussion")}</TabsTrigger>
-          </TabsList>
-          
-          <div className="p-6 min-h-[500px]">
-            <TabsContent value="upload" className="m-0 mt-0">
-              <FileUpload
-                onExtracted={setExtractedText}
-                onFileInfo={setFileInfo}
-                extractedText={extractedText}
-              />
-            </TabsContent>
-            <TabsContent value="proofread" className="m-0 mt-0">
-              <Proofreader text={extractedText} />
-            </TabsContent>
-            <TabsContent value="stats" className="m-0 mt-0">
+      {/* ── Main Content ── */}
+      <div style={S.container}>
+
+        {/* Tab Bar */}
+        <nav style={S.tabBar}>
+          {tabs.map(tab => (
+            <button
+              key={tab.key}
+              className="mhk-tab"
+              style={tabStyle(activeTab === tab.key)}
+              onClick={() => setActiveTab(tab.key)}
+              data-testid={`tab-${tab.key}`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        {/* Content Panel */}
+        <div style={S.content} className="mhk-main-fade" key={activeTab}>
+          {activeTab === "upload" && (
+            <FileUpload
+              onExtracted={setExtractedText}
+              onFileInfo={setFileInfo}
+              extractedText={extractedText}
+            />
+          )}
+          {activeTab === "proofread" && (
+            <Proofreader text={extractedText} />
+          )}
+          {activeTab === "stats" && (
+            <div style={{ padding: 28 }}>
               <StatParser />
-            </TabsContent>
-            <TabsContent value="equations" className="m-0 mt-0">
+            </div>
+          )}
+          {activeTab === "equations" && (
+            <div style={{ padding: 28 }}>
               <EquationChecker />
-            </TabsContent>
-            <TabsContent value="qr" className="m-0 mt-0">
+            </div>
+          )}
+          {activeTab === "qr" && (
+            <div style={{ padding: 28 }}>
               <QRGenerator />
-            </TabsContent>
-            <TabsContent value="report" className="m-0 mt-0">
+            </div>
+          )}
+          {activeTab === "report" && (
+            <div style={{ padding: 28 }}>
               <ReviewReport />
-            </TabsContent>
-            <TabsContent value="about" className="m-0 mt-0">
-              <About />
-            </TabsContent>
-            <TabsContent value="discussion" className="m-0 mt-0">
+            </div>
+          )}
+          {activeTab === "discussion" && (
+            <div style={{ padding: 28 }}>
               <DiscussionPanel
                 text={extractedText}
                 fileName={fileInfo?.name ?? ""}
               />
-            </TabsContent>
-          </div>
-        </Tabs>
-      </main>
+            </div>
+          )}
+          {activeTab === "about" && (
+            <div style={{ padding: 28 }}>
+              <About />
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

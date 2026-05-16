@@ -48,18 +48,18 @@
 }
 
 :root {
-  --app-font-sans: 'Inter', 'IBM Plex Arabic', sans-serif;
+  --app-font-sans: 'Tajawal', 'Inter', 'IBM Plex Arabic', sans-serif;
   --radius: 0.5rem;
 
-  --background: 216 50% 12%;
+  --background: 222 62% 7%;
   --foreground: 215 36% 93%;
-  --border: 216 38% 27%;
-  --input: 216 38% 27%;
+  --border: 216 38% 22%;
+  --input: 216 38% 18%;
   --ring: 44 55% 54%;
 
-  --card: 218 42% 15%;
+  --card: 220 55% 10%;
   --card-foreground: 215 36% 93%;
-  --card-border: 216 38% 27%;
+  --card-border: 216 38% 20%;
 
   --popover: 218 42% 15%;
   --popover-foreground: 215 36% 93%;
