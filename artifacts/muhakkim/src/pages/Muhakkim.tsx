@@ -3,7 +3,6 @@ import { useLanguage } from "../lib/i18n";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 
-// Import tabs (we'll implement them below, but simulating for now to avoid errors)
 import FileUpload from "../components/muhakkim/FileUpload";
 import Proofreader from "../components/muhakkim/Proofreader";
 import StatParser from "../components/muhakkim/StatParser";
@@ -16,6 +15,7 @@ import DiscussionPanel from "../components/muhakkim/DiscussionPanel";
 export default function Muhakkim() {
   const { lang, setLang, t } = useLanguage();
   const [extractedText, setExtractedText] = useState("");
+  const [fileInfo, setFileInfo] = useState<{ name: string; size: string } | null>(null);
 
   const toggleLanguage = () => {
     setLang(lang === "ar" ? "en" : "ar");
@@ -52,7 +52,11 @@ export default function Muhakkim() {
           
           <div className="p-6 min-h-[500px]">
             <TabsContent value="upload" className="m-0 mt-0">
-              <FileUpload onExtracted={setExtractedText} extractedText={extractedText} />
+              <FileUpload
+                onExtracted={setExtractedText}
+                onFileInfo={setFileInfo}
+                extractedText={extractedText}
+              />
             </TabsContent>
             <TabsContent value="proofread" className="m-0 mt-0">
               <Proofreader text={extractedText} />
@@ -73,7 +77,10 @@ export default function Muhakkim() {
               <About />
             </TabsContent>
             <TabsContent value="discussion" className="m-0 mt-0">
-              <DiscussionPanel />
+              <DiscussionPanel
+                text={extractedText}
+                fileName={fileInfo?.name ?? ""}
+              />
             </TabsContent>
           </div>
         </Tabs>

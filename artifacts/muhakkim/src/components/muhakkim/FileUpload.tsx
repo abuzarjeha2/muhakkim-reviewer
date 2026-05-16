@@ -10,6 +10,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.mi
 
 interface FileUploadProps {
   onExtracted: (text: string) => void;
+  onFileInfo?: (info: { name: string; size: string }) => void;
   extractedText: string;
 }
 
@@ -50,7 +51,7 @@ function stripRtf(rtf: string): string {
     .trim();
 }
 
-export default function FileUpload({ onExtracted, extractedText }: FileUploadProps) {
+export default function FileUpload({ onExtracted, onFileInfo, extractedText }: FileUploadProps) {
   const { t, lang } = useLanguage();
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -160,6 +161,7 @@ export default function FileUpload({ onExtracted, extractedText }: FileUploadPro
 
       setFileInfo({ name: file.name, size: formatSize(file.size), detail });
       onExtracted(text);
+      onFileInfo?.({ name: file.name, size: formatSize(file.size) });
     } catch (err) {
       console.error(err);
       setError(lang === 'ar' ? 'حدث خطأ أثناء معالجة الملف.' : 'Error processing file.');
