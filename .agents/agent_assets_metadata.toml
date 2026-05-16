@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "EjNw3vjpStzbpTWXKMqeE"
+uri = "file://muhakkim-qr.png"
+type = "image"
+title = "باركود تطبيق محكّم"
