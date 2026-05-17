@@ -2,11 +2,11 @@ import React, { useState, useRef } from 'react';
 import { useLanguage } from "../../lib/i18n";
 import { UploadCloud, FileText, Trash2, FileCheck2, FolderOpen } from "lucide-react";
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import mammoth from 'mammoth';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url
-).href;
+// v5 requires the worker URL to be set via Vite's ?url import
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 
 interface FileUploadProps {
   onExtracted: (text: string) => void;
@@ -103,9 +103,14 @@ export default function FileUpload({ onExtracted, onFileInfo, extractedText }: F
           setProgress(ar ? `صفحة ${j} من ${pdf.numPages}` : `Page ${j} of ${pdf.numPages}`);
           const page    = await pdf.getPage(j);
           const content = await page.getTextContent();
-          pages.push(content.items.map((s: any) => s.str).join(' '));
+          // v5: items can be TextItem (has .str) or TextMarkedContent (no .str)
+          const pageText = content.items
+            .filter((s: any) => typeof s.str === 'string')
+            .map((s: any) => s.str)
+            .join(' ');
+          pages.push(pageText);
         }
-        text   = pages.join('\n');
+        text   = pages.join('\n').replace(/ {2,}/g, ' ').trim();
         detail = ar ? `${pdf.numPages} صفحة` : `${pdf.numPages} pages`;
 
       // ── DOCX / DOC / ODT ──
