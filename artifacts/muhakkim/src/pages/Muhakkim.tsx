@@ -3,15 +3,13 @@ import { useLanguage } from "../lib/i18n";
 
 import FileUpload from "../components/muhakkim/FileUpload";
 import Proofreader from "../components/muhakkim/Proofreader";
-import StatParser from "../components/muhakkim/StatParser";
-import EquationChecker from "../components/muhakkim/EquationChecker";
 import QRGenerator from "../components/muhakkim/QRGenerator";
 import ReviewReport from "../components/muhakkim/ReviewReport";
 import About from "../components/muhakkim/About";
 import DiscussionPanel from "../components/muhakkim/DiscussionPanel";
-import DataAnalyzer from "../components/muhakkim/DataAnalyzer";
 import AIDetector from "../components/muhakkim/AIDetector";
 import CitationPlagiarism from "../components/muhakkim/CitationPlagiarism";
+import DataHub from "../components/muhakkim/DataHub";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3D Wireframe Sphere (canvas)
@@ -210,11 +208,9 @@ function ParticleField() {
 const TABS_AR = [
   { key:"upload",     icon:"📂", label:"رفع الملف",          shortLabel:"رفع" },
   { key:"proofread",  icon:"📝", label:"التدقيق اللغوي",      shortLabel:"تدقيق" },
-  { key:"data",       icon:"📈", label:"تحليل البيانات",      shortLabel:"بيانات" },
+  { key:"datalab",    icon:"🔬", label:"مختبر البيانات",       shortLabel:"بيانات" },
   { key:"aidetect",   icon:"🛡️", label:"كشف AI",              shortLabel:"كشف AI" },
   { key:"citation",   icon:"📖", label:"اقتباس وانتحال",      shortLabel:"اقتباس" },
-  { key:"stats",      icon:"📊", label:"المخرجات الإحصائية",  shortLabel:"إحصاء" },
-  { key:"equations",  icon:"🔢", label:"فاحص المعادلات",      shortLabel:"معادلات" },
   { key:"qr",         icon:"📷", label:"مولّد QR",            shortLabel:"QR" },
   { key:"report",     icon:"📋", label:"تقرير التحكيم",       shortLabel:"تقرير" },
   { key:"discussion", icon:"💬", label:"لوحة المناقشة",       shortLabel:"مناقشة" },
@@ -223,11 +219,9 @@ const TABS_AR = [
 const TABS_EN = [
   { key:"upload",     icon:"📂", label:"File Upload",    shortLabel:"Upload" },
   { key:"proofread",  icon:"📝", label:"Proofreader",    shortLabel:"Proof" },
-  { key:"data",       icon:"📈", label:"Data Analyzer",  shortLabel:"Data" },
+  { key:"datalab",    icon:"🔬", label:"Data Lab",        shortLabel:"DataLab" },
   { key:"aidetect",   icon:"🛡️", label:"AI Detector",    shortLabel:"AI Det." },
   { key:"citation",   icon:"📖", label:"Citation & Plagiarism", shortLabel:"Cite" },
-  { key:"stats",      icon:"📊", label:"Stat Parser",    shortLabel:"Stats" },
-  { key:"equations",  icon:"🔢", label:"Equations",      shortLabel:"Eq" },
   { key:"qr",         icon:"📷", label:"QR Code",        shortLabel:"QR" },
   { key:"report",     icon:"📋", label:"Review Report",  shortLabel:"Report" },
   { key:"discussion", icon:"💬", label:"Discussion",     shortLabel:"Chat" },
@@ -666,12 +660,11 @@ export default function Muhakkim() {
         {/* Content panel */}
         <div className="mhk-content mhk-fade" key={activeTab}>
           {activeTab === "upload"     && <FileUpload onExtracted={setExtractedText} onFileInfo={setFileInfo} extractedText={extractedText} />}
-          {activeTab === "data"       && <DataAnalyzer />}
+          {activeTab === "datalab"    && <DataHub />}
           {activeTab === "aidetect"   && <AIDetector initialText={extractedText} />}
           {activeTab === "citation"   && <CitationPlagiarism initialText={extractedText} />}
           {activeTab === "proofread"  && <Proofreader text={extractedText} />}
-          {activeTab === "stats"      && <div className="mhk-inner"><StatParser /></div>}
-          {activeTab === "equations"  && <div className="mhk-inner"><EquationChecker /></div>}
+
           {activeTab === "qr"         && <div className="mhk-inner"><QRGenerator /></div>}
           {activeTab === "report"     && <div className="mhk-inner"><ReviewReport /></div>}
           {activeTab === "discussion" && <div className="mhk-inner"><DiscussionPanel text={extractedText} fileName={fileInfo?.name ?? ""} /></div>}
