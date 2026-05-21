@@ -6,6 +6,7 @@ import EquationChecker from './EquationChecker';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, ReferenceLine,
+  ComposedChart,
 } from 'recharts';
 import { Plus, Trash2 } from 'lucide-react';
 
@@ -1678,7 +1679,581 @@ function CronbachAlpha({ ar }: { ar: boolean }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// ⑨  SAMPLE SIZE CALCULATOR
+// ── MEDIATION ANALYSIS (Baron & Kenny + Sobel) ────────────────────────────
+function olsWithSE(X: number[][], Y: number[]) {
+  const Xt = matT(X);
+  const XtX = matMul(Xt, X);
+  const XtXinv = matInv(XtX);
+  if (!XtXinv) {
+    const z = X[0].map(() => 0);
+    return { beta: z, se: z, tv: z, pv: z.map(() => 1), R2: 0, dof: 0 };
+  }
+  const XtY = matMul(Xt, Y.map(yi => [yi]));
+  const beta = matMul(XtXinv, XtY).map(row => row[0]);
+  const yhat = X.map(row => row.reduce((s, xi, j) => s + xi * beta[j], 0));
+  const res = Y.map((yi, i) => yi - yhat[i]);
+  const SSE = res.reduce((s, ri) => s + ri * ri, 0);
+  const dof = Y.length - beta.length;
+  const MSE = SSE / Math.max(1, dof);
+  const se = XtXinv.map((row, j) => Math.sqrt(Math.max(0, MSE * row[j])));
+  const tv = beta.map((b, j) => b / Math.max(1e-10, se[j]));
+  const pv = tv.map(ti => 2 * (1 - normalCDF(Math.abs(ti))));
+  const Stot = Y.reduce((s, yi) => s + (yi - avg(Y)) ** 2, 0);
+  const R2 = Math.max(0, 1 - SSE / Math.max(1e-10, Stot));
+  return { beta, se, tv, pv, R2, dof };
+}
+
+function MediationAnalysis({ ar }: { ar: boolean }) {
+  const [xRaw, setXRaw] = useState('2 3 4 5 6 3 4 5 6 7 4 5 6 7 8');
+  const [mRaw, setMRaw] = useState('3 4 5 6 7 4 5 6 7 8 5 6 7 8 9');
+  const [yRaw, setYRaw] = useState('55 62 68 75 82 60 67 74 81 88 65 72 79 86 93');
+
+  const parse = (s: string) => s.split(/[\s,;،]+/).map(Number).filter(v => isFinite(v) && !isNaN(v));
+
+  const res = useMemo(() => {
+    const xv = parse(xRaw), mv = parse(mRaw), yv = parse(yRaw);
+    const n = Math.min(xv.length, mv.length, yv.length);
+    if (n < 5) return null;
+    const x = xv.slice(0, n), m = mv.slice(0, n), y = yv.slice(0, n);
+
+    const s1 = olsWithSE(x.map(xi => [1, xi]), y);       // Y ~ X  → c (total)
+    const s2 = olsWithSE(x.map(xi => [1, xi]), m);       // M ~ X  → a
+    const s3 = olsWithSE(x.map((xi, i) => [1, xi, m[i]]), y); // Y ~ X+M → c', b
+
+    const a = s2.beta[1], SE_a = s2.se[1], t_a = s2.tv[1], p_a = s2.pv[1];
+    const b = s3.beta[2], SE_b = s3.se[2], t_b = s3.tv[2], p_b = s3.pv[2];
+    const c  = s1.beta[1], t_c  = s1.tv[1], p_c  = s1.pv[1];
+    const cp = s3.beta[1], t_cp = s3.tv[1], p_cp = s3.pv[1];
+
+    const indirect = a * b;
+    const sobelSE  = Math.sqrt(b * b * SE_a * SE_a + a * a * SE_b * SE_b);
+    const sobelZ   = indirect / Math.max(1e-12, sobelSE);
+    const sobelP   = 2 * (1 - normalCDF(Math.abs(sobelZ)));
+    const propMed  = Math.abs(c) > 1e-10 ? indirect / c : 0;
+
+    return { a, SE_a, t_a, p_a, b, SE_b, t_b, p_b, c, t_c, p_c, cp, t_cp, p_cp, indirect, sobelSE, sobelZ, sobelP, propMed, R2_1: s1.R2, R2_2: s2.R2, R2_3: s3.R2, n, dof1: s1.dof, dof3: s3.dof };
+  }, [xRaw, mRaw, yRaw]);
+
+  const pF  = (p: number) => p < 0.001 ? '< .001' : p.toFixed(3);
+  const sig = (p: number) => p < 0.05;
+  const SB  = ({ label, val, color }: { label: string; val: string; color?: string }) => (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', textAlign: 'center', minWidth: 88 }}>
+      <div style={{ fontSize: 10, color: C.sub, marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 16, fontWeight: 800, color: color ?? C.text }}>{val}</div>
+    </div>
+  );
+  const Sig = ({ p }: { p: number }) => (
+    <span style={{ fontSize: 11, fontWeight: 700, color: sig(p) ? C.green : C.red }}>
+      {sig(p) ? '✓' : '✗'} p = {pF(p)}
+    </span>
+  );
+
+  return (
+    <div>
+      {/* Inputs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12, marginBottom: 16 }}>
+        {[
+          { label: ar ? 'X — المتغير المستقل' : 'X — Independent Variable', val: xRaw, set: setXRaw },
+          { label: ar ? 'M — الوسيط (Mediator)' : 'M — Mediator Variable', val: mRaw, set: setMRaw },
+          { label: ar ? 'Y — المتغير التابع' : 'Y — Dependent Variable',   val: yRaw, set: setYRaw },
+        ].map(({ label, val, set }) => (
+          <div key={label}>
+            <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>{label}</label>
+            <textarea rows={3} value={val} onChange={e => set(e.target.value)}
+              style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 12, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+          </div>
+        ))}
+      </div>
+
+      {!res && <p style={{ color: C.muted, fontSize: 13 }}>{ar ? 'يلزم 5 قيم على الأقل في كل متغير' : 'At least 5 values per variable required'}</p>}
+
+      {res && (
+        <>
+          {/* Path diagram */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '18px 20px', marginBottom: 16, textAlign: 'center' }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: C.gold, marginBottom: 14 }}>{ar ? 'مخطط المسار — Baron & Kenny' : 'Path Diagram — Baron & Kenny'}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0, flexWrap: 'wrap', rowGap: 8 }}>
+              {/* X box */}
+              <div style={{ background: 'rgba(147,197,253,0.12)', border: `2px solid ${C.blue}40`, borderRadius: 10, padding: '10px 18px', fontWeight: 800, color: C.blue, fontSize: 15 }}>X</div>
+              {/* X→M→Y top path */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '0 4px' }}>
+                <div style={{ fontSize: 10, color: C.teal, marginBottom: 2 }}>a = {res.a.toFixed(3)}</div>
+                <div style={{ fontSize: 10, color: sig(res.p_a) ? C.green : C.red }}>{sig(res.p_a) ? '✓' : '✗'} sig.</div>
+              </div>
+              <div style={{ background: 'rgba(94,234,212,0.12)', border: `2px solid ${C.teal}40`, borderRadius: 10, padding: '10px 18px', fontWeight: 800, color: C.teal, fontSize: 15 }}>M</div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '0 4px' }}>
+                <div style={{ fontSize: 10, color: C.teal, marginBottom: 2 }}>b = {res.b.toFixed(3)}</div>
+                <div style={{ fontSize: 10, color: sig(res.p_b) ? C.green : C.red }}>{sig(res.p_b) ? '✓' : '✗'} sig.</div>
+              </div>
+              <div style={{ background: 'rgba(201,168,76,0.12)', border: `2px solid ${C.gold}40`, borderRadius: 10, padding: '10px 18px', fontWeight: 800, color: C.gold, fontSize: 15 }}>Y</div>
+            </div>
+            <div style={{ marginTop: 10, fontSize: 12, color: C.sub }}>
+              {ar ? `الأثر الكلي: c = ${res.c.toFixed(3)} · الأثر المباشر: c' = ${res.cp.toFixed(3)} · الأثر غير المباشر: a×b = ${res.indirect.toFixed(3)}`
+                  : `Total c = ${res.c.toFixed(3)} · Direct c' = ${res.cp.toFixed(3)} · Indirect a×b = ${res.indirect.toFixed(3)}`}
+            </div>
+          </div>
+
+          {/* Baron & Kenny Steps */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
+            <div style={{ padding: '10px 16px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 13, color: C.gold }}>{ar ? 'خطوات Baron & Kenny' : 'Baron & Kenny Steps'}</div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                {[ar ? 'الخطوة' : 'Step', ar ? 'النموذج' : 'Model', 'β', 't', 'p', ar ? 'الاشتراط' : 'Required'].map(h => (
+                  <th key={h} style={{ padding: '8px 12px', textAlign: ar ? 'right' : 'left', color: C.sub, fontWeight: 600 }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {[
+                  { step: '1', model: 'Y ~ X', coef: res.c,  t: res.t_c,  p: res.p_c,  req: ar ? 'دال (c)' : 'Sig. (c)' },
+                  { step: '2', model: 'M ~ X', coef: res.a,  t: res.t_a,  p: res.p_a,  req: ar ? 'دال (a)' : 'Sig. (a)' },
+                  { step: '3a', model: 'Y ~ X+M (M)', coef: res.b,  t: res.t_b,  p: res.p_b,  req: ar ? 'دال (b)' : 'Sig. (b)' },
+                  { step: "3b", model: "Y ~ X+M (X = c')", coef: res.cp, t: res.t_cp, p: res.p_cp, req: ar ? 'أصغر من c' : '< c (mediation)' },
+                ].map(({ step, model, coef, t, p, req }) => (
+                  <tr key={step} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: 700, color: C.blue }}>{step}</td>
+                    <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: 11, color: C.text }}>{model}</td>
+                    <td style={{ padding: '8px 12px', color: C.text }}>{coef.toFixed(3)}</td>
+                    <td style={{ padding: '8px 12px', color: C.sub }}>{t.toFixed(2)}</td>
+                    <td style={{ padding: '8px 12px' }}><Sig p={p} /></td>
+                    <td style={{ padding: '8px 12px', color: C.muted }}>{req}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Indirect effect + Sobel */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
+            <SB label={ar ? 'الأثر غير المباشر (a×b)' : 'Indirect effect (a×b)'} val={res.indirect.toFixed(4)} color={C.purple} />
+            <SB label="SE (Sobel)" val={res.sobelSE.toFixed(4)} />
+            <SB label="z (Sobel)" val={res.sobelZ.toFixed(3)} />
+            <SB label="p (Sobel)" val={pF(res.sobelP)} color={sig(res.sobelP) ? C.green : C.red} />
+            <SB label={ar ? 'نسبة الوساطة' : 'Proportion mediated'} val={`${(Math.abs(res.propMed) * 100).toFixed(1)}%`} color={C.gold} />
+          </div>
+
+          {/* APA text */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 16px', marginBottom: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: C.blue, marginBottom: 8 }}>APA (English)</div>
+            <div style={{ fontFamily: 'monospace', fontSize: 12.5, color: C.text, lineHeight: 1.8 }}>
+              {`The indirect effect was ${res.indirect.toFixed(3)} (SE = ${res.sobelSE.toFixed(3)}, z = ${res.sobelZ.toFixed(2)}, p ${res.sobelP < 0.001 ? '< .001' : `= ${res.sobelP.toFixed(3)}`}).`}
+              <br/>
+              {`The total effect of X on Y was significant, c = ${res.c.toFixed(3)}, t(${res.dof1}) = ${res.t_c.toFixed(2)}, p ${res.p_c < 0.001 ? '< .001' : `= ${res.p_c.toFixed(3)}`}.`}
+              <br/>
+              {`After controlling for M, the direct effect was c' = ${res.cp.toFixed(3)}, t(${res.dof3}) = ${res.t_cp.toFixed(2)}, p ${res.p_cp < 0.001 ? '< .001' : `= ${res.p_cp.toFixed(3)}`}.`}
+            </div>
+          </div>
+
+          {/* Mediation type */}
+          <div style={{ padding: '12px 16px', borderRadius: 10, background: 'rgba(196,181,253,0.08)', border: `1px solid rgba(196,181,253,0.3)`, fontSize: 13 }}>
+            <strong style={{ color: C.purple }}>{ar ? 'نوع الوساطة: ' : 'Mediation type: '}</strong>
+            <span style={{ color: C.text }}>
+              {!sig(res.p_c) ? (ar ? 'لا يوجد أثر كلي دال (لا وساطة)' : 'No significant total effect (no mediation)')
+               : sig(res.sobelP) && !sig(res.p_cp) ? (ar ? 'وساطة كاملة (Full Mediation)' : 'Full Mediation')
+               : sig(res.sobelP) && sig(res.p_cp)  ? (ar ? 'وساطة جزئية (Partial Mediation)' : 'Partial Mediation')
+               : (ar ? 'لا دليل على وساطة' : 'No evidence of mediation')}
+            </span>
+          </div>
+
+          <p style={{ fontSize: 11, color: C.muted, marginTop: 10, marginBottom: 0 }}>
+            {ar ? '* يُنصح بـ bootstrapping (5000 مكرر) للتحقق من الأثر غير المباشر في برامج متخصصة (PROCESS/JASP) · اختبار Sobel حساس لتوزيع البيانات'
+                : '* Bootstrapping (5000 iterations) is preferred to confirm indirect effects — use PROCESS/JASP for published work · Sobel test assumes normality'}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── NON-PARAMETRIC HELPERS ────────────────────────────────────────────────
+function rankArr(arr: number[]): number[] {
+  const idx = arr.map((v, i) => ({ v, i })).sort((a, b) => a.v - b.v);
+  const out = new Array<number>(arr.length);
+  let i = 0;
+  while (i < idx.length) {
+    let j = i;
+    while (j < idx.length && idx[j].v === idx[i].v) j++;
+    const avg = (i + j + 1) / 2;
+    for (let k = i; k < j; k++) out[idx[k].i] = avg;
+    i = j;
+  }
+  return out;
+}
+
+function mwuTest(g1: number[], g2: number[]) {
+  const n1 = g1.length, n2 = g2.length, N = n1 + n2;
+  const all = [...g1.map(v => ({ v, g: 1 })), ...g2.map(v => ({ v, g: 2 }))].sort((a, b) => a.v - b.v);
+  let i = 0;
+  while (i < N) {
+    let j = i; while (j < N && all[j].v === all[i].v) j++;
+    const rk = (i + j + 1) / 2;
+    for (let k = i; k < j; k++) (all[k] as { v: number; g: number; rank?: number }).rank = rk;
+    i = j;
+  }
+  const R1 = all.filter(x => x.g === 1).reduce((s, x) => s + ((x as { rank?: number }).rank ?? 0), 0);
+  const U1 = n1 * n2 + n1 * (n1 + 1) / 2 - R1;
+  const U2 = n1 * n2 - U1;
+  const U = Math.min(U1, U2);
+  const z = (U - n1 * n2 / 2) / Math.sqrt(n1 * n2 * (N + 1) / 12);
+  const p = 2 * (1 - normalCDF(Math.abs(z)));
+  const r = Math.abs(z) / Math.sqrt(N);
+  return { U, U1, U2, z, p, r };
+}
+
+function kwTest(groups: number[][]) {
+  const N = groups.reduce((s, g) => s + g.length, 0);
+  const tagged = groups.flatMap((g, gi) => g.map(v => ({ v, g: gi }))).sort((a, b) => a.v - b.v);
+  let i = 0;
+  while (i < N) {
+    let j = i; while (j < N && tagged[j].v === tagged[i].v) j++;
+    const rk = (i + j + 1) / 2;
+    for (let k = i; k < j; k++) (tagged[k] as { v: number; g: number; rank?: number }).rank = rk;
+    i = j;
+  }
+  const H = (12 / (N * (N + 1))) * groups.reduce((s, g, gi) => {
+    const Ri = tagged.filter(x => x.g === gi).reduce((acc, x) => acc + ((x as { rank?: number }).rank ?? 0), 0);
+    return s + Ri * Ri / g.length;
+  }, 0) - 3 * (N + 1);
+  const df = groups.length - 1;
+  const p = 1 - chiSqP(H, df);
+  const eta2 = Math.max(0, (H - df + 1) / (N - df));
+  return { H, df, p, eta2 };
+}
+
+function spearmanTest(x: number[], y: number[]) {
+  const n = Math.min(x.length, y.length);
+  const xs = x.slice(0, n), ys = y.slice(0, n);
+  const rs = pearson(rankArr(xs), rankArr(ys));
+  const t = rs * Math.sqrt(n - 2) / Math.sqrt(Math.max(1e-12, 1 - rs * rs));
+  const p = 2 * (1 - normalCDF(Math.abs(t)));
+  return { rs, t, n, p };
+}
+
+type NPTest = 'mwu' | 'kw' | 'spearman';
+
+function NonParametricTests({ ar }: { ar: boolean }) {
+  const [test, setTest] = useState<NPTest>('mwu');
+  const [g1Raw, setG1Raw] = useState('23 45 34 56 67 45 34 56');
+  const [g2Raw, setG2Raw] = useState('12 23 34 15 22 18 25 30');
+  const [kwRaws, setKwRaws] = useState(['23 45 34 56 67', '12 23 34 15 22', '45 67 56 78 65']);
+  const [xRaw, setXRaw] = useState('23 45 34 56 67 45 34 56 67 78');
+  const [yRaw, setYRaw] = useState('12 34 23 45 56 34 23 45 56 67');
+
+  const parse = (s: string) => s.split(/[\s,;،]+/).map(Number).filter(v => isFinite(v) && !isNaN(v));
+
+  const mwuResult  = useMemo(() => { const g1 = parse(g1Raw), g2 = parse(g2Raw); return (test === 'mwu' && g1.length >= 3 && g2.length >= 3) ? mwuTest(g1, g2) : null; }, [test, g1Raw, g2Raw]);
+  const kwResult   = useMemo(() => { const gs = kwRaws.map(parse).filter(g => g.length >= 2); return (test === 'kw' && gs.length >= 2) ? kwTest(gs) : null; }, [test, kwRaws]);
+  const spResult   = useMemo(() => { const x = parse(xRaw), y = parse(yRaw); return (test === 'spearman' && x.length >= 5 && y.length >= 5) ? spearmanTest(x, y) : null; }, [test, xRaw, yRaw]);
+
+  const TA = { style: { width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 12, fontFamily: 'monospace', direction: 'ltr' as const, resize: 'vertical' as const, boxSizing: 'border-box' as const } };
+  const pFmt = (p: number) => p < 0.001 ? '< .001' : p.toFixed(3);
+  const sig   = (p: number) => p < 0.05;
+
+  const Badge = ({ p }: { p: number }) => (
+    <span style={{ background: sig(p) ? 'rgba(74,222,128,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${sig(p) ? C.green : C.red}50`, borderRadius: 7, padding: '3px 10px', fontSize: 12, fontWeight: 700, color: sig(p) ? C.green : C.red }}>
+      {sig(p) ? (ar ? 'دال (p < .05)' : 'Sig. (p < .05)') : (ar ? 'غير دال' : 'Not sig.')}
+    </span>
+  );
+
+  const StatBox = ({ label, val }: { label: string; val: string }) => (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 14px', textAlign: 'center', minWidth: 90 }}>
+      <div style={{ fontSize: 10, color: C.sub, marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 17, fontWeight: 800, color: C.text }}>{val}</div>
+    </div>
+  );
+
+  const TESTS = [
+    { key: 'mwu'     as NPTest, label: ar ? 'مان-ويتني U' : 'Mann-Whitney U', desc: ar ? 'بديل t-test للمجموعتين المستقلتين' : 'Alternative to independent t-test' },
+    { key: 'kw'      as NPTest, label: ar ? 'كروسكال-واليس H' : 'Kruskal-Wallis H', desc: ar ? 'بديل ANOVA لثلاث مجموعات فأكثر' : 'Alternative to one-way ANOVA' },
+    { key: 'spearman'as NPTest, label: ar ? 'ارتباط سبيرمان ρ' : "Spearman's ρ", desc: ar ? 'بديل ارتباط بيرسون (للرتب أو البيانات غير المعتدلة)' : 'Non-parametric rank correlation' },
+  ];
+
+  return (
+    <div>
+      {/* Test selector */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 8, marginBottom: 18 }}>
+        {TESTS.map(tp => (
+          <button key={tp.key} onClick={() => setTest(tp.key)}
+            style={{ background: test === tp.key ? 'linear-gradient(135deg,rgba(201,168,76,0.18),rgba(245,215,142,0.07))' : 'rgba(255,255,255,0.02)', border: `1px solid ${test === tp.key ? 'rgba(201,168,76,0.45)' : C.border}`, borderRadius: 12, padding: '10px 14px', cursor: 'pointer', fontFamily: 'inherit', textAlign: ar ? 'right' : 'left', transition: 'all .2s' }}>
+            <div style={{ fontWeight: 800, fontSize: 13, color: test === tp.key ? C.gold : C.text }}>{tp.label}</div>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{tp.desc}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* ── Mann-Whitney U ── */}
+      {test === 'mwu' && (
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+            {[{ label: ar ? 'المجموعة الأولى' : 'Group 1', val: g1Raw, set: setG1Raw }, { label: ar ? 'المجموعة الثانية' : 'Group 2', val: g2Raw, set: setG2Raw }].map(({ label, val, set }) => (
+              <div key={label}>
+                <label style={{ fontSize: 12, color: C.sub, display: 'block', marginBottom: 5 }}>{label}</label>
+                <textarea rows={3} value={val} onChange={e => set(e.target.value)} {...TA} />
+                <span style={{ fontSize: 10, color: C.muted }}>n = {parse(val).length}</span>
+              </div>
+            ))}
+          </div>
+          {mwuResult ? (
+            <>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
+                <StatBox label="U" val={mwuResult.U.toFixed(0)} />
+                <StatBox label="z" val={mwuResult.z.toFixed(3)} />
+                <StatBox label="p" val={pFmt(mwuResult.p)} />
+                <StatBox label="r (effect)" val={mwuResult.r.toFixed(3)} />
+                <Badge p={mwuResult.p} />
+              </div>
+              <div style={{ padding: '12px 16px', background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 12, color: C.sub }}>
+                <strong style={{ color: C.text }}>APA:</strong> U = {mwuResult.U.toFixed(0)}, z = {mwuResult.z.toFixed(2)}, p {mwuResult.p < 0.001 ? '< .001' : `= ${mwuResult.p.toFixed(3)}`}, r = {mwuResult.r.toFixed(2)}
+                <div style={{ marginTop: 6, fontSize: 11 }}>{ar ? `U₁ = ${mwuResult.U1.toFixed(0)} · U₂ = ${mwuResult.U2.toFixed(0)}` : `U₁ = ${mwuResult.U1.toFixed(0)} · U₂ = ${mwuResult.U2.toFixed(0)}`}</div>
+              </div>
+            </>
+          ) : <p style={{ color: C.muted, fontSize: 13 }}>{ar ? 'أدخل ≥ 3 قيم في كل مجموعة' : 'Enter ≥ 3 values per group'}</p>}
+        </div>
+      )}
+
+      {/* ── Kruskal-Wallis ── */}
+      {test === 'kw' && (
+        <div>
+          {kwRaws.map((raw, i) => (
+            <div key={i} style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 12, color: C.sub, display: 'block', marginBottom: 4 }}>{ar ? `المجموعة ${i + 1}` : `Group ${i + 1}`}</label>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <textarea rows={2} value={raw} onChange={e => { const c = [...kwRaws]; c[i] = e.target.value; setKwRaws(c); }} {...TA} />
+                {kwRaws.length > 2 && <button onClick={() => setKwRaws(kwRaws.filter((_, j) => j !== i))} style={{ background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: 8, padding: '6px 10px', color: C.red, cursor: 'pointer', fontSize: 13, flexShrink: 0 }}>✕</button>}
+              </div>
+              <span style={{ fontSize: 10, color: C.muted }}>n = {parse(raw).length}</span>
+            </div>
+          ))}
+          <button onClick={() => setKwRaws([...kwRaws, ''])} style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '7px 16px', color: C.sub, cursor: 'pointer', fontSize: 12, fontFamily: 'inherit', marginBottom: 16 }}>
+            {ar ? '+ مجموعة' : '+ Group'}
+          </button>
+          {kwResult ? (
+            <>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
+                <StatBox label="H" val={kwResult.H.toFixed(3)} />
+                <StatBox label={`df`} val={String(kwResult.df)} />
+                <StatBox label="p" val={pFmt(kwResult.p)} />
+                <StatBox label="η² (ε²)" val={kwResult.eta2.toFixed(3)} />
+                <Badge p={kwResult.p} />
+              </div>
+              <div style={{ padding: '12px 16px', background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 12, color: C.sub }}>
+                <strong style={{ color: C.text }}>APA:</strong> H({kwResult.df}) = {kwResult.H.toFixed(2)}, p {kwResult.p < 0.001 ? '< .001' : `= ${kwResult.p.toFixed(3)}`}, ε² = {kwResult.eta2.toFixed(2)}
+              </div>
+            </>
+          ) : <p style={{ color: C.muted, fontSize: 13 }}>{ar ? 'أدخل ≥ 2 قيم في كل مجموعة' : 'Enter ≥ 2 values per group'}</p>}
+        </div>
+      )}
+
+      {/* ── Spearman ── */}
+      {test === 'spearman' && (
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+            {[{ label: ar ? 'المتغير X' : 'Variable X', val: xRaw, set: setXRaw }, { label: ar ? 'المتغير Y' : 'Variable Y', val: yRaw, set: setYRaw }].map(({ label, val, set }) => (
+              <div key={label}>
+                <label style={{ fontSize: 12, color: C.sub, display: 'block', marginBottom: 5 }}>{label}</label>
+                <textarea rows={3} value={val} onChange={e => set(e.target.value)} {...TA} />
+                <span style={{ fontSize: 10, color: C.muted }}>n = {parse(val).length}</span>
+              </div>
+            ))}
+          </div>
+          {spResult ? (
+            <>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
+                <StatBox label="ρ (Spearman)" val={spResult.rs.toFixed(4)} />
+                <StatBox label={`t(${spResult.n - 2})`} val={spResult.t.toFixed(3)} />
+                <StatBox label="p" val={pFmt(spResult.p)} />
+                <Badge p={spResult.p} />
+              </div>
+              <div style={{ padding: '12px 16px', background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 12, color: C.sub }}>
+                <strong style={{ color: C.text }}>APA:</strong> r_s({spResult.n - 2}) = {spResult.rs.toFixed(2)}, p {spResult.p < 0.001 ? '< .001' : `= ${spResult.p.toFixed(3)}`}
+                <div style={{ marginTop: 6, fontSize: 11, color: C.muted }}>{ar ? 'الاتجاه: ' : 'Direction: '}<strong style={{ color: spResult.rs > 0 ? C.green : C.red }}>{spResult.rs > 0 ? (ar ? 'موجب' : 'Positive') : (ar ? 'سالب' : 'Negative')}</strong> · {ar ? 'القوة: ' : 'Strength: '}<strong style={{ color: C.text }}>{Math.abs(spResult.rs) < 0.3 ? (ar ? 'ضعيف' : 'Weak') : Math.abs(spResult.rs) < 0.6 ? (ar ? 'متوسط' : 'Moderate') : (ar ? 'قوي' : 'Strong')}</strong></div>
+              </div>
+            </>
+          ) : <p style={{ color: C.muted, fontSize: 13 }}>{ar ? 'أدخل ≥ 5 قيم في كل متغير' : 'Enter ≥ 5 values per variable'}</p>}
+        </div>
+      )}
+
+      <p style={{ fontSize: 11, color: C.muted, marginTop: 14, marginBottom: 0 }}>
+        {ar ? '* تستخدم هذه الاختبارات الرتب بدلاً من القيم الخام — تصلح عند رفض الاعتدالية أو للبيانات الترتيبية'
+            : '* These tests use ranks instead of raw values — appropriate when normality is rejected or for ordinal data'}
+      </p>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ⑨  NORMALITY TEST (D'Agostino-Pearson K² + histogram + Q-Q)
+// ════════════════════════════════════════════════════════════════════════════
+function NormalityTest({ ar }: { ar: boolean }) {
+  const DEMO = '23 45 34 56 67 45 34 23 56 67 45 78 56 34 45 67 56 45 34 56 67 45 56 34 45 38 71 55 42 60';
+  const [raw, setRaw] = useState(DEMO);
+
+  const vals = useMemo(() =>
+    raw.split(/[\s,;،\n]+/).map(Number).filter(v => isFinite(v) && !isNaN(v)), [raw]);
+  const n = vals.length;
+
+  const stats = useMemo(() => {
+    if (n < 8) return null;
+    const m = avg(vals);
+    const s2 = vals.reduce((s, v) => s + (v - m) ** 2, 0) / (n - 1);
+    const sd = Math.sqrt(s2);
+    if (sd === 0) return null;
+
+    const skew = vals.reduce((s, v) => s + ((v - m) / sd) ** 3, 0) / n;
+    const kurt = vals.reduce((s, v) => s + ((v - m) / sd) ** 4, 0) / n - 3;
+    const zSkew = skew / Math.sqrt(6 / n);
+    const zKurt = kurt / Math.sqrt(24 / n);
+    const K2 = zSkew ** 2 + zKurt ** 2;
+    const pVal = Math.exp(-K2 / 2);   // chi²(2) survival = e^(−K²/2)
+
+    const mn = Math.min(...vals), mx = Math.max(...vals);
+    const k = Math.max(5, Math.ceil(Math.log2(n)) + 1);
+    const bw = (mx - mn) / k || 1;
+    const bins = Array.from({ length: k }, (_, i) => {
+      const lo = mn + i * bw, hi = lo + bw;
+      const cnt = vals.filter(v => v >= lo && (i < k - 1 ? v < hi : v <= hi)).length;
+      const mid = (lo + hi) / 2;
+      return {
+        label: lo.toFixed(1),
+        density: parseFloat((cnt / (n * bw)).toFixed(5)),
+        normal: parseFloat(((1 / (sd * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * ((mid - m) / sd) ** 2)).toFixed(5)),
+      };
+    });
+
+    const sorted = [...vals].sort((a, b) => a - b);
+    const qq = sorted.map((v, i) => {
+      const z = zInv((i + 0.5) / n);
+      return { z: parseFloat(z.toFixed(3)), v, ref: parseFloat((m + z * sd).toFixed(2)) };
+    });
+
+    return { m, sd, skew, kurt, zSkew, zKurt, K2, pVal, mn, mx, bins, qq };
+  }, [vals, n]);
+
+  const isNormal = !!(stats && stats.pVal >= 0.05);
+  const isBorder = !!(stats && stats.pVal < 0.05 && stats.pVal >= 0.01);
+
+  const TT = { contentStyle: { background: '#0d172d', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 11 } };
+
+  return (
+    <div>
+      {/* Input */}
+      <div style={{ marginBottom: 14 }}>
+        <label style={{ fontSize: 12, color: C.sub, display: 'block', marginBottom: 5 }}>
+          {ar ? 'أدخل القيم (فاصلة أو مسافة أو سطر جديد):' : 'Enter values (comma / space / newline separated):'}
+        </label>
+        <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={3}
+          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 14px', color: C.text, fontSize: 13, fontFamily: 'monospace', resize: 'vertical', boxSizing: 'border-box', direction: 'ltr' }} />
+        <span style={{ fontSize: 11, color: C.muted }}>n = {n}</span>
+      </div>
+
+      {n < 8 && <p style={{ color: C.red, fontSize: 13 }}>{ar ? 'يلزم 8 قيم على الأقل (يُفضّل ≥ 20)' : 'At least 8 values required (≥ 20 recommended)'}</p>}
+
+      {stats && (
+        <>
+          {/* Stats grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(118px,1fr))', gap: 8, marginBottom: 14 }}>
+            {[
+              { label: ar ? 'المتوسط' : 'Mean',           val: stats.m.toFixed(2),    color: C.text },
+              { label: ar ? 'الانحراف المعياري' : 'SD',   val: stats.sd.toFixed(2),   color: C.text },
+              { label: ar ? 'الالتواء (g₁)' : 'Skewness', val: stats.skew.toFixed(3), color: Math.abs(stats.skew) < 0.5 ? C.green : Math.abs(stats.skew) < 1 ? C.gold : C.red },
+              { label: ar ? 'التفرطح (g₂)' : 'Ex. Kurtosis', val: stats.kurt.toFixed(3), color: Math.abs(stats.kurt) < 1 ? C.green : Math.abs(stats.kurt) < 2 ? C.gold : C.red },
+              { label: "K² (D'Agostino)",                  val: stats.K2.toFixed(3),   color: C.blue },
+              { label: 'p-value',                          val: stats.pVal < 0.001 ? '< .001' : stats.pVal.toFixed(3), color: stats.pVal >= 0.05 ? C.green : C.red },
+            ].map(({ label, val, color }) => (
+              <div key={label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+                <div style={{ fontSize: 10, color: C.sub, marginBottom: 3 }}>{label}</div>
+                <div style={{ fontSize: 17, fontWeight: 800, color }}>{val}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Decision badge */}
+          <div style={{ marginBottom: 18, padding: '13px 18px', borderRadius: 12, background: isNormal ? 'rgba(74,222,128,0.07)' : isBorder ? 'rgba(201,168,76,0.07)' : 'rgba(239,68,68,0.07)', border: `1.5px solid ${isNormal ? C.green : isBorder ? C.gold : C.red}` }}>
+            <div style={{ fontWeight: 800, fontSize: 14, color: isNormal ? C.green : isBorder ? C.gold : C.red, marginBottom: isBorder || !isNormal ? 5 : 0 }}>
+              {isNormal
+                ? (ar ? '✓ لا يُرفض افتراض الاعتدالية — p ≥ .05' : '✓ Cannot reject normality — p ≥ .05')
+                : isBorder
+                  ? (ar ? '⚠️ نتيجة حدّية — .01 ≤ p < .05 (استخدم الرسوم البيانية لتأكيد)' : '⚠️ Borderline — .01 ≤ p < .05 (check plots)')
+                  : (ar ? '✗ يُرفض افتراض الاعتدالية — p < .05' : '✗ Normality rejected — p < .05')}
+            </div>
+            {!isNormal && (
+              <div style={{ fontSize: 12, color: C.sub }}>
+                {ar ? '→ بدائل لابارامترية: Mann-Whitney U · Kruskal-Wallis · معامل سبيرمان'
+                    : '→ Non-parametric alternatives: Mann-Whitney U · Kruskal-Wallis · Spearman ρ'}
+              </div>
+            )}
+          </div>
+
+          {/* Charts */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(290px,1fr))', gap: 14 }}>
+            {/* Histogram + Normal curve */}
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14 }}>
+              <div style={{ fontWeight: 700, fontSize: 12, color: C.gold, marginBottom: 10 }}>
+                {ar ? '📊 مدرج تكراري + منحنى الاعتدال' : '📊 Histogram + Normal Curve'}
+              </div>
+              <ResponsiveContainer width="100%" height={190}>
+                <ComposedChart data={stats.bins} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <XAxis dataKey="label" tick={{ fill: C.muted, fontSize: 9 }} />
+                  <YAxis tick={{ fill: C.muted, fontSize: 9 }} />
+                  <Tooltip {...TT} />
+                  <Bar dataKey="density" name={ar ? 'الكثافة' : 'Density'} fill="rgba(74,158,235,0.5)" radius={[3,3,0,0]} />
+                  <Line type="monotone" dataKey="normal" name={ar ? 'نظري' : 'Normal'} stroke={C.gold} strokeWidth={2} dot={false} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Q-Q Plot */}
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14 }}>
+              <div style={{ fontWeight: 700, fontSize: 12, color: C.gold, marginBottom: 10 }}>
+                {ar ? '📈 مخطط Q-Q (الكميّات الطبيعية)' : '📈 Q-Q Plot (Normal Quantiles)'}
+              </div>
+              <ResponsiveContainer width="100%" height={190}>
+                <ComposedChart data={stats.qq} margin={{ top: 4, right: 8, bottom: 16, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <XAxis dataKey="z" tick={{ fill: C.muted, fontSize: 9 }} label={{ value: ar ? 'الكميّة النظرية' : 'Theoretical Quantile', position: 'insideBottom', offset: -8, fill: C.muted, fontSize: 9 }} />
+                  <YAxis tick={{ fill: C.muted, fontSize: 9 }} />
+                  <Tooltip {...TT} />
+                  <Line type="linear" dataKey="v" name={ar ? 'البيانات' : 'Data'} stroke={C.blue} strokeWidth={0} dot={{ r: 3, fill: C.blue, opacity: 0.8 }} activeDot={{ r: 4 }} />
+                  <Line type="linear" dataKey="ref" name={ar ? 'خط الاعتدال' : 'Normal line'} stroke={C.gold} strokeWidth={1.5} dot={false} strokeDasharray="5 3" />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Skewness / Kurtosis detail */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
+            {([
+              { label: ar ? 'الالتواء' : 'Skewness g₁', val: stats.skew, z: stats.zSkew,
+                desc: Math.abs(stats.skew) < 0.5 ? (ar ? 'متماثل' : 'Symmetric') : Math.abs(stats.skew) < 1 ? (ar ? 'التواء معتدل' : 'Moderate skew') : (ar ? 'التواء شديد' : 'High skew'),
+                col: Math.abs(stats.skew) < 0.5 ? C.green : Math.abs(stats.skew) < 1 ? C.gold : C.red },
+              { label: ar ? 'التفرطح الزائد' : 'Ex. Kurtosis g₂', val: stats.kurt, z: stats.zKurt,
+                desc: Math.abs(stats.kurt) < 1 ? (ar ? 'اعتدالي' : 'Normal') : Math.abs(stats.kurt) < 2 ? (ar ? 'انحراف معتدل' : 'Moderate') : (ar ? 'انحراف شديد' : 'High deviation'),
+                col: Math.abs(stats.kurt) < 1 ? C.green : Math.abs(stats.kurt) < 2 ? C.gold : C.red },
+            ] as {label:string;val:number;z:number;desc:string;col:string}[]).map(({ label, val, z, desc, col }) => (
+              <div key={label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: 11, color: C.sub }}>{label}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: C.text }}>{val.toFixed(3)}</div>
+                  <div style={{ fontSize: 10, color: C.muted }}>z = {z.toFixed(2)}</div>
+                </div>
+                <div style={{ background: `${col}18`, border: `1px solid ${col}50`, borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: col, whiteSpace: 'nowrap' }}>{desc}</div>
+              </div>
+            ))}
+          </div>
+
+          <p style={{ fontSize: 11, color: C.muted, marginTop: 10, marginBottom: 0 }}>
+            {ar ? '* اختبار D\'Agostino-Pearson K² (df=2) · يفقد دقّته لـ n < 20 · يُنصح بتفسير المدرج و Q-Q معاً'
+                : "* D'Agostino-Pearson K² omnibus test (df=2) · Unreliable for n < 20 · Interpret alongside histogram and Q-Q plot"}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ⑩  SAMPLE SIZE CALCULATOR
 // ════════════════════════════════════════════════════════════════════════════
 function zInv(p: number): number {
   if (p <= 0) return -Infinity; if (p >= 1) return Infinity; if (Math.abs(p - 0.5) < 1e-10) return 0;
@@ -1953,8 +2528,11 @@ const SUBTABS_AR = [
   { key: 'corr',       icon: '🔗', label: 'مصفوفة الارتباط',      short: 'ارتباط' },
   { key: 'crosstab',   icon: '⊞',  label: 'جدول التقاطع',         short: 'تقاطع' },
   { key: 'regression', icon: '📉', label: 'تحليل الانحدار',        short: 'انحدار' },
+  { key: 'mediation',  icon: '🔀', label: 'تحليل الوساطة',         short: 'وساطة' },
   { key: 'groups',     icon: '👥', label: 'مقارنة المجموعات',      short: 'مجموعات' },
   { key: 'cronbach',    icon: 'α',  label: 'ثبات كرونباخ',           short: 'كرونباخ' },
+  { key: 'normality',   icon: '📐', label: 'اختبار الاعتدالية',      short: 'اعتدالية' },
+  { key: 'nonparam',    icon: '🔬', label: 'اختبارات لابارامترية',   short: 'لابارام' },
   { key: 'samplesize',  icon: '🎯', label: 'حجم العيّنة',            short: 'عيّنة' },
   { key: 'apa',         icon: '📝', label: 'منسّق APA',              short: 'APA' },
   { key: 'stats',       icon: '📊', label: 'اختبارات إحصائية',     short: 'إحصاء' },
@@ -1968,8 +2546,11 @@ const SUBTABS_EN = [
   { key: 'corr',        icon: '🔗', label: 'Correlation Matrix',  short: 'Corr' },
   { key: 'crosstab',    icon: '⊞',  label: 'Cross-Tabulation',   short: 'CrossTab' },
   { key: 'regression',  icon: '📉', label: 'Linear Regression',   short: 'Regress' },
+  { key: 'mediation',   icon: '🔀', label: 'Mediation Analysis',  short: 'Mediate' },
   { key: 'groups',      icon: '👥', label: 'Group Comparison',    short: 'Groups' },
   { key: 'cronbach',    icon: 'α',  label: "Cronbach's Alpha",    short: 'Cronbach' },
+  { key: 'normality',   icon: '📐', label: 'Normality Test',      short: 'Normal' },
+  { key: 'nonparam',    icon: '🔬', label: 'Non-Parametric',      short: 'NonPar' },
   { key: 'samplesize',  icon: '🎯', label: 'Sample Size',         short: 'n Calc' },
   { key: 'apa',         icon: '📝', label: 'APA Formatter',       short: 'APA' },
   { key: 'stats',       icon: '📊', label: 'Statistical Tests',   short: 'Stats' },
@@ -2074,6 +2655,42 @@ export default function DataHub() {
                   : '2 groups → Welch t-test + Cohen\'s d · 3+ groups → ANOVA + η² + pairwise LSD'}
             </p>
             <GroupComparison ar={ar} />
+          </>
+        )}
+        {sub === 'mediation' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🔀 {ar ? 'تحليل الوساطة — Baron & Kenny + اختبار Sobel' : 'Mediation Analysis — Baron & Kenny + Sobel Test'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'يحدّد هل يتوسّط M في العلاقة بين X وY · الأثر المباشر وغير المباشر · نوع الوساطة (كاملة / جزئية)'
+                  : 'Tests whether M mediates the X→Y relationship · Direct & indirect effects · Full vs. partial mediation'}
+            </p>
+            <MediationAnalysis ar={ar} />
+          </>
+        )}
+        {sub === 'nonparam' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🔬 {ar ? 'الاختبارات اللابارامترية' : 'Non-Parametric Tests'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'تستخدم الرتب بدلاً من القيم الخام — للبيانات غير المعتدلة أو الترتيبية · Mann-Whitney U · Kruskal-Wallis H · سبيرمان ρ'
+                  : 'Rank-based alternatives for non-normal or ordinal data · Mann-Whitney U · Kruskal-Wallis H · Spearman ρ'}
+            </p>
+            <NonParametricTests ar={ar} />
+          </>
+        )}
+        {sub === 'normality' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              📐 {ar ? "اختبار الاعتدالية — D'Agostino-Pearson K²" : "Normality Test — D'Agostino-Pearson K²"}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'يختبر هل البيانات تتّبع التوزيع الطبيعي · الالتواء · التفرطح · مدرج تكراري · مخطط Q-Q'
+                  : 'Tests whether data follow a normal distribution · Skewness · Kurtosis · Histogram · Q-Q plot'}
+            </p>
+            <NormalityTest ar={ar} />
           </>
         )}
         {sub === 'apa' && (
