@@ -34,6 +34,87 @@ function ols(xs: number[], ys: number[]) {
   const a = yb - b * xb;
   return { a: r2(a), b: r2(b) };
 }
+function normalCDF(x: number): number {
+  const t = 1 / (1 + 0.3275911 * Math.abs(x));
+  const p = 1 - t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429)))) * Math.exp(-x * x / 2);
+  return x >= 0 ? p : 1 - p;
+}
+function chiSqP(chi: number, df: number): number {
+  if (chi <= 0 || df <= 0) return 1;
+  const k = 2 / (9 * df);
+  const z = ((chi / df) ** (1 / 3) - (1 - k)) / Math.sqrt(k);
+  return Math.max(0, Math.min(1, 1 - normalCDF(z)));
+}
+function pearson(xs: number[], ys: number[]): number {
+  const xb = avg(xs), yb = avg(ys);
+  const num = xs.reduce((s, x, i) => s + (x - xb) * (ys[i] - yb), 0);
+  const den = Math.sqrt(xs.reduce((s, x) => s + (x - xb) ** 2, 0) * ys.reduce((s, y) => s + (y - yb) ** 2, 0));
+  return den === 0 ? 0 : r2(num / den);
+}
+function rInterp(rv: number, ar: boolean) {
+  const a = Math.abs(rv);
+  if (a < 0.10) return { label: ar ? 'ضئيل' : 'Negligible', color: C.sub };
+  if (a < 0.30) return { label: ar ? 'ضعيف' : 'Small', color: C.muted };
+  if (a < 0.50) return { label: ar ? 'متوسط' : 'Moderate', color: C.yellow };
+  if (a < 0.70) return { label: ar ? 'قوي' : 'Large', color: C.blue };
+  if (a < 0.90) return { label: ar ? 'قوي جداً' : 'Very Large', color: C.teal };
+  return { label: ar ? 'شبه تام' : 'Near Perfect', color: C.green };
+}
+function rCellBg(rv: number): string {
+  const a = Math.abs(rv);
+  return rv > 0 ? `rgba(74,222,128,${0.06 + a * 0.5})` : `rgba(248,113,113,${0.06 + a * 0.5})`;
+}
+
+// ── Matrix operations for multiple regression ──────────────────────────────
+function matMul(A: number[][], B: number[][]): number[][] {
+  return A.map(row => Array.from({ length: B[0].length }, (_, j) =>
+    row.reduce((s, v, k) => s + v * B[k][j], 0)));
+}
+function matT(A: number[][]): number[][] { return A[0].map((_, j) => A.map(row => row[j])); }
+function matInv(A: number[][]): number[][] | null {
+  const n = A.length;
+  const M = A.map((row, i) => [...row, ...Array.from({ length: n }, (_, j) => i === j ? 1 : 0)]);
+  for (let c = 0; c < n; c++) {
+    let piv = c;
+    for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[piv][c])) piv = r;
+    [M[c], M[piv]] = [M[piv], M[c]];
+    if (Math.abs(M[c][c]) < 1e-12) return null;
+    const sc = M[c][c]; M[c] = M[c].map(v => v / sc);
+    for (let r = 0; r < n; r++) { if (r === c) continue; const f = M[r][c]; M[r] = M[r].map((v, j) => v - f * M[c][j]); }
+  }
+  return M.map(row => row.slice(n));
+}
+interface RegResult {
+  vars: string[]; depVar: string; beta: number[]; se: number[]; tStat: number[]; pVal: number[];
+  R2: number; adjR2: number; F: number; pF: number; n: number; k: number; rmse: number; residuals: number[]; fitted: number[];
+}
+function olsRegression(Xm: number[][], y: number[], depVar: string, indVars: string[]): RegResult | null {
+  const n = y.length, k = Xm[0].length;
+  const Xa = Xm.map(row => [1, ...row]);
+  const Xt = matT(Xa); const XtX = matMul(Xt, Xa); const inv = matInv(XtX);
+  if (!inv) return null;
+  const Xty = Xt.map(row => row.reduce((s, x, i) => s + x * y[i], 0));
+  const beta = inv.map(row => row.reduce((s, v, j) => s + v * Xty[j], 0));
+  const fitted = Xa.map(row => row.reduce((s, x, j) => s + x * beta[j], 0));
+  const residuals = y.map((yi, i) => yi - fitted[i]);
+  const ybar = avg(y);
+  const SSres = residuals.reduce((s, e) => s + e * e, 0);
+  const SStot = y.reduce((s, yi) => s + (yi - ybar) ** 2, 0);
+  const MSres = SSres / (n - k - 1); const MSreg = (SStot - SSres) / k;
+  const R2 = r2(1 - SSres / SStot);
+  const adjR2 = r2(1 - (1 - R2) * (n - 1) / (n - k - 1));
+  const F = r2(MSreg / MSres); const pF = r2(chiSqP(F * k, k));
+  const se = inv.map((row, i) => r2(Math.sqrt(Math.max(0, MSres * row[i]))));
+  const tStat = beta.map((b, i) => r2(se[i] !== 0 ? b / se[i] : 0));
+  const pVal = tStat.map(t => { const p = 2 * (1 - normalCDF(Math.abs(t))); return r2(Math.max(0.0001, p)); });
+  return { vars: [indVars.length > 0 ? 'Intercept' : 'β₀', ...indVars], depVar, beta: beta.map(b => r2(b)), se, tStat, pVal, R2, adjR2, F, pF, n, k, rmse: r2(Math.sqrt(MSres)), residuals: residuals.map(e => r2(e)), fitted: fitted.map(f => r2(f)) };
+}
+function pLabel(p: number, ar: boolean): { text: string; color: string } {
+  if (p < 0.001) return { text: ar ? 'دال جداً (p<0.001)' : 'Highly sig. (p<0.001)', color: C.green };
+  if (p < 0.01)  return { text: ar ? 'دال (p<0.01)' : 'Sig. (p<0.01)', color: C.teal };
+  if (p < 0.05)  return { text: ar ? 'دال (p<0.05)' : 'Sig. (p<0.05)', color: C.blue };
+  return { text: ar ? 'غير دال (p≥0.05)' : 'Not sig. (p≥0.05)', color: C.muted };
+}
 
 // ── Tooltip style ─────────────────────────────────────────────────────────────
 const TT = { contentStyle: { background: '#0d1729', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 11 } };
@@ -629,23 +710,538 @@ function TimeSeriesAnalyzer({ ar }: { ar: boolean }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// ④  CORRELATION MATRIX
+// ════════════════════════════════════════════════════════════════════════════
+function CorrelationMatrix({ ar }: { ar: boolean }) {
+  const [raw, setRaw] = useState('');
+  const [hasHeader, setHasHeader] = useState(true);
+  const [selA, setSelA] = useState(0);
+  const [selB, setSelB] = useState(1);
+
+  const { vars, cols, matrix } = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim()).map(l => l.split(/[,;\t]/).map(v => v.trim()));
+    if (lines.length < 2) return { vars: [], cols: [], matrix: [] };
+    let hdr: string[], rows: string[][];
+    if (hasHeader) { hdr = lines[0].map((h, i) => h || `X${i + 1}`); rows = lines.slice(1); }
+    else { hdr = lines[0].map((_, i) => `X${i + 1}`); rows = lines; }
+    const cols: { name: string; vals: number[] }[] = [];
+    for (let c = 0; c < hdr.length; c++) {
+      const vals = rows.map(r => parseFloat(r[c])).filter(v => !isNaN(v));
+      if (vals.length >= 2) cols.push({ name: hdr[c], vals });
+    }
+    const minLen = Math.min(...cols.map(c => c.vals.length));
+    const aligned = cols.map(c => ({ ...c, vals: c.vals.slice(0, minLen) }));
+    const matrix = aligned.map(cx => aligned.map(cy => pearson(cx.vals, cy.vals)));
+    return { vars: aligned.map(c => c.name), cols: aligned, matrix };
+  }, [raw, hasHeader]);
+
+  const hasData = matrix.length >= 2;
+  const scatter = hasData && selA < cols.length && selB < cols.length && selA !== selB
+    ? cols[selA].vals.map((x, i) => ({ x, y: cols[selB].vals[i] }))
+    : [];
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'flex-end' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.text, cursor: 'pointer' }}>
+          <input type="checkbox" checked={hasHeader} onChange={e => setHasHeader(e.target.checked)} />
+          {ar ? 'الصف الأول = أسماء المتغيرات' : 'First row = variable names'}
+        </label>
+        <div style={{ flex: 1, minWidth: 280 }}>
+          <p style={{ fontSize: 11, color: C.sub, margin: '0 0 4px' }}>
+            {ar ? 'البيانات CSV — كل صف مشاركٌ، كل عمود متغير' : 'CSV data — each row = observation, each column = variable'}
+          </p>
+          <TA value={raw} onChange={setRaw} rows={5}
+            placeholder={ar
+              ? 'الدرجة,الغياب,الساعات\n85,2,6\n72,5,4\n90,1,8\n65,7,3'
+              : 'Score,Absences,Hours\n85,2,6\n72,5,4\n90,1,8\n65,7,3'} />
+        </div>
+      </div>
+
+      {!hasData && <p style={{ textAlign: 'center', color: C.sub, fontSize: 13, padding: '24px 0' }}>{ar ? 'أدخل بيانات CSV بمتغيرَين على الأقل' : 'Enter CSV with at least 2 numerical variables'}</p>}
+
+      {hasData && (
+        <>
+          {/* Matrix */}
+          <div style={{ overflowX: 'auto', marginBottom: 14, borderRadius: 12, border: `1px solid ${C.border}`, background: C.card }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ background: 'rgba(201,168,76,0.08)' }}>
+                  <th style={{ padding: '9px 12px', color: C.sub, fontWeight: 600, borderBottom: `1px solid ${C.border}` }}></th>
+                  {vars.map(v => <th key={v} style={{ padding: '9px 12px', textAlign: 'center', color: C.gold, fontWeight: 700, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>{v}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {vars.map((vr, i) => (
+                  <tr key={vr} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: 700, color: C.gold, whiteSpace: 'nowrap', background: 'rgba(201,168,76,0.04)' }}>{vr}</td>
+                    {matrix[i].map((rv, j) => {
+                      const ip = rInterp(rv, ar);
+                      const isDiag = i === j;
+                      return (
+                        <td key={j} style={{ padding: '8px 10px', textAlign: 'center', background: isDiag ? 'rgba(255,255,255,0.03)' : rCellBg(rv), cursor: !isDiag ? 'pointer' : 'default', transition: 'opacity .15s' }}
+                          title={!isDiag ? `r = ${rv} — ${ip.label}` : ''}
+                          onClick={() => { if (!isDiag) { setSelA(i); setSelB(j); } }}>
+                          {isDiag
+                            ? <span style={{ color: C.sub }}>1.00</span>
+                            : <><div style={{ fontWeight: 800, color: ip.color, fontSize: 13 }}>{rv.toFixed(2)}</div>
+                              <div style={{ fontSize: 9, color: ip.color, opacity: 0.8, marginTop: 1 }}>{ip.label}</div></>}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pair details table */}
+          <div style={{ overflowX: 'auto', marginBottom: 14, borderRadius: 12, border: `1px solid ${C.border}`, background: C.card }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+              <thead>
+                <tr style={{ background: 'rgba(201,168,76,0.08)' }}>
+                  {[ar ? 'المتغير أ' : 'Var A', ar ? 'المتغير ب' : 'Var B', 'r', ar ? 'القوة' : 'Strength', ar ? 'الاتجاه' : 'Direction'].map(h => (
+                    <th key={h} style={{ padding: '8px 10px', textAlign: 'center', color: C.gold, fontWeight: 700, borderBottom: `1px solid ${C.border}` }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {vars.flatMap((va, i) => vars.slice(i + 1).map((vb, jj) => {
+                  const j = i + 1 + jj;
+                  const rv = matrix[i][j];
+                  const ip = rInterp(rv, ar);
+                  return (
+                    <tr key={`${i}-${j}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', cursor: 'pointer', background: selA === i && selB === j ? 'rgba(201,168,76,0.06)' : 'transparent' }}
+                      onClick={() => { setSelA(i); setSelB(j); }}>
+                      <td style={{ padding: '6px 10px', textAlign: 'center', color: C.text }}>{va}</td>
+                      <td style={{ padding: '6px 10px', textAlign: 'center', color: C.text }}>{vb}</td>
+                      <td style={{ padding: '6px 10px', textAlign: 'center' }}>
+                        <span style={{ background: rCellBg(rv), borderRadius: 6, padding: '2px 10px', fontWeight: 800, color: ip.color }}>{rv.toFixed(2)}</span>
+                      </td>
+                      <td style={{ padding: '6px 10px', textAlign: 'center', color: ip.color, fontWeight: 600 }}>{ip.label}</td>
+                      <td style={{ padding: '6px 10px', textAlign: 'center', color: rv > 0 ? C.green : rv < 0 ? C.red : C.sub }}>
+                        {rv > 0 ? (ar ? '↑ طردي' : '↑ Positive') : rv < 0 ? (ar ? '↓ عكسي' : '↓ Negative') : '—'}
+                      </td>
+                    </tr>
+                  );
+                }))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Scatter plot for selected pair */}
+          {scatter.length > 0 && selA !== selB && (
+            <ChartCard title={`🔵 ${ar ? 'مخطط الانتشار' : 'Scatter Plot'}: ${vars[selA]} × ${vars[selB]}  (r = ${matrix[selA][selB].toFixed(2)})`}>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={scatter} margin={{ left: -10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                  <XAxis dataKey="x" name={vars[selA]} tick={{ fill: C.sub, fontSize: 9 }} label={{ value: vars[selA], position: 'insideBottom', offset: -2, fill: C.sub, fontSize: 10 }} />
+                  <YAxis dataKey="y" name={vars[selB]} tick={{ fill: C.sub, fontSize: 9 }} />
+                  <Tooltip {...TT} formatter={(v: number | string, name: string) => [v, name === 'y' ? vars[selB] : vars[selA]]} />
+                  <Line type="linear" dataKey="y" stroke={C.gold} dot={{ r: 4, fill: C.gold, fillOpacity: 0.7 }} activeDot={{ r: 6 }} strokeWidth={0} />
+                </LineChart>
+              </ResponsiveContainer>
+              <p style={{ fontSize: 11, color: C.sub, textAlign: 'center', margin: '4px 0 0' }}>{ar ? 'انقر على أي زوج في الجدول لعرض مخططه' : 'Click any pair in the table to view its scatter plot'}</p>
+            </ChartCard>
+          )}
+
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 12, padding: '10px 14px', background: C.card, border: `1px solid ${C.border}`, borderRadius: 10 }}>
+            <span style={{ fontSize: 11, color: C.sub, marginInlineEnd: 4 }}>{ar ? 'مرجع تفسير r:' : 'r interpretation:'}</span>
+            {[[ar ? '|r|<0.1 ضئيل' : '|r|<0.1 Negligible', C.sub],
+              [ar ? '0.1–0.3 ضعيف' : '0.1–0.3 Small', C.muted],
+              [ar ? '0.3–0.5 متوسط' : '0.3–0.5 Moderate', C.yellow],
+              [ar ? '0.5–0.7 قوي' : '0.5–0.7 Large', C.blue],
+              [ar ? '0.7–0.9 قوي جداً' : '0.7–0.9 Very Large', C.teal],
+              [ar ? '≥0.9 شبه تام' : '≥0.9 Near Perfect', C.green]].map(([l, c]) => (
+              <span key={String(l)} style={{ fontSize: 10, color: c as string, background: `${c as string}15`, border: `1px solid ${c as string}30`, borderRadius: 5, padding: '2px 8px' }}>{l}</span>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ⑤  CROSS-TABULATION + CHI-SQUARE
+// ════════════════════════════════════════════════════════════════════════════
+function CrossTab({ ar }: { ar: boolean }) {
+  const [rawA, setRawA] = useState('');
+  const [rawB, setRawB] = useState('');
+  const [nameA, setNameA] = useState('');
+  const [nameB, setNameB] = useState('');
+  const [view, setView] = useState<'obs' | 'exp' | 'pct'>('obs');
+
+  const res = useMemo(() => {
+    const vA = rawA.split(/[\n,;]+/).map(v => v.trim()).filter(Boolean);
+    const vB = rawB.split(/[\n,;]+/).map(v => v.trim()).filter(Boolean);
+    const n = Math.min(vA.length, vB.length);
+    if (n < 4) return null;
+    const catsA = [...new Set(vA.slice(0, n))].sort();
+    const catsB = [...new Set(vB.slice(0, n))].sort();
+    const obs: number[][] = catsA.map(a => catsB.map(b =>
+      vA.slice(0, n).filter((v, i) => v === a && vB[i] === b).length
+    ));
+    const rowTot = obs.map(row => row.reduce((s, v) => s + v, 0));
+    const colTot = catsB.map((_, j) => obs.reduce((s, row) => s + row[j], 0));
+    const total = rowTot.reduce((s, v) => s + v, 0);
+    const exp: number[][] = obs.map((row, i) => row.map((_, j) => r2(rowTot[i] * colTot[j] / total)));
+    let chiSq = 0;
+    obs.forEach((row, i) => row.forEach((o, j) => { if (exp[i][j] > 0) chiSq += (o - exp[i][j]) ** 2 / exp[i][j]; }));
+    chiSq = r2(chiSq);
+    const df = (catsA.length - 1) * (catsB.length - 1);
+    const p = chiSqP(chiSq, df);
+    const cramers = df > 0 ? r2(Math.sqrt(chiSq / (total * Math.min(catsA.length - 1, catsB.length - 1)))) : 0;
+    return { catsA, catsB, obs, exp, rowTot, colTot, total, chiSq, df, p, cramers };
+  }, [rawA, rawB]);
+
+  const tableData = res
+    ? (view === 'obs' ? res.obs : view === 'exp' ? res.exp : res.obs.map((row, i) => row.map((o, j) => r2(o / (res.rowTot[i] || 1) * 100))))
+    : null;
+
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+        {([
+          [nameA, setNameA, rawA, setRawA, ar ? 'المتغير الأول (الصفوف)' : 'Variable A (rows)', ar ? 'مثال: ذكر, أنثى, ذكر, أنثى...' : 'e.g.: Male, Female, Male, Female...'],
+          [nameB, setNameB, rawB, setRawB, ar ? 'المتغير الثاني (الأعمدة)' : 'Variable B (columns)', ar ? 'مثال: موافق, معارض, محايد, موافق...' : 'e.g.: Agree, Disagree, Neutral, Agree...'],
+        ] as const).map(([name, setName, raw, setRaw, label, ph], idx) => (
+          <div key={idx}>
+            <input value={name} onChange={e => (setName as (v: string) => void)(e.target.value)}
+              placeholder={ar ? `اسم المتغير ${idx + 1}` : `Variable ${idx + 1} name`}
+              style={{ width: '100%', background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: '7px 10px', fontSize: 12, color: C.text, fontFamily: 'inherit', outline: 'none', marginBottom: 6 }} />
+            <p style={{ fontSize: 11, color: C.sub, margin: '0 0 4px' }}>{label}</p>
+            <TA value={raw} onChange={v => (setRaw as (v: string) => void)(v)} rows={4} placeholder={ph} />
+          </div>
+        ))}
+      </div>
+
+      {!res && <p style={{ textAlign: 'center', color: C.sub, fontSize: 13, padding: '20px 0' }}>{ar ? 'أدخل متغيرَين فئويَّين (4 مشاهدات على الأقل)' : 'Enter 2 categorical variables (at least 4 observations each)'}</p>}
+
+      {res && (
+        <>
+          {/* Chi-square summary */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+            {[
+              { l: 'χ²', v: res.chiSq, color: C.gold },
+              { l: 'df', v: res.df, color: C.blue },
+              { l: 'p-value', v: res.p < 0.001 ? '<0.001' : res.p.toFixed(3), color: pLabel(res.p, ar).color },
+              { l: "Cramér's V", v: res.cramers, color: C.teal },
+              { l: 'n', v: res.total, color: C.sub },
+            ].map(s => <Pill key={s.l} label={s.l} value={s.v} color={s.color} />)}
+            <div style={{ ...{}, display: 'flex', alignItems: 'center', background: `${pLabel(res.p, ar).color}15`, border: `1px solid ${pLabel(res.p, ar).color}33`, borderRadius: 10, padding: '8px 16px', fontSize: 13, fontWeight: 700, color: pLabel(res.p, ar).color }}>
+              {pLabel(res.p, ar).text}
+            </div>
+          </div>
+
+          {/* View toggle */}
+          <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
+            {([['obs', ar ? 'التكرارات المشاهدة' : 'Observed'], ['exp', ar ? 'المتوقعة' : 'Expected'], ['pct', ar ? 'نسب الصف %' : 'Row %']] as const).map(([k, l]) => (
+              <button key={k} onClick={() => setView(k)}
+                style={{ padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s', border: `1px solid ${view === k ? 'rgba(201,168,76,0.5)' : 'rgba(255,255,255,0.08)'}`, background: view === k ? 'rgba(201,168,76,0.15)' : 'rgba(255,255,255,0.02)', color: view === k ? C.gold : C.muted }}>
+                {l}
+              </button>
+            ))}
+          </div>
+
+          {/* Contingency table */}
+          <div style={{ overflowX: 'auto', marginBottom: 14, borderRadius: 12, border: `1px solid ${C.border}`, background: C.card }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ background: 'rgba(201,168,76,0.08)' }}>
+                  <th style={{ padding: '9px 12px', color: C.sub, borderBottom: `1px solid ${C.border}` }}>
+                    {(nameA || (ar ? 'أ' : 'A'))} \ {(nameB || (ar ? 'ب' : 'B'))}
+                  </th>
+                  {res.catsB.map(b => <th key={b} style={{ padding: '9px 10px', textAlign: 'center', color: C.gold, fontWeight: 700, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>{b}</th>)}
+                  <th style={{ padding: '9px 10px', textAlign: 'center', color: C.purple, fontWeight: 700, borderBottom: `1px solid ${C.border}` }}>{ar ? 'المجموع' : 'Total'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {res.catsA.map((a, i) => (
+                  <tr key={a} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: 700, color: C.gold, background: 'rgba(201,168,76,0.04)', whiteSpace: 'nowrap' }}>{a}</td>
+                    {(tableData![i]).map((val, j) => (
+                      <td key={j} style={{ padding: '8px 10px', textAlign: 'center' }}>
+                        <span style={{ fontWeight: 700, color: C.text }}>{view === 'pct' ? `${val}%` : val}</span>
+                        {view === 'obs' && <div style={{ fontSize: 9, color: C.sub, marginTop: 1 }}>E={res.exp[i][j]}</div>}
+                      </td>
+                    ))}
+                    <td style={{ padding: '8px 10px', textAlign: 'center', color: C.purple, fontWeight: 700 }}>
+                      {view === 'pct' ? '100%' : res.rowTot[i]}
+                    </td>
+                  </tr>
+                ))}
+                <tr style={{ background: 'rgba(201,168,76,0.06)', borderTop: `1px solid ${C.border}`, fontWeight: 800 }}>
+                  <td style={{ padding: '8px 12px', color: C.purple }}>{ar ? 'المجموع' : 'Total'}</td>
+                  {res.colTot.map((ct, j) => <td key={j} style={{ padding: '8px 10px', textAlign: 'center', color: C.purple }}>{ct}</td>)}
+                  <td style={{ padding: '8px 10px', textAlign: 'center', color: C.gold }}>{res.total}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Bar chart of observed */}
+          <ChartCard title={`📊 ${ar ? 'توزيع التكرارات المشاهدة' : 'Observed Frequencies Distribution'}`}>
+            <ResponsiveContainer width="100%" height={Math.max(180, res.catsA.length * 45)}>
+              <BarChart data={res.catsA.map((a, i) => {
+                const row: Record<string, unknown> = { name: a };
+                res.catsB.forEach((b, j) => { row[b] = res.obs[i][j]; });
+                return row;
+              })} margin={{ left: -10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <XAxis dataKey="name" tick={{ fill: C.sub, fontSize: 10 }} />
+                <YAxis tick={{ fill: C.sub, fontSize: 9 }} />
+                <Tooltip {...TT} />
+                <Legend iconSize={8} wrapperStyle={{ fontSize: 10, color: C.sub }} />
+                {res.catsB.map((b, j) => <Bar key={b} dataKey={b} fill={P[j % P.length]} radius={[3, 3, 0, 0]} />)}
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+
+          {/* Cramér's V interpretation */}
+          <div style={{ marginTop: 12, padding: '10px 14px', background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 12 }}>
+            <span style={{ color: C.gold, fontWeight: 700 }}>Cramér's V = {res.cramers}</span>
+            <span style={{ color: C.sub, marginInlineStart: 8 }}>
+              {res.cramers < 0.10 ? (ar ? '← تأثير ضئيل' : '← Negligible effect')
+                : res.cramers < 0.30 ? (ar ? '← تأثير صغير' : '← Small effect')
+                : res.cramers < 0.50 ? (ar ? '← تأثير متوسط' : '← Moderate effect')
+                : (ar ? '← تأثير كبير' : '← Large effect')}
+            </span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ⑥  REGRESSION ANALYSIS
+// ════════════════════════════════════════════════════════════════════════════
+function RegressionAnalysis({ ar }: { ar: boolean }) {
+  const [raw, setRaw] = useState('');
+  const [hasHeader, setHasHeader] = useState(true);
+  const [depIdx, setDepIdx] = useState(0);
+  const [indIdxs, setIndIdxs] = useState<number[]>([1]);
+
+  const { vars, cols } = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim()).map(l => l.split(/[,;\t]/).map(v => v.trim()));
+    if (lines.length < 3) return { vars: [], cols: [] };
+    let hdr: string[], rows: string[][];
+    if (hasHeader) { hdr = lines[0].map((h, i) => h || `X${i + 1}`); rows = lines.slice(1); }
+    else { hdr = lines[0].map((_, i) => `X${i + 1}`); rows = lines; }
+    const cs: { name: string; vals: number[] }[] = [];
+    for (let c = 0; c < hdr.length; c++) {
+      const vals = rows.map(r => parseFloat(r[c])).filter(v => !isNaN(v));
+      if (vals.length >= 3) cs.push({ name: hdr[c], vals });
+    }
+    const minLen = Math.min(...cs.map(c => c.vals.length));
+    return { vars: cs.map(c => c.name), cols: cs.map(c => ({ ...c, vals: c.vals.slice(0, minLen) })) };
+  }, [raw, hasHeader]);
+
+  const toggleInd = (idx: number) => {
+    if (idx === depIdx) return;
+    setIndIdxs(prev => prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]);
+  };
+
+  const result: RegResult | null = useMemo(() => {
+    if (cols.length < 2) return null;
+    const safeIndIdxs = indIdxs.filter(i => i !== depIdx && i < cols.length);
+    if (safeIndIdxs.length === 0) return null;
+    const y = cols[depIdx]?.vals ?? [];
+    const Xm = cols[0].vals.map((_, i) => safeIndIdxs.map(j => cols[j].vals[i]));
+    return olsRegression(Xm, y, vars[depIdx] ?? '', safeIndIdxs.map(j => vars[j] ?? ''));
+  }, [cols, depIdx, indIdxs, vars]);
+
+  const hasData = vars.length >= 2;
+  const isSimple = result && result.k === 1;
+
+  const scatterData = isSimple && result
+    ? cols[indIdxs.filter(i => i !== depIdx)[0]]?.vals.map((x, i) => ({
+        x, y: cols[depIdx].vals[i],
+        fit: r2(result.beta[0] + result.beta[1] * x),
+      }))
+    : null;
+
+  const residualData = result
+    ? result.fitted.map((f, i) => ({ x: r2(f), y: result.residuals[i] }))
+    : null;
+
+  return (
+    <div>
+      {/* Input */}
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'flex-start' }}>
+        <div style={{ flex: 1, minWidth: 260 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.text, cursor: 'pointer', marginBottom: 6 }}>
+            <input type="checkbox" checked={hasHeader} onChange={e => setHasHeader(e.target.checked)} />
+            {ar ? 'الصف الأول = أسماء المتغيرات' : 'First row = variable names'}
+          </label>
+          <p style={{ fontSize: 11, color: C.sub, margin: '0 0 4px' }}>
+            {ar ? 'البيانات CSV — كل صف مشاركٌ، كل عمود متغير' : 'CSV data — rows = observations, columns = variables'}
+          </p>
+          <TA value={raw} onChange={setRaw} rows={5}
+            placeholder={ar
+              ? 'الدرجة,الدخل,التعليم,العمر\n82,35000,16,28\n74,28000,12,35\n91,52000,18,24\n67,22000,10,45'
+              : 'Score,Income,Education,Age\n82,35000,16,28\n74,28000,12,35\n91,52000,18,24\n67,22000,10,45'} />
+        </div>
+
+        {hasData && (
+          <div style={{ minWidth: 200 }}>
+            <p style={{ fontSize: 11, color: C.sub, margin: '0 0 8px' }}>{ar ? 'المتغير التابع (Y)' : 'Dependent variable (Y)'}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
+              {vars.map((v, i) => (
+                <label key={v} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer', color: depIdx === i ? C.gold : C.text }}>
+                  <input type="radio" name="dep" checked={depIdx === i} onChange={() => { setDepIdx(i); setIndIdxs(prev => prev.filter(j => j !== i)); }} />
+                  {v}
+                </label>
+              ))}
+            </div>
+            <p style={{ fontSize: 11, color: C.sub, margin: '0 0 8px' }}>{ar ? 'المتغيرات المستقلة (X)' : 'Independent variables (X)'}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {vars.map((v, i) => i === depIdx ? null : (
+                <label key={v} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer', color: indIdxs.includes(i) ? C.blue : C.muted }}>
+                  <input type="checkbox" checked={indIdxs.includes(i)} onChange={() => toggleInd(i)} />
+                  {v}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {!hasData && <p style={{ textAlign: 'center', color: C.sub, fontSize: 13, padding: '24px 0' }}>{ar ? 'أدخل بيانات CSV بمتغيرَين على الأقل' : 'Enter CSV data with at least 2 variables'}</p>}
+      {hasData && !result && <p style={{ textAlign: 'center', color: C.sub, fontSize: 13, padding: '12px 0' }}>{ar ? 'اختر متغيراً تابعاً ومتغيراً مستقلاً على الأقل' : 'Select a dependent variable and at least one independent variable'}</p>}
+
+      {result && (
+        <>
+          {/* Model summary */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+            {[
+              { l: 'R²', v: result.R2, color: C.gold },
+              { l: ar ? 'R² المعدّل' : 'Adj. R²', v: result.adjR2, color: C.teal },
+              { l: 'F', v: result.F, color: C.blue },
+              { l: 'p(F)', v: result.pF < 0.001 ? '<0.001' : result.pF.toFixed(3), color: pLabel(result.pF, ar).color },
+              { l: 'RMSE', v: result.rmse, color: C.purple },
+              { l: 'n', v: result.n, color: C.sub },
+              { l: 'k', v: result.k, color: C.sub },
+            ].map(s => <Pill key={s.l} label={s.l} value={s.v} color={s.color} />)}
+            <div style={{ display: 'flex', alignItems: 'center', background: `${pLabel(result.pF, ar).color}15`, border: `1px solid ${pLabel(result.pF, ar).color}33`, borderRadius: 10, padding: '8px 16px', fontSize: 13, fontWeight: 700, color: pLabel(result.pF, ar).color }}>
+              {pLabel(result.pF, ar).text}
+            </div>
+          </div>
+
+          {/* Equation */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 16px', marginBottom: 14, fontFamily: 'monospace' }}>
+            <p style={{ fontSize: 11, color: C.sub, margin: '0 0 6px' }}>{ar ? 'معادلة الانحدار:' : 'Regression equation:'}</p>
+            <p style={{ fontSize: 13, color: C.gold, margin: 0, fontWeight: 700, wordBreak: 'break-all' }}>
+              {result.depVar} = {result.beta[0]}{result.beta.slice(1).map((b, i) => ` ${b >= 0 ? '+' : ''} ${b}·${result.vars[i + 1]}`).join('')}
+            </p>
+          </div>
+
+          {/* Coefficients table */}
+          <div style={{ overflowX: 'auto', marginBottom: 14, borderRadius: 12, border: `1px solid ${C.border}`, background: C.card }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ background: 'rgba(201,168,76,0.08)' }}>
+                  {[ar ? 'المتغير' : 'Variable', 'β', 'SE', 't', 'p-value', ar ? 'الدلالة' : 'Sig.'].map(h => (
+                    <th key={h} style={{ padding: '9px 10px', textAlign: 'center', color: C.gold, fontWeight: 700, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {result.vars.map((v, i) => {
+                  const pl = pLabel(result.pVal[i], ar);
+                  return (
+                    <tr key={v} style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                      <td style={{ padding: '7px 10px', fontWeight: 700, color: i === 0 ? C.sub : C.text }}>{v}</td>
+                      <td style={{ padding: '7px 10px', textAlign: 'center' }}>
+                        <span style={{ background: result.beta[i] >= 0 ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', color: result.beta[i] >= 0 ? C.green : C.red, borderRadius: 6, padding: '2px 10px', fontWeight: 700 }}>{result.beta[i]}</span>
+                      </td>
+                      <td style={{ padding: '7px 10px', textAlign: 'center', color: C.sub }}>{result.se[i]}</td>
+                      <td style={{ padding: '7px 10px', textAlign: 'center', color: C.blue, fontWeight: 700 }}>{result.tStat[i]}</td>
+                      <td style={{ padding: '7px 10px', textAlign: 'center', color: pl.color }}>{result.pVal[i] <= 0.0001 ? '<0.0001' : result.pVal[i].toFixed(4)}</td>
+                      <td style={{ padding: '7px 10px', textAlign: 'center', fontSize: 11, color: pl.color, fontWeight: 600 }}>{pl.text.split('(')[0].trim()}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Charts */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 12 }}>
+            {scatterData && (
+              <ChartCard title={`🔵 ${ar ? 'مخطط الانتشار مع خط الانحدار' : 'Scatter Plot with Regression Line'}`}>
+                <ResponsiveContainer width="100%" height={210}>
+                  <LineChart data={scatterData} margin={{ left: -10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                    <XAxis dataKey="x" tick={{ fill: C.sub, fontSize: 9 }} name={result.vars[1]} />
+                    <YAxis tick={{ fill: C.sub, fontSize: 9 }} />
+                    <Tooltip {...TT} />
+                    <Line type="linear" dataKey="y" name={result.depVar} stroke={C.gold} strokeWidth={0} dot={{ r: 4, fill: C.gold, fillOpacity: 0.7 }} />
+                    <Line type="linear" dataKey="fit" name={ar ? 'خط الانحدار' : 'Fit'} stroke={C.teal} strokeWidth={2} dot={false} strokeDasharray="5 3" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartCard>
+            )}
+            {residualData && (
+              <ChartCard title={`📉 ${ar ? 'مخطط البواقي (Fitted vs Residuals)' : 'Residuals Plot (Fitted vs Residuals)'}`}>
+                <ResponsiveContainer width="100%" height={210}>
+                  <LineChart data={residualData} margin={{ left: -10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                    <XAxis dataKey="x" tick={{ fill: C.sub, fontSize: 9 }} label={{ value: ar ? 'القيم المتوقعة' : 'Fitted', position: 'insideBottom', offset: -2, fill: C.sub, fontSize: 9 }} />
+                    <YAxis tick={{ fill: C.sub, fontSize: 9 }} />
+                    <Tooltip {...TT} />
+                    <ReferenceLine y={0} stroke={C.muted} strokeDasharray="4 2" />
+                    <Line type="linear" dataKey="y" name={ar ? 'البواقي' : 'Residual'} stroke={C.purple} strokeWidth={0} dot={{ r: 4, fill: C.purple, fillOpacity: 0.7 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartCard>
+            )}
+          </div>
+
+          {/* R² interpretation */}
+          <div style={{ marginTop: 12, padding: '10px 16px', background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 12 }}>
+            <span style={{ color: C.gold, fontWeight: 700 }}>R² = {result.R2}</span>
+            <span style={{ color: C.sub, marginInlineStart: 8 }}>
+              {ar
+                ? `يفسّر النموذج ${(result.R2 * 100).toFixed(1)}% من التباين في المتغير التابع`
+                : `The model explains ${(result.R2 * 100).toFixed(1)}% of variance in the dependent variable`}
+            </span>
+            <span style={{ color: C.muted, marginInlineStart: 8, fontSize: 10 }}>
+              {ar ? '* قيم p تقريبية (تقريب التوزيع الطبيعي)' : '* p-values are approximate (normal approximation)'}
+            </span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // ── DATAHUB MAIN ─────────────────────────────────────────────────────────────
 // ════════════════════════════════════════════════════════════════════════════
 const SUBTABS_AR = [
-  { key: 'explorer',  icon: '📁', label: 'مستكشف البيانات',     short: 'استكشاف' },
-  { key: 'freq',      icon: '📋', label: 'جدول تكراري',          short: 'تكراري' },
-  { key: 'likert',    icon: '⚖️', label: 'مقياس ليكرت',          short: 'ليكرت' },
-  { key: 'timeseries',icon: '📈', label: 'سلاسل زمنية',          short: 'زمني' },
-  { key: 'stats',     icon: '📊', label: 'اختبارات إحصائية',     short: 'إحصاء' },
-  { key: 'equations', icon: '🔢', label: 'المعادلات',             short: 'معادلات' },
+  { key: 'explorer',   icon: '📁', label: 'مستكشف البيانات',     short: 'استكشاف' },
+  { key: 'freq',       icon: '📋', label: 'جدول تكراري',          short: 'تكراري' },
+  { key: 'likert',     icon: '⚖️', label: 'مقياس ليكرت',          short: 'ليكرت' },
+  { key: 'timeseries', icon: '📈', label: 'سلاسل زمنية',          short: 'زمني' },
+  { key: 'corr',       icon: '🔗', label: 'مصفوفة الارتباط',      short: 'ارتباط' },
+  { key: 'crosstab',   icon: '⊞',  label: 'جدول التقاطع',         short: 'تقاطع' },
+  { key: 'regression', icon: '📉', label: 'تحليل الانحدار',        short: 'انحدار' },
+  { key: 'stats',      icon: '📊', label: 'اختبارات إحصائية',     short: 'إحصاء' },
+  { key: 'equations',  icon: '🔢', label: 'المعادلات',             short: 'معادلات' },
 ];
 const SUBTABS_EN = [
-  { key: 'explorer',   icon: '📁', label: 'Data Explorer',      short: 'Explore' },
-  { key: 'freq',       icon: '📋', label: 'Frequency Table',    short: 'Freq' },
-  { key: 'likert',     icon: '⚖️', label: 'Likert Scale',       short: 'Likert' },
-  { key: 'timeseries', icon: '📈', label: 'Time Series',        short: 'TimeSeries' },
-  { key: 'stats',      icon: '📊', label: 'Statistical Tests',  short: 'Stats' },
-  { key: 'equations',  icon: '🔢', label: 'Equations',          short: 'Eq' },
+  { key: 'explorer',   icon: '📁', label: 'Data Explorer',       short: 'Explore' },
+  { key: 'freq',       icon: '📋', label: 'Frequency Table',     short: 'Freq' },
+  { key: 'likert',     icon: '⚖️', label: 'Likert Scale',        short: 'Likert' },
+  { key: 'timeseries', icon: '📈', label: 'Time Series',         short: 'Time' },
+  { key: 'corr',       icon: '🔗', label: 'Correlation Matrix',  short: 'Corr' },
+  { key: 'crosstab',   icon: '⊞',  label: 'Cross-Tabulation',   short: 'CrossTab' },
+  { key: 'regression', icon: '📉', label: 'Linear Regression',   short: 'Regress' },
+  { key: 'stats',      icon: '📊', label: 'Statistical Tests',   short: 'Stats' },
+  { key: 'equations',  icon: '🔢', label: 'Equations',           short: 'Eq' },
 ];
 
 export default function DataHub() {
@@ -710,6 +1306,42 @@ export default function DataHub() {
                   : 'Moving averages · OLS trend line · Growth rates · Forecasting'}
             </p>
             <TimeSeriesAnalyzer ar={ar} />
+          </>
+        )}
+        {sub === 'corr'       && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🔗 {ar ? 'مصفوفة الارتباط (Pearson)' : 'Correlation Matrix (Pearson)'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'الكشف عن العلاقات الخطية بين المتغيرات الكمية — انقر على أي زوج لعرض مخطط الانتشار'
+                  : 'Detect linear relationships between quantitative variables — click any pair to view scatter plot'}
+            </p>
+            <CorrelationMatrix ar={ar} />
+          </>
+        )}
+        {sub === 'crosstab'   && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              ⊞ {ar ? 'جدول التقاطع واختبار كاي مربع' : 'Cross-Tabulation & Chi-Square Test'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'تحليل العلاقة بين متغيرَين فئويَّين · يحسب χ² و p-value و Cramér\'s V تلقائياً'
+                  : 'Analyze association between 2 categorical variables · auto-computes χ², p-value & Cramér\'s V'}
+            </p>
+            <CrossTab ar={ar} />
+          </>
+        )}
+        {sub === 'regression' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              📉 {ar ? 'تحليل الانحدار الخطي (OLS)' : 'Linear Regression Analysis (OLS)'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'انحدار بسيط ومتعدد · معاملات β · R² · F-statistic · مخطط البواقي · معادلة التنبؤ'
+                  : 'Simple & multiple regression · β coefficients · R² · F-statistic · Residual plot · Prediction equation'}
+            </p>
+            <RegressionAnalysis ar={ar} />
           </>
         )}
         {sub === 'stats'      && <StatParser />}
