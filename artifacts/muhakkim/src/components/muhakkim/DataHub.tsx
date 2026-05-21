@@ -1865,6 +1865,3348 @@ function MediationAnalysis({ ar }: { ar: boolean }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// ── CONFIDENCE INTERVAL CALCULATOR ───────────────────────────────────────
+function CICalc({ ar }: { ar: boolean }) {
+  const [mode, setMode] = useState<'mean'|'prop'|'diff'|'pearson'>('mean');
+  // mean
+  const [mStr, setMStr] = useState('72.4'); const [sStr, setSStr] = useState('10.8'); const [nStr, setNStr] = useState('45');
+  // proportion
+  const [xStr, setXStr] = useState('34'); const [nPStr, setNPStr] = useState('80');
+  // diff of means
+  const [m1S, setM1S] = useState('68.2'); const [s1S, setS1S] = useState('9.4'); const [n1S, setN1S] = useState('40');
+  const [m2S, setM2S] = useState('73.8'); const [s2S, setS2S] = useState('10.2'); const [n2S, setN2S] = useState('38');
+  // pearson r
+  const [rStr, setRStr] = useState('0.52'); const [nRStr, setNRStr] = useState('60');
+  const [conf, setConf] = useState(95);
+
+  const z = conf === 99 ? 2.576 : conf === 90 ? 1.645 : 1.960;
+
+  const ci = useMemo(() => {
+    if (mode === 'mean') {
+      const m = parseFloat(mStr), s = parseFloat(sStr), n = parseFloat(nStr);
+      if (!isFinite(m)||!isFinite(s)||!isFinite(n)||n<2||s<0) return null;
+      const se = s/Math.sqrt(n), me = z*se;
+      return { lo:m-me, hi:m+me, se, me, label:`M = ${m.toFixed(2)}`, unit:'', extra:`n = ${n}, SD = ${s}` };
+    }
+    if (mode === 'prop') {
+      const x = parseFloat(xStr), n = parseFloat(nPStr);
+      if (!isFinite(x)||!isFinite(n)||n<2||x<0||x>n) return null;
+      const p = x/n;
+      // Wilson interval
+      const denom = 1 + z*z/n;
+      const centre = (p + z*z/(2*n))/denom;
+      const half = (z/denom)*Math.sqrt(p*(1-p)/n + z*z/(4*n*n));
+      const se = Math.sqrt(p*(1-p)/n);
+      return { lo:Math.max(0,centre-half), hi:Math.min(1,centre+half), se, me:half, label:`p̂ = ${(p*100).toFixed(1)}%`, unit:'', extra:`x = ${x}, n = ${n}` };
+    }
+    if (mode === 'diff') {
+      const m1=parseFloat(m1S),s1=parseFloat(s1S),n1=parseFloat(n1S);
+      const m2=parseFloat(m2S),s2=parseFloat(s2S),n2=parseFloat(n2S);
+      if ([m1,s1,n1,m2,s2,n2].some(v=>!isFinite(v))||n1<2||n2<2||s1<0||s2<0) return null;
+      const diff = m1-m2;
+      const se = Math.sqrt(s1*s1/n1+s2*s2/n2);
+      const me = z*se;
+      const sp = Math.sqrt(((n1-1)*s1*s1+(n2-1)*s2*s2)/(n1+n2-2));
+      const d = Math.abs(diff)/Math.max(1e-10,sp);
+      return { lo:diff-me, hi:diff+me, se, me, label:`Δ = ${diff.toFixed(3)}`, unit:'', extra:`d = ${d.toFixed(3)}, Welch SE = ${se.toFixed(3)}` };
+    }
+    // pearson r
+    const r = parseFloat(rStr), n = parseFloat(nRStr);
+    if (!isFinite(r)||!isFinite(n)||n<4||Math.abs(r)>=1) return null;
+    const zr = 0.5*Math.log((1+r)/(1-r));
+    const se = 1/Math.sqrt(n-3);
+    const lo_z = zr-z*se, hi_z = zr+z*se;
+    const lo = (Math.exp(2*lo_z)-1)/(Math.exp(2*lo_z)+1);
+    const hi = (Math.exp(2*hi_z)-1)/(Math.exp(2*hi_z)+1);
+    return { lo, hi, se, me:z*se, label:`r = ${r.toFixed(3)}`, unit:'', extra:`Fisher z' = ${zr.toFixed(4)}, n = ${n}` };
+  }, [mode, mStr, sStr, nStr, xStr, nPStr, m1S, s1S, n1S, m2S, s2S, n2S, rStr, nRStr, conf, z]);
+
+  const fmt = (v: number) => mode==='prop' ? `${(v*100).toFixed(2)}%` : v.toFixed(4);
+
+  return (
+    <div>
+      <div style={{ display:'flex', gap:8, marginBottom:14, flexWrap:'wrap', alignItems:'center' }}>
+        {([['mean',ar?'متوسط عيّنة':'Sample Mean'],['prop',ar?'نسبة':'Proportion'],['diff',ar?'فرق متوسطين':'Diff. of Means'],['pearson',ar?'Pearson r':'Pearson r']] as const).map(([m,lbl])=>(
+          <button key={m} onClick={()=>setMode(m)}
+            style={{ background:mode===m?'rgba(201,168,76,0.2)':'rgba(255,255,255,0.04)', border:`1px solid ${mode===m?C.gold:C.border}`, borderRadius:9, padding:'7px 14px', color:mode===m?C.gold:C.sub, cursor:'pointer', fontFamily:'inherit', fontWeight:mode===m?700:400, fontSize:13 }}>
+            {lbl}
+          </button>
+        ))}
+        <div style={{ marginLeft:'auto', display:'flex', gap:6 }}>
+          {[90,95,99].map(c=>(
+            <button key={c} onClick={()=>setConf(c)}
+              style={{ background:conf===c?'rgba(94,234,212,0.2)':'rgba(255,255,255,0.04)', border:`1px solid ${conf===c?C.teal:C.border}`, borderRadius:7, padding:'5px 12px', color:conf===c?C.teal:C.sub, cursor:'pointer', fontFamily:'inherit', fontWeight:conf===c?700:400, fontSize:12 }}>
+              {c}%
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Inputs */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))', gap:10, marginBottom:16 }}>
+        {mode==='mean' && [
+          { l:'M', v:mStr, s:setMStr }, { l:'SD', v:sStr, s:setSStr }, { l:'n', v:nStr, s:setNStr }
+        ].map(({l,v,s})=>(
+          <div key={l}>
+            <label style={{fontSize:11,color:C.sub,display:'block',marginBottom:3}}>{l}</label>
+            <input value={v} onChange={e=>s(e.target.value)} type="number" style={{width:'100%',background:'rgba(255,255,255,0.04)',border:`1px solid ${C.border}`,borderRadius:8,padding:'8px 12px',color:C.text,fontSize:14,fontWeight:700,direction:'ltr',boxSizing:'border-box'}}/>
+          </div>
+        ))}
+        {mode==='prop' && [
+          { l:ar?'عدد النجاحات x':'Successes x', v:xStr, s:setXStr }, { l:'n', v:nPStr, s:setNPStr }
+        ].map(({l,v,s})=>(
+          <div key={l}>
+            <label style={{fontSize:11,color:C.sub,display:'block',marginBottom:3}}>{l}</label>
+            <input value={v} onChange={e=>s(e.target.value)} type="number" style={{width:'100%',background:'rgba(255,255,255,0.04)',border:`1px solid ${C.border}`,borderRadius:8,padding:'8px 12px',color:C.text,fontSize:14,fontWeight:700,direction:'ltr',boxSizing:'border-box'}}/>
+          </div>
+        ))}
+        {mode==='diff' && [
+          { l:'M₁', v:m1S, s:setM1S }, { l:'SD₁', v:s1S, s:setS1S }, { l:'n₁', v:n1S, s:setN1S },
+          { l:'M₂', v:m2S, s:setM2S }, { l:'SD₂', v:s2S, s:setS2S }, { l:'n₂', v:n2S, s:setN2S }
+        ].map(({l,v,s})=>(
+          <div key={l}>
+            <label style={{fontSize:11,color:C.sub,display:'block',marginBottom:3}}>{l}</label>
+            <input value={v} onChange={e=>s(e.target.value)} type="number" style={{width:'100%',background:'rgba(255,255,255,0.04)',border:`1px solid ${C.border}`,borderRadius:8,padding:'8px 12px',color:C.text,fontSize:14,fontWeight:700,direction:'ltr',boxSizing:'border-box'}}/>
+          </div>
+        ))}
+        {mode==='pearson' && [
+          { l:'r', v:rStr, s:setRStr }, { l:'n', v:nRStr, s:setNRStr }
+        ].map(({l,v,s})=>(
+          <div key={l}>
+            <label style={{fontSize:11,color:C.sub,display:'block',marginBottom:3}}>{l}</label>
+            <input value={v} onChange={e=>s(e.target.value)} type="number" step="0.001" min="-1" max="1" style={{width:'100%',background:'rgba(255,255,255,0.04)',border:`1px solid ${C.border}`,borderRadius:8,padding:'8px 12px',color:C.text,fontSize:14,fontWeight:700,direction:'ltr',boxSizing:'border-box'}}/>
+          </div>
+        ))}
+      </div>
+
+      {ci && (
+        <>
+          {/* Visual CI strip */}
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:'20px 24px', marginBottom:14 }}>
+            <div style={{ fontWeight:700, fontSize:13, color:C.gold, marginBottom:16 }}>
+              {conf}% {ar?'فترة الثقة':'Confidence Interval'} — {ci.label}
+            </div>
+            <div style={{ position:'relative', height:36, marginBottom:12 }}>
+              <div style={{ position:'absolute', top:'50%', left:'5%', right:'5%', height:4, background:'rgba(255,255,255,0.08)', borderRadius:4, transform:'translateY(-50%)' }}/>
+              {(() => {
+                const range = ci.hi - ci.lo;
+                const pad = range * 0.3;
+                const total = range + 2*pad;
+                const loP = (pad/total*90)+5;
+                const hiP = ((pad+range)/total*90)+5;
+                const midP = (loP+hiP)/2;
+                return <>
+                  <div style={{ position:'absolute', top:'50%', left:`${loP}%`, right:`${100-hiP}%`, height:8, background:`${C.blue}66`, borderRadius:4, transform:'translateY(-50%)' }}/>
+                  <div style={{ position:'absolute', top:'50%', left:`${loP}%`, width:3, height:20, background:C.blue, borderRadius:2, transform:'translate(-50%,-50%)' }}/>
+                  <div style={{ position:'absolute', top:'50%', left:`${hiP}%`, width:3, height:20, background:C.blue, borderRadius:2, transform:'translate(-50%,-50%)' }}/>
+                  <div style={{ position:'absolute', top:'50%', left:`${midP}%`, width:8, height:8, background:C.gold, borderRadius:'50%', transform:'translate(-50%,-50%)' }}/>
+                  <div style={{ position:'absolute', top:'-2px', left:`${loP}%`, transform:'translateX(-50%)', fontSize:11, color:C.blue }}>{fmt(ci.lo)}</div>
+                  <div style={{ position:'absolute', bottom:'-2px', left:`${midP}%`, transform:'translateX(-50%)', fontSize:11, color:C.gold, fontWeight:700 }}>{ci.label}</div>
+                  <div style={{ position:'absolute', top:'-2px', left:`${hiP}%`, transform:'translateX(-50%)', fontSize:11, color:C.blue }}>{fmt(ci.hi)}</div>
+                </>;
+              })()}
+            </div>
+            <div style={{ display:'flex', gap:16, fontSize:12, color:C.sub, marginTop:20 }}>
+              <span>{ar?'الحد الأدنى':'Lower'}: <strong style={{color:C.text}}>{fmt(ci.lo)}</strong></span>
+              <span>{ar?'الحد الأعلى':'Upper'}: <strong style={{color:C.text}}>{fmt(ci.hi)}</strong></span>
+              <span>SE: <strong style={{color:C.text}}>{ci.se.toFixed(4)}</strong></span>
+              <span>ME: <strong style={{color:C.text}}>±{fmt(ci.me)}</strong></span>
+            </div>
+            {ci.extra && <div style={{ fontSize:11, color:C.muted, marginTop:6 }}>{ci.extra}</div>}
+          </div>
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:9, padding:'10px 16px', fontSize:12, color:C.sub }}>
+            <strong style={{ color:C.gold }}>APA: </strong>
+            {ci.label}, {conf}% CI [{fmt(ci.lo)}, {fmt(ci.hi)}]
+            {mode==='prop' && <span style={{color:C.muted}}> {ar?'(Wilson interval)':'(Wilson interval)'}</span>}
+            {mode==='pearson' && <span style={{color:C.muted}}> {ar?'(تحويل Fisher z)':'(Fisher z transformation)'}</span>}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── PARTIAL CORRELATION MATRIX ────────────────────────────────────────────
+function PartialCorr({ ar }: { ar: boolean }) {
+  const DEF = `gpa,study,anxiety,motivation,score
+3.8,22,2.1,4.2,88
+3.2,18,3.4,3.6,76
+2.9,14,4.1,2.8,65
+3.6,20,2.5,4.0,84
+3.0,16,3.8,3.1,70
+3.9,24,1.9,4.5,92
+3.4,19,3.0,3.7,79
+2.7,13,4.5,2.6,62
+3.7,21,2.3,4.1,87
+3.1,17,3.6,3.3,72
+3.5,20,2.7,3.9,81
+3.3,18,3.1,3.5,75
+3.8,23,2.0,4.3,89
+2.8,15,4.2,2.9,67
+3.6,21,2.4,4.0,85`;
+  const [raw, setRaw] = useState(DEF);
+
+  const result = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 5) return null;
+    const sep = lines[0].includes('\t') ? '\t' : ',';
+    const firstCells = lines[0].trim().split(sep);
+    const hasHeader = firstCells.some(v => isNaN(parseFloat(v.trim())));
+    const varNames = hasHeader ? firstCells.map(h => h.trim()) : Array.from({ length: firstCells.length }, (_, i) => `V${i + 1}`);
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+    const data = dataLines.map(l => l.trim().split(sep).map(v => parseFloat(v.trim())).filter(v => isFinite(v)));
+    const k = Math.min(...data.map(r => r.length), varNames.length);
+    if (k < 2 || data.length < k + 2) return null;
+    const n = data.length;
+    const D = data.map(r => r.slice(0, k));
+
+    // Pearson correlation matrix
+    const R: number[][] = Array.from({ length: k }, (_, i) =>
+      Array.from({ length: k }, (_, j) => {
+        if (i === j) return 1;
+        const xi = D.map(r => r[i]), xj = D.map(r => r[j]);
+        return pearson(xi, xj);
+      }));
+
+    // Helper functions (always defined)
+    const df = n - k;
+    const tStat = (rp: number) => rp * Math.sqrt(df) / Math.sqrt(Math.max(1e-10, 1 - rp * rp));
+    const pVal = (rp: number) => 2 * (1 - normalCDF(Math.abs(tStat(rp))));
+    const pFmt = (p: number) => p < 0.001 ? '< .001' : p.toFixed(3);
+    const stars = (p: number) => p < 0.001 ? '***' : p < 0.01 ? '**' : p < 0.05 ? '*' : '';
+    const colorR = (r: number) => r >= 0.5 ? C.teal : r >= 0.3 ? C.blue : r >= 0 ? C.sub : r >= -0.3 ? '#f97316' : C.red;
+
+    // Invert R for partial correlations
+    const Rinv = matInv(R);
+    if (!Rinv) return { n, k, varNames, R, Rp: null, df, tStat, pVal, pFmt, stars, colorR };
+
+    const Rp: number[][] = Array.from({ length: k }, (_, i) =>
+      Array.from({ length: k }, (_, j) => {
+        if (i === j) return 1;
+        return -Rinv[i][j] / Math.sqrt(Math.abs(Rinv[i][i] * Rinv[j][j]));
+      }));
+
+    return { n, k, varNames, R, Rp, df, tStat, pVal, pFmt, stars, colorR };
+  }, [raw]);
+
+  const [view, setView] = useState<'partial'|'pearson'>('partial');
+  const [copyMsg, setCopyMsg] = useState('');
+
+  const copyTSV = () => {
+    if (!result?.Rp) return;
+    const M = view === 'partial' ? result.Rp : result.R;
+    const header = ['', ...result.varNames].join('\t');
+    const rows = result.varNames.map((v, i) => [v, ...M[i].map(r => r.toFixed(4))].join('\t'));
+    navigator.clipboard.writeText([header, ...rows].join('\n')).then(() => { setCopyMsg(ar?'تم النسخ':'Copied!'); setTimeout(()=>setCopyMsg(''),1800); });
+  };
+
+  const matToShow = view === 'partial' ? result?.Rp : result?.R;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        {([['partial',ar?'ارتباط جزئي':'Partial r'],['pearson',ar?'Pearson r (عادي)':'Pearson r (zero-order)']] as const).map(([m,lbl])=>(
+          <button key={m} onClick={()=>setView(m)}
+            style={{ background:view===m?'rgba(201,168,76,0.2)':'rgba(255,255,255,0.04)', border:`1px solid ${view===m?C.gold:C.border}`, borderRadius:9, padding:'7px 14px', color:view===m?C.gold:C.sub, cursor:'pointer', fontFamily:'inherit', fontWeight:view===m?700:400, fontSize:12 }}>
+            {lbl}
+          </button>
+        ))}
+        <button onClick={copyTSV} style={{ marginLeft:'auto', background:'rgba(255,255,255,0.04)', border:`1px solid ${C.border}`, borderRadius:8, padding:'6px 14px', color:C.sub, cursor:'pointer', fontFamily:'inherit', fontSize:12 }}>
+          {copyMsg || (ar?'نسخ TSV':'Copy TSV')}
+        </button>
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+          {ar ? 'البيانات — السطر الأول: أسماء المتغيرات (اختياري) · يدعم CSV/Tab':'Data — first row: variable names (optional) · CSV/tab supported'}
+        </label>
+        <textarea value={raw} onChange={e=>setRaw(e.target.value)} rows={7}
+          style={{ width:'100%', background:'rgba(255,255,255,0.04)', border:`1px solid ${C.border}`, borderRadius:9, padding:'8px 12px', color:C.text, fontSize:11, fontFamily:'monospace', direction:'ltr', resize:'vertical', boxSizing:'border-box' }}/>
+      </div>
+
+      {!result && <p style={{color:C.muted,fontSize:13}}>{ar?'يلزم ≥ 5 صفوف و ≥ 2 أعمدة':'Need ≥ 5 rows and ≥ 2 columns'}</p>}
+
+      {result && matToShow && (
+        <>
+          <div style={{ fontSize:11, color:C.sub, marginBottom:8 }}>
+            n = {result.n}, k = {result.k} {ar?'متغيرات':'variables'}, df = {result.df}
+            {view==='partial' && <span style={{color:C.muted}}> · {ar?'كل ارتباط يضبط جميع المتغيرات الأخرى':'each r controls for all other variables'}</span>}
+          </div>
+          <div style={{ overflowX:'auto', background:C.card, border:`1px solid ${C.border}`, borderRadius:12, marginBottom:12 }}>
+            <table style={{ borderCollapse:'collapse', fontSize:11, minWidth:'100%' }}>
+              <thead><tr style={{ borderBottom:`1px solid ${C.border}` }}>
+                <th style={{ padding:'8px 12px', color:C.sub, textAlign:'left' }}>—</th>
+                {result.varNames.map(v=><th key={v} style={{ padding:'8px 12px', color:C.gold, fontWeight:700, whiteSpace:'nowrap' }}>{v}</th>)}
+              </tr></thead>
+              <tbody>
+                {result.varNames.map((vi, i) => (
+                  <tr key={vi} style={{ borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding:'6px 12px', fontWeight:700, color:C.gold, whiteSpace:'nowrap' }}>{vi}</td>
+                    {matToShow[i].map((r, j) => {
+                      const p = i === j ? 1 : result.pVal(r);
+                      const s = i === j ? '' : result.stars(p);
+                      return (
+                        <td key={j} style={{ padding:'6px 12px', textAlign:'center', background:i===j?'rgba(255,255,255,0.04)':'transparent', fontWeight:i===j?700:400, color:i===j?C.muted:result.colorR(r) }}>
+                          {i===j ? '—' : <>{r.toFixed(3)}<sup style={{color:C.gold}}>{s}</sup><br/><span style={{fontSize:9,color:C.muted}}>{result.pFmt(p)}</span></>}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ fontSize:11, color:C.muted }}>* p&lt;.05 · ** p&lt;.01 · *** p&lt;.001</div>
+        </>
+      )}
+
+      {result && !result.Rp && (
+        <p style={{ color:C.red, fontSize:13 }}>{ar?'مصفوفة الارتباط غير قابلة للعكس (تحقق من التعدد الخطي أو أزل متغيرات متطابقة)':'Correlation matrix is singular — check for multicollinearity or duplicate variables'}</p>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── LOGISTIC REGRESSION ───────────────────────────────────────────────────
+function sigmoid(x: number) { return 1 / (1 + Math.exp(-Math.max(-500, Math.min(500, x)))); }
+function logisticFit(X: number[][], y: number[]) {
+  const n = X.length, k = X[0].length;
+  let beta = Array(k).fill(0);
+  for (let iter = 0; iter < 80; iter++) {
+    const p = X.map(xi => sigmoid(xi.reduce((s, xij, j) => s + xij * beta[j], 0)));
+    const W = p.map(pi => Math.max(1e-8, pi * (1 - pi)));
+    const g = Array.from({ length: k }, (_, j) => X.reduce((s, xi, i) => s + xi[j] * (y[i] - p[i]), 0));
+    const F: number[][] = Array.from({ length: k }, (_, j) => Array.from({ length: k }, (_, l) => X.reduce((s, xi, i) => s + xi[j] * xi[l] * W[i], 0)));
+    const Finv = matInv(F);
+    if (!Finv) break;
+    const delta = Finv.map(row => row.reduce((s, fij, j) => s + fij * g[j], 0));
+    for (let j = 0; j < k; j++) beta[j] += delta[j];
+    if (delta.reduce((s, d) => s + d * d, 0) < 1e-12) break;
+  }
+  const p = X.map(xi => sigmoid(xi.reduce((s, xij, j) => s + xij * beta[j], 0)));
+  const W = p.map(pi => Math.max(1e-8, pi * (1 - pi)));
+  const F: number[][] = Array.from({ length: k }, (_, j) => Array.from({ length: k }, (_, l) => X.reduce((s, xi, i) => s + xi[j] * xi[l] * W[i], 0)));
+  const Finv = matInv(F);
+  const se = Finv ? Array.from({ length: k }, (_, j) => Math.sqrt(Math.max(0, Finv[j][j]))) : Array(k).fill(NaN);
+  const LL = y.reduce((s, yi, i) => s + (yi * Math.log(Math.max(1e-10, p[i])) + (1 - yi) * Math.log(Math.max(1e-10, 1 - p[i]))), 0);
+  const p0 = avg(y);
+  const LL0 = n * (p0 * Math.log(Math.max(1e-10, p0)) + (1 - p0) * Math.log(Math.max(1e-10, 1 - p0)));
+  return { beta, se, LL, LL0, n, k, p };
+}
+function LogisticReg({ ar }: { ar: boolean }) {
+  const DEF = `pass,gpa,study,anxiety,motivation
+1,3.8,22,2.1,4.2
+0,2.9,14,4.1,2.8
+1,3.6,20,2.5,4.0
+0,3.0,16,3.8,3.1
+1,3.9,24,1.9,4.5
+0,2.7,13,4.5,2.6
+1,3.7,21,2.3,4.1
+0,3.1,17,3.6,3.3
+1,3.5,20,2.7,3.9
+1,3.8,23,2.0,4.3
+0,2.8,15,4.2,2.9
+1,3.6,21,2.4,4.0
+1,3.4,19,3.0,3.7
+0,2.6,12,4.8,2.5
+1,3.9,25,1.8,4.6
+0,3.2,18,3.4,3.6
+1,3.7,22,2.2,4.2
+0,2.9,15,4.0,3.0
+1,3.8,23,2.1,4.4
+1,3.5,21,2.6,4.1`;
+  const [raw, setRaw] = useState(DEF);
+
+  const result = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 6) return null;
+    const sep = lines[0].includes('\t') ? '\t' : ',';
+    const firstCells = lines[0].trim().split(sep);
+    const hasHeader = firstCells.some(v => isNaN(parseFloat(v.trim())));
+    const varNames = hasHeader ? firstCells.map(h => h.trim()) : Array.from({ length: firstCells.length }, (_, i) => i === 0 ? 'Y' : `X${i}`);
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+    const data = dataLines.map(l => l.trim().split(sep).map(v => parseFloat(v.trim())).filter(v => isFinite(v)));
+    const k = Math.min(...data.map(r => r.length), varNames.length);
+    if (k < 2 || data.length < k + 2) return null;
+    const n = data.length;
+    const D = data.map(r => r.slice(0, k));
+    const y = D.map(r => r[0]);
+    if (!y.every(v => v === 0 || v === 1)) return { error: ar ? 'Y يجب أن يكون 0 أو 1 (ثنائي)' : 'Y must be binary (0 or 1)' };
+    const predNames = varNames.slice(1, k);
+    const Xraw = D.map(r => r.slice(1));
+    const Xm = Xraw.map(r => [1, ...r]);  // add intercept
+    const fit = logisticFit(Xm, y);
+    const depName = varNames[0];
+    const allNames = ['(Intercept)', ...predNames];
+    const pFmt = (p: number) => p < 0.001 ? '< .001' : p.toFixed(3);
+    const pC = (p: number) => p < 0.05 ? C.green : C.muted;
+    const stars = (p: number) => p < 0.001 ? '***' : p < 0.01 ? '**' : p < 0.05 ? '*' : '';
+    const pv = fit.beta.map((b, j) => 2 * (1 - normalCDF(Math.abs(b / Math.max(1e-10, fit.se[j])))));
+    const chi2 = -2 * (fit.LL0 - fit.LL);
+    const df = k - 1;
+    const chi2p = 1 - chiSqP(chi2, df);
+    const mcFadden = 1 - fit.LL / fit.LL0;
+    const nagel = (1 - Math.exp(-chi2 / n)) / (1 - Math.exp(2 * fit.LL0 / n));
+    const aic = -2 * fit.LL + 2 * k;
+    const cutoff = 0.5;
+    const classified = fit.p.map((pi, i) => ({ pred: pi >= cutoff ? 1 : 0, actual: y[i] }));
+    const correct = classified.filter(c => c.pred === c.actual).length;
+    const accuracy = correct / n;
+    // AUC (trapezoidal)
+    const sorted = [...fit.p.map((pi, i) => ({ pi, y: y[i] }))].sort((a, b) => b.pi - a.pi);
+    let tp = 0, fp = 0, prevTp = 0, prevFp = 0;
+    const posN = y.filter(v => v === 1).length, negN = n - posN;
+    let auc = 0;
+    for (const { y: yi } of sorted) {
+      if (yi === 1) tp++; else fp++;
+      auc += (fp - prevFp) * (tp + prevTp) / 2;
+      prevTp = tp; prevFp = fp;
+    }
+    auc /= Math.max(1, posN * negN);
+    const chartData = predNames.slice(0, 8).map((name, i) => ({
+      name, beta: fit.beta[i + 1], or: Math.exp(fit.beta[i + 1]),
+      ci_lo: Math.exp(fit.beta[i + 1] - 1.96 * fit.se[i + 1]),
+      ci_hi: Math.exp(fit.beta[i + 1] + 1.96 * fit.se[i + 1]),
+    }));
+    return { n, k, depName, allNames, predNames, fit, pv, chi2, df, chi2p, mcFadden, nagel, aic, accuracy, auc, pFmt, pC, stars, chartData };
+  }, [raw]);
+
+  return (
+    <div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+          {ar ? 'البيانات — العمود الأول: Y (0 أو 1) · الأعمدة التالية: المتنبئات · السطر الأول: أسماء المتغيرات (اختياري) · CSV/Tab'
+            : 'Data — col 1: Y (binary 0/1) · remaining: predictors · row 1: variable names (optional) · CSV/tab'}
+        </label>
+        <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={8}
+          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 11, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+      </div>
+
+      {!result && <p style={{ color: C.muted, fontSize: 13 }}>{ar ? 'يلزم 6 صفوف على الأقل وعمودان (Y ثنائي + متنبئ)' : 'Need ≥ 6 rows and ≥ 2 columns (binary Y + predictor)'}</p>}
+      {'error' in (result ?? {}) && <p style={{ color: C.red, fontSize: 13 }}>{(result as { error: string }).error}</p>}
+
+      {result && !('error' in result) && (() => {
+        const r = result as Exclude<typeof result, { error: string } | null>;
+        return (
+          <>
+            {/* Model summary */}
+            <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 12 }}>
+              {[
+                { l: 'McFadden R²', v: r.mcFadden.toFixed(4), c: r.mcFadden >= 0.2 ? C.green : r.mcFadden >= 0.1 ? C.gold : C.sub },
+                { l: "Nagelkerke R²", v: r.nagel.toFixed(4), c: C.sub },
+                { l: `χ²(${r.df})`, v: r.chi2.toFixed(3), c: C.text },
+                { l: 'p(χ²)', v: r.pFmt(r.chi2p), c: r.chi2p < 0.05 ? C.green : C.red },
+                { l: 'AIC', v: r.aic.toFixed(2), c: C.sub },
+                { l: ar ? 'دقة التصنيف' : 'Accuracy', v: `${(r.accuracy * 100).toFixed(1)}%`, c: r.accuracy >= 0.8 ? C.green : r.accuracy >= 0.7 ? C.gold : C.sub },
+                { l: 'AUC', v: r.auc.toFixed(4), c: r.auc >= 0.9 ? C.green : r.auc >= 0.7 ? C.teal : r.auc >= 0.6 ? C.gold : C.red },
+                { l: 'n', v: String(r.n), c: C.sub },
+              ].map(({ l, v, c }) => (
+                <div key={l} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '6px 12px', textAlign: 'center', minWidth: 80 }}>
+                  <div style={{ fontSize: 9, color: C.sub }}>{l}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: c }}>{v}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Coefficient table */}
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 12 }}>
+              <div style={{ padding: '10px 14px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 12, color: C.gold }}>
+                {ar ? `جدول المعاملات — المتغير التابع: ${r.depName}` : `Coefficients — Dependent: ${r.depName}`}
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+                  <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                    {[ar?'المتغير':'Variable','β','SE','z','p','OR','95% CI (OR)'].map(h => (
+                      <th key={h} style={{ padding: '6px 10px', textAlign: 'center', color: C.sub, fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+                    ))}
+                  </tr></thead>
+                  <tbody>
+                    {r.allNames.map((name, j) => {
+                      const pv = r.pv[j], b = r.fit.beta[j], se = r.fit.se[j];
+                      const or = Math.exp(b), ci_lo = Math.exp(b - 1.96 * se), ci_hi = Math.exp(b + 1.96 * se);
+                      return (
+                        <tr key={name} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                          <td style={{ padding: '6px 10px', fontWeight: j === 0 ? 400 : 700, color: j === 0 ? C.sub : C.text }}>{name}</td>
+                          <td style={{ padding: '6px 10px', textAlign: 'center', color: b >= 0 ? C.teal : '#f97316', fontWeight: 700 }}>{b.toFixed(4)}</td>
+                          <td style={{ padding: '6px 10px', textAlign: 'center', color: C.sub }}>{se.toFixed(4)}</td>
+                          <td style={{ padding: '6px 10px', textAlign: 'center', color: C.text }}>{(b / Math.max(1e-10, se)).toFixed(3)}</td>
+                          <td style={{ padding: '6px 10px', textAlign: 'center', color: r.pC(pv), fontWeight: pv < 0.05 ? 700 : 400 }}>{r.pFmt(pv)}<sup style={{ color: C.gold }}>{r.stars(pv)}</sup></td>
+                          <td style={{ padding: '6px 10px', textAlign: 'center', color: or > 1 ? C.teal : or < 1 ? '#f97316' : C.sub, fontWeight: 700 }}>{j === 0 ? '—' : or.toFixed(4)}</td>
+                          <td style={{ padding: '6px 10px', textAlign: 'center', color: C.sub, fontSize: 10 }}>{j === 0 ? '—' : `[${ci_lo.toFixed(3)}, ${ci_hi.toFixed(3)}]`}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* OR chart */}
+            {r.chartData.length > 0 && (
+              <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, marginBottom: 12 }}>
+                <div style={{ fontWeight: 700, fontSize: 12, color: C.gold, marginBottom: 10 }}>{ar ? 'نسب الأرجحية (OR) مع CI 95%' : 'Odds Ratios with 95% CI'}</div>
+                <ResponsiveContainer width="100%" height={Math.max(120, r.chartData.length * 36)}>
+                  <BarChart data={r.chartData} layout="vertical" margin={{ top: 4, right: 50, left: 70, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false}/>
+                    <XAxis type="number" tick={{ fontSize: 9, fill: C.sub }} domain={['auto','auto']}/>
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: C.sub }} width={65}/>
+                    <Tooltip contentStyle={{ background: '#0d172d', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 11 }} formatter={(v: number) => v.toFixed(4)}/>
+                    <ReferenceLine x={1} stroke={C.gold} strokeDasharray="4 2"/>
+                    <Bar dataKey="or" fill={C.blue} radius={4} label={{ position: 'right', fontSize: 9, fill: C.sub, formatter: (v: number) => v.toFixed(3) }}/>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '10px 16px', fontSize: 11, color: C.sub }}>
+              <strong style={{ color: C.gold }}>APA: </strong>
+              {ar
+                ? `أشار نموذج الانحدار اللوجستي إلى دلالة إحصائية للنموذج الكلي: χ²(${r.df}) = ${r.chi2.toFixed(2)}, p = ${r.pFmt(r.chi2p)}, McFadden R² = ${r.mcFadden.toFixed(3)}, AUC = ${r.auc.toFixed(3)}`
+                : `The logistic regression model was statistically significant: χ²(${r.df}) = ${r.chi2.toFixed(2)}, p = ${r.pFmt(r.chi2p)}, McFadden R² = ${r.mcFadden.toFixed(3)}, AUC = ${r.auc.toFixed(3)}`}
+              <br /><span style={{ fontSize: 10, color: C.muted }}>* p&lt;.05 · ** p&lt;.01 · *** p&lt;.001 · OR &gt; 1 = {ar?'يزيد احتمال Y=1':'increases odds of Y=1'}</span>
+            </div>
+          </>
+        );
+      })()}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── McDONALD'S OMEGA ──────────────────────────────────────────────────────
+function OmegaRel({ ar }: { ar: boolean }) {
+  const DEF = `i1,i2,i3,i4,i5,i6,i7,i8
+4,3,4,5,4,3,4,4
+2,2,3,2,2,3,2,3
+5,5,5,4,5,5,5,5
+3,4,3,3,3,4,3,4
+4,4,5,4,4,4,4,5
+2,3,2,2,2,2,2,3
+5,4,5,5,5,5,5,4
+3,3,4,3,3,3,3,3
+4,5,4,5,4,5,4,5
+2,2,2,3,2,2,2,2
+5,5,5,5,5,5,5,5
+3,4,3,3,3,3,3,4
+4,4,4,4,4,4,4,4
+2,2,3,2,3,2,2,2
+5,5,4,5,5,5,5,5`;
+  const [raw, setRaw] = useState(DEF);
+
+  const result = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 5) return null;
+    const sep = lines[0].includes('\t') ? '\t' : ',';
+    const firstCells = lines[0].trim().split(sep);
+    const hasHeader = firstCells.some(v => isNaN(parseFloat(v.trim())));
+    const itemNames = hasHeader ? firstCells.map(h => h.trim()) : Array.from({ length: firstCells.length }, (_, i) => `i${i + 1}`);
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+    const data = dataLines.map(l => l.trim().split(sep).map(v => parseFloat(v.trim())).filter(v => isFinite(v)));
+    const k = Math.min(...data.map(r => r.length), itemNames.length);
+    if (k < 3 || data.length < 5) return null;
+    const n = data.length;
+    const D = data.map(r => r.slice(0, k));
+
+    // Correlation matrix
+    const R: number[][] = Array.from({ length: k }, (_, i) =>
+      Array.from({ length: k }, (_, j) => i === j ? 1 : pearson(D.map(r => r[i]), D.map(r => r[j]))));
+
+    // Alpha (standardized)
+    const rBar = R.flat().filter((_, idx) => idx % (k + 1) !== 0).reduce((s, v) => s + v, 0) / (k * (k - 1));
+    const alpha = (k * rBar) / (1 + (k - 1) * rBar);
+
+    // Omega: extract first factor via power iteration on R
+    let v = Array(k).fill(1 / Math.sqrt(k));
+    for (let iter = 0; iter < 200; iter++) {
+      const Rv = R.map(row => row.reduce((s, rij, j) => s + rij * v[j], 0));
+      const norm = Math.sqrt(Rv.reduce((s, x) => s + x * x, 0));
+      const vNew = Rv.map(x => x / Math.max(1e-10, norm));
+      if (vNew.reduce((s, x, i) => s + (x - v[i]) ** 2, 0) < 1e-14) { v = vNew; break; }
+      v = vNew;
+    }
+    const lambda1 = R.map(row => row.reduce((s, rij, j) => s + rij * v[j], 0)).reduce((s, x, i) => s + x * v[i], 0);
+    const loadings = v.map(vi => vi * Math.sqrt(Math.max(0, lambda1)));
+    const sumL = loadings.reduce((s, l) => s + l, 0);
+    const sumL2 = loadings.reduce((s, l) => s + l * l, 0);
+    const uniqueness = loadings.map(l => Math.max(0, 1 - l * l));
+    const sumU = uniqueness.reduce((s, u) => s + u, 0);
+    const omega = (sumL * sumL) / Math.max(1e-10, sumL * sumL + sumU);
+    const omegaH = (sumL * sumL) / Math.max(1e-10, k);  // hierarchical (simplified)
+
+    // Interpretation
+    const relC = (v: number) => v >= 0.9 ? C.green : v >= 0.8 ? C.teal : v >= 0.7 ? C.gold : C.red;
+    const relL = (v: number) => v >= 0.9 ? (ar ? 'ممتاز' : 'Excellent') : v >= 0.8 ? (ar ? 'جيد' : 'Good') : v >= 0.7 ? (ar ? 'مقبول' : 'Acceptable') : (ar ? 'ضعيف' : 'Poor');
+
+    const loadingData = itemNames.slice(0, k).map((name, i) => ({ name, loading: +loadings[i].toFixed(4), uniqueness: +uniqueness[i].toFixed(4) }));
+
+    return { n, k, alpha, omega, omegaH: Math.min(1, omegaH), rBar, lambda1, loadings, loadingData, itemNames: itemNames.slice(0, k), relC, relL };
+  }, [raw]);
+
+  return (
+    <div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+          {ar ? 'بيانات الفقرات الخام — السطر الأول: أسماء الفقرات (اختياري) · كل صف = مستجيب · CSV/Tab'
+            : 'Raw item data — first row: item names (optional) · each row = respondent · CSV/tab'}
+        </label>
+        <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={7}
+          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 11, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+      </div>
+
+      {!result && <p style={{ color: C.muted, fontSize: 13 }}>{ar ? 'يلزم 5 مستجيبين و3 فقرات على الأقل' : 'Need ≥ 5 respondents and ≥ 3 items'}</p>}
+      {result && (
+        <>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+            {[
+              { l: "McDonald's ω", v: result.omega.toFixed(4), c: result.relC(result.omega), note: result.relL(result.omega) },
+              { l: "Cronbach's α", v: result.alpha.toFixed(4), c: result.relC(result.alpha), note: result.relL(result.alpha) },
+              { l: 'Δ(ω−α)', v: (result.omega - result.alpha >= 0 ? '+' : '') + (result.omega - result.alpha).toFixed(4), c: result.omega >= result.alpha ? C.teal : '#f97316', note: '' },
+            ].map(({ l, v, c, note }) => (
+              <div key={l} style={{ background: C.card, border: `2px solid ${c}`, borderRadius: 14, padding: '14px 22px', textAlign: 'center', minWidth: 120 }}>
+                <div style={{ fontSize: 11, color: C.sub, marginBottom: 4 }}>{l}</div>
+                <div style={{ fontSize: 30, fontWeight: 900, color: c }}>{v}</div>
+                {note && <div style={{ fontSize: 11, color: c, fontWeight: 700 }}>{note}</div>}
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignSelf: 'center' }}>
+              {[
+                { l: 'k (items)', v: String(result.k) }, { l: 'n', v: String(result.n) },
+                { l: 'r̄ (mean r)', v: result.rBar.toFixed(4) }, { l: 'λ₁', v: result.lambda1.toFixed(4) },
+              ].map(({ l, v }) => (
+                <div key={l} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '6px 12px', textAlign: 'center', minWidth: 72 }}>
+                  <div style={{ fontSize: 9, color: C.sub }}>{l}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Factor loading bar chart */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, marginBottom: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: C.gold, marginBottom: 10 }}>
+              {ar ? 'تشبعات العامل الأول وتفرّدات الفقرات' : 'First Factor Loadings & Item Uniqueness'}
+            </div>
+            <ResponsiveContainer width="100%" height={Math.max(150, result.k * 30)}>
+              <BarChart data={result.loadingData} layout="vertical" margin={{ top: 4, right: 60, left: 30, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false}/>
+                <XAxis type="number" domain={[0, 1]} tick={{ fontSize: 9, fill: C.sub }}/>
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: C.sub }} width={28}/>
+                <Tooltip contentStyle={{ background: '#0d172d', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 11 }} formatter={(v: number) => v.toFixed(4)}/>
+                <Legend wrapperStyle={{ fontSize: 10 }}/>
+                <Bar dataKey="loading" name={ar?'تشبع':'Loading'} fill={C.blue} radius={3} label={{ position: 'right', fontSize: 9, fill: C.sub, formatter: (v: number) => v.toFixed(3) }}/>
+                <Bar dataKey="uniqueness" name={ar?'تفرّد':'Uniqueness'} fill={`${C.red}66`} radius={3}/>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '10px 16px', fontSize: 11, color: C.sub }}>
+            <strong style={{ color: C.gold }}>{ar ? 'تفسير: ' : 'Note: '}</strong>
+            {ar
+              ? `ω = ${result.omega.toFixed(3)} مقابل α = ${result.alpha.toFixed(3)}. ${result.omega > result.alpha ? 'ω > α يشير إلى تباين في تشبعات الفقرات (غير tau-equivalent) — يُفضَّل ω.' : 'ω ≈ α يشير إلى توازٍ في تشبعات الفقرات — كلاهما مناسب.'} McDonald (1999): ω هو مقدار غير متحيّز لموثوقية الدرجة المركّبة.`
+              : `ω = ${result.omega.toFixed(3)} vs. α = ${result.alpha.toFixed(3)}. ${result.omega > result.alpha ? 'ω > α indicates unequal factor loadings (non-tau-equivalent) — ω is preferred.' : 'ω ≈ α indicates parallel items — both are appropriate.'} McDonald (1999): ω is an unbiased estimate of composite reliability.`}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── TWO-PROPORTION Z-TEST ─────────────────────────────────────────────────
+function TwoPropZ({ ar }: { ar: boolean }) {
+  const [x1, setX1] = useState('47'); const [n1, setN1] = useState('120');
+  const [x2, setX2] = useState('38'); const [n2, setN2] = useState('110');
+  const [conf, setConf] = useState(95);
+  const [tail, setTail] = useState<'two'|'greater'|'less'>('two');
+
+  const z_crit = conf === 99 ? 2.576 : conf === 90 ? 1.645 : 1.960;
+
+  const result = useMemo(() => {
+    const x1n=parseFloat(x1),n1n=parseFloat(n1),x2n=parseFloat(x2),n2n=parseFloat(n2);
+    if ([x1n,n1n,x2n,n2n].some(v=>!isFinite(v))||n1n<2||n2n<2||x1n<0||x1n>n1n||x2n<0||x2n>n2n) return null;
+    const p1=x1n/n1n, p2=x2n/n2n;
+    const pPool=(x1n+x2n)/(n1n+n2n);
+    const se_z=Math.sqrt(pPool*(1-pPool)*(1/n1n+1/n2n));
+    const se_ci=Math.sqrt(p1*(1-p1)/n1n+p2*(1-p2)/n2n);
+    const diff=p1-p2;
+    const z=diff/Math.max(1e-10,se_z);
+    let pv: number;
+    if (tail==='two') pv=2*(1-normalCDF(Math.abs(z)));
+    else if (tail==='greater') pv=1-normalCDF(z);
+    else pv=normalCDF(z);
+    const ci_lo=diff-z_crit*se_ci, ci_hi=diff+z_crit*se_ci;
+    // Cohen's h
+    const phi1=2*Math.asin(Math.sqrt(p1)), phi2=2*Math.asin(Math.sqrt(p2));
+    const h=Math.abs(phi1-phi2);
+    const hLbl = h>=0.8?(ar?'كبير':'Large'):h>=0.5?(ar?'متوسط':'Medium'):(ar?'صغير':'Small');
+    const hC = h>=0.8?C.red:h>=0.5?C.gold:C.teal;
+    const pFmt = (p:number) => p<0.001?'< .001':p.toFixed(3);
+    const sig = pv<0.05;
+    const or=(p1*(1-p2))/Math.max(1e-10,(p2*(1-p1)));
+    const rr=p1/Math.max(1e-10,p2);
+    return { p1,p2,pPool,se_z,se_ci,diff,z,pv,ci_lo:Math.max(-1,ci_lo),ci_hi:Math.min(1,ci_hi),h,hLbl,hC,or,rr,sig,pFmt };
+  }, [x1,n1,x2,n2,conf,tail,z_crit]);
+
+  return (
+    <div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))', gap:10, marginBottom:14 }}>
+        {([
+          {l:`x₁ (${ar?'نجاح':'Successes'})`,v:x1,s:setX1},{l:`n₁`,v:n1,s:setN1},
+          {l:`x₂ (${ar?'نجاح':'Successes'})`,v:x2,s:setX2},{l:`n₂`,v:n2,s:setN2}
+        ]).map(({l,v,s})=>(
+          <div key={l}>
+            <label style={{fontSize:11,color:C.sub,display:'block',marginBottom:3}}>{l}</label>
+            <input value={v} onChange={e=>s(e.target.value)} type="number" min="0"
+              style={{width:'100%',background:'rgba(255,255,255,0.04)',border:`1px solid ${C.border}`,borderRadius:8,padding:'10px 12px',color:C.text,fontSize:18,fontWeight:800,direction:'ltr',boxSizing:'border-box'}}/>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display:'flex', gap:8, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
+        <span style={{fontSize:12,color:C.sub}}>{ar?'مستوى الثقة:':'Confidence:'}</span>
+        {[90,95,99].map(c=>(
+          <button key={c} onClick={()=>setConf(c)} style={{ background:conf===c?'rgba(201,168,76,0.2)':'rgba(255,255,255,0.04)', border:`1px solid ${conf===c?C.gold:C.border}`, borderRadius:7, padding:'5px 12px', color:conf===c?C.gold:C.sub, cursor:'pointer', fontFamily:'inherit', fontWeight:conf===c?700:400, fontSize:12 }}>{c}%</button>
+        ))}
+        <span style={{fontSize:12,color:C.sub,marginLeft:12}}>{ar?'الطرف:':'Tail:'}</span>
+        {([['two',ar?'طرفان':'Two-tailed'],['greater',ar?'أكبر (p₁>p₂)':'Greater (p₁>p₂)'],['less',ar?'أصغر (p₁<p₂)':'Less (p₁<p₂)']] as const).map(([t,lbl])=>(
+          <button key={t} onClick={()=>setTail(t)} style={{ background:tail===t?'rgba(94,234,212,0.2)':'rgba(255,255,255,0.04)', border:`1px solid ${tail===t?C.teal:C.border}`, borderRadius:7, padding:'5px 12px', color:tail===t?C.teal:C.sub, cursor:'pointer', fontFamily:'inherit', fontWeight:tail===t?700:400, fontSize:11 }}>{lbl}</button>
+        ))}
+      </div>
+
+      {!result && <p style={{color:C.muted,fontSize:13}}>{ar?'أدخل قيماً صحيحة (x ≤ n)':'Enter valid values (x ≤ n)'}</p>}
+      {result && (
+        <>
+          <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:12}}>
+            <div style={{background:C.card,border:`2px solid ${result.sig?C.green:C.red}`,borderRadius:12,padding:'12px 20px',textAlign:'center'}}>
+              <div style={{fontSize:11,color:C.sub}}>p-value ({tail==='two'?(ar?'طرفان':'two-tailed'):tail==='greater'?(ar?'أكبر':'greater'):(ar?'أصغر':'less')})</div>
+              <div style={{fontSize:30,fontWeight:900,color:result.sig?C.green:C.red}}>{result.pFmt(result.pv)}</div>
+              <div style={{fontSize:11,color:result.sig?C.green:C.red,fontWeight:700}}>{result.sig?(ar?'دال':'Significant'):(ar?'غير دال':'Not significant')}</div>
+            </div>
+            <div style={{display:'flex',gap:8,flexWrap:'wrap',alignSelf:'center'}}>
+              {[
+                {l:'p̂₁',v:`${(result.p1*100).toFixed(1)}%`,c:C.teal},{l:'p̂₂',v:`${(result.p2*100).toFixed(1)}%`,c:C.blue},
+                {l:'Δp̂',v:`${(result.diff*100).toFixed(2)}%`,c:C.text},{l:'z',v:result.z.toFixed(3),c:C.text},
+                {l:`${conf}% CI`,v:`[${(result.ci_lo*100).toFixed(2)}%, ${(result.ci_hi*100).toFixed(2)}%]`,c:C.blue},
+                {l:"Cohen's h",v:result.h.toFixed(3),c:result.hC},{l:'OR',v:result.or.toFixed(3),c:C.sub},{l:'RR',v:result.rr.toFixed(3),c:C.sub},
+              ].map(({l,v,c})=>(
+                <div key={l} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:'6px 12px',textAlign:'center',minWidth:72}}>
+                  <div style={{fontSize:9,color:C.sub}}>{l}</div>
+                  <div style={{fontSize:11,fontWeight:700,color:c}}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Proportion visual */}
+          <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:'14px',marginBottom:12}}>
+            <div style={{fontWeight:700,fontSize:12,color:C.gold,marginBottom:12}}>{ar?'مقارنة النسب':'Proportion Comparison'}</div>
+            {[{lbl:ar?'المجموعة 1':'Group 1',p:result.p1,x:parseFloat(x1),n:parseFloat(n1),color:C.teal},
+              {lbl:ar?'المجموعة 2':'Group 2',p:result.p2,x:parseFloat(x2),n:parseFloat(n2),color:C.blue}].map(({lbl,p,x,n,color})=>(
+              <div key={lbl} style={{marginBottom:10}}>
+                <div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:C.sub,marginBottom:4}}>
+                  <span>{lbl}</span><span style={{color,fontWeight:700}}>{x}/{n} = {(p*100).toFixed(1)}%</span>
+                </div>
+                <div style={{height:20,background:'rgba(255,255,255,0.06)',borderRadius:10,overflow:'hidden'}}>
+                  <div style={{height:'100%',width:`${p*100}%`,background:color,borderRadius:10}}/>
+                </div>
+              </div>
+            ))}
+            <div style={{fontSize:11,color:C.sub,marginTop:8}}>
+              {ar?'حجم الأثر:':'Effect size:'} Cohen&apos;s h = {result.h.toFixed(3)} <span style={{color:result.hC,fontWeight:700}}>({result.hLbl})</span>
+              <span style={{color:C.muted}}> · {ar?'معيار Cohen: .20 صغير · .50 متوسط · .80 كبير':'Cohen (1988): .20 small · .50 medium · .80 large'}</span>
+            </div>
+          </div>
+
+          <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:'10px 16px',fontSize:12,color:C.sub}}>
+            <strong style={{color:C.gold}}>APA: </strong>
+            {ar
+              ?`كانت نسبة المجموعة 1 (${(result.p1*100).toFixed(1)}%) ${result.sig?'أعلى دلالياً من':'لا تختلف دلالياً عن'} نسبة المجموعة 2 (${(result.p2*100).toFixed(1)}%)، z = ${result.z.toFixed(2)}, p = ${result.pFmt(result.pv)}, ${conf}% CI [${(result.ci_lo*100).toFixed(2)}%, ${(result.ci_hi*100).toFixed(2)}%], h = ${result.h.toFixed(3)}`
+              :`Proportion 1 (${(result.p1*100).toFixed(1)}%) was ${result.sig?'significantly different from':'not significantly different from'} Proportion 2 (${(result.p2*100).toFixed(1)}%), z = ${result.z.toFixed(2)}, p = ${result.pFmt(result.pv)}, ${conf}% CI [${(result.ci_lo*100).toFixed(2)}%, ${(result.ci_hi*100).toFixed(2)}%], h = ${result.h.toFixed(3)}`}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── COHEN'S KAPPA ─────────────────────────────────────────────────────────
+function CohenKappa({ ar }: { ar: boolean }) {
+  const DEF = `1 1
+2 2
+1 2
+1 1
+2 1
+3 3
+2 2
+1 1
+3 2
+3 3
+2 2
+1 1
+3 3
+2 2
+1 1
+2 3
+1 1
+2 2
+3 3
+2 2`;
+  const [raw, setRaw] = useState(DEF);
+  const [useWeighted, setUseWeighted] = useState(false);
+
+  const result = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 5) return null;
+    const ratings: [number, number][] = [];
+    for (const line of lines) {
+      const parts = line.trim().split(/[\s,\t]+/);
+      if (parts.length < 2) continue;
+      const r1 = parseFloat(parts[0]), r2 = parseFloat(parts[1]);
+      if (isFinite(r1) && isFinite(r2)) ratings.push([r1, r2]);
+    }
+    if (ratings.length < 5) return null;
+    const n = ratings.length;
+    const cats = [...new Set([...ratings.map(r => r[0]), ...ratings.map(r => r[1])])].sort((a, b) => a - b);
+    const k = cats.length;
+    const matrix: number[][] = Array.from({ length: k }, () => Array(k).fill(0));
+    for (const [r1, r2] of ratings) {
+      const i = cats.indexOf(r1), j = cats.indexOf(r2);
+      if (i >= 0 && j >= 0) matrix[i][j]++;
+    }
+    const rowT = matrix.map(row => row.reduce((s, v) => s + v, 0));
+    const colT = Array.from({ length: k }, (_, j) => matrix.reduce((s, row) => s + row[j], 0));
+    const Po = matrix.reduce((s, row, i) => s + row[i], 0) / n;
+    const Pe = rowT.reduce((s, ri, i) => s + (ri / n) * (colT[i] / n), 0);
+    const kappa = Pe >= 1 ? 0 : (Po - Pe) / (1 - Pe);
+
+    let kappaW: number | null = null;
+    if (k > 2 && useWeighted) {
+      const maxD = k - 1;
+      let PoW = 0, PeW = 0;
+      for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) {
+        const w = 1 - Math.abs(i - j) / maxD;
+        PoW += w * matrix[i][j] / n;
+        PeW += w * (rowT[i] / n) * (colT[j] / n);
+      }
+      kappaW = PeW >= 1 ? 0 : (PoW - PeW) / (1 - PeW);
+    }
+
+    const se = Math.sqrt((Po * (1 - Po)) / Math.max(1, n * (1 - Pe) ** 2));
+    const ci_lo = kappa - 1.96 * se, ci_hi = kappa + 1.96 * se;
+    const z = kappa / Math.max(1e-10, se);
+    const pv = 2 * (1 - normalCDF(Math.abs(z)));
+
+    return { n, k, cats, matrix, rowT, colT, Po, Pe, kappa, kappaW, se, ci_lo, ci_hi, z, pv };
+  }, [raw, useWeighted]);
+
+  const kC = (v: number) => v >= 0.81 ? C.green : v >= 0.61 ? C.teal : v >= 0.41 ? C.blue : v >= 0.21 ? C.gold : C.red;
+  const kL = (v: number) => v >= 0.81 ? (ar ? 'ممتاز تقريباً' : 'Almost perfect') : v >= 0.61 ? (ar ? 'قوي' : 'Substantial') : v >= 0.41 ? (ar ? 'متوسط' : 'Moderate') : v >= 0.21 ? (ar ? 'معقول' : 'Fair') : v >= 0 ? (ar ? 'طفيف' : 'Slight') : (ar ? 'ضعيف' : 'Poor');
+  const pFmt = (p: number) => p < 0.001 ? '< .001' : p.toFixed(3);
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <label style={{ fontSize: 12, color: C.sub }}>
+          <input type="checkbox" checked={useWeighted} onChange={e => setUseWeighted(e.target.checked)} style={{ marginRight: 6 }} />
+          {ar ? 'كاپا مرجّحة (للفئات الترتيبية)' : 'Weighted κ (linear, for ordinal categories)'}
+        </label>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 12, marginBottom: 14 }}>
+        <div>
+          <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+            {ar ? 'كل سطر: تقدير المحكّم 1 ثم تقدير المحكّم 2' : 'Each row: Rater 1 rating, Rater 2 rating (space/comma separated)'}
+          </label>
+          <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={10}
+            style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 11, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          {result && (
+            <>
+              {/* Main stats */}
+              <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 12 }}>
+                <div style={{ background: C.card, border: `2px solid ${kC(result.kappa)}`, borderRadius: 12, padding: '12px 22px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 10, color: C.sub }}>{ar ? 'كاپا Cohen' : "Cohen's κ"}</div>
+                  <div style={{ fontSize: 34, fontWeight: 900, color: kC(result.kappa) }}>{result.kappa.toFixed(4)}</div>
+                  <div style={{ fontSize: 12, color: kC(result.kappa), fontWeight: 700 }}>{kL(result.kappa)}</div>
+                </div>
+                {result.kappaW !== null && (
+                  <div style={{ background: C.card, border: `2px solid ${kC(result.kappaW)}`, borderRadius: 12, padding: '12px 22px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 10, color: C.sub }}>{ar ? 'كاپا مرجّحة' : 'Weighted κ'}</div>
+                    <div style={{ fontSize: 34, fontWeight: 900, color: kC(result.kappaW) }}>{result.kappaW.toFixed(4)}</div>
+                    <div style={{ fontSize: 12, color: kC(result.kappaW), fontWeight: 700 }}>{kL(result.kappaW)}</div>
+                  </div>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                {[
+                  { l: 'Po (observed)', v: result.Po.toFixed(4) }, { l: 'Pe (expected)', v: result.Pe.toFixed(4) },
+                  { l: 'SE', v: result.se.toFixed(4) }, { l: 'z', v: result.z.toFixed(3) },
+                  { l: 'p', v: pFmt(result.pv), c: result.pv < 0.05 ? C.green : C.red },
+                  { l: '95% CI', v: `[${result.ci_lo.toFixed(3)}, ${result.ci_hi.toFixed(3)}]`, c: C.blue },
+                  { l: 'n', v: String(result.n) }, { l: 'k cats', v: String(result.k) },
+                ].map(({ l, v, c }) => (
+                  <div key={l} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: '6px 12px', textAlign: 'center', minWidth: 72 }}>
+                    <div style={{ fontSize: 9, color: C.sub }}>{l}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: c ?? C.text }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 14px', fontSize: 11, color: C.sub }}>
+                <strong style={{ color: C.gold }}>APA: </strong>
+                {`κ = ${result.kappa.toFixed(3)}, SE = ${result.se.toFixed(3)}, p = ${pFmt(result.pv)}, 95% CI [${result.ci_lo.toFixed(3)}, ${result.ci_hi.toFixed(3)}]`}
+                <br /><span style={{ fontSize: 10, color: C.muted }}>
+                  {ar ? 'Landis & Koch (1977): ≥.81 ممتاز · .61–.80 قوي · .41–.60 متوسط · .21–.40 معقول · .01–.20 طفيف · ≤0 ضعيف'
+                    : 'Landis & Koch (1977): ≥.81 Almost perfect · .61–.80 Substantial · .41–.60 Moderate · .21–.40 Fair · .01–.20 Slight · ≤0 Poor'}
+                </span>
+              </div>
+            </>
+          )}
+          {!result && <p style={{ color: C.muted, fontSize: 13 }}>{ar ? 'يلزم 5 زوج تقدير على الأقل' : 'Need ≥ 5 rating pairs'}</p>}
+        </div>
+      </div>
+
+      {result && result.k <= 8 && (
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ padding: '10px 16px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 12, color: C.gold }}>
+            {ar ? 'مصفوفة الاتفاق' : 'Agreement Matrix'} (n = {result.n})
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ borderCollapse: 'collapse', fontSize: 11, margin: '8px' }}>
+              <thead><tr>
+                <th style={{ padding: '4px 10px', color: C.sub }}>{ar ? 'م2↓ / م1→' : 'R2↓ R1→'}</th>
+                {result.cats.map(c => <th key={c} style={{ padding: '4px 10px', textAlign: 'center', color: C.gold }}>{c}</th>)}
+                <th style={{ padding: '4px 10px', textAlign: 'center', color: C.sub }}>{ar ? 'المجموع' : 'Total'}</th>
+              </tr></thead>
+              <tbody>
+                {result.cats.map((cat, i) => (
+                  <tr key={cat} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding: '4px 10px', fontWeight: 700, color: C.gold }}>{cat}</td>
+                    {result.matrix[i].map((v, j) => (
+                      <td key={j} style={{ padding: '4px 10px', textAlign: 'center', background: i === j ? 'rgba(94,234,212,0.12)' : 'transparent', fontWeight: i === j ? 700 : 400, color: i === j ? C.teal : C.text }}>{v}</td>
+                    ))}
+                    <td style={{ padding: '4px 10px', textAlign: 'center', color: C.sub }}>{result.rowT[i]}</td>
+                  </tr>
+                ))}
+                <tr style={{ borderTop: `1px solid ${C.border}` }}>
+                  <td style={{ padding: '4px 10px', color: C.sub }}>{ar ? 'المجموع' : 'Total'}</td>
+                  {result.colT.map((v, j) => <td key={j} style={{ padding: '4px 10px', textAlign: 'center', color: C.sub }}>{v}</td>)}
+                  <td style={{ padding: '4px 10px', textAlign: 'center', fontWeight: 700, color: C.text }}>{result.n}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── HIERARCHICAL REGRESSION (ΔR²) ─────────────────────────────────────────
+function HierarchReg({ ar }: { ar: boolean }) {
+  const DEF = `score age gender gpa motivation anxiety
+75 22 1 3.8 4.1 3.2
+82 24 0 3.5 3.8 2.8
+68 21 1 2.9 3.0 4.1
+90 25 0 3.9 4.5 2.1
+71 23 1 3.2 3.3 3.7
+85 22 0 3.7 4.2 2.5
+78 24 1 3.4 3.7 3.0
+65 21 0 2.7 2.8 4.5
+88 23 1 3.8 4.4 2.3
+73 25 0 3.1 3.1 3.9
+80 22 1 3.6 4.0 2.7
+76 23 0 3.3 3.6 3.4
+84 24 1 3.7 4.3 2.6
+70 21 0 3.0 3.2 3.8
+87 23 1 3.9 4.6 2.2`;
+  const [raw, setRaw] = useState(DEF);
+  const [block1N, setBlock1N] = useState('2');
+
+  const result = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 5) return null;
+    const firstCells = lines[0].trim().split(/[\s,\t]+/);
+    const hasHeader = firstCells.some(v => isNaN(parseFloat(v)));
+    const headers = hasHeader ? firstCells : Array.from({ length: firstCells.length }, (_, i) => i === 0 ? 'Y' : `X${i}`);
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+    const data = dataLines.map(l => l.trim().split(/[\s,\t;،]+/).map(Number).filter(v => isFinite(v) && !isNaN(v)));
+    const pTotal = Math.min(...data.map(r => r.length));
+    if (data.length < pTotal + 1 || pTotal < 3) return null;
+    const D = data.map(r => r.slice(0, pTotal));
+    const n = D.length, kTotal = pTotal - 1;
+    const Y = D.map(r => r[0]);
+    const Xall = D.map(r => r.slice(1));
+    const b1n = Math.max(1, Math.min(parseInt(block1N) || 1, kTotal - 1));
+    const depName = headers[0] ?? 'Y';
+    const predNames = headers.slice(1, pTotal);
+    const pred1 = predNames.slice(0, b1n), pred2 = predNames.slice(b1n);
+
+    const X1 = Xall.map(r => r.slice(0, b1n));
+    const reg1 = olsRegression(X1, Y, depName, pred1);
+    const reg2 = olsRegression(Xall, Y, depName, predNames);
+    if (!reg1 || !reg2) return null;
+
+    const deltaR2 = reg2.R2 - reg1.R2;
+    const k1 = b1n, k2 = kTotal;
+    const ddf = k2 - k1;
+    const dF = ((deltaR2 / ddf) / Math.max(1e-10, (1 - reg2.R2) / (n - k2 - 1)));
+    const dpv = 1 - chiSqP(dF * ddf, ddf);
+
+    return { n, k1, k2, ddf, Y, Xall, pred1, pred2, depName, reg1, reg2, deltaR2, dF, dpv };
+  }, [raw, block1N]);
+
+  const pFmt = (p: number) => p < 0.001 ? '< .001' : p.toFixed(3);
+  const pC = (p: number) => p < 0.05 ? C.green : C.red;
+  const r2C = (r2: number) => r2 >= 0.5 ? C.green : r2 >= 0.3 ? C.gold : r2 >= 0.1 ? C.teal : C.muted;
+
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: '3fr 120px', gap: 12, marginBottom: 14 }}>
+        <div>
+          <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+            {ar ? 'البيانات — السطر الأول: أسماء المتغيرات · العمود الأول: Y · الأعمدة التالية: المتنبئات (بلوك 1 أولاً ثم بلوك 2)'
+              : 'Data — first row: var names · col 1: Y · remaining: predictors (Block 1 first, then Block 2)'}
+          </label>
+          <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={8}
+            style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 11, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+            {ar ? 'عدد متنبئات البلوك 1' : '# Block 1 predictors'}
+          </label>
+          <input type="number" value={block1N} onChange={e => setBlock1N(e.target.value)} min="1"
+            style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '12px', color: C.text, fontSize: 22, fontWeight: 800, direction: 'ltr', boxSizing: 'border-box', textAlign: 'center' }} />
+        </div>
+      </div>
+
+      {!result && <p style={{ color: C.muted, fontSize: 13 }}>{ar ? 'يلزم 3 أعمدة على الأقل (Y + بلوك1 + بلوك2)' : 'Need ≥ 3 columns (Y + block1 + block2)'}</p>}
+
+      {result && (
+        <>
+          {/* Block labels */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+            {[
+              { lbl: ar ? 'البلوك 1 (الضبط/السياق)' : 'Block 1 (Controls)', preds: result.pred1, reg: result.reg1, color: C.teal },
+              { lbl: ar ? 'البلوك 1 + 2 (النموذج الكامل)' : 'Block 1 + 2 (Full Model)', preds: result.pred1.concat(result.pred2), reg: result.reg2, color: C.blue },
+            ].map(({ lbl, preds, reg, color }) => (
+              <div key={lbl} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 14px' }}>
+                <div style={{ fontWeight: 700, fontSize: 12, color, marginBottom: 8 }}>{lbl}</div>
+                <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>{preds.join(' + ')}</div>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 12 }}>
+                  <span>R² = <strong style={{ color: r2C(reg.R2) }}>{reg.R2.toFixed(4)}</strong></span>
+                  <span>Adj.R² = <strong style={{ color: C.sub }}>{reg.adjR2.toFixed(4)}</strong></span>
+                  <span>F = <strong style={{ color: C.text }}>{reg.F.toFixed(3)}</strong></span>
+                  <span>p = <strong style={{ color: pC(reg.pF) }}>{pFmt(reg.pF)}</strong></span>
+                </div>
+                <div style={{ marginTop: 10 }}>
+                  {reg.vars.slice(1).map((v, i) => (
+                    <div key={v} style={{ display: 'flex', gap: 12, fontSize: 11, color: C.sub, borderBottom: '1px solid rgba(255,255,255,0.04)', padding: '3px 0' }}>
+                      <span style={{ minWidth: 70, fontWeight: 600, color: C.text }}>{v}</span>
+                      <span>β={reg.beta[i + 1].toFixed(3)}</span>
+                      <span>t={reg.tStat[i + 1].toFixed(3)}</span>
+                      <span style={{ color: reg.pVal[i + 1] < 0.05 ? C.green : C.muted }}>p={pFmt(reg.pVal[i + 1])}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* ΔR² highlight */}
+          <div style={{ background: `rgba(201,168,76,0.1)`, border: `2px solid ${C.gold}`, borderRadius: 14, padding: '16px 24px', marginBottom: 14, display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 11, color: C.sub, marginBottom: 4 }}>{ar ? 'زيادة R² (ΔR²)' : 'R² Change (ΔR²)'}</div>
+              <div style={{ fontSize: 36, fontWeight: 900, color: C.gold }}>{result.deltaR2.toFixed(4)}</div>
+              <div style={{ fontSize: 11, color: C.muted }}>{(result.deltaR2 * 100).toFixed(1)}% {ar ? 'تباين إضافي' : 'additional variance'}</div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {[
+                { l: `ΔF(${result.ddf},${result.n - result.k2 - 1})`, v: result.dF.toFixed(3), c: C.text },
+                { l: 'p(ΔF)', v: pFmt(result.dpv), c: pC(result.dpv) },
+                { l: 'Δk predictors', v: String(result.k2 - result.k1), c: C.sub },
+              ].map(({ l, v, c }) => (
+                <div key={l} style={{ background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 14px', textAlign: 'center', minWidth: 90 }}>
+                  <div style={{ fontSize: 10, color: C.sub }}>{l}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: c }}>{v}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize: 11, color: result.dpv < 0.05 ? C.green : C.muted, fontWeight: result.dpv < 0.05 ? 700 : 400 }}>
+              {result.dpv < 0.05
+                ? (ar ? `✓ إضافة [${result.pred2.join(', ')}] تفسّر ${(result.deltaR2 * 100).toFixed(1)}% إضافي دلالياً` : `✓ Adding [${result.pred2.join(', ')}] explains ${(result.deltaR2 * 100).toFixed(1)}% additional variance significantly`)
+                : (ar ? `✗ إضافة البلوك 2 لا تفسّر تبايناً إضافياً دالاً` : `✗ Block 2 addition does not explain significant additional variance`)}
+            </div>
+          </div>
+
+          {/* Visual R² bars */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px', marginBottom: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: C.gold, marginBottom: 12 }}>{ar ? 'التباين المفسَّر' : 'Variance Explained'}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { lbl: ar ? 'البلوك 1' : 'Block 1', r2: result.reg1.R2, color: C.teal },
+                { lbl: ar ? 'البلوك 1 + 2' : 'Block 1+2', r2: result.reg2.R2, color: C.blue },
+              ].map(({ lbl, r2, color }) => (
+                <div key={lbl}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.sub, marginBottom: 4 }}>
+                    <span>{lbl}</span><span style={{ color, fontWeight: 700 }}>R² = {r2.toFixed(4)}</span>
+                  </div>
+                  <div style={{ height: 14, background: 'rgba(255,255,255,0.06)', borderRadius: 7, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${r2 * 100}%`, background: color, borderRadius: 7 }}/>
+                  </div>
+                </div>
+              ))}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.gold, marginBottom: 4, fontWeight: 700 }}>
+                  <span>{ar ? 'ΔR² (البلوك 2 وحده)' : 'ΔR² (Block 2 only)'}</span>
+                  <span>ΔR² = {result.deltaR2.toFixed(4)}</span>
+                </div>
+                <div style={{ height: 14, background: 'rgba(255,255,255,0.06)', borderRadius: 7, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', display: 'flex' }}>
+                    <div style={{ width: `${result.reg1.R2 * 100}%`, background: `${C.teal}44`, borderRadius: 0 }}/>
+                    <div style={{ width: `${result.deltaR2 * 100}%`, background: C.gold, borderRadius: 0 }}/>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '10px 16px', fontSize: 12, color: C.sub }}>
+            <strong style={{ color: C.gold }}>APA: </strong>
+            {ar
+              ? `أضافت متغيرات البلوك 2 [${result.pred2.join(', ')}] تبايناً إضافياً دالاً (ΔR² = ${result.deltaR2.toFixed(3)}, ΔF(${result.ddf}, ${result.n - result.k2 - 1}) = ${result.dF.toFixed(2)}, p = ${pFmt(result.dpv)})`
+              : `Block 2 variables [${result.pred2.join(', ')}] explained additional variance (ΔR² = ${result.deltaR2.toFixed(3)}, ΔF(${result.ddf}, ${result.n - result.k2 - 1}) = ${result.dF.toFixed(2)}, p = ${pFmt(result.dpv)})`}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── ICC — INTRACLASS CORRELATION COEFFICIENT ─────────────────────────────
+function IccCalc({ ar }: { ar: boolean }) {
+  const DEF = `Rater1,Rater2,Rater3
+82,80,84
+77,79,78
+91,89,93
+68,71,70
+85,84,87
+73,72,75
+88,90,89
+79,80,81
+92,94,91
+74,75,76
+86,85,88
+70,72,71`;
+  const [raw, setRaw] = useState(DEF);
+  const [model, setModel] = useState<'icc1'|'icc2'|'icc3'>('icc3');
+
+  const result = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 4) return null;
+    const sep = lines[0].includes('\t') ? '\t' : ',';
+    const firstCells = lines[0].split(sep);
+    const hasHeader = firstCells.some(v => isNaN(parseFloat(v.trim())));
+    const raterNames = hasHeader ? firstCells.map(h => h.trim()) : null;
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+    const data = dataLines.map(l => l.split(sep).map(v => parseFloat(v.trim())).filter(v => isFinite(v) && !isNaN(v)));
+    const n = data.length, k = Math.min(...data.map(r => r.length));
+    if (n < 3 || k < 2) return null;
+    const D = data.map(r => r.slice(0, k));
+
+    const grandMean = avg(D.flat());
+    const rowMeans = D.map(r => avg(r));
+    const colMeans = Array.from({ length: k }, (_, j) => avg(D.map(r => r[j])));
+    const SSR = k * rowMeans.reduce((s, m) => s + (m - grandMean) ** 2, 0);
+    const SSC = n * colMeans.reduce((s, m) => s + (m - grandMean) ** 2, 0);
+    const SST = D.flat().reduce((s, x) => s + (x - grandMean) ** 2, 0);
+    const SSE = SST - SSR - SSC;
+    const dfR = n - 1, dfC = k - 1, dfE = (n - 1) * (k - 1);
+    const MSR = SSR / Math.max(1, dfR), MSC = SSC / Math.max(1, dfC), MSE = SSE / Math.max(1, dfE);
+
+    let icc: number;
+    if (model === 'icc1') {
+      icc = (MSR - MSE) / (MSR + (k - 1) * MSE);
+    } else if (model === 'icc2') {
+      icc = (MSR - MSE) / (MSR + (k - 1) * MSE + k * (MSC - MSE) / n);
+    } else {
+      icc = (MSR - MSE) / (MSR + (k - 1) * MSE);
+    }
+    icc = Math.max(-1, Math.min(1, icc));
+
+    const F = MSR / Math.max(1e-10, MSE);
+    const pv = 1 - chiSqP(F * dfR, dfR);
+
+    const raterStats = Array.from({ length: k }, (_, j) => {
+      const vals = D.map(r => r[j]);
+      const m = avg(vals);
+      const sd = Math.sqrt(vals.reduce((s, x) => s + (x - m) ** 2, 0) / Math.max(1, n - 1));
+      return { name: (raterNames?.[j]) ?? `R${j + 1}`, m, sd };
+    });
+
+    const chartData = D.map((row, i) => {
+      const obj: Record<string,number> = { subject: i + 1 };
+      row.forEach((v, j) => { obj[(raterNames?.[j]) ?? `R${j+1}`] = v; });
+      return obj;
+    });
+
+    return { n, k, icc, F, pv, SSR, SSC, SSE, dfR, dfC, dfE, MSR, MSC, MSE, raterStats, chartData, raterNames: raterStats.map(r => r.name) };
+  }, [raw, model]);
+
+  const iccC = (v: number) => v >= 0.9 ? C.green : v >= 0.75 ? C.teal : v >= 0.5 ? C.gold : C.red;
+  const iccL = (v: number) => v >= 0.9 ? (ar?'ممتاز':'Excellent') : v >= 0.75 ? (ar?'جيد':'Good') : v >= 0.5 ? (ar?'متوسط':'Moderate') : (ar?'ضعيف':'Poor');
+  const pFmt = (p: number) => p < 0.001 ? '< .001' : p.toFixed(3);
+  const COLORS = [C.blue, C.teal, C.gold, C.green, C.purple, C.red];
+
+  return (
+    <div>
+      <div style={{ display:'flex', gap:8, marginBottom:14, flexWrap:'wrap' }}>
+        {([['icc1',ar?'أحادي العشوائية ICC(1,1)':'One-Way Random ICC(1,1)'],['icc2',ar?'ثنائي العشوائية ICC(2,1)':'Two-Way Random ICC(2,1)'],['icc3',ar?'ثنائي مختلط ICC(3,1)':'Two-Way Mixed ICC(3,1)']] as const).map(([m,lbl])=>(
+          <button key={m} onClick={()=>setModel(m)}
+            style={{ background:model===m?'rgba(201,168,76,0.2)':'rgba(255,255,255,0.04)', border:`1px solid ${model===m?C.gold:C.border}`, borderRadius:9, padding:'7px 14px', color:model===m?C.gold:C.sub, cursor:'pointer', fontFamily:'inherit', fontWeight:model===m?700:400, fontSize:12 }}>
+            {lbl}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ marginBottom:14 }}>
+        <label style={{ fontSize:11, color:C.sub, display:'block', marginBottom:4 }}>
+          {ar?'البيانات — السطر الأول: أسماء المحكّمين/القياسات (اختياري) · كل سطر = موضوع واحد · كل عمود = محكّم/وقت':
+             'Data — first row: rater/measurement names (optional) · each row = one subject · each column = one rater/time'}
+        </label>
+        <textarea value={raw} onChange={e=>setRaw(e.target.value)} rows={8}
+          style={{ width:'100%', background:'rgba(255,255,255,0.04)', border:`1px solid ${C.border}`, borderRadius:9, padding:'8px 12px', color:C.text, fontSize:11, fontFamily:'monospace', direction:'ltr', resize:'vertical', boxSizing:'border-box' }}/>
+      </div>
+
+      {!result && <p style={{ color:C.muted, fontSize:13 }}>{ar?'يلزم 3 موضوعات وعمودان على الأقل':'Need ≥ 3 subjects and ≥ 2 raters/measurements'}</p>}
+
+      {result && (
+        <>
+          {/* ICC value */}
+          <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:14, flexWrap:'wrap' }}>
+            <div style={{ background:C.card, border:`2px solid ${iccC(result.icc)}`, borderRadius:14, padding:'16px 28px', textAlign:'center' }}>
+              <div style={{ fontSize:11, color:C.sub, marginBottom:4 }}>ICC({model==='icc1'?'1':'2'},{model==='icc3'?'1':'1'})</div>
+              <div style={{ fontSize:38, fontWeight:900, color:iccC(result.icc) }}>{result.icc.toFixed(4)}</div>
+              <div style={{ fontSize:13, color:iccC(result.icc), fontWeight:700 }}>{iccL(result.icc)}</div>
+            </div>
+            <div style={{ display:'flex', gap:9, flexWrap:'wrap' }}>
+              {[
+                { l:`F(${result.dfR},${result.dfE})`, v:result.F.toFixed(3), c:C.text },
+                { l:'p', v:pFmt(result.pv), c:result.pv<0.05?C.green:C.red },
+                { l:'n (subjects)', v:String(result.n), c:C.sub },
+                { l:'k (raters)', v:String(result.k), c:C.sub },
+              ].map(({ l, v, c }) => (
+                <div key={l} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:9, padding:'8px 14px', textAlign:'center', minWidth:80 }}>
+                  <div style={{ fontSize:10, color:C.sub }}>{l}</div>
+                  <div style={{ fontSize:14, fontWeight:800, color:c }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Two-way ANOVA table */}
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, overflow:'hidden', marginBottom:14 }}>
+            <div style={{ padding:'10px 16px', background:'rgba(201,168,76,0.07)', fontWeight:700, fontSize:12, color:C.gold }}>
+              {ar?'جدول تحليل التباين الثنائي (Two-Way ANOVA)':'Two-Way ANOVA Table'}
+            </div>
+            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:11 }}>
+              <thead><tr style={{ borderBottom:`1px solid ${C.border}` }}>
+                {[ar?'المصدر':'Source','SS','df','MS'].map(h=>(
+                  <th key={h} style={{ padding:'6px 12px', textAlign:'center', color:C.sub, fontWeight:600 }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {[
+                  { src:ar?'بين الموضوعات (BMS)':'Between Subjects (BMS)', ss:result.SSR, df:result.dfR, ms:result.MSR },
+                  { src:ar?'بين المحكّمين (JMS)':'Between Raters (JMS)', ss:result.SSC, df:result.dfC, ms:result.MSC },
+                  { src:ar?'الخطأ (EMS)':'Error (EMS)', ss:result.SSE, df:result.dfE, ms:result.MSE },
+                  { src:ar?'الكلي':'Total', ss:result.SSR+result.SSC+result.SSE, df:result.dfR+result.dfC+result.dfE, ms:null },
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom:'1px solid rgba(255,255,255,0.04)', background:i===3?'rgba(201,168,76,0.04)':'transparent' }}>
+                    <td style={{ padding:'6px 12px', fontWeight:i===3?700:400, color:i===3?C.gold:C.text }}>{row.src}</td>
+                    <td style={{ padding:'6px 12px', textAlign:'center', color:C.sub }}>{row.ss.toFixed(3)}</td>
+                    <td style={{ padding:'6px 12px', textAlign:'center', color:C.sub }}>{row.df}</td>
+                    <td style={{ padding:'6px 12px', textAlign:'center', color:C.sub }}>{row.ms!=null?row.ms.toFixed(3):'—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Rater profile chart */}
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:'14px', marginBottom:14 }}>
+            <div style={{ fontWeight:700, fontSize:12, color:C.gold, marginBottom:10 }}>
+              {ar?'قيم المحكّمين/القياسات لكل موضوع':'Rater/Measurement Profiles per Subject'}
+            </div>
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={result.chartData} margin={{ top:4, right:8, left:0, bottom:4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)"/>
+                <XAxis dataKey="subject" tick={{ fontSize:9, fill:C.sub }} label={{ value:ar?'الموضوع':'Subject', position:'insideBottom', offset:-4, fill:C.sub, fontSize:9 }}/>
+                <YAxis tick={{ fontSize:9, fill:C.sub }} width={32}/>
+                <Tooltip contentStyle={{ background:'#0d172d', border:`1px solid ${C.border}`, borderRadius:8, fontSize:11 }}/>
+                <Legend wrapperStyle={{ fontSize:10 }}/>
+                {result.raterNames.map((name, i) => (
+                  <Line key={name} type="monotone" dataKey={name} stroke={COLORS[i % COLORS.length]} strokeWidth={1.5} dot={false}/>
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:9, padding:'10px 16px', fontSize:12, color:C.sub }}>
+            <strong style={{ color:C.gold }}>{ar?'التفسير: ':'Interpretation: '}</strong>
+            {ar
+              ? `ICC = ${result.icc.toFixed(3)} — ${iccL(result.icc)} · معيار Koo & Mae (2016): < .50 ضعيف · .50–.75 متوسط · .75–.90 جيد · ≥ .90 ممتاز`
+              : `ICC = ${result.icc.toFixed(3)} — ${iccL(result.icc)} · Koo & Mae (2016): < .50 Poor · .50–.75 Moderate · .75–.90 Good · ≥ .90 Excellent`}
+            <br/><span style={{ fontSize:11, color:C.muted, display:'block', marginTop:4 }}>
+              {ar?'ICC(1,1): المحكّمون عشوائيون وغير منتظمون · ICC(2,1): المحكّمون عشوائيون واتفاق مطلق · ICC(3,1): المحكّمون ثابتون واتساق'
+                 :'ICC(1,1): random raters, absolute · ICC(2,1): random raters, absolute agreement · ICC(3,1): fixed raters, consistency'}
+            </span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── CHI-SQUARE GOODNESS OF FIT ────────────────────────────────────────────
+function ChiGoF({ ar }: { ar: boolean }) {
+  const [obsRaw, setObsRaw]   = useState('30 45 25 20 35 15');
+  const [expRaw, setExpRaw]   = useState('');
+  const [lblRaw, setLblRaw]   = useState('A B C D E F');
+
+  const result = useMemo(() => {
+    const p = (s: string) => s.trim().split(/[\s,;،]+/).map(Number).filter(v => isFinite(v) && !isNaN(v));
+    const obs = p(obsRaw); const k = obs.length;
+    if (k < 2) return null;
+    const n = obs.reduce((s, o) => s + o, 0);
+    if (n === 0) return null;
+
+    let exp: number[];
+    const ep = p(expRaw);
+    if (ep.length === k) {
+      const es = ep.reduce((s, e) => s + e, 0);
+      exp = Math.abs(es - 1) < 0.02 ? ep.map(e => e * n) : ep;
+    } else {
+      exp = Array(k).fill(n / k);
+    }
+
+    const chiSq = obs.reduce((s, o, i) => s + (o - exp[i]) ** 2 / Math.max(0.001, exp[i]), 0);
+    const df = k - 1;
+    const pv = 1 - chiSqP(chiSq, df);
+    const w = Math.sqrt(chiSq / n);
+    const lbls = lblRaw.trim().split(/[\s,;،]+/).filter(Boolean);
+
+    return {
+      k, n, obs, exp, chiSq, df, pv, w,
+      lbls: Array.from({ length: k }, (_, i) => lbls[i] ?? `Cat${i+1}`),
+      smallCell: exp.some(e => e < 5),
+      cells: Array.from({ length: k }, (_, i) => ({
+        lbl: lbls[i] ?? `Cat${i+1}`,
+        o: obs[i], e: exp[i],
+        diff: obs[i] - exp[i],
+        chi: (obs[i] - exp[i]) ** 2 / Math.max(0.001, exp[i]),
+        pct: obs[i] / n * 100,
+      })),
+    };
+  }, [obsRaw, expRaw, lblRaw]);
+
+  const wC = (w: number) => w >= 0.5 ? C.gold : w >= 0.3 ? C.blue : w >= 0.1 ? C.teal : C.muted;
+  const wL = (w: number) => w >= 0.5 ? (ar?'كبير':'large') : w >= 0.3 ? (ar?'متوسط':'medium') : w >= 0.1 ? (ar?'صغير':'small') : (ar?'ضئيل':'trivial');
+  const pFmt = (p: number) => p < 0.001 ? '< .001' : p.toFixed(3);
+  const pC = (p: number) => p < 0.05 ? C.green : C.red;
+
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
+        {[
+          { lbl: ar?'التكرارات الملاحظة (O)':'Observed frequencies (O)', val: obsRaw, set: setObsRaw, ph: '30 45 25 20 35 15' },
+          { lbl: ar?'التكرارات/النسب المتوقعة (اتركها فارغة = توزيع منتظم)':'Expected freq/prop (empty = uniform)', val: expRaw, set: setExpRaw, ph: ar?'أو 0.2 0.3 0.1...(فارغة=منتظم)':'or 0.2 0.3 0.1... (empty=uniform)' },
+          { lbl: ar?'تسميات الفئات (اختيارية)':'Category labels (optional)', val: lblRaw, set: setLblRaw, ph: 'A B C D E F' },
+        ].map(({ lbl, val, set, ph }) => (
+          <div key={lbl}>
+            <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>{lbl}</label>
+            <input value={val} onChange={e => set(e.target.value)} placeholder={ph}
+              style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 12, fontFamily: 'monospace', direction: 'ltr', boxSizing: 'border-box' }} />
+          </div>
+        ))}
+      </div>
+
+      {!result && <p style={{ color: C.muted, fontSize: 13 }}>{ar?'أدخل تكرارين على الأقل':'Enter at least 2 observed frequencies'}</p>}
+
+      {result && (
+        <>
+          {result.smallCell && (
+            <div style={{ background: 'rgba(245,215,142,0.1)', border: `1px solid ${C.gold}`, borderRadius: 9, padding: '8px 14px', marginBottom: 12, fontSize: 12, color: C.gold }}>
+              ⚠ {ar?'بعض الخلايا المتوقعة < 5 — نتائج χ² قد تكون غير دقيقة':'Some expected cells < 5 — χ² results may be unreliable'}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 14 }}>
+            {[
+              { l:'χ²', v:result.chiSq.toFixed(4), c:C.text },
+              { l:`df`, v:String(result.df), c:C.sub },
+              { l:'p', v:pFmt(result.pv), c:pC(result.pv) },
+              { l:"Cohen's w", v:result.w.toFixed(3), c:wC(result.w), s:wL(result.w) },
+              { l:'n', v:String(result.n), c:C.sub },
+            ].map(({ l, v, c, s }) => (
+              <div key={l} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 14px', textAlign: 'center', minWidth: 80 }}>
+                <div style={{ fontSize: 10, color: C.sub }}>{l}</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: c }}>{v}</div>
+                {s && <div style={{ fontSize: 9, color: c }}>{s}</div>}
+              </div>
+            ))}
+          </div>
+
+          {/* Observed vs Expected chart */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px', marginBottom: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: C.gold, marginBottom: 10 }}>{ar?'ملاحظ مقابل متوقع':'Observed vs. Expected'}</div>
+            <ResponsiveContainer width="100%" height={150}>
+              <BarChart data={result.cells.map(c => ({ name: c.lbl, [ar?'ملاحظ':'Observed']: c.o, [ar?'متوقع':'Expected']: +c.e.toFixed(2) }))} margin={{ top:4, right:8, left:0, bottom:4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false}/>
+                <XAxis dataKey="name" tick={{ fontSize:9, fill:C.sub }}/>
+                <YAxis tick={{ fontSize:9, fill:C.sub }} width={28}/>
+                <Tooltip contentStyle={{ background:'#0d172d', border:`1px solid ${C.border}`, borderRadius:8, fontSize:11 }}/>
+                <Legend wrapperStyle={{ fontSize:10 }}/>
+                <Bar dataKey={ar?'ملاحظ':'Observed'} fill={`${C.blue}bb`} radius={[3,3,0,0]}/>
+                <Bar dataKey={ar?'متوقع':'Expected'} fill={`${C.gold}66`} radius={[3,3,0,0]}/>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Cell-by-cell table */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead><tr style={{ borderBottom: `1px solid ${C.border}`, background: 'rgba(201,168,76,0.07)' }}>
+                {[ar?'الفئة':'Category','O','E','O−E',(ar?'مساهمة χ²':'χ² Contrib.'), '%'].map(h => (
+                  <th key={h} style={{ padding: '7px 12px', textAlign: 'center', color: C.sub, fontWeight: 600 }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {result.cells.map((c, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: c.chi > result.chiSq/result.k*2 ? 'rgba(239,68,68,0.05)' : 'transparent' }}>
+                    <td style={{ padding: '6px 12px', fontWeight: 700, color: C.text }}>{c.lbl}</td>
+                    <td style={{ padding: '6px 12px', textAlign: 'center', fontWeight: 700, color: C.text }}>{c.o}</td>
+                    <td style={{ padding: '6px 12px', textAlign: 'center', color: C.sub }}>{c.e.toFixed(2)}</td>
+                    <td style={{ padding: '6px 12px', textAlign: 'center', color: c.diff > 0 ? C.green : C.red }}>{c.diff > 0 ? '+' : ''}{c.diff.toFixed(2)}</td>
+                    <td style={{ padding: '6px 12px', textAlign: 'center', fontWeight: 700, color: c.chi > 3.84 ? C.gold : C.sub }}>{c.chi.toFixed(3)}</td>
+                    <td style={{ padding: '6px 12px', textAlign: 'center', color: C.muted }}>{c.pct.toFixed(1)}%</td>
+                  </tr>
+                ))}
+                <tr style={{ borderTop: `1px solid ${C.border}`, background: 'rgba(201,168,76,0.06)' }}>
+                  <td style={{ padding: '6px 12px', fontWeight: 800, color: C.gold }}>{ar?'المجموع':'Total'}</td>
+                  <td style={{ padding: '6px 12px', textAlign: 'center', fontWeight: 800, color: C.text }}>{result.n}</td>
+                  <td style={{ padding: '6px 12px', textAlign: 'center', color: C.sub }}>{result.exp.reduce((s,e)=>s+e,0).toFixed(2)}</td>
+                  <td colSpan={2} style={{ padding: '6px 12px', textAlign: 'center', fontWeight: 800, color: C.text }}>χ²={result.chiSq.toFixed(3)}</td>
+                  <td style={{ padding: '6px 12px', textAlign: 'center', color: C.muted }}>100%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '10px 16px', fontSize: 12, color: C.sub }}>
+            <strong style={{ color: C.gold }}>APA: </strong>
+            {`χ²(${result.df}, N = ${result.n}) = ${result.chiSq.toFixed(2)}, p = ${pFmt(result.pv)}, w = ${result.w.toFixed(2)}`}
+            <br/><span style={{ color: pC(result.pv), fontSize: 11 }}>
+              {result.pv < 0.05 ? (ar?'✓ توزيع الملاحظات يختلف دلالياً عن المتوقع':'✓ Observed distribution significantly differs from expected')
+                                : (ar?'✗ لا يوجد دليل كافٍ على اختلاف التوزيع عن المتوقع':'✗ No significant difference from expected distribution')}
+            </span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── ONE-WAY ANOVA FROM SUMMARY STATISTICS ────────────────────────────────
+function AnovaSummary({ ar }: { ar: boolean }) {
+  const DEF = `Control,20,52.3,8.1
+Low,22,61.4,7.6
+Medium,21,68.9,9.2
+High,19,75.2,8.8`;
+  const [raw, setRaw] = useState(DEF);
+
+  interface GrpRow { name:string; n:number; m:number; sd:number }
+
+  const result = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim());
+    const groups: GrpRow[] = [];
+    for (const line of lines) {
+      const parts = line.split(/[,;\t]+/).map(s => s.trim());
+      if (parts.length < 4) continue;
+      const n = parseFloat(parts[1]), m = parseFloat(parts[2]), sd = parseFloat(parts[3]);
+      if (isFinite(n) && n >= 2 && isFinite(m) && isFinite(sd) && sd >= 0) {
+        groups.push({ name: parts[0], n, m, sd });
+      }
+    }
+    if (groups.length < 2) return null;
+    const k = groups.length;
+    const N = groups.reduce((s, g) => s + g.n, 0);
+    const grandM = groups.reduce((s, g) => s + g.n * g.m, 0) / N;
+    const SSb = groups.reduce((s, g) => s + g.n * (g.m - grandM) ** 2, 0);
+    const SSw = groups.reduce((s, g) => s + (g.n - 1) * g.sd ** 2, 0);
+    const dfb = k - 1, dfw = N - k;
+    const MSb = SSb / dfb, MSw = SSw / dfw;
+    const F = MSb / Math.max(1e-10, MSw);
+    const pv = 1 - chiSqP(F * dfb, dfb);
+    const eta2 = SSb / (SSb + SSw);
+    const omega2 = (SSb - dfb * MSw) / (SSb + SSw + MSw);
+    const pooledSD = Math.sqrt(MSw);
+
+    // Tukey HSD critical value (approx using q / sqrt(2)); q from studentized range
+    // For simplicity: compare each pair with Bonferroni-corrected t
+    const nPairs = k * (k - 1) / 2;
+    const pairs: { g1:string; g2:string; diff:number; se:number; t:number; p:number; d:number; sig:boolean }[] = [];
+    for (let i = 0; i < k; i++) {
+      for (let j = i + 1; j < k; j++) {
+        const g1 = groups[i], g2 = groups[j];
+        const se = Math.sqrt(MSw * (1/g1.n + 1/g2.n));
+        const diff = g1.m - g2.m;
+        const t = Math.abs(diff) / Math.max(1e-10, se);
+        const p_raw = 2 * (1 - normalCDF(t));
+        const p_bon = Math.min(1, p_raw * nPairs);
+        const d = Math.abs(diff) / Math.max(1e-10, pooledSD);
+        pairs.push({ g1: g1.name, g2: g2.name, diff, se, t, p: p_bon, d, sig: p_bon < 0.05 });
+      }
+    }
+
+    return { k, N, groups, grandM, SSb, SSw, MSb, MSw, dfb, dfw, F, pv, eta2, omega2, pooledSD, pairs };
+  }, [raw]);
+
+  const pFmt = (p: number) => p < 0.001 ? '< .001' : p.toFixed(3);
+  const pC = (p: number) => p < 0.05 ? C.green : C.red;
+  const eta2C = (e: number) => e >= 0.14 ? C.gold : e >= 0.06 ? C.blue : e >= 0.01 ? C.teal : C.muted;
+  const eta2L = (e: number) => e >= 0.14 ? (ar?'كبير':'large') : e >= 0.06 ? (ar?'متوسط':'medium') : e >= 0.01 ? (ar?'صغير':'small') : (ar?'ضئيل':'trivial');
+
+  return (
+    <div>
+      <div style={{ marginBottom: 14 }}>
+        <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+          {ar ? 'كل سطر: اسم المجموعة، n، M، SD (مفصولة بفاصلة أو تاب)' : 'Each row: Group name, n, M, SD (comma or tab separated)'}
+        </label>
+        <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={6}
+          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 12, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+      </div>
+
+      {!result && <p style={{ color: C.muted, fontSize: 13 }}>{ar?'يلزم مجموعتان على الأقل بتنسيق: الاسم، n، M، SD':'Need ≥ 2 groups formatted as: Name, n, M, SD'}</p>}
+
+      {result && (
+        <>
+          {/* F test summary */}
+          <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 14 }}>
+            {[
+              { l:`F(${result.dfb},${result.dfw})`, v:result.F.toFixed(3), c:C.text },
+              { l:'p', v:pFmt(result.pv), c:pC(result.pv) },
+              { l:'η²', v:result.eta2.toFixed(3), c:eta2C(result.eta2), s:eta2L(result.eta2) },
+              { l:'ω²', v:result.omega2.toFixed(3), c:C.sub },
+              { l:'Pooled SD', v:result.pooledSD.toFixed(3), c:C.sub },
+              { l:'N', v:String(result.N), c:C.sub },
+              { l:'k', v:String(result.k), c:C.sub },
+            ].map(({ l, v, c, s }) => (
+              <div key={l} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 14px', textAlign: 'center', minWidth: 80 }}>
+                <div style={{ fontSize: 10, color: C.sub }}>{l}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: c }}>{v}</div>
+                {s && <div style={{ fontSize: 9, color: c }}>{s}</div>}
+              </div>
+            ))}
+          </div>
+
+          {/* ANOVA Table */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
+            <div style={{ padding: '10px 16px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 13, color: C.gold }}>
+              {ar ? 'جدول ANOVA' : 'ANOVA Summary Table'}
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                {[ar?'المصدر':'Source','SS','df','MS','F','p'].map(h => (
+                  <th key={h} style={{ padding: '7px 12px', textAlign: 'center', color: C.sub, fontWeight: 600 }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <td style={{ padding: '6px 12px', fontWeight: 700, color: C.text }}>{ar?'بين المجموعات':'Between Groups'}</td>
+                  <td style={{ padding: '6px 12px', textAlign: 'center' }}>{result.SSb.toFixed(3)}</td>
+                  <td style={{ padding: '6px 12px', textAlign: 'center' }}>{result.dfb}</td>
+                  <td style={{ padding: '6px 12px', textAlign: 'center' }}>{result.MSb.toFixed(3)}</td>
+                  <td style={{ padding: '6px 12px', textAlign: 'center', fontWeight: 800, color: C.text }}>{result.F.toFixed(3)}</td>
+                  <td style={{ padding: '6px 12px', textAlign: 'center', fontWeight: 800, color: pC(result.pv) }}>{pFmt(result.pv)}</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <td style={{ padding: '6px 12px', color: C.sub }}>{ar?'داخل المجموعات (خطأ)':'Within Groups (Error)'}</td>
+                  <td style={{ padding: '6px 12px', textAlign: 'center', color: C.sub }}>{result.SSw.toFixed(3)}</td>
+                  <td style={{ padding: '6px 12px', textAlign: 'center', color: C.sub }}>{result.dfw}</td>
+                  <td style={{ padding: '6px 12px', textAlign: 'center', color: C.sub }}>{result.MSw.toFixed(3)}</td>
+                  <td colSpan={2}/>
+                </tr>
+                <tr style={{ background: 'rgba(201,168,76,0.04)' }}>
+                  <td style={{ padding: '6px 12px', fontWeight: 700, color: C.gold }}>{ar?'الكلي':'Total'}</td>
+                  <td style={{ padding: '6px 12px', textAlign: 'center', fontWeight: 700 }}>{(result.SSb+result.SSw).toFixed(3)}</td>
+                  <td style={{ padding: '6px 12px', textAlign: 'center', fontWeight: 700 }}>{result.dfb+result.dfw}</td>
+                  <td colSpan={3}/>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Groups bar chart */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px', marginBottom: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: C.gold, marginBottom: 10 }}>{ar?'المتوسطات (M ± SD)':'Group Means (M ± SD)'}</div>
+            <ResponsiveContainer width="100%" height={160}>
+              <BarChart data={result.groups.map(g => ({ name:g.name, M:+g.m.toFixed(3), SD:+g.sd.toFixed(3) }))} margin={{ top:4, right:8, left:0, bottom:4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false}/>
+                <XAxis dataKey="name" tick={{ fontSize:9, fill:C.sub }}/>
+                <YAxis tick={{ fontSize:9, fill:C.sub }} width={36}/>
+                <Tooltip contentStyle={{ background:'#0d172d', border:`1px solid ${C.border}`, borderRadius:8, fontSize:11 }} formatter={(v:number)=>v.toFixed(3)}/>
+                <Bar dataKey="M" fill={`${C.blue}bb`} radius={[4,4,0,0]} label={{ position:'top', formatter:(v:number)=>v.toFixed(1), fill:C.sub, fontSize:9 }}/>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Post-hoc pairs (Bonferroni) */}
+          {result.pairs.length > 0 && (
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
+              <div style={{ padding: '10px 16px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 12, color: C.gold }}>
+                {ar ? `مقارنات Bonferroni البعدية (nPairs = ${result.pairs.length})` : `Bonferroni Post-hoc Comparisons (nPairs = ${result.pairs.length})`}
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+                <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                  {[ar?'المقارنة':'Comparison','M diff','d','p (Bonf.)',ar?'النتيجة':'Result'].map(h => (
+                    <th key={h} style={{ padding: '6px 10px', textAlign: 'center', color: C.sub, fontWeight: 600 }}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {result.pairs.map((pr, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: pr.sig ? 'rgba(94,234,212,0.04)' : 'transparent' }}>
+                      <td style={{ padding: '5px 10px', fontWeight: 600, color: C.text }}>{pr.g1} vs {pr.g2}</td>
+                      <td style={{ padding: '5px 10px', textAlign: 'center', color: pr.diff > 0 ? C.green : C.red }}>{pr.diff > 0 ? '+' : ''}{pr.diff.toFixed(3)}</td>
+                      <td style={{ padding: '5px 10px', textAlign: 'center', color: C.sub }}>{pr.d.toFixed(3)}</td>
+                      <td style={{ padding: '5px 10px', textAlign: 'center', color: pC(pr.p), fontWeight: 700 }}>{pFmt(pr.p)}</td>
+                      <td style={{ padding: '5px 10px', textAlign: 'center', color: pr.sig ? C.green : C.muted, fontWeight: pr.sig ? 700 : 400 }}>{pr.sig ? (ar?'✓ دال':'✓ Sig.') : (ar?'ns':'ns')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '10px 16px', fontSize: 12, color: C.sub }}>
+            <strong style={{ color: C.gold }}>APA: </strong>
+            {`F(${result.dfb}, ${result.dfw}) = ${result.F.toFixed(2)}, p = ${pFmt(result.pv)}, η² = ${result.eta2.toFixed(3)}, ω² = ${result.omega2.toFixed(3)}`}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── REGRESSION DIAGNOSTICS (VIF, DW, Residuals) ──────────────────────────
+function RegDiagnostics({ ar }: { ar: boolean }) {
+  const DEF = `score anxiety motivation gpa
+75 3.2 4.1 3.8
+82 2.8 3.8 3.5
+68 4.1 3.0 2.9
+90 2.1 4.5 3.9
+71 3.7 3.3 3.2
+85 2.5 4.2 3.7
+78 3.0 3.7 3.4
+65 4.5 2.8 2.7
+88 2.3 4.4 3.8
+73 3.9 3.1 3.1
+80 2.7 4.0 3.6
+76 3.4 3.6 3.3
+84 2.6 4.3 3.7
+70 3.8 3.2 3.0
+87 2.2 4.6 3.9`;
+  const [raw, setRaw] = useState(DEF);
+
+  const result = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim() && !l.trim().startsWith('#'));
+    if (lines.length < 4) return null;
+    const firstCells = lines[0].trim().split(/[\s,\t]+/);
+    const hasHeader = firstCells.some(v => isNaN(parseFloat(v)));
+    const headers = hasHeader ? firstCells : Array.from({ length: firstCells.length }, (_, i) => i === 0 ? 'Y' : `X${i}`);
+    const dataLines = (hasHeader ? lines.slice(1) : lines);
+    const data = dataLines.map(l => l.trim().split(/[\s,\t;،]+/).map(Number).filter(v => isFinite(v) && !isNaN(v)));
+    const p_total = Math.min(...data.map(r => r.length));
+    if (data.length < p_total + 1 || p_total < 2) return null;
+    const D = data.map(r => r.slice(0, p_total));
+    const n = D.length, k = p_total - 1;
+    const Y = D.map(r => r[0]);
+    const Xraw = D.map(r => r.slice(1));
+    const depName = headers[0] ?? 'Y';
+    const predNames = headers.slice(1, p_total);
+
+    const reg = olsRegression(Xraw, Y, depName, predNames);
+    if (!reg) return null;
+
+    // Durbin-Watson on residuals
+    const resids = reg.residuals;
+    const DW = resids.slice(1).reduce((s, e, i) => s + (e - resids[i]) ** 2, 0) / Math.max(1e-10, resids.reduce((s, e) => s + e * e, 0));
+
+    // VIF: for each predictor j, regress Xj on rest + intercept
+    const vif: number[] = [];
+    for (let j = 0; j < k; j++) {
+      const Yj = Xraw.map(r => r[j]);
+      const Xoth = Xraw.map(r => [1, ...r.filter((_, i) => i !== j)]);
+      const { R2 } = olsWithSE(Xoth, Yj);
+      vif.push(1 / Math.max(1e-10, 1 - R2));
+    }
+
+    // Standardized residuals
+    const MSE = resids.reduce((s, e) => s + e * e, 0) / Math.max(1, n - k - 1);
+    const sRes = resids.map(e => e / Math.sqrt(MSE));
+
+    // Residuals vs. Fitted scatter data
+    const rfData = reg.fitted.map((f, i) => ({ fitted: +Number(f).toFixed(3), sRes: +sRes[i].toFixed(3) }));
+
+    // QQ data for residuals
+    const sortedRes = [...sRes].sort((a, b) => a - b);
+    const qqData = sortedRes.map((r, i) => ({ theoretical: +zInv((i + 0.5) / n).toFixed(3), sample: +r.toFixed(3) }));
+
+    return { n, k, depName, predNames, reg, DW, vif, sRes, rfData, qqData, MSE };
+  }, [raw]);
+
+  const vifC = (v: number) => v >= 10 ? C.red : v >= 5 ? C.gold : C.green;
+  const vifLbl = (v: number) => v >= 10 ? (ar ? 'مشكلة شديدة' : 'Severe') : v >= 5 ? (ar ? 'مشكلة متوسطة' : 'Moderate') : (ar ? 'لا مشكلة' : 'OK');
+  const dwC = (d: number) => d >= 1.5 && d <= 2.5 ? C.green : C.gold;
+  const dwLbl = (d: number) => d >= 1.5 && d <= 2.5 ? (ar ? 'لا ارتباط ذاتي' : 'No autocorrelation') : d < 1.5 ? (ar ? 'ارتباط ذاتي موجب محتمل' : 'Possible + autocorr.') : (ar ? 'ارتباط ذاتي سالب محتمل' : 'Possible − autocorr.');
+
+  return (
+    <div>
+      <div style={{ marginBottom: 14 }}>
+        <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+          {ar ? 'البيانات — السطر الأول: أسماء المتغيرات (اختياري) · العمود الأول: المتغير التابع Y · الأعمدة التالية: المتنبئات X' : 'Data — first row: variable names (optional) · first column: Y (dependent) · other columns: predictors X'}
+        </label>
+        <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={8}
+          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 11, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+      </div>
+
+      {!result && <p style={{ color: C.muted, fontSize: 13 }}>{ar ? 'يلزم n > p + 1 وعمودان على الأقل' : 'Need n > p + 1 and at least 2 columns'}</p>}
+
+      {result && (
+        <>
+          {/* Model fit summary */}
+          <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 14 }}>
+            {[
+              { l: 'R²', v: result.reg.R2.toFixed(4), c: result.reg.R2 >= 0.5 ? C.green : result.reg.R2 >= 0.3 ? C.gold : C.red },
+              { l: 'Adj.R²', v: result.reg.adjR2.toFixed(4), c: C.sub },
+              { l: `F(${result.k},${result.n-result.k-1})`, v: result.reg.F.toFixed(3), c: C.text },
+              { l: 'p(F)', v: result.reg.pF < 0.001 ? '< .001' : result.reg.pF.toFixed(3), c: result.reg.pF < 0.05 ? C.green : C.red },
+              { l: 'RMSE', v: result.reg.rmse.toFixed(4), c: C.sub },
+              { l: 'n', v: String(result.n), c: C.text },
+              { l: 'k', v: String(result.k), c: C.text },
+            ].map(({ l, v, c }) => (
+              <div key={l} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 14px', textAlign: 'center', minWidth: 80 }}>
+                <div style={{ fontSize: 10, color: C.sub }}>{l}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: c }}>{v}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* VIF Table */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
+            <div style={{ padding: '10px 16px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 13, color: C.gold }}>
+              {ar ? 'معامل تضخم التباين (VIF) — كشف التعدد الخطي' : 'Variance Inflation Factor (VIF) — Multicollinearity Check'}
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                {[ar?'المتنبئ':'Predictor','β','VIF',ar?'التسامح':'Tolerance',ar?'التفسير':'Interpretation'].map(h => (
+                  <th key={h} style={{ padding: '7px 12px', textAlign: 'center', color: C.sub, fontWeight: 600 }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {result.predNames.map((name, j) => (
+                  <tr key={j} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: result.vif[j] >= 10 ? 'rgba(239,68,68,0.06)' : 'transparent' }}>
+                    <td style={{ padding: '7px 12px', fontWeight: 700, color: C.text }}>{name}</td>
+                    <td style={{ padding: '7px 12px', textAlign: 'center', color: C.sub }}>{result.reg.beta[j+1]?.toFixed(4) ?? '—'}</td>
+                    <td style={{ padding: '7px 12px', textAlign: 'center', fontWeight: 800, color: vifC(result.vif[j]) }}>{result.vif[j].toFixed(3)}</td>
+                    <td style={{ padding: '7px 12px', textAlign: 'center', color: C.sub }}>{(1/result.vif[j]).toFixed(3)}</td>
+                    <td style={{ padding: '7px 12px', textAlign: 'center', color: vifC(result.vif[j]) }}>{vifLbl(result.vif[j])}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={{ padding: '8px 16px', fontSize: 11, color: C.muted }}>
+              {ar ? 'VIF < 5 = مقبول · 5–10 = مشكلة متوسطة · > 10 = مشكلة شديدة (التسامح = 1/VIF)' : 'VIF < 5 = acceptable · 5–10 = moderate · > 10 = severe (Tolerance = 1/VIF)'}
+            </div>
+          </div>
+
+          {/* Durbin-Watson */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
+            <div style={{ textAlign: 'center', minWidth: 100 }}>
+              <div style={{ fontSize: 11, color: C.sub, marginBottom: 4 }}>{ar ? 'إحصاء Durbin-Watson' : 'Durbin-Watson Stat.'}</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: dwC(result.DW) }}>{result.DW.toFixed(4)}</div>
+              <div style={{ fontSize: 11, color: dwC(result.DW) }}>{dwLbl(result.DW)}</div>
+            </div>
+            <div style={{ flex: 1, fontSize: 12, color: C.muted }}>
+              {ar ? 'DW ≈ 2: لا ارتباط ذاتي · DW < 1.5: ارتباط ذاتي موجب · DW > 2.5: ارتباط ذاتي سالب · المدى الجيد: 1.5 ≤ DW ≤ 2.5'
+                  : 'DW ≈ 2: no autocorrelation · DW < 1.5: positive autocorr. · DW > 2.5: negative autocorr. · Good range: 1.5 ≤ DW ≤ 2.5'}
+            </div>
+          </div>
+
+          {/* Residuals vs Fitted + QQ side by side */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px' }}>
+              <div style={{ fontWeight: 700, fontSize: 12, color: C.gold, marginBottom: 10 }}>{ar?'البواقي المعيارية مقابل القيم المُناسَبة':'Std. Residuals vs. Fitted'}</div>
+              <ResponsiveContainer width="100%" height={180}>
+                <ComposedChart data={result.rfData} margin={{ top:4,right:8,left:0,bottom:4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)"/>
+                  <XAxis dataKey="fitted" tick={{fontSize:9,fill:C.sub}} label={{value:ar?'مُناسَب':'Fitted',position:'insideBottom',offset:-4,fill:C.sub,fontSize:9}}/>
+                  <YAxis tick={{fontSize:9,fill:C.sub}} label={{value:ar?'باقٍ':'Resid.',angle:-90,position:'insideLeft',fill:C.sub,fontSize:9}}/>
+                  <Tooltip contentStyle={{background:'#0d172d',border:`1px solid ${C.border}`,borderRadius:8,fontSize:11}}/>
+                  <ReferenceLine y={0} stroke={C.gold} strokeDasharray="4 3"/>
+                  <ReferenceLine y={2} stroke={C.red} strokeDasharray="3 3" label={{value:'±2',fill:C.red,fontSize:8}}/>
+                  <ReferenceLine y={-2} stroke={C.red} strokeDasharray="3 3"/>
+                  <Bar dataKey="sRes" fill={`${C.blue}88`} radius={[2,2,0,0]}/>
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px' }}>
+              <div style={{ fontWeight: 700, fontSize: 12, color: C.gold, marginBottom: 10 }}>{ar?'مخطط QQ للبواقي (اعتدالية البواقي)':'Residuals Q-Q Plot (normality)'}</div>
+              <ResponsiveContainer width="100%" height={180}>
+                <ComposedChart data={result.qqData} margin={{ top:4,right:8,left:0,bottom:4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)"/>
+                  <XAxis dataKey="theoretical" tick={{fontSize:9,fill:C.sub}} label={{value:ar?'نظري':'Theoretical',position:'insideBottom',offset:-4,fill:C.sub,fontSize:9}}/>
+                  <YAxis tick={{fontSize:9,fill:C.sub}} label={{value:ar?'عيني':'Sample',angle:-90,position:'insideLeft',fill:C.sub,fontSize:9}}/>
+                  <Tooltip contentStyle={{background:'#0d172d',border:`1px solid ${C.border}`,borderRadius:8,fontSize:11}}/>
+                  <ReferenceLine segment={[{x:result.qqData[0]?.theoretical,y:result.qqData[0]?.theoretical},{x:result.qqData[result.qqData.length-1]?.theoretical,y:result.qqData[result.qqData.length-1]?.theoretical}]} stroke={C.gold} strokeDasharray="4 3"/>
+                  <Bar dataKey="sample" fill={`${C.teal}88`} radius={[2,2,0,0]}/>
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <p style={{ fontSize: 11, color: C.muted }}>
+            {ar ? '* VIF: إحصاء كشف التعدد الخطي بين المتنبئات · DW: كشف الارتباط الذاتي للبواقي · بواقٍ خارج ±2 تُشير لقيم شاذة أو مؤثرة'
+                : '* VIF detects multicollinearity among predictors · DW detects autocorrelation in residuals · Residuals beyond ±2 may indicate outliers or influential cases'}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── DESCRIPTIVE STATISTICS TABLE (Table 1 Generator) ─────────────────────
+function DescTable({ ar }: { ar: boolean }) {
+  const DEF = `variable,score,anxiety,motivation,gpa,age
+P1,75,3.2,4.1,3.8,22
+P2,82,2.8,3.8,3.5,24
+P3,68,4.1,3.0,2.9,21
+P4,90,2.1,4.5,3.9,25
+P5,71,3.7,3.3,3.2,23
+P6,85,2.5,4.2,3.7,22
+P7,78,3.0,3.7,3.4,24
+P8,65,4.5,2.8,2.7,21
+P9,88,2.3,4.4,3.8,23
+P10,73,3.9,3.1,3.1,25
+P11,80,2.7,4.0,3.6,22
+P12,76,3.4,3.6,3.3,23`;
+  const [raw, setRaw] = useState(DEF);
+  const [copied, setCopied] = useState(false);
+
+  const result = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 3) return null;
+    const sep = lines[0].includes('\t') ? '\t' : ',';
+    const headers = lines[0].split(sep).map(h => h.trim().replace(/^"|"$/g, ''));
+
+    const cols: { name: string; vals: number[] }[] = headers.map((name, i) => {
+      const vals: number[] = [];
+      for (const line of lines.slice(1)) {
+        const v = parseFloat(line.split(sep)[i]?.trim().replace(/^"|"$/g, '') ?? '');
+        if (isFinite(v) && !isNaN(v)) vals.push(v);
+      }
+      return { name, vals };
+    });
+
+    const numeric = cols.filter(c => c.vals.length >= 3);
+    if (!numeric.length) return null;
+
+    const stats = numeric.map(({ name, vals }) => {
+      const n = vals.length, m = avg(vals);
+      const sorted = [...vals].sort((a,b)=>a-b);
+      const sd = Math.sqrt(vals.reduce((s,x)=>s+(x-m)**2,0)/Math.max(1,n-1));
+      const se = sd/Math.sqrt(n);
+      const median = n%2===0?(sorted[n/2-1]+sorted[n/2])/2:sorted[Math.floor(n/2)];
+      const skew = n>=3 ? (n/((n-1)*(n-2)))*vals.reduce((s,x)=>s+((x-m)/Math.max(1e-10,sd))**3,0) : 0;
+      const kurt = n>=4 ? (n*(n+1)/((n-1)*(n-2)*(n-3)))*vals.reduce((s,x)=>s+((x-m)/Math.max(1e-10,sd))**4,0)-3*(n-1)**2/((n-2)*(n-3)) : 0;
+      return { name, n, m, sd, se, median, min:sorted[0], max:sorted[n-1], skew, kurt };
+    });
+
+    return { stats };
+  }, [raw]);
+
+  const skC = (s: number) => Math.abs(s)<0.5?C.green:Math.abs(s)<1?C.gold:C.red;
+  const kuC = (k: number) => Math.abs(k)<2?C.green:Math.abs(k)<3?C.gold:C.red;
+
+  const copyTable = () => {
+    if (!result) return;
+    const hdr = `Variable\tn\tM\tSD\tSE\tMedian\tMin\tMax\tSkewness\tKurtosis`;
+    const rows = result.stats.map(s =>
+      `${s.name}\t${s.n}\t${s.m.toFixed(2)}\t${s.sd.toFixed(2)}\t${s.se.toFixed(3)}\t${s.median.toFixed(2)}\t${s.min.toFixed(2)}\t${s.max.toFixed(2)}\t${s.skew.toFixed(2)}\t${s.kurt.toFixed(2)}`);
+    navigator.clipboard.writeText([hdr,...rows].join('\n')).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2200);});
+  };
+
+  return (
+    <div>
+      <div style={{ marginBottom: 14 }}>
+        <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+          {ar ? 'البيانات — السطر الأول: أسماء المتغيرات · الفاصل: فاصلة أو tab · القيم غير الرقمية تُتجاهل' : 'Data — first row: variable names · separator: comma or tab · non-numeric values are skipped'}
+        </label>
+        <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={9}
+          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 11, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+      </div>
+
+      {!result && <p style={{ color: C.muted, fontSize: 13 }}>{ar?'يلزم 3 صفوف بيانات على الأقل وعمود رقمي واحد':'Need ≥ 3 data rows and ≥ 1 numeric column'}</p>}
+
+      {result && (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+            <button onClick={copyTable}
+              style={{ background: copied?'rgba(94,234,212,0.2)':'rgba(201,168,76,0.15)', border: `1px solid ${copied?C.teal:C.gold}`, borderRadius: 9, padding: '7px 18px', color: copied?C.teal:C.gold, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13 }}>
+              {copied ? (ar?'✓ تم النسخ':'✓ Copied!') : (ar?'📋 نسخ TSV (للـ Word/Excel)':'📋 Copy TSV (paste into Word/Excel)')}
+            </button>
+          </div>
+
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
+            <div style={{ padding: '10px 16px', background: 'rgba(201,168,76,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontWeight: 700, fontSize: 13, color: C.gold }}>
+                {ar?`الإحصاءات الوصفية (n=${result.stats[0]?.n} مشاهدة · ${result.stats.length} متغير)`:`Descriptive Statistics (n=${result.stats[0]?.n} observations · ${result.stats.length} variables)`}
+              </span>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                    {[ar?'المتغير':'Variable','n','M','SD','SE',ar?'الوسيط':'Median',ar?'الحد الأدنى':'Min',ar?'الحد الأقصى':'Max',ar?'الالتواء':'Skew',ar?'التفرطح':'Kurtosis'].map(h => (
+                      <th key={h} style={{ padding: '8px 10px', textAlign: 'center', color: C.sub, fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.stats.map((s, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: i%2===0?'rgba(255,255,255,0.01)':'transparent' }}>
+                      <td style={{ padding: '7px 10px', fontWeight: 700, color: C.text, textAlign: ar?'right':'left', paddingLeft: ar?10:14, minWidth: 80 }}>{s.name}</td>
+                      <td style={{ padding: '7px 10px', textAlign: 'center', color: C.sub }}>{s.n}</td>
+                      <td style={{ padding: '7px 10px', textAlign: 'center', fontWeight: 700, color: C.text }}>{s.m.toFixed(2)}</td>
+                      <td style={{ padding: '7px 10px', textAlign: 'center', color: C.sub }}>{s.sd.toFixed(2)}</td>
+                      <td style={{ padding: '7px 10px', textAlign: 'center', color: C.muted }}>{s.se.toFixed(3)}</td>
+                      <td style={{ padding: '7px 10px', textAlign: 'center', color: C.sub }}>{s.median.toFixed(2)}</td>
+                      <td style={{ padding: '7px 10px', textAlign: 'center', color: C.muted }}>{s.min.toFixed(2)}</td>
+                      <td style={{ padding: '7px 10px', textAlign: 'center', color: C.muted }}>{s.max.toFixed(2)}</td>
+                      <td style={{ padding: '7px 10px', textAlign: 'center', color: skC(s.skew), fontWeight: Math.abs(s.skew)>=1?700:400 }}>{s.skew.toFixed(3)}<div style={{fontSize:8,color:skC(s.skew)}}>{Math.abs(s.skew)<0.5?(ar?'متماثل':'symm.'):Math.abs(s.skew)<1?(ar?'متوسط':'mod.'):ar?'شديد':'high'}</div></td>
+                      <td style={{ padding: '7px 10px', textAlign: 'center', color: kuC(s.kurt), fontWeight: Math.abs(s.kurt)>=3?700:400 }}>{s.kurt.toFixed(3)}<div style={{fontSize:8,color:kuC(s.kurt)}}>{Math.abs(s.kurt)<2?(ar?'مقبول':'ok'):Math.abs(s.kurt)<3?(ar?'متوسط':'mod.'):ar?'شديد':'high'}</div></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Visual M ± SD bars */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px', marginBottom: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: C.gold, marginBottom: 12 }}>{ar?'رسم المتوسطات ± الانحراف المعياري':'Mean ± SD Chart'}</div>
+            <ResponsiveContainer width="100%" height={Math.max(160, result.stats.length * 38)}>
+              <BarChart data={result.stats.map(s=>({name:s.name,M:+s.m.toFixed(3),err:+s.sd.toFixed(3)}))} layout="vertical" margin={{ top:4, right:40, left:60, bottom:4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false}/>
+                <XAxis type="number" tick={{ fontSize:9, fill:C.sub }}/>
+                <YAxis type="category" dataKey="name" tick={{ fontSize:10, fill:C.sub }} width={55}/>
+                <Tooltip contentStyle={{ background:'#0d172d', border:`1px solid ${C.border}`, borderRadius:8, fontSize:11 }} formatter={(v:number)=>v.toFixed(3)}/>
+                <Bar dataKey="M" fill={`${C.blue}bb`} radius={[0,4,4,0]} label={{ position:'right', formatter:(v:number)=>v.toFixed(2), fill:C.sub, fontSize:9 }}/>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div style={{ fontSize: 11, color: C.muted }}>
+            {ar ? '* الالتواء: |S| < 0.5 = متماثل · 0.5–1.0 = متوسط · > 1.0 = شديد | التفرطح الزائد: |K| < 2 = مقبول · بياناتك جاهزة للنسخ بتنسيق TSV (للصق في Word أو Excel)'
+                : '* Skewness: |S| < 0.5 = symmetric · 0.5–1.0 = moderate · > 1.0 = substantial | Excess kurtosis: |K| < 2 = acceptable · Copy as TSV to paste directly into Word or Excel'}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── T-TESTS (One-sample / Paired / Welch Independent) ─────────────────────
+type TTRes =
+  | { type:'onesample'; n:number; xbar:number; s:number; se:number; t:number; p:number; d:number; ci_lo:number; ci_hi:number; mu0:number }
+  | { type:'paired'; n:number; xbar1:number; xbar2:number; dbar:number; sd:number; se:number; t:number; p:number; d:number; ci_lo:number; ci_hi:number; diffs:number[] }
+  | { type:'welch'; n1:number; n2:number; m1:number; m2:number; s1:number; s2:number; t_w:number; df_w:number; p_w:number; t_s:number; p_s:number; d:number; F_lev:number; p_lev:number; ci_lo:number; ci_hi:number };
+
+function TTests({ ar }: { ar: boolean }) {
+  const [mode, setMode] = useState<'onesample'|'paired'|'welch'>('paired');
+  const [raw1, setRaw1] = useState('4 3 5 4 3 5 4 3 5 4 3 4 5 4 3');
+  const [raw2, setRaw2] = useState('5 4 6 5 4 6 5 4 6 5 4 5 6 5 4');
+  const [mu0Str, setMu0Str] = useState('3');
+
+  const parse = (s: string) => s.trim().split(/[\s,;،]+/).map(Number).filter(v => isFinite(v) && !isNaN(v));
+
+  const result: TTRes | null = useMemo(() => {
+    const x1 = parse(raw1);
+    if (mode === 'onesample') {
+      const mu0 = parseFloat(mu0Str);
+      if (x1.length < 3 || isNaN(mu0)) return null;
+      const n = x1.length, xbar = avg(x1);
+      const s = Math.sqrt(x1.reduce((s,x)=>s+(x-xbar)**2,0)/Math.max(1,n-1));
+      const se = s/Math.sqrt(n), t=(xbar-mu0)/Math.max(1e-10,se);
+      const p = 2*(1-normalCDF(Math.abs(t))), d=(xbar-mu0)/Math.max(1e-10,s);
+      return { type:'onesample', n, xbar, s, se, t, p, d, ci_lo:xbar-1.96*se, ci_hi:xbar+1.96*se, mu0 };
+    }
+    if (mode === 'paired') {
+      const x2 = parse(raw2);
+      const n = Math.min(x1.length, x2.length);
+      if (n < 3) return null;
+      const v1=x1.slice(0,n), v2=x2.slice(0,n);
+      const diffs=v1.map((x,i)=>v2[i]-x), dbar=avg(diffs);
+      const sd=Math.sqrt(diffs.reduce((s,d)=>s+(d-dbar)**2,0)/Math.max(1,n-1));
+      const se=sd/Math.sqrt(n), t=dbar/Math.max(1e-10,se);
+      const p=2*(1-normalCDF(Math.abs(t))), d=dbar/Math.max(1e-10,sd);
+      return { type:'paired', n, xbar1:avg(v1), xbar2:avg(v2), diffs, dbar, sd, se, t, p, d, ci_lo:dbar-1.96*se, ci_hi:dbar+1.96*se };
+    }
+    // Welch independent
+    const x2 = parse(raw2);
+    if (x1.length < 3 || x2.length < 3) return null;
+    const n1=x1.length, n2=x2.length, m1=avg(x1), m2=avg(x2);
+    const v1n=x1.reduce((s,x)=>s+(x-m1)**2,0)/(n1-1), v2n=x2.reduce((s,x)=>s+(x-m2)**2,0)/(n2-1);
+    const s1=Math.sqrt(v1n), s2=Math.sqrt(v2n);
+    const se_w=Math.sqrt(v1n/n1+v2n/n2);
+    const t_w=(m1-m2)/Math.max(1e-10,se_w);
+    const df_w=(v1n/n1+v2n/n2)**2/((v1n/n1)**2/(n1-1)+(v2n/n2)**2/(n2-1));
+    const p_w=2*(1-normalCDF(Math.abs(t_w)));
+    const sp=Math.sqrt(((n1-1)*v1n+(n2-1)*v2n)/(n1+n2-2));
+    const t_s=(m1-m2)/(sp*Math.sqrt(1/n1+1/n2));
+    const p_s=2*(1-normalCDF(Math.abs(t_s)));
+    const d=Math.abs(m1-m2)/Math.max(1e-10,sp);
+    // Levene (Brown-Forsythe median-based)
+    const s1s=[...x1].sort((a,b)=>a-b), s2s=[...x2].sort((a,b)=>a-b);
+    const med1=s1s[Math.floor(n1/2)], med2=s2s[Math.floor(n2/2)];
+    const z1=x1.map(x=>Math.abs(x-med1)), z2=x2.map(x=>Math.abs(x-med2));
+    const zbar=avg([...z1,...z2]), z1b=avg(z1), z2b=avg(z2);
+    const SSLb=n1*(z1b-zbar)**2+n2*(z2b-zbar)**2;
+    const SSLw=z1.reduce((s,z)=>s+(z-z1b)**2,0)+z2.reduce((s,z)=>s+(z-z2b)**2,0);
+    const F_lev=SSLb/Math.max(1e-10,SSLw/(n1+n2-2));
+    const p_lev=1-chiSqP(F_lev,1);
+    return { type:'welch', n1, n2, m1, m2, s1, s2, t_w, df_w, p_w, t_s, p_s, d, F_lev, p_lev, ci_lo:(m1-m2)-1.96*se_w, ci_hi:(m1-m2)+1.96*se_w };
+  }, [mode, raw1, raw2, mu0Str]);
+
+  const pFmt = (p:number) => p<0.001?'< .001':p.toFixed(3);
+  const pC = (p:number) => p<0.05?C.green:C.red;
+  const dC = (d:number) => Math.abs(d)>=0.8?C.gold:Math.abs(d)>=0.5?C.blue:Math.abs(d)>=0.2?C.teal:C.muted;
+  const dLbl = (d:number) => { const a=Math.abs(d); return a>=0.8?(ar?'كبير':'large'):a>=0.5?(ar?'متوسط':'medium'):a>=0.2?(ar?'صغير':'small'):(ar?'ضئيل':'trivial'); };
+
+  const StatCard = ({ label, val, color, sub }: { label:string; val:string; color?:string; sub?:string }) => (
+    <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:9, padding:'8px 14px', textAlign:'center', minWidth:88 }}>
+      <div style={{ fontSize:10, color:C.sub }}>{label}</div>
+      <div style={{ fontSize:15, fontWeight:800, color:color??C.text }}>{val}</div>
+      {sub && <div style={{ fontSize:9, color:C.muted }}>{sub}</div>}
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Mode selector */}
+      <div style={{ display:'flex', gap:8, marginBottom:16, flexWrap:'wrap' }}>
+        {([['onesample',ar?'أحادي العينة':'One-Sample'],['paired',ar?'مزدوج (قبل/بعد)':'Paired (Pre/Post)'],['welch',ar?'مستقل (Welch)':'Independent (Welch)']] as const).map(([m,lbl]) => (
+          <button key={m} onClick={()=>setMode(m)}
+            style={{ background:mode===m?'rgba(201,168,76,0.2)':'rgba(255,255,255,0.04)', border:`1px solid ${mode===m?C.gold:C.border}`, borderRadius:9, padding:'7px 16px', color:mode===m?C.gold:C.sub, cursor:'pointer', fontFamily:'inherit', fontWeight:mode===m?700:400, fontSize:13 }}>
+            {lbl}
+          </button>
+        ))}
+      </div>
+
+      {/* Inputs */}
+      <div style={{ display:'grid', gridTemplateColumns:mode==='onesample'?'1fr 140px':'1fr 1fr', gap:12, marginBottom:14 }}>
+        <div>
+          <label style={{ fontSize:11, color:C.sub, display:'block', marginBottom:4 }}>
+            {mode==='onesample'?(ar?'البيانات':'Data'):mode==='paired'?(ar?'قبل / المجموعة 1':'Before / Group 1'):(ar?'المجموعة الأولى':'Group 1')}
+          </label>
+          <textarea value={raw1} onChange={e=>setRaw1(e.target.value)} rows={4}
+            style={{ width:'100%', background:'rgba(255,255,255,0.04)', border:`1px solid ${C.border}`, borderRadius:9, padding:'8px 12px', color:C.text, fontSize:11, fontFamily:'monospace', direction:'ltr', resize:'vertical', boxSizing:'border-box' }}/>
+        </div>
+        {mode==='onesample' ? (
+          <div>
+            <label style={{ fontSize:11, color:C.sub, display:'block', marginBottom:4 }}>{ar?'المتوسط الفرضي μ₀':'Hypothesized mean μ₀'}</label>
+            <input type="number" value={mu0Str} onChange={e=>setMu0Str(e.target.value)} step="0.1"
+              style={{ width:'100%', background:'rgba(255,255,255,0.04)', border:`1px solid ${C.border}`, borderRadius:9, padding:'12px', color:C.text, fontSize:20, fontWeight:700, direction:'ltr', boxSizing:'border-box' }}/>
+          </div>
+        ) : (
+          <div>
+            <label style={{ fontSize:11, color:C.sub, display:'block', marginBottom:4 }}>
+              {mode==='paired'?(ar?'بعد / المجموعة 2':'After / Group 2'):(ar?'المجموعة الثانية':'Group 2')}
+            </label>
+            <textarea value={raw2} onChange={e=>setRaw2(e.target.value)} rows={4}
+              style={{ width:'100%', background:'rgba(255,255,255,0.04)', border:`1px solid ${C.border}`, borderRadius:9, padding:'8px 12px', color:C.text, fontSize:11, fontFamily:'monospace', direction:'ltr', resize:'vertical', boxSizing:'border-box' }}/>
+          </div>
+        )}
+      </div>
+
+      {!result && <p style={{ color:C.muted, fontSize:13 }}>{ar?'يلزم 3 قيم على الأقل':'Need at least 3 values per group'}</p>}
+
+      {result?.type === 'onesample' && (
+        <>
+          <div style={{ display:'flex', gap:9, flexWrap:'wrap', marginBottom:14 }}>
+            <StatCard label="n" val={String(result.n)}/>
+            <StatCard label={ar?'المتوسط x̄':'Mean x̄'} val={result.xbar.toFixed(4)}/>
+            <StatCard label={ar?'الانحراف s':'SD s'} val={result.s.toFixed(4)}/>
+            <StatCard label="μ₀" val={String(result.mu0)} color={C.sub}/>
+            <StatCard label="t" val={result.t.toFixed(4)}/>
+            <StatCard label="p (two-tailed)" val={pFmt(result.p)} color={pC(result.p)}/>
+            <StatCard label="Cohen's d" val={result.d.toFixed(3)} color={dC(result.d)} sub={dLbl(result.d)}/>
+            <StatCard label="95% CI" val={`[${result.ci_lo.toFixed(3)}, ${result.ci_hi.toFixed(3)}]`} color={C.blue}/>
+          </div>
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:9, padding:'10px 16px', fontSize:12, color:C.sub }}>
+            <strong style={{ color:C.gold }}>APA: </strong>
+            {ar ? `t(${result.n-1}) = ${result.t.toFixed(2)}, p = ${pFmt(result.p)}, d = ${result.d.toFixed(2)}, 95% CI [${result.ci_lo.toFixed(2)}, ${result.ci_hi.toFixed(2)}]`
+                : `t(${result.n-1}) = ${result.t.toFixed(2)}, p = ${pFmt(result.p)}, d = ${result.d.toFixed(2)}, 95% CI [${result.ci_lo.toFixed(2)}, ${result.ci_hi.toFixed(2)}]`}
+            <br/><span style={{ color:result.p<0.05?C.green:C.red, fontSize:11 }}>
+              {result.p<0.05 ? (ar?`✓ المتوسط (${result.xbar.toFixed(2)}) يختلف دلالياً عن μ₀=${result.mu0}`:`✓ Mean (${result.xbar.toFixed(2)}) significantly differs from μ₀=${result.mu0}`)
+                             : (ar?`✗ لا يوجد دليل كافٍ على اختلاف المتوسط عن μ₀=${result.mu0}`:`✗ No evidence that mean differs from μ₀=${result.mu0}`)}
+            </span>
+          </div>
+        </>
+      )}
+
+      {result?.type === 'paired' && (
+        <>
+          <div style={{ display:'flex', gap:9, flexWrap:'wrap', marginBottom:14 }}>
+            <StatCard label={ar?'الأزواج n':'Pairs n'} val={String(result.n)}/>
+            <StatCard label={ar?'م. القبلي':'M before'} val={result.xbar1.toFixed(3)}/>
+            <StatCard label={ar?'م. البعدي':'M after'} val={result.xbar2.toFixed(3)}/>
+            <StatCard label={ar?'م. الفروق D̄':'Mean diff D̄'} val={result.dbar.toFixed(4)} color={result.dbar>0?C.green:C.red}/>
+            <StatCard label="t" val={result.t.toFixed(4)}/>
+            <StatCard label="p (two)" val={pFmt(result.p)} color={pC(result.p)}/>
+            <StatCard label="d (Cohen)" val={result.d.toFixed(3)} color={dC(result.d)} sub={dLbl(result.d)}/>
+            <StatCard label="95% CI (diff)" val={`[${result.ci_lo.toFixed(2)}, ${result.ci_hi.toFixed(2)}]`} color={C.blue}/>
+          </div>
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:'14px', marginBottom:14 }}>
+            <div style={{ fontWeight:700, fontSize:13, color:C.gold, marginBottom:10 }}>{ar?'توزيع الفروق (بعد − قبل)':'Distribution of Differences (After − Before)'}</div>
+            <ResponsiveContainer width="100%" height={130}>
+              <BarChart data={(() => {
+                const mn=Math.min(...result.diffs), mx=Math.max(...result.diffs);
+                if(mn===mx) return [{x:String(mn),count:result.diffs.length}];
+                const bw=(mx-mn)/8;
+                return Array.from({length:8},(_,b)=>({x:(mn+b*bw).toFixed(2),count:result.diffs.filter(d=>d>=mn+b*bw&&(b===7?d<=mx:d<mn+(b+1)*bw)).length}));
+              })()} margin={{ top:4,right:8,left:0,bottom:4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false}/>
+                <XAxis dataKey="x" tick={{fontSize:9,fill:C.sub}}/>
+                <YAxis tick={{fontSize:9,fill:C.sub}} width={24}/>
+                <Tooltip contentStyle={{background:'#0d172d',border:`1px solid ${C.border}`,borderRadius:8,fontSize:11}}/>
+                <ReferenceLine x={result.dbar.toFixed(2)} stroke={C.gold} strokeDasharray="4 3"/>
+                <Bar dataKey="count" fill={`${C.blue}bb`} radius={[3,3,0,0]}/>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:9, padding:'10px 16px', fontSize:12, color:C.sub }}>
+            <strong style={{ color:C.gold }}>APA: </strong>
+            {`t(${result.n-1}) = ${result.t.toFixed(2)}, p = ${pFmt(result.p)}, d = ${result.d.toFixed(2)}, 95% CI [${result.ci_lo.toFixed(2)}, ${result.ci_hi.toFixed(2)}]`}
+            <br/><span style={{ color:result.p<0.05?C.green:C.red, fontSize:11 }}>
+              {result.p<0.05 ? (ar?`✓ فرق دال: M_diff = ${result.dbar.toFixed(2)} (${result.dbar>0?'تحسّن':'تراجع'}) p ${pFmt(result.p)}`:`✓ Significant difference: M_diff = ${result.dbar.toFixed(2)} p ${pFmt(result.p)}`)
+                             : (ar?'✗ لا فرق دال بين القياسين':'✗ No significant difference between measurements')}
+            </span>
+          </div>
+        </>
+      )}
+
+      {result?.type === 'welch' && (
+        <>
+          {/* Group descriptives */}
+          <div style={{ display:'flex', gap:9, flexWrap:'wrap', marginBottom:14 }}>
+            {[{lbl:ar?'المجموعة 1':'Group 1',n:result.n1,m:result.m1,s:result.s1},{lbl:ar?'المجموعة 2':'Group 2',n:result.n2,m:result.m2,s:result.s2}].map(g=>(
+              <div key={g.lbl} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:9, padding:'8px 14px' }}>
+                <div style={{ fontSize:11, color:C.gold, fontWeight:700 }}>{g.lbl}</div>
+                <div style={{ fontSize:13, fontWeight:700, color:C.text }}>M={g.m.toFixed(3)}</div>
+                <div style={{ fontSize:10, color:C.sub }}>SD={g.s.toFixed(3)} · n={g.n}</div>
+              </div>
+            ))}
+          </div>
+          {/* Levene */}
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:9, padding:'10px 14px', marginBottom:12, fontSize:12 }}>
+            <strong style={{ color:C.gold }}>{ar?'اختبار Levene (Brown-Forsythe) لتجانس التباين: ':'Levene (Brown-Forsythe) Test of Variance Equality: '}</strong>
+            F = {result.F_lev.toFixed(3)}, p = <strong style={{ color:pC(result.p_lev) }}>{pFmt(result.p_lev)}</strong>
+            <span style={{ color:result.p_lev<0.05?C.red:C.green, marginLeft:8, fontSize:11 }}>
+              {result.p_lev<0.05 ? (ar?'⚠ تباينات غير متجانسة → استخدم Welch':'⚠ Unequal variances → use Welch') : (ar?'✓ تباينات متجانسة → كلاهما صالح':'✓ Equal variances → both tests valid')}
+            </span>
+          </div>
+          {/* Both t-tests */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:14 }}>
+            {[{lbl:ar?'t-test ويلش (متباين)':'Welch t-test (unequal var.)',t:result.t_w,df:result.df_w,p:result.p_w,rec:true},
+              {lbl:ar?'t-test ستيودنت (متجانس)':'Student t-test (equal var.)',t:result.t_s,df:result.n1+result.n2-2,p:result.p_s,rec:false}].map(({lbl,t,df,p,rec})=>(
+              <div key={lbl} style={{ background:C.card, border:`1px solid ${rec?C.gold:C.border}`, borderRadius:12, padding:'12px 14px' }}>
+                <div style={{ fontSize:11, color:rec?C.gold:C.sub, fontWeight:rec?700:400, marginBottom:6 }}>{lbl}{rec?` ⭐`:''}</div>
+                <div style={{ display:'flex', gap:14, flexWrap:'wrap', fontSize:12 }}>
+                  <span>t({df.toFixed(1)}) = <strong style={{color:C.text}}>{t.toFixed(3)}</strong></span>
+                  <span>p = <strong style={{color:pC(p)}}>{pFmt(p)}</strong></span>
+                  <span style={{color:p<0.05?C.green:C.red,fontWeight:700}}>{p<0.05?(ar?'دال':'Sig.'):(ar?'غير دال':'ns')}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display:'flex', gap:9, flexWrap:'wrap', marginBottom:14 }}>
+            <StatCard label="Cohen's d" val={result.d.toFixed(3)} color={dC(result.d)} sub={dLbl(result.d)}/>
+            <StatCard label={ar?'فرق المتوسطات':'Mean diff'} val={(result.m1-result.m2).toFixed(3)} color={result.m1>result.m2?C.green:C.red}/>
+            <StatCard label="95% CI (diff)" val={`[${result.ci_lo.toFixed(2)}, ${result.ci_hi.toFixed(2)}]`} color={C.blue}/>
+          </div>
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:9, padding:'10px 16px', fontSize:12, color:C.sub }}>
+            <strong style={{ color:C.gold }}>APA (Welch): </strong>
+            {`t(${result.df_w.toFixed(1)}) = ${result.t_w.toFixed(2)}, p = ${pFmt(result.p_w)}, d = ${result.d.toFixed(2)}, 95% CI [${result.ci_lo.toFixed(2)}, ${result.ci_hi.toFixed(2)}]`}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── POST-HOC TESTS ────────────────────────────────────────────────────────
+function PostHoc({ ar }: { ar: boolean }) {
+  const DEF = `A: 4 3 5 4 3 5 4 3
+B: 3 4 3 4 3 4 3 4
+C: 5 5 4 5 5 4 5 5
+D: 2 3 2 3 2 3 2 3`;
+  const [raw, setRaw] = useState(DEF);
+
+  const result = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim());
+    const groups: { name: string; vals: number[] }[] = [];
+    for (const line of lines) {
+      const match = line.match(/^(.+?):\s*(.+)$/);
+      if (!match) continue;
+      const vals = match[2].trim().split(/[\s,;،]+/).map(Number).filter(v => isFinite(v) && !isNaN(v));
+      if (vals.length >= 2) groups.push({ name: match[1].trim(), vals });
+    }
+    if (groups.length < 2) return null;
+
+    const k = groups.length;
+    const N = groups.reduce((s, g) => s + g.vals.length, 0);
+    const gm  = groups.map(g => avg(g.vals));
+    const gN  = groups.map(g => g.vals.length);
+    const gSD = groups.map((g, i) => Math.sqrt(g.vals.reduce((s, x) => s+(x-gm[i])**2, 0) / Math.max(1, gN[i]-1)));
+
+    const SSw = groups.reduce((s, _, i) => s + (gN[i]-1)*gSD[i]**2, 0);
+    const df_err = N - k;
+    const MSE   = SSw / Math.max(1, df_err);
+    const grand = avg(groups.flatMap(g => g.vals));
+    const SSb   = groups.reduce((s, _, i) => s + gN[i]*(gm[i]-grand)**2, 0);
+    const df_b  = k - 1;
+    const F     = (SSb / df_b) / Math.max(1e-10, MSE);
+    const η2    = SSb / (SSb + SSw);
+    const pF    = 1 - chiSqP(F * df_b, df_b);
+
+    const m = k*(k-1)/2;
+    const pairs: { i: number; j: number; md: number; t: number; p_raw: number; p_bon: number; p_holm: number; d: number; sig_bon: boolean; sig_holm: boolean }[] = [];
+    for (let i = 0; i < k-1; i++) for (let j = i+1; j < k; j++) {
+      const se = Math.sqrt(MSE*(1/gN[i]+1/gN[j]));
+      const t  = Math.abs(gm[i]-gm[j]) / Math.max(1e-10, se);
+      const p_raw = 2*(1-normalCDF(t));
+      const poolSD = Math.sqrt(((gN[i]-1)*gSD[i]**2+(gN[j]-1)*gSD[j]**2)/Math.max(1,gN[i]+gN[j]-2));
+      const d = Math.abs(gm[i]-gm[j])/Math.max(1e-10,poolSD);
+      pairs.push({ i, j, md: gm[i]-gm[j], t, p_raw, p_bon: Math.min(1,p_raw*m), p_holm: 0, d, sig_bon: false, sig_holm: false });
+    }
+    // Holm step-down
+    const byP = [...pairs].sort((a,b)=>a.p_raw-b.p_raw);
+    byP.forEach((pr, idx) => { pr.p_holm = Math.min(1, pr.p_raw*(m-idx)); pr.sig_holm = pr.p_raw <= 0.05/(m-idx); });
+    pairs.forEach(pr => { pr.sig_bon = pr.p_bon < 0.05; });
+
+    // p-adj matrix
+    const mx: (number|null)[][] = Array.from({length:k},()=>new Array(k).fill(null));
+    pairs.forEach(({i,j,p_bon})=>{ mx[i][j]=mx[j][i]=p_bon; });
+
+    return { groups, k, N, gm, gN, gSD, F, df_b, df_err, η2, pF, pairs, m, mx };
+  }, [raw]);
+
+  const pFmt = (p: number) => p < 0.001 ? '< .001' : p.toFixed(3);
+  const starFmt = (p: number) => p<0.001?'***':p<0.01?'**':p<0.05?'*':'ns';
+  const pColor = (p: number) => p < 0.05 ? C.green : C.muted;
+  const cellBg = (p: number|null) => !p ? 'transparent' : p<0.05 ? 'rgba(94,234,212,0.18)' : 'rgba(255,255,255,0.03)';
+  const dLabel = (d: number) => d>=0.8?(ar?'كبير':'large'):d>=0.5?(ar?'متوسط':'med.'):d>=0.2?(ar?'صغير':'small'):(ar?'ضئيل':'trivial');
+
+  return (
+    <div>
+      <div style={{ marginBottom: 14 }}>
+        <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+          {ar ? 'أدخل كل مجموعة في سطر: اسم المجموعة : القيم' : 'Each group on its own line: GroupName: v1 v2 v3 ...'}
+        </label>
+        <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={7}
+          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 12, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+      </div>
+
+      {!result && <p style={{ color: C.muted, fontSize: 13 }}>{ar?'يلزم مجموعتان أو أكثر':'Need 2+ groups'}</p>}
+
+      {result && (
+        <>
+          {/* ANOVA summary */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 16px', marginBottom: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: C.gold, marginBottom: 8 }}>{ar?'ANOVA أحادي الاتجاه (الخطوة الأولى)':'One-Way ANOVA (prerequisite)'}</div>
+            <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 13, alignItems: 'center' }}>
+              <span>F({result.df_b}, {result.df_err}) = <strong style={{ color: C.text }}>{result.F.toFixed(3)}</strong></span>
+              <span>p = <strong style={{ color: result.pF<0.05?C.green:C.red }}>{pFmt(result.pF)}</strong></span>
+              <span>η² = <strong style={{ color: C.blue }}>{result.η2.toFixed(3)}</strong></span>
+              <span style={{ fontSize: 11, color: result.pF<0.05?C.green:C.gold }}>
+                {result.pF<0.05 ? (ar?'✓ فروق دالة → المقارنات البعدية مبررة':'✓ Significant — post-hoc justified') : (ar?'⚠ لا فروق دالة → المقارنات بعدية غير موصى بها':'⚠ Not significant — post-hoc not recommended')}
+              </span>
+            </div>
+          </div>
+
+          {/* Group cards */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+            {result.groups.map((g, i) => (
+              <div key={i} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 14px', textAlign: 'center', minWidth: 80 }}>
+                <div style={{ fontSize: 12, color: C.gold, fontWeight: 700 }}>{g.name}</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: C.text }}>M={result.gm[i].toFixed(2)}</div>
+                <div style={{ fontSize: 10, color: C.sub }}>SD={result.gSD[i].toFixed(2)} · n={result.gN[i]}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Pairwise table */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
+            <div style={{ padding: '10px 16px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 13, color: C.gold }}>
+              {ar ? `المقارنات الزوجية (${result.m} أزواج) — Bonferroni & Holm` : `Pairwise Comparisons (${result.m} pairs) — Bonferroni & Holm`}
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+                <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                  {[ar?'المقارنة':'Pair', 'MD', 't', 'p', 'p (Bonf)', '✓Bon', 'p (Holm)', '✓Holm', "d"].map(h => (
+                    <th key={h} style={{ padding: '7px 9px', textAlign: 'center', color: C.sub, fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {result.pairs.map(({ i, j, md, t, p_raw, p_bon, p_holm, sig_bon, sig_holm, d }) => (
+                    <tr key={`${i}${j}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: sig_bon?'rgba(94,234,212,0.05)':'transparent' }}>
+                      <td style={{ padding: '5px 9px', fontWeight: 700, color: C.text, whiteSpace: 'nowrap' }}>{result.groups[i].name} vs {result.groups[j].name}</td>
+                      <td style={{ padding: '5px 9px', textAlign: 'center', color: C.sub }}>{md.toFixed(3)}</td>
+                      <td style={{ padding: '5px 9px', textAlign: 'center', color: C.sub }}>{t.toFixed(3)}</td>
+                      <td style={{ padding: '5px 9px', textAlign: 'center', color: pColor(p_raw) }}>{pFmt(p_raw)} <sup>{starFmt(p_raw)}</sup></td>
+                      <td style={{ padding: '5px 9px', textAlign: 'center', color: pColor(p_bon), fontWeight: sig_bon?700:400 }}>{pFmt(p_bon)}</td>
+                      <td style={{ padding: '5px 9px', textAlign: 'center' }}>{sig_bon?<span style={{color:C.green,fontWeight:800}}>✓</span>:<span style={{color:C.muted}}>—</span>}</td>
+                      <td style={{ padding: '5px 9px', textAlign: 'center', color: pColor(p_holm), fontWeight: sig_holm?700:400 }}>{pFmt(p_holm)}</td>
+                      <td style={{ padding: '5px 9px', textAlign: 'center' }}>{sig_holm?<span style={{color:C.green,fontWeight:800}}>✓</span>:<span style={{color:C.muted}}>—</span>}</td>
+                      <td style={{ padding: '5px 9px', textAlign: 'center', color: d>=0.8?C.gold:d>=0.5?C.blue:d>=0.2?C.teal:C.muted }}>
+                        {d.toFixed(3)}<div style={{fontSize:8,color:C.muted}}>{dLabel(d)}</div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Significance matrix */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
+            <div style={{ padding: '10px 16px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 13, color: C.gold }}>
+              {ar?'مصفوفة الدلالة (p Bonferroni — الخلايا الخضراء = دالة)':'Significance Matrix (Bonferroni p-adj — green = significant)'}
+            </div>
+            <div style={{ overflowX: 'auto', padding: '12px' }}>
+              <table style={{ borderCollapse: 'collapse', fontSize: 11 }}>
+                <thead><tr>
+                  <th style={{ padding: '6px 10px' }}></th>
+                  {result.groups.map((g, j) => <th key={j} style={{ padding: '6px 10px', color: C.gold, textAlign: 'center', minWidth: 65 }}>{g.name}</th>)}
+                </tr></thead>
+                <tbody>
+                  {result.groups.map((g, i) => (
+                    <tr key={i}>
+                      <th style={{ padding: '6px 10px', textAlign: ar?'right':'left', color: C.gold, fontWeight: 700, paddingRight: 14 }}>{g.name}</th>
+                      {result.groups.map((_, j) => (
+                        <td key={j} style={{ padding: '6px 10px', textAlign: 'center', background: i===j?'rgba(255,255,255,0.04)':cellBg(result.mx[i][j]), borderRadius: 4, minWidth: 65 }}>
+                          {i===j ? '—' : result.mx[i][j]!==null ? (
+                            <span style={{ color: result.mx[i][j]!<0.05?C.green:C.muted, fontWeight: result.mx[i][j]!<0.05?700:400 }}>
+                              {pFmt(result.mx[i][j]!)}{result.mx[i][j]!<0.05?' ✓':''}
+                            </span>
+                          ) : '—'}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <p style={{ fontSize: 11, color: C.muted }}>
+            {ar ? '* p تقريبي (توزيع طبيعي) · أكثر دقة لـ df > 30 · Bonferroni: يُقلّل خطأ النوع الأول · Holm: أقوى إحصائياً (أعلى قوة اختبار) · d: Cohen (0.2=صغير، 0.5=متوسط، 0.8=كبير)'
+                : '* p uses normal approximation (accurate for df > 30) · Bonferroni: controls FWER · Holm: more powerful (step-down) · d: Cohen (0.2=small, 0.5=medium, 0.8=large)'}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── ITEM ANALYSIS ────────────────────────────────────────────────────────
+function ItemAnalysis({ ar }: { ar: boolean }) {
+  const DEF = `4 3 5 4 3 5 4 3
+3 4 3 4 3 4 3 4
+5 5 4 5 5 4 5 5
+2 3 2 3 2 3 2 3
+4 4 5 4 4 5 4 4
+3 3 3 3 3 3 3 3
+5 4 4 5 4 4 5 4
+4 5 5 4 5 5 4 5
+2 2 3 2 2 3 2 2
+5 5 5 5 5 5 5 5
+3 4 4 3 4 4 3 4
+1 2 1 2 1 2 1 2`;
+  const [raw, setRaw] = useState(DEF);
+  const [names, setNames] = useState('');
+  const [maxScore, setMaxScore] = useState(5);
+
+  const result = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim() && !l.trim().startsWith('//') && !l.trim().startsWith('#'));
+    const data = lines.map(l => l.trim().split(/[\s,;،]+/).map(Number).filter(v => isFinite(v) && !isNaN(v)));
+    if (!data.length) return null;
+    const p = Math.min(...data.map(r => r.length));
+    if (data.length < 5 || p < 2) return null;
+    const D = data.map(r => r.slice(0, p));
+    const n = D.length;
+
+    const totals = D.map(row => row.reduce((s, v) => s + v, 0));
+    const idxByTot = [...Array(n).keys()].sort((a, b) => totals[a] - totals[b]);
+    const cut = Math.max(1, Math.floor(0.27 * n));
+
+    const varOf = (arr: number[]) => { const m = avg(arr); return arr.reduce((s, x) => s+(x-m)**2, 0) / Math.max(1, arr.length-1); };
+
+    const calcAlpha = (mat: number[][]): number => {
+      const k = mat[0].length;
+      if (k < 2) return 0;
+      const varItems = Array.from({ length: k }, (_, j) => varOf(mat.map(r => r[j])));
+      const tots = mat.map(r => r.reduce((s,v)=>s+v,0));
+      const varTot = varOf(tots);
+      if (varTot < 1e-10) return 0;
+      return (k/(k-1)) * (1 - varItems.reduce((s,v)=>s+v,0) / varTot);
+    };
+
+    const overallAlpha = calcAlpha(D);
+
+    const items = Array.from({ length: p }, (_, j) => {
+      const col = D.map(r => r[j]);
+      const rest = D.map(r => r.reduce((s, v, k) => k !== j ? s+v : s, 0));
+      const citc = pearson(col, rest);
+
+      const subMat = D.map(r => r.filter((_, k) => k !== j));
+      const alphaIfDel = calcAlpha(subMat);
+
+      const m = avg(col);
+      const sd = Math.sqrt(varOf(col));
+      const difficulty = m / Math.max(1, maxScore);
+
+      const lower27 = avg(idxByTot.slice(0, cut).map(i => D[i][j]));
+      const upper27 = avg(idxByTot.slice(-cut).map(i => D[i][j]));
+      const disc = (upper27 - lower27) / Math.max(1, maxScore);
+
+      const status = citc >= 0.4 ? 'good' : citc >= 0.3 ? 'marginal' : 'poor';
+      return { m, sd, citc, alphaIfDel, difficulty, disc, status };
+    });
+
+    const vnames = names.trim() ? names.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean) : Array.from({ length: p }, (_, i) => `Q${i+1}`);
+    const chartData = items.map((it, i) => ({ name: vnames[i] ?? `Q${i+1}`, CITC: +it.citc.toFixed(3), D: +it.disc.toFixed(3) }));
+    return { items, vnames: vnames.slice(0, p), overallAlpha, n, p, chartData };
+  }, [raw, names, maxScore]);
+
+  const citcC = (c: number) => c >= 0.4 ? C.green : c >= 0.3 ? C.gold : C.red;
+  const discC = (d: number) => d >= 0.4 ? C.green : d >= 0.3 ? C.gold : d >= 0.2 ? C.blue : C.red;
+  const diffC = (p: number) => p > 0.8 ? C.red : p > 0.2 ? C.green : C.red;
+  const statusLabel = (s: string) => s === 'good' ? (ar?'✓ جيدة':'✓ Good') : s === 'marginal' ? (ar?'⚠ مقبولة':'⚠ Marginal') : (ar?'✗ ضعيفة':'✗ Poor');
+  const statusColor = (s: string) => s === 'good' ? C.green : s === 'marginal' ? C.gold : C.red;
+
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 150px 120px', gap: 12, marginBottom: 14 }}>
+        <div>
+          <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+            {ar ? 'البيانات — كل سطر مستجيب · كل عمود فقرة' : 'Data — each row = respondent, each column = item'}
+          </label>
+          <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={8}
+            style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 11, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>{ar?'أسماء الفقرات (اختياري)':'Item names (optional)'}</label>
+          <textarea value={names} onChange={e => setNames(e.target.value)} rows={8} placeholder="Q1\nQ2\nQ3\n..."
+            style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 11, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>{ar?'أعلى درجة ممكنة':'Max possible score'}</label>
+          <input type="number" value={maxScore} min={2} max={100} onChange={e => setMaxScore(Number(e.target.value))}
+            style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 14, fontWeight: 700, direction: 'ltr', boxSizing: 'border-box' }} />
+          <p style={{ fontSize: 10, color: C.muted, margin: '6px 0 0' }}>{ar?'للمقياس الخماسي: 5':'e.g., Likert-5: 5'}</p>
+        </div>
+      </div>
+
+      {!result && <p style={{ color: C.muted, fontSize: 13 }}>{ar?'يلزم 5 مستجيبين على الأقل وفقرتان فأكثر':'Need ≥ 5 respondents and ≥ 2 items'}</p>}
+
+      {result && (
+        <>
+          {/* Overall alpha */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+            {[
+              { l: 'n', v: String(result.n), c: C.text },
+              { l: ar?'فقرات':'Items', v: String(result.p), c: C.text },
+              { l: 'α (كرونباخ)', v: result.overallAlpha.toFixed(3), c: result.overallAlpha >= 0.7 ? C.green : result.overallAlpha >= 0.6 ? C.gold : C.red },
+              { l: ar?'فقرات جيدة CITC≥0.4':'Good items CITC≥0.4', v: String(result.items.filter(it=>it.citc>=0.4).length), c: C.green },
+              { l: ar?'فقرات ضعيفة CITC<0.3':'Poor items CITC<0.3', v: String(result.items.filter(it=>it.citc<0.3).length), c: result.items.filter(it=>it.citc<0.3).length ? C.red : C.green },
+            ].map(({ l, v, c }) => (
+              <div key={l} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 14px', textAlign: 'center', minWidth: 90 }}>
+                <div style={{ fontSize: 10, color: C.sub }}>{l}</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: c }}>{v}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* CITC + D bar chart */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px', marginBottom: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: C.gold, marginBottom: 10 }}>
+              {ar?'الارتباط المصحَّح بالدرجة الكلية (CITC) ومؤشر التمييز (D) لكل فقرة':'CITC & Discrimination Index D per item'}
+            </div>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={result.chartData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false}/>
+                <XAxis dataKey="name" tick={{ fontSize: 9, fill: C.sub }}/>
+                <YAxis domain={[-0.1, 1]} tick={{ fontSize: 9, fill: C.sub }} width={30}/>
+                <Tooltip contentStyle={{ background: '#0d172d', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 11 }}/>
+                <Legend wrapperStyle={{ fontSize: 11, color: C.sub }}/>
+                <ReferenceLine y={0.4} stroke={C.green} strokeDasharray="6 3" label={{ value: '0.4', fill: C.green, fontSize: 9, position: 'insideTopRight' }}/>
+                <ReferenceLine y={0.3} stroke={C.gold} strokeDasharray="4 3" label={{ value: '0.3', fill: C.gold, fontSize: 9, position: 'insideTopRight' }}/>
+                <Bar dataKey="CITC" fill={`${C.blue}bb`} radius={[3,3,0,0]} name="CITC"/>
+                <Bar dataKey="D" fill={`${C.teal}99`} radius={[3,3,0,0]} name="D (Discrim.)"/>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Item analysis table */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
+            <div style={{ padding: '10px 16px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 13, color: C.gold }}>
+              {ar?'جدول تحليل الفقرات التفصيلي':'Detailed Item Analysis Table'}
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+                <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                  {[ar?'الفقرة':'Item', ar?'م':'M', ar?'ع':'SD', ar?'الصعوبة P':'Difficulty P', 'CITC', ar?'التمييز D':'Discrim. D', ar?'α بحذفها':'α if del.', ar?'الحالة':'Status'].map(h => (
+                    <th key={h} style={{ padding: '7px 10px', textAlign: 'center', color: C.sub, fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {result.items.map((it, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: it.status === 'poor' ? 'rgba(239,68,68,0.05)' : 'transparent' }}>
+                      <td style={{ padding: '6px 10px', textAlign: 'center', fontWeight: 700, color: C.text }}>{result.vnames[i] ?? `Q${i+1}`}</td>
+                      <td style={{ padding: '6px 10px', textAlign: 'center', color: C.sub }}>{it.m.toFixed(2)}</td>
+                      <td style={{ padding: '6px 10px', textAlign: 'center', color: C.muted }}>{it.sd.toFixed(2)}</td>
+                      <td style={{ padding: '6px 10px', textAlign: 'center', color: diffC(it.difficulty) }}>{(it.difficulty*100).toFixed(1)}%<div style={{ fontSize: 9, color: C.muted }}>{it.difficulty > 0.8 ? (ar?'سهلة':'Easy') : it.difficulty < 0.2 ? (ar?'صعبة':'Hard') : (ar?'متوسطة':'Moderate')}</div></td>
+                      <td style={{ padding: '6px 10px', textAlign: 'center', color: citcC(it.citc), fontWeight: 700 }}>{it.citc.toFixed(3)}</td>
+                      <td style={{ padding: '6px 10px', textAlign: 'center', color: discC(it.disc), fontWeight: 600 }}>{it.disc.toFixed(3)}</td>
+                      <td style={{ padding: '6px 10px', textAlign: 'center', color: C.muted }}>{it.alphaIfDel.toFixed(3)}<div style={{ fontSize: 9, color: it.alphaIfDel > result.overallAlpha + 0.01 ? C.red : C.muted }}>{it.alphaIfDel > result.overallAlpha + 0.01 ? (ar?'↑ يُحسَّن بحذفها':'↑ improves α') : ''}</div></td>
+                      <td style={{ padding: '6px 10px', textAlign: 'center', color: statusColor(it.status), fontWeight: 700 }}>{statusLabel(it.status)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.7 }}>
+            <strong style={{ color: C.sub }}>{ar?'معيار التقييم: ':'Criteria: '}</strong>
+            {ar ? 'CITC ≥ 0.4 = جيدة · 0.3–0.4 = مقبولة · < 0.3 = مرشحة للحذف | P: 0.2–0.8 = مدى مناسب | D ≥ 0.4 = ممتاز · 0.3–0.4 = جيد · 0.2–0.3 = مقبول · < 0.2 = ضعيف'
+                : 'CITC ≥ 0.4 = good · 0.3–0.4 = marginal · < 0.3 = candidate for removal | P: 0.2–0.8 = good difficulty range | D ≥ 0.4 = excellent · 0.3–0.4 = good · 0.2–0.3 = marginal · < 0.2 = poor'}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── OUTLIER DETECTION ────────────────────────────────────────────────────
+function OutlierDetection({ ar }: { ar: boolean }) {
+  const [raw, setRaw] = useState('12 15 14 10 98 16 13 14 12 15 11 14 16 13 12 14 15 13 99 12');
+  const [zThr, setZThr] = useState(2.5);
+
+  const parse = (s: string) => s.split(/[\s,;،]+/).map(Number).filter(v => isFinite(v) && !isNaN(v));
+
+  const result = useMemo(() => {
+    const vals = parse(raw);
+    if (vals.length < 4) return null;
+    const n = vals.length;
+    const mu = avg(vals);
+    const sd = Math.sqrt(vals.reduce((s, x) => s + (x - mu)**2, 0) / Math.max(1, n - 1));
+    const sorted = [...vals].sort((a, b) => a - b);
+
+    // Quartiles (linear interpolation)
+    const quart = (p: number) => {
+      const pos = p * (n - 1);
+      const lo = Math.floor(pos), hi = Math.ceil(pos);
+      return lo === hi ? sorted[lo] : sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+    };
+    const q1 = quart(0.25), median = quart(0.5), q3 = quart(0.75);
+    const iqr = q3 - q1;
+    const fence_lo = q1 - 1.5 * iqr, fence_hi = q3 + 1.5 * iqr;
+    const whi_lo = sorted.find(v => v >= fence_lo) ?? sorted[0];
+    const whi_hi = [...sorted].reverse().find(v => v <= fence_hi) ?? sorted[sorted.length - 1];
+
+    const rows = vals.map((v, i) => {
+      const z = (v - mu) / Math.max(1e-10, sd);
+      return { i: i + 1, v, z, zOut: Math.abs(z) > zThr, iqrOut: v < fence_lo || v > fence_hi };
+    });
+
+    const iqrOutVals = rows.filter(r => r.iqrOut).map(r => r.v);
+    const zOutVals   = rows.filter(r => r.zOut).map(r => r.v);
+
+    // Data for histogram (recharts)
+    const mn = sorted[0], mx = sorted[sorted.length - 1];
+    const bins = 10, bw = (mx - mn) / bins;
+    const hist = Array.from({ length: bins }, (_, b) => {
+      const lo = mn + b * bw, hi = mn + (b + 1) * bw;
+      return { label: lo.toFixed(1), count: vals.filter(v => v >= lo && (b === bins - 1 ? v <= hi : v < hi)).length, lo, hi };
+    });
+
+    return { vals, n, mu, sd, sorted, q1, median, q3, iqr, fence_lo, fence_hi, whi_lo, whi_hi, rows, iqrOutVals, zOutVals, hist, mn, mx };
+  }, [raw, zThr]);
+
+  const BoxPlot = () => {
+    if (!result) return null;
+    const { q1, median, q3, whi_lo, whi_hi, iqrOutVals, mn, mx } = result;
+    const W = 500, H = 80, PAD = 40;
+    const sc = (v: number) => PAD + ((v - mn) / Math.max(1e-10, mx - mn)) * (W - 2 * PAD);
+    return (
+      <svg width="100%" viewBox={`0 0 ${W} ${H + 20}`} style={{ overflow: 'visible', display: 'block' }}>
+        <line x1={sc(whi_lo)} y1={H/2} x2={sc(q1)} y2={H/2} stroke={C.sub} strokeWidth={1.5}/>
+        <line x1={sc(q3)} y1={H/2} x2={sc(whi_hi)} y2={H/2} stroke={C.sub} strokeWidth={1.5}/>
+        {[whi_lo, whi_hi].map((v, i) => <line key={i} x1={sc(v)} y1={H/2-8} x2={sc(v)} y2={H/2+8} stroke={C.sub} strokeWidth={1.5}/>)}
+        <rect x={sc(q1)} y={H/2-14} width={Math.max(1,sc(q3)-sc(q1))} height={28} fill="rgba(96,165,250,0.18)" stroke={C.blue} strokeWidth={1.5} rx={3}/>
+        <line x1={sc(median)} y1={H/2-14} x2={sc(median)} y2={H/2+14} stroke={C.gold} strokeWidth={3}/>
+        {iqrOutVals.map((v, i) => <circle key={i} cx={sc(v)} cy={H/2} r={5} fill="rgba(239,68,68,0.75)" stroke={C.red} strokeWidth={1.5}/>)}
+        {[{ v: q1, lbl: `Q1=${q1.toFixed(2)}`, col: C.sub }, { v: median, lbl: `M=${result.median.toFixed(2)}`, col: C.gold }, { v: q3, lbl: `Q3=${q3.toFixed(2)}`, col: C.sub }].map(({ v, lbl, col }) => (
+          <text key={lbl} x={sc(v)} y={H + 16} textAnchor="middle" fontSize={9} fill={col}>{lbl}</text>
+        ))}
+        {[mn, mx].map((v, i) => <text key={i} x={sc(v)} y={H/2 - 20} textAnchor="middle" fontSize={9} fill={C.muted}>{v.toFixed(1)}</text>)}
+      </svg>
+    );
+  };
+
+  return (
+    <div>
+      {/* Input */}
+      <div style={{ marginBottom: 14 }}>
+        <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+          {ar ? 'البيانات (أرقام مفصولة بمسافات أو فواصل)' : 'Data (numbers separated by spaces or commas)'}
+        </label>
+        <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={3}
+          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 12, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+      </div>
+
+      {/* Z-score threshold */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, flexWrap: 'wrap' }}>
+        <label style={{ fontSize: 12, color: C.sub }}>{ar ? 'عتبة Z-score:' : 'Z-score threshold:'}</label>
+        {[2, 2.5, 3].map(t => (
+          <button key={t} onClick={() => setZThr(t)}
+            style={{ background: zThr === t ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.04)', border: `1px solid ${zThr === t ? C.gold : C.border}`, borderRadius: 8, padding: '5px 14px', color: zThr === t ? C.gold : C.sub, cursor: 'pointer', fontFamily: 'inherit', fontWeight: zThr === t ? 700 : 400, fontSize: 13 }}>
+            |z| {`>`} {t}
+          </button>
+        ))}
+        <span style={{ fontSize: 11, color: C.muted }}>{ar ? '(المتحفظ: 2.5 ، الصارم: 3)' : '(Moderate: 2.5, Strict: 3)'}</span>
+      </div>
+
+      {!result && <p style={{ color: C.muted, fontSize: 13 }}>{ar ? 'أدخل 4 قيم على الأقل' : 'Enter at least 4 values'}</p>}
+
+      {result && (
+        <>
+          {/* Summary cards */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
+            {[
+              { label: 'n', val: String(result.n), color: C.text },
+              { label: ar?'المتوسط':'Mean', val: result.mu.toFixed(3), color: C.text },
+              { label: ar?'الانحراف':'SD', val: result.sd.toFixed(3), color: C.text },
+              { label: 'IQR', val: result.iqr.toFixed(3), color: C.blue },
+              { label: ar?'شوارد IQR':'IQR Outliers', val: String(result.iqrOutVals.length), color: result.iqrOutVals.length ? C.red : C.green },
+              { label: `|z|>${zThr}`, val: String(result.zOutVals.length), color: result.zOutVals.length ? C.red : C.green },
+            ].map(({ label, val, color }) => (
+              <div key={label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 14px', textAlign: 'center', minWidth: 80 }}>
+                <div style={{ fontSize: 10, color: C.sub }}>{label}</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color }}>{val}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Box plot */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '16px', marginBottom: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: C.gold, marginBottom: 12 }}>
+              {ar ? 'مخطط الصندوق (Box Plot) — النقاط الحمراء = شوارد IQR' : 'Box Plot — Red dots = IQR outliers'}
+            </div>
+            <BoxPlot />
+          </div>
+
+          {/* IQR boundaries */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 16px', marginBottom: 14, fontSize: 12 }}>
+            <strong style={{ color: C.text }}>{ar ? 'حدود IQR: ' : 'IQR Fences: '}</strong>
+            <span style={{ color: C.sub }}>
+              {ar ? `السياج السفلي = Q1 − 1.5×IQR = ` : 'Lower fence = Q1 − 1.5×IQR = '}<strong style={{ color: C.blue }}>{result.fence_lo.toFixed(3)}</strong>
+              {' · '}
+              {ar ? `السياج العلوي = Q3 + 1.5×IQR = ` : 'Upper fence = Q3 + 1.5×IQR = '}<strong style={{ color: C.blue }}>{result.fence_hi.toFixed(3)}</strong>
+            </span>
+            {result.iqrOutVals.length > 0 && (
+              <div style={{ marginTop: 6, color: C.red }}>
+                {ar ? 'القيم الشاذة: ' : 'Outlier values: '}{result.iqrOutVals.join(', ')}
+              </div>
+            )}
+          </div>
+
+          {/* Observation table (compact) */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
+            <div style={{ padding: '10px 16px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 13, color: C.gold }}>
+              {ar ? 'تفصيل القيم (المُعلَّمة = شاذة)' : 'Value Detail (highlighted = outlier)'}
+            </div>
+            <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead style={{ position: 'sticky', top: 0, background: '#080f22' }}>
+                  <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                    {['#', ar?'القيمة':'Value', 'z-score', 'IQR', `|z|>${zThr}`].map(h => (
+                      <th key={h} style={{ padding: '7px 12px', textAlign: 'center', color: C.sub, fontWeight: 600 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.rows.map(({ i, v, z, zOut, iqrOut }) => (
+                    <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: (zOut || iqrOut) ? 'rgba(239,68,68,0.06)' : 'transparent' }}>
+                      <td style={{ padding: '5px 12px', textAlign: 'center', color: C.muted }}>{i}</td>
+                      <td style={{ padding: '5px 12px', textAlign: 'center', fontWeight: (zOut||iqrOut)?700:400, color: (zOut||iqrOut)?C.red:C.text }}>{v}</td>
+                      <td style={{ padding: '5px 12px', textAlign: 'center', color: Math.abs(z)>zThr?C.red:C.sub }}>{z.toFixed(3)}</td>
+                      <td style={{ padding: '5px 12px', textAlign: 'center' }}>{iqrOut ? <span style={{ color: C.red, fontWeight: 700 }}>✗ شاذ</span> : <span style={{ color: C.green }}>✓</span>}</td>
+                      <td style={{ padding: '5px 12px', textAlign: 'center' }}>{zOut  ? <span style={{ color: C.red, fontWeight: 700 }}>✗ شاذ</span> : <span style={{ color: C.green }}>✓</span>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Histogram */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px', marginBottom: 10 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: C.gold, marginBottom: 10 }}>{ar ? 'التوزيع التكراري' : 'Distribution Histogram'}</div>
+            <ResponsiveContainer width="100%" height={130}>
+              <BarChart data={result.hist} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 9, fill: C.sub }} />
+                <YAxis tick={{ fontSize: 9, fill: C.sub }} width={24} />
+                <Tooltip contentStyle={{ background: '#0d172d', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 11 }} />
+                <Bar dataKey="count" radius={[3,3,0,0]}>
+                  {result.hist.map((bin, i) => (
+                    <Cell key={i} fill={bin.lo < result.fence_lo || bin.hi > result.fence_hi ? `${C.red}99` : `${C.blue}99`} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <p style={{ fontSize: 11, color: C.muted, marginBottom: 0 }}>
+            {ar ? '* طريقة IQR: الأكثر مقاومةً لحجم العينة · Z-score: مناسبة للتوزيع الطبيعي · اتخذ قراراً تحليلياً قبل حذف أي قيمة شاذة'
+                : '* IQR method is robust to sample size · Z-score assumes normality · Make an analytical decision before removing any outlier'}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── EXPLORATORY FACTOR ANALYSIS (EFA) ────────────────────────────────────
+function jacobiEigen(A: number[][]): { values: number[]; vectors: number[][] } {
+  const n = A.length;
+  const D = A.map(row => [...row]);
+  const V: number[][] = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)));
+  for (let sw = 0; sw < 50 * n * n; sw++) {
+    let mx = 0, p = 0, q = 1;
+    for (let i = 0; i < n - 1; i++) for (let j = i + 1; j < n; j++) if (Math.abs(D[i][j]) > mx) { mx = Math.abs(D[i][j]); p = i; q = j; }
+    if (mx < 1e-10) break;
+    const dif = D[q][q] - D[p][p];
+    const phi = dif === 0 ? Math.PI / 4 : 0.5 * Math.atan2(2 * D[p][q], dif);
+    const c = Math.cos(phi), s = Math.sin(phi);
+    const Dpp = D[p][p], Dqq = D[q][q], Dpq = D[p][q];
+    D[p][p] = c*c*Dpp - 2*s*c*Dpq + s*s*Dqq;
+    D[q][q] = s*s*Dpp + 2*s*c*Dpq + c*c*Dqq;
+    D[p][q] = D[q][p] = 0;
+    for (let r = 0; r < n; r++) {
+      if (r !== p && r !== q) { const dp = D[r][p], dq = D[r][q]; D[r][p] = D[p][r] = c*dp - s*dq; D[r][q] = D[q][r] = s*dp + c*dq; }
+      const vp = V[r][p], vq = V[r][q]; V[r][p] = c*vp - s*vq; V[r][q] = s*vp + c*vq;
+    }
+  }
+  const ord = D.map((row, i) => ({ v: row[i], i })).sort((a, b) => b.v - a.v);
+  return { values: ord.map(x => x.v), vectors: ord.map(x => V.map(row => row[x.i])) };
+}
+
+function faCorrMat(data: number[][]): number[][] {
+  const n = data.length, p = data[0].length;
+  const mu = Array.from({ length: p }, (_, j) => avg(data.map(r => r[j])));
+  const sd = Array.from({ length: p }, (_, j) => { const col = data.map(r => r[j]); return Math.sqrt(col.reduce((s, x) => s + (x - mu[j])**2, 0) / Math.max(1, n-1)); });
+  return Array.from({ length: p }, (_, i) => Array.from({ length: p }, (_, j) => {
+    if (i === j) return 1;
+    if (sd[i] < 1e-10 || sd[j] < 1e-10) return 0;
+    return data.reduce((s, r) => s + (r[i]-mu[i])*(r[j]-mu[j]), 0) / ((n-1)*sd[i]*sd[j]);
+  }));
+}
+
+function FactorAnalysis({ ar }: { ar: boolean }) {
+  const DEF = `4 3 5 4 3 5 4 3
+3 4 3 4 3 4 3 4
+5 5 4 5 5 4 5 5
+2 3 2 3 2 3 2 3
+4 4 5 4 4 5 4 4
+3 3 3 3 3 3 3 3
+5 4 4 5 4 4 5 4
+4 5 5 4 5 5 4 5
+2 2 3 2 2 3 2 2
+5 5 5 5 5 5 5 5
+3 4 4 3 4 4 3 4
+1 2 1 2 1 2 1 2`;
+  const [raw, setRaw] = useState(DEF);
+  const [names, setNames] = useState('');
+
+  const result = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim() && !l.trim().startsWith('#'));
+    const data = lines.map(l => l.trim().split(/[\s,;،]+/).map(Number).filter(v => isFinite(v) && !isNaN(v)));
+    if (!data.length) return null;
+    const p = Math.min(...data.map(r => r.length));
+    if (data.length < p + 1 || p < 2) return null;
+    const D = data.map(r => r.slice(0, p));
+    const n = D.length;
+
+    const R = faCorrMat(D);
+    const { values: λ, vectors: Vecs } = jacobiEigen(R);
+    const nF = Math.min(p, Math.max(1, λ.filter(v => v > 1).length), 8);
+    const L = Array.from({ length: p }, (_, i) => Array.from({ length: nF }, (_, k) => Vecs[i][k] * Math.sqrt(Math.max(0, λ[k]))));
+    const h2 = Array.from({ length: p }, (_, i) => L[i].reduce((s, l) => s + l*l, 0));
+
+    const totalVar = p;
+    const pctVar = λ.map(v => v / totalVar * 100);
+    const cumPct = pctVar.reduce<number[]>((acc, v) => [...acc, (acc.at(-1) ?? 0) + v], []);
+
+    let kmo = 0;
+    const Rinv = matInv(R);
+    if (Rinv) {
+      let sR2 = 0, sA2 = 0;
+      for (let i = 0; i < p; i++) for (let j = 0; j < p; j++) {
+        if (i === j) continue;
+        sR2 += R[i][j]**2;
+        const aij = -Rinv[i][j] / Math.sqrt(Math.abs(Rinv[i][i] * Rinv[j][j]));
+        sA2 += aij**2;
+      }
+      kmo = sR2 / (sR2 + sA2);
+    }
+
+    const detR = λ.reduce((prod, v) => prod * Math.max(1e-100, v), 1);
+    const chi2 = Math.max(0, -(n - 1 - (2*p + 5)/6) * Math.log(Math.max(1e-100, detR)));
+    const bartDf = p * (p - 1) / 2;
+    const bartP = 1 - chiSqP(chi2, bartDf);
+
+    const vnames = names.trim() ? names.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean) : Array.from({ length: p }, (_, i) => `V${i+1}`);
+    const screeData = λ.slice(0, Math.min(p, 15)).map((v, i) => ({ factor: `F${i+1}`, λ: +v.toFixed(4) }));
+
+    return { L, λ, nF, h2, pctVar, cumPct: cumPct.slice(0, nF), kmo, chi2, bartDf, bartP, vnames: vnames.slice(0, p), screeData, n, p };
+  }, [raw, names]);
+
+  const kmoLabel = (k: number) => k > 0.9 ? (ar?'ممتاز':'Marvelous') : k > 0.8 ? (ar?'جيد جداً':'Meritorious') : k > 0.7 ? (ar?'متوسط':'Middling') : k > 0.6 ? (ar?'مقبول':'Mediocre') : k > 0.5 ? (ar?'ضعيف':'Miserable') : (ar?'غير مقبول':'Unacceptable');
+  const kmoColor = (k: number) => k > 0.7 ? C.green : k > 0.5 ? C.gold : C.red;
+  const loadBg = (l: number) => { const a=Math.abs(l); return a>=0.6?'rgba(201,168,76,0.3)':a>=0.4?'rgba(96,165,250,0.2)':a>=0.3?'rgba(94,234,212,0.12)':'transparent'; };
+  const loadColor = (l: number) => { const a=Math.abs(l); return a>=0.6?C.gold:a>=0.4?C.blue:a>=0.3?C.teal:C.muted; };
+
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 190px', gap: 12, marginBottom: 14 }}>
+        <div>
+          <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+            {ar ? 'البيانات — كل سطر مشاهدة · كل عمود عنصر (فقرة)' : 'Data — each row = 1 observation, each column = 1 item/variable'}
+          </label>
+          <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={9}
+            style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 11, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+            {ar ? 'أسماء المتغيرات (اختياري، سطر لكل اسم)' : 'Variable names (optional, one per line)'}
+          </label>
+          <textarea value={names} onChange={e => setNames(e.target.value)} rows={9} placeholder={'V1\nV2\nV3\n...'}
+            style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 11, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+        </div>
+      </div>
+
+      {!result && <p style={{ color: C.muted, fontSize: 13 }}>{ar ? 'يلزم n > p ≥ 2 (مشاهدات أكثر من متغيرات)' : 'Need n > p ≥ 2 (more observations than variables)'}</p>}
+
+      {result && (
+        <>
+          {/* KMO + Bartlett */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 18px', flex: '0 0 auto', minWidth: 160 }}>
+              <div style={{ fontSize: 11, color: C.sub, marginBottom: 4 }}>KMO {ar ? '(ملاءمة العينة)' : '(Sampling Adequacy)'}</div>
+              <div style={{ fontSize: 26, fontWeight: 800, color: kmoColor(result.kmo) }}>{result.kmo.toFixed(3)}</div>
+              <div style={{ fontSize: 11, color: kmoColor(result.kmo), marginTop: 2 }}>{kmoLabel(result.kmo)}</div>
+            </div>
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 18px', flex: 1, minWidth: 240 }}>
+              <div style={{ fontSize: 11, color: C.sub, marginBottom: 6 }}>{ar ? "اختبار Bartlett للتروية" : "Bartlett's Test of Sphericity"}</div>
+              <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
+                <div><span style={{ fontSize: 11, color: C.muted }}>χ²({result.bartDf}) = </span><strong style={{ color: C.text, fontSize: 14 }}>{result.chi2.toFixed(2)}</strong></div>
+                <div><span style={{ fontSize: 11, color: C.muted }}>p = </span><strong style={{ color: result.bartP < 0.05 ? C.green : C.red }}>{result.bartP < 0.001 ? '< .001' : result.bartP.toFixed(3)}</strong></div>
+                <span style={{ fontSize: 11, color: result.bartP < 0.05 ? C.green : C.red }}>
+                  {result.bartP < 0.05 ? (ar ? '✓ مناسب للتحليل العاملي' : '✓ Suitable for FA') : (ar ? '✗ غير مناسب' : '✗ Not suitable')}
+                </span>
+              </div>
+              <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>n = {result.n} · p = {result.p} · {ar ? 'عوامل مقترحة (λ>1)' : 'Suggested factors (λ>1)'}: {result.nF}</div>
+            </div>
+          </div>
+
+          {/* Scree + Loadings side-by-side on wide screens */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px', marginBottom: 12 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: C.gold, marginBottom: 10 }}>
+                {ar ? 'مخطط Scree — معيار Kaiser: الاحتفاظ بالعوامل ذات λ > 1' : 'Scree Plot — Kaiser criterion: retain factors with λ > 1'}
+              </div>
+              <ResponsiveContainer width="100%" height={170}>
+                <ComposedChart data={result.screeData} margin={{ top: 4, right: 10, left: 0, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <XAxis dataKey="factor" tick={{ fontSize: 10, fill: C.sub }} />
+                  <YAxis tick={{ fontSize: 10, fill: C.sub }} width={34} />
+                  <Tooltip contentStyle={{ background: '#0d172d', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12 }} formatter={(v: number) => v.toFixed(3)} />
+                  <ReferenceLine y={1} stroke={C.red} strokeDasharray="6 3" label={{ value: 'λ=1', fill: C.red, fontSize: 10, position: 'insideTopRight' }} />
+                  <Bar dataKey="λ" fill={`${C.gold}bb`} radius={[4,4,0,0]} />
+                  <Line type="linear" dataKey="λ" stroke={C.blue} dot={{ r: 4, fill: C.blue }} strokeWidth={2} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Loadings table */}
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden' }}>
+              <div style={{ padding: '10px 16px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 13, color: C.gold }}>
+                {ar ? `مصفوفة التشبعات (${result.nF} عوامل — PCA بدون تدوير)` : `Factor Loading Matrix (${result.nF} factors — Unrotated PCA)`}
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                    <th style={{ padding: '7px 12px', textAlign: ar?'right':'left', color: C.sub, minWidth: 70 }}>{ar?'المتغير':'Variable'}</th>
+                    {Array.from({ length: result.nF }, (_, k) => <th key={k} style={{ padding: '7px 10px', color: C.gold, textAlign: 'center', minWidth: 60 }}>F{k+1}<div style={{ fontSize: 9, color: C.muted, fontWeight: 400 }}>{result.pctVar[k].toFixed(1)}%</div></th>)}
+                    <th style={{ padding: '7px 10px', color: C.sub, textAlign: 'center', minWidth: 50 }}>h²</th>
+                  </tr></thead>
+                  <tbody>
+                    {result.vnames.map((name, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <td style={{ padding: '6px 12px', fontWeight: 600, color: C.text }}>{name}</td>
+                        {Array.from({ length: result.nF }, (_, k) => {
+                          const l = result.L[i][k];
+                          return <td key={k} style={{ padding: '6px 10px', textAlign: 'center', background: loadBg(l), color: loadColor(l), fontWeight: Math.abs(l)>=0.4?700:400 }}>{l.toFixed(3)}</td>;
+                        })}
+                        <td style={{ padding: '6px 10px', textAlign: 'center', color: C.muted }}>{result.h2[i].toFixed(3)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ borderTop: `1px solid ${C.border}` }}>
+                      <td style={{ padding: '7px 12px', color: C.sub, fontSize: 10 }}>{ar?'% مفسَّر':'% Variance'}</td>
+                      {Array.from({ length: result.nF }, (_, k) => <td key={k} style={{ padding: '7px 10px', textAlign: 'center', color: C.gold, fontWeight: 700, fontSize: 10 }}>{result.pctVar[k].toFixed(1)}%</td>)}
+                      <td style={{ padding: '7px 10px', textAlign: 'center', color: C.gold, fontWeight: 700, fontSize: 10 }}>{result.h2.reduce((s,h)=>s+h,0).toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '4px 12px', color: C.muted, fontSize: 10 }}>{ar?'% تراكمي':'% Cum.'}</td>
+                      {result.cumPct.map((c, k) => <td key={k} style={{ padding: '4px 10px', textAlign: 'center', color: C.muted, fontSize: 10 }}>{c.toFixed(1)}%</td>)}
+                      <td />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
+            {[['rgba(201,168,76,0.3)', C.gold, ar?'|λ|≥0.6 تشبع عالٍ':'|λ|≥0.6 High'], ['rgba(96,165,250,0.2)', C.blue, ar?'|λ|≥0.4 متوسط':'|λ|≥0.4 Moderate'], ['rgba(94,234,212,0.12)', C.teal, ar?'|λ|≥0.3 ضعيف':'|λ|≥0.3 Low']].map(([bg, col, label]) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
+                <div style={{ width: 18, height: 12, borderRadius: 3, background: bg as string, border: `1px solid ${col}50` }} />
+                <span style={{ color: C.sub }}>{label}</span>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: 11, color: C.muted, marginBottom: 0 }}>
+            {ar ? '* استخلاص المكونات الرئيسية (PCA) بدون تدوير · لتدوير Varimax أو Oblimin استخدم R/SPSS/JASP · الكفاية: KMO > 0.7 و p(Bartlett) < .05'
+                : '* Unrotated PCA extraction · For Varimax/Oblimin rotation use R/SPSS/JASP · Adequacy: KMO > 0.7 and p(Bartlett) < .05'}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── EFFECT SIZE CONVERTER ─────────────────────────────────────────────────
+type ESType = 'd' | 'r' | 'f' | 'eta2' | 'OR' | 'V';
+
+function EffectSizeConverter({ ar }: { ar: boolean }) {
+  const [type, setType] = useState<ESType>('d');
+  const [valStr, setValStr] = useState('0.50');
+  const [nStr, setNStr] = useState('');
+
+  const ES_TYPES: { key: ESType; label: string; hint: string }[] = [
+    { key: 'd',    label: "Cohen's d",     hint: ar ? 'الفرق بين متوسطين بوحدات الانحراف المعياري' : 'Standardized mean difference' },
+    { key: 'r',    label: 'Pearson r',     hint: ar ? 'معامل الارتباط (−1 إلى 1)'             : 'Correlation coefficient (−1 to 1)' },
+    { key: 'f',    label: "Cohen's f",     hint: ar ? 'حجم أثر ANOVA (f = d/2 للمجموعتين)'    : 'ANOVA effect size (f = d/2 for 2 groups)' },
+    { key: 'eta2', label: 'η² (eta²)',     hint: ar ? 'نسبة التباين المفسَّر (0 إلى 1)'       : 'Proportion of variance explained' },
+    { key: 'OR',   label: 'Odds Ratio',    hint: ar ? 'نسبة الحظوظ (يجب أن تكون > 0)'         : 'Odds ratio (must be > 0)' },
+    { key: 'V',    label: "Cramér's V",    hint: ar ? 'حجم أثر جداول التقاطع (0 إلى 1)'      : 'Chi-square table effect size (0 to 1)' },
+  ];
+
+  const result = useMemo(() => {
+    const v = parseFloat(valStr);
+    const n = parseFloat(nStr);
+    if (isNaN(v)) return null;
+
+    let d: number;
+    switch (type) {
+      case 'd':    d = v; break;
+      case 'r':    { const rc = Math.max(-0.9999, Math.min(0.9999, v)); d = 2 * rc / Math.sqrt(Math.max(1e-10, 1 - rc * rc)); break; }
+      case 'f':    d = 2 * Math.abs(v); break;
+      case 'eta2': { const e = Math.max(0, Math.min(0.9999, v)); d = Math.sqrt(4 * e / Math.max(1e-10, 1 - e)); break; }
+      case 'OR':   d = Math.log(Math.max(1e-10, v)) * Math.sqrt(3) / Math.PI; break;
+      case 'V':    { const vc = Math.max(0, Math.min(0.9999, v)); d = 2 * vc / Math.sqrt(Math.max(1e-10, 1 - vc * vc)); break; }
+      default:     d = 0;
+    }
+
+    const da = Math.abs(d);
+    const r   = Math.max(-0.9999, Math.min(0.9999, d / Math.sqrt(d * d + 4)));
+    const ra  = Math.abs(r);
+    const f   = da / 2;
+    const eta2 = da * da / (da * da + 4);
+    const R2   = r * r;
+    const OR_  = Math.exp(d * Math.PI / Math.sqrt(3));
+    const fisherZ = Math.atanh(r);
+    const V_   = ra / Math.sqrt(ra * ra + 1 - ra * ra); // ≈ r for 2x2
+
+    // Hedge's g (bias-corrected d) — requires n
+    const g = (!isNaN(n) && n > 4) ? d * (1 - 3 / (4 * (n - 2) - 1)) : null;
+
+    // 95% CI for d (Hedges approximation)
+    const ci = (!isNaN(n) && n > 4) ? 1.96 * Math.sqrt(4 / n + d * d / (2 * n)) : null;
+
+    // Power (for two-group t-test at α=.05 with equal groups)
+    const powerArr = (!isNaN(n) && n > 4) ? [0.8, 0.9, 0.95].map(pow => {
+      // Solve for n from power: n = ((z_α/2 + z_β) / (d/2))² * 2
+      const zB = pow === 0.8 ? 0.842 : pow === 0.9 ? 1.282 : 1.645;
+      const nReq = Math.ceil(2 * ((1.96 + zB) / Math.max(0.01, da)) ** 2);
+      return { pow, nReq };
+    }) : null;
+
+    // Interpretation
+    const interpD = da < 0.1 ? (ar ? 'ضئيل جداً' : 'Negligible') : da < 0.2 ? (ar ? 'صغير جداً' : 'Very small') : da < 0.5 ? (ar ? 'صغير' : 'Small') : da < 0.8 ? (ar ? 'متوسط' : 'Medium') : da < 1.2 ? (ar ? 'كبير' : 'Large') : (ar ? 'كبير جداً' : 'Very large');
+    const interpR  = ra < 0.1 ? (ar ? 'ضئيل' : 'Negligible') : ra < 0.3 ? (ar ? 'صغير' : 'Small') : ra < 0.5 ? (ar ? 'متوسط' : 'Medium') : (ar ? 'كبير' : 'Large');
+    const colorD   = da < 0.2 ? C.muted : da < 0.5 ? C.blue : da < 0.8 ? C.gold : C.green;
+
+    return { d, r, f, eta2, R2, OR: OR_, fisherZ, V: V_, g, ci, interpD, interpR, colorD, powerArr };
+  }, [valStr, type, nStr]);
+
+  const fmt = (v: number | null, dec = 4) => v === null ? '—' : v.toFixed(dec);
+
+  return (
+    <div>
+      {/* Type selector */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: 8, marginBottom: 16 }}>
+        {ES_TYPES.map(tp => (
+          <button key={tp.key} onClick={() => setType(tp.key)}
+            style={{ background: type === tp.key ? 'linear-gradient(135deg,rgba(201,168,76,0.18),rgba(245,215,142,0.07))' : 'rgba(255,255,255,0.02)', border: `1px solid ${type === tp.key ? 'rgba(201,168,76,0.45)' : C.border}`, borderRadius: 10, padding: '9px 12px', cursor: 'pointer', fontFamily: 'inherit', textAlign: ar ? 'right' : 'left' }}>
+            <div style={{ fontWeight: 800, fontSize: 13, color: type === tp.key ? C.gold : C.text }}>{tp.label}</div>
+            <div style={{ fontSize: 10, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{tp.hint}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Input row */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 180px' }}>
+          <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>{ES_TYPES.find(t => t.key === type)?.label} =</label>
+          <input type="number" step="0.01" value={valStr} onChange={e => setValStr(e.target.value)}
+            style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.gold}60`, borderRadius: 9, padding: '10px 14px', color: C.text, fontSize: 16, fontWeight: 700, outline: 'none', boxSizing: 'border-box', fontFamily: 'monospace' }} />
+        </div>
+        <div style={{ flex: '1 1 180px' }}>
+          <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>{ar ? 'n الكلي (اختياري — للـ CI وHedge\'s g)' : 'Total n (optional — for CI & Hedge\'s g)'}</label>
+          <input type="number" value={nStr} onChange={e => setNStr(e.target.value)} placeholder={ar ? 'مثلاً 120' : 'e.g. 120'}
+            style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '10px 14px', color: C.text, fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'monospace' }} />
+        </div>
+      </div>
+
+      {result && (
+        <>
+          {/* Conversion table */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
+            <div style={{ padding: '10px 16px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 13, color: C.gold }}>{ar ? 'التحويل إلى مقاييس أخرى' : 'Converted Effect Sizes'}</div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                {[ar ? 'المقياس' : 'Metric', ar ? 'القيمة' : 'Value', ar ? 'التفسير' : 'Benchmark', ar ? 'المرجع' : 'Source'].map(h => (
+                  <th key={h} style={{ padding: '8px 12px', textAlign: ar ? 'right' : 'left', color: C.sub, fontWeight: 600 }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {[
+                  { label: "Cohen's d",    val: fmt(result.d, 3),      bench: `${result.interpD} (0.2/0.5/0.8)`, src: 'Cohen 1988' },
+                  { label: "Hedge's g",    val: fmt(result.g, 3),      bench: ar ? 'تصحيح للعينات الصغيرة' : 'Bias-corrected d', src: 'Hedges 1981' },
+                  { label: 'Pearson r',    val: fmt(result.r, 4),      bench: `${result.interpR} (0.1/0.3/0.5)`, src: 'Cohen 1988' },
+                  { label: 'R² (r²)',      val: `${(result.R2*100).toFixed(1)}%`, bench: ar ? '% تباين مشترك' : '% Shared variance', src: '' },
+                  { label: "Cohen's f",    val: fmt(result.f, 3),      bench: 'Small/Med/Large: 0.1/0.25/0.4', src: 'Cohen 1988' },
+                  { label: 'η² (eta²)',    val: fmt(result.eta2, 4),   bench: 'Small/Med/Large: 0.01/0.06/0.14', src: 'Cohen 1988' },
+                  { label: 'Odds Ratio',   val: fmt(result.OR, 3),     bench: 'Small/Med/Large: 1.5/2.5/4.3', src: 'Cohen 1988' },
+                  { label: "Fisher's z",   val: fmt(result.fisherZ, 4), bench: ar ? 'لتقدير الفترة الثقة لـ r' : 'For CI of r', src: 'Fisher 1921' },
+                  { label: "Cramér's V",   val: fmt(Math.abs(result.r), 4), bench: '≈ r for 2×2 table', src: '' },
+                  ...(result.ci !== null ? [{ label: '95% CI (d)',   val: `[${fmt(result.d - result.ci, 3)}, ${fmt(result.d + result.ci, 3)}]`, bench: ar ? 'تقريبي' : 'Approximate', src: 'Hedges & Olkin' }] : []),
+                ].map(({ label, val, bench, src }) => (
+                  <tr key={label} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: 700, color: label === "Cohen's d" ? result.colorD : C.text }}>{label}</td>
+                    <td style={{ padding: '8px 12px', fontFamily: 'monospace', color: label === "Cohen's d" ? result.colorD : C.text, fontWeight: label === "Cohen's d" ? 800 : 400, fontSize: label === "Cohen's d" ? 14 : 12 }}>{val}</td>
+                    <td style={{ padding: '8px 12px', fontSize: 11, color: C.muted }}>{bench}</td>
+                    <td style={{ padding: '8px 12px', fontSize: 10, color: C.muted }}>{src}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Power table */}
+          {result.powerArr && (
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
+              <div style={{ padding: '10px 16px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 13, color: C.gold }}>{ar ? 'حجم العينة المطلوب (t-test مجموعتان متساويتان · α = .05)' : 'Required n per group (independent t-test · α = .05)'}</div>
+              <div style={{ display: 'flex', gap: 0 }}>
+                {result.powerArr.map(({ pow, nReq }) => (
+                  <div key={pow} style={{ flex: 1, padding: '14px', textAlign: 'center', borderLeft: ar ? 'none' : `1px solid ${C.border}`, borderRight: ar ? `1px solid ${C.border}` : 'none' }}>
+                    <div style={{ fontSize: 11, color: C.sub, marginBottom: 4 }}>{ar ? `قدرة ${(pow*100).toFixed(0)}%` : `Power ${(pow*100).toFixed(0)}%`}</div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: C.text }}>{nReq}</div>
+                    <div style={{ fontSize: 10, color: C.muted }}>{ar ? 'لكل مجموعة' : 'per group'}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Visual bar */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px 18px' }}>
+            <div style={{ fontSize: 12, color: C.sub, marginBottom: 8, fontWeight: 600 }}>{ar ? 'موضع d على مقياس كوهن' : "Position on Cohen's d scale"}</div>
+            <div style={{ position: 'relative', height: 14, borderRadius: 7, background: 'linear-gradient(to right,rgba(239,68,68,0.3),rgba(251,191,36,0.4),rgba(74,222,128,0.4))', overflow: 'visible' }}>
+              {[{ x: 0.2, label: '0.2' }, { x: 0.5, label: '0.5' }, { x: 0.8, label: '0.8' }].map(({ x, label }) => (
+                <div key={x} style={{ position: 'absolute', left: `${Math.min(95, x / 1.5 * 100)}%`, top: 0, height: '100%', width: 2, background: 'rgba(255,255,255,0.2)' }}>
+                  <span style={{ position: 'absolute', top: 16, left: -6, fontSize: 10, color: C.muted }}>{label}</span>
+                </div>
+              ))}
+              <div style={{ position: 'absolute', top: -4, width: 22, height: 22, borderRadius: '50%', background: result.colorD, border: '3px solid #fff', transform: 'translateX(-50%)', left: `${Math.min(97, Math.abs(result.d) / 1.5 * 100)}%`, boxShadow: `0 0 10px ${result.colorD}`, transition: 'left 0.3s' }} />
+            </div>
+            <div style={{ marginTop: 22, textAlign: 'center', fontSize: 14, fontWeight: 800, color: result.colorD }}>
+              |d| = {Math.abs(result.d).toFixed(3)} — {result.interpD}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── MODERATION ANALYSIS ──────────────────────────────────────────────────
+function ModerationAnalysis({ ar }: { ar: boolean }) {
+  const [xRaw, setXRaw] = useState('2 3 4 5 6 7 2 3 4 5 6 7 2 3 4 5 6 7');
+  const [wRaw, setWRaw] = useState('1 1 1 1 1 1 3 3 3 3 3 3 5 5 5 5 5 5');
+  const [yRaw, setYRaw] = useState('50 55 60 65 70 72 55 62 70 78 85 90 60 70 82 92 100 105');
+
+  const parse = (s: string) => s.split(/[\s,;،]+/).map(Number).filter(v => isFinite(v) && !isNaN(v));
+
+  const result = useMemo(() => {
+    const xv = parse(xRaw), wv = parse(wRaw), yv = parse(yRaw);
+    const n = Math.min(xv.length, wv.length, yv.length);
+    if (n < 6) return null;
+    const x = xv.slice(0, n), w = wv.slice(0, n), y = yv.slice(0, n);
+
+    // Center X and W for interpretability
+    const mx = avg(x), mw = avg(w);
+    const xc = x.map(xi => xi - mx);
+    const wc = w.map(wi => wi - mw);
+    const xw = xc.map((xi, i) => xi * wc[i]);
+    const sdW = Math.sqrt(wc.reduce((s, wi) => s + wi * wi, 0) / Math.max(1, n - 1));
+
+    // Design matrix [1, Xc, Wc, Xc*Wc]
+    const DM = x.map((_, i) => [1, xc[i], wc[i], xw[i]]);
+    const { beta, tv, pv, R2, dof } = olsWithSE(DM, y);
+    const [b0, b_X, b_W, b_XW] = beta;
+
+    // Full covariance matrix for simple slope SEs
+    const Xt = matT(DM);
+    const XtXinv = matInv(matMul(Xt, DM));
+    const yhat = DM.map(row => row.reduce((s, xi, j) => s + xi * beta[j], 0));
+    const resid = y.map((yi, i) => yi - yhat[i]);
+    const MSE = resid.reduce((s, ri) => s + ri * ri, 0) / Math.max(1, dof);
+
+    const wLevels = [
+      { wl: -sdW, label: ar ? 'W − 1 انحراف' : 'W − 1 SD' },
+      { wl:     0, label: ar ? 'W = المتوسط'  : 'W = Mean' },
+      { wl: +sdW, label: ar ? 'W + 1 انحراف' : 'W + 1 SD' },
+    ];
+
+    const simpleSlopes = wLevels.map(({ wl, label }) => {
+      const slope  = b_X + b_XW * wl;
+      const cov_XW = XtXinv ? MSE * XtXinv[1][3] : 0;
+      const seB_X  = XtXinv ? Math.sqrt(Math.max(0, MSE * XtXinv[1][1])) : 1;
+      const seB_XW = XtXinv ? Math.sqrt(Math.max(0, MSE * XtXinv[3][3])) : 1;
+      const se_sl  = Math.sqrt(Math.max(0, seB_X ** 2 + wl ** 2 * seB_XW ** 2 + 2 * wl * cov_XW));
+      const t_sl   = slope / Math.max(1e-10, se_sl);
+      const p_sl   = 2 * (1 - normalCDF(Math.abs(t_sl)));
+      return { label, wl, slope, se_sl, t_sl, p_sl };
+    });
+
+    // Interaction plot data (20 points over Xc range)
+    const NPTS = 20;
+    const xcMin = Math.min(...xc), xcMax = Math.max(...xc);
+    const plotData = Array.from({ length: NPTS }, (_, i) => {
+      const xci = xcMin + (xcMax - xcMin) * i / (NPTS - 1);
+      const row: Record<string, number> = { x: +(xci + mx).toFixed(2) };
+      wLevels.forEach(({ wl }, li) => {
+        row[`line${li}`] = +(b0 + b_X * xci + b_W * wl + b_XW * xci * wl).toFixed(3);
+      });
+      return row;
+    });
+
+    return { b0, b_X, b_W, b_XW, t_X: tv[1], t_W: tv[2], t_XW: tv[3], p_X: pv[1], p_W: pv[2], p_XW: pv[3], R2, dof, n, simpleSlopes, plotData, wLevels };
+  }, [xRaw, wRaw, yRaw]);
+
+  const pF  = (p: number) => p < 0.001 ? '< .001' : p.toFixed(3);
+  const sig = (p: number) => p < 0.05;
+  const COLORS = ['#60a5fa', '#f5d78e', '#4ade80'];
+
+  const SB = ({ label, val, color }: { label: string; val: string; color?: string }) => (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', textAlign: 'center', minWidth: 90 }}>
+      <div style={{ fontSize: 10, color: C.sub, marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 15, fontWeight: 800, color: color ?? C.text }}>{val}</div>
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Inputs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12, marginBottom: 16 }}>
+        {[
+          { label: ar ? 'X — المتغير المستقل' : 'X — Independent Variable', val: xRaw, set: setXRaw },
+          { label: ar ? 'W — المعتدِل (Moderator)' : 'W — Moderator Variable', val: wRaw, set: setWRaw },
+          { label: ar ? 'Y — المتغير التابع' : 'Y — Dependent Variable',   val: yRaw, set: setYRaw },
+        ].map(({ label, val, set }) => (
+          <div key={label}>
+            <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>{label}</label>
+            <textarea rows={3} value={val} onChange={e => set(e.target.value)}
+              style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 12, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+          </div>
+        ))}
+      </div>
+
+      {!result && <p style={{ color: C.muted, fontSize: 13 }}>{ar ? 'يلزم 6 قيم على الأقل في كل متغير' : 'At least 6 values per variable required'}</p>}
+
+      {result && (
+        <>
+          {/* Regression table */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
+            <div style={{ padding: '10px 16px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 13, color: C.gold }}>
+              Y ~ X + W + X×W &nbsp;<span style={{ fontSize: 11, fontWeight: 400, color: C.sub }}>R² = {result.R2.toFixed(3)} · n = {result.n}</span>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                {[ar ? 'المنبئ' : 'Predictor', 'β', 't', 'p', ''].map(h => (
+                  <th key={h} style={{ padding: '8px 12px', textAlign: ar ? 'right' : 'left', color: C.sub, fontWeight: 600 }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {[
+                  { label: 'X (centered)',   b: result.b_X,  t: result.t_X,  p: result.p_X  },
+                  { label: 'W (centered)',   b: result.b_W,  t: result.t_W,  p: result.p_W  },
+                  { label: 'X × W',         b: result.b_XW, t: result.t_XW, p: result.p_XW },
+                ].map(({ label, b, t, p }) => (
+                  <tr key={label} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: label === 'X × W' ? 'rgba(201,168,76,0.04)' : 'transparent' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: label === 'X × W' ? 700 : 400, color: label === 'X × W' ? C.gold : C.text }}>{label}</td>
+                    <td style={{ padding: '8px 12px' }}>{b.toFixed(3)}</td>
+                    <td style={{ padding: '8px 12px', color: C.sub }}>{t.toFixed(2)}</td>
+                    <td style={{ padding: '8px 12px' }}>
+                      <span style={{ color: sig(p) ? C.green : C.red, fontWeight: 700 }}>
+                        {sig(p) ? '✓' : '✗'} {pF(p)}
+                      </span>
+                    </td>
+                    <td style={{ padding: '8px 12px', fontSize: 11, color: C.muted }}>
+                      {label === 'X × W' ? (sig(p) ? (ar ? '✦ تفاعل دال — يوجد اعتدال' : '✦ Sig. interaction = Moderation!') : (ar ? 'لا دليل على اعتدال' : 'No moderation')) : ''}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Interaction plot */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '16px', marginBottom: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: C.gold, marginBottom: 12 }}>
+              {ar ? 'مخطط التفاعل (Simple Slopes)' : 'Interaction Plot (Simple Slopes)'}
+            </div>
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={result.plotData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="x" stroke={C.sub} tick={{ fontSize: 10, fill: C.sub }} label={{ value: 'X', position: 'insideRight', offset: 0, fill: C.sub, fontSize: 11 }} />
+                <YAxis stroke={C.sub} tick={{ fontSize: 10, fill: C.sub }} width={40} />
+                <Tooltip contentStyle={{ background: '#0d172d', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12 }} />
+                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+                {result.wLevels.map(({ label }, i) => (
+                  <Line key={i} type="linear" dataKey={`line${i}`} stroke={COLORS[i]} name={label} dot={false} strokeWidth={2} strokeDasharray={i === 0 ? '6 3' : i === 2 ? '2 3' : undefined} />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Simple Slopes */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
+            <div style={{ padding: '10px 16px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 13, color: C.gold }}>{ar ? 'بسائط المنحدر (Simple Slopes)' : 'Simple Slopes'}</div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                {[ar ? 'مستوى W' : 'W level', ar ? 'المنحدر (b_X)' : 'Slope (b_X)', 'SE', 't', 'p'].map(h => (
+                  <th key={h} style={{ padding: '8px 12px', textAlign: ar ? 'right' : 'left', color: C.sub, fontWeight: 600 }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {result.simpleSlopes.map(({ label, slope, se_sl, t_sl, p_sl }, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding: '8px 12px', color: COLORS[i], fontWeight: 700 }}>{label}</td>
+                    <td style={{ padding: '8px 12px' }}>{slope.toFixed(3)}</td>
+                    <td style={{ padding: '8px 12px', color: C.sub }}>{se_sl.toFixed(3)}</td>
+                    <td style={{ padding: '8px 12px', color: C.sub }}>{t_sl.toFixed(2)}</td>
+                    <td style={{ padding: '8px 12px' }}>
+                      <span style={{ color: sig(p_sl) ? C.green : C.red, fontWeight: 700 }}>{sig(p_sl) ? '✓' : '✗'} {pF(p_sl)}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Key stats + APA */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
+            <SB label="R²" val={result.R2.toFixed(3)} color={C.gold} />
+            <SB label="b (X×W)" val={result.b_XW.toFixed(3)} color={sig(result.p_XW) ? C.green : C.red} />
+            <SB label="t (X×W)" val={result.t_XW.toFixed(2)} />
+            <SB label="p (X×W)" val={pF(result.p_XW)} color={sig(result.p_XW) ? C.green : C.red} />
+          </div>
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 16px' }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: C.blue, marginBottom: 8 }}>APA (English)</div>
+            <div style={{ fontFamily: 'monospace', fontSize: 12.5, color: C.text, lineHeight: 1.8 }}>
+              {`The interaction between X and W was ${sig(result.p_XW) ? '' : 'not '}statistically significant, `}
+              {`b = ${result.b_XW.toFixed(3)}, t(${result.dof}) = ${result.t_XW.toFixed(2)}, p ${result.p_XW < 0.001 ? '< .001' : `= ${result.p_XW.toFixed(3)}`}, R² = ${result.R2.toFixed(3)}.`}
+              {sig(result.p_XW) && ` Simple slopes analysis revealed that the effect of X was ${result.simpleSlopes[2].slope > result.simpleSlopes[0].slope ? 'stronger' : 'weaker'} at high levels of W.`}
+            </div>
+          </div>
+          <p style={{ fontSize: 11, color: C.muted, marginTop: 10, marginBottom: 0 }}>
+            {ar ? '* تُمركَز X وW تلقائياً لتقليل التعدد الخطي · لتحليل Johnson-Neyman واستخدام PROCESS Macro (Hayes)'
+                : '* X and W are mean-centered to reduce multicollinearity · For Johnson-Neyman regions use PROCESS Macro (Hayes)'}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // ── NON-PARAMETRIC HELPERS ────────────────────────────────────────────────
 function rankArr(arr: number[]): number[] {
   const idx = arr.map((v, i) => ({ v, i })).sort((a, b) => a.v - b.v);
@@ -2522,17 +5864,36 @@ function APAFormatter({ ar }: { ar: boolean }) {
 // ════════════════════════════════════════════════════════════════════════════
 const SUBTABS_AR = [
   { key: 'explorer',   icon: '📁', label: 'مستكشف البيانات',     short: 'استكشاف' },
+  { key: 'desctable',  icon: '📋', label: 'جدول وصفي شامل',       short: 'جدول 1' },
   { key: 'freq',       icon: '📋', label: 'جدول تكراري',          short: 'تكراري' },
   { key: 'likert',     icon: '⚖️', label: 'مقياس ليكرت',          short: 'ليكرت' },
   { key: 'timeseries', icon: '📈', label: 'سلاسل زمنية',          short: 'زمني' },
+  { key: 'effectsize', icon: '📏', label: 'محوّل حجم الأثر',       short: 'حجم الأثر' },
+  { key: 'outlier',   icon: '🚨', label: 'كشف القيم الشاذة',      short: 'شاذة' },
   { key: 'corr',       icon: '🔗', label: 'مصفوفة الارتباط',      short: 'ارتباط' },
   { key: 'crosstab',   icon: '⊞',  label: 'جدول التقاطع',         short: 'تقاطع' },
   { key: 'regression', icon: '📉', label: 'تحليل الانحدار',        short: 'انحدار' },
+  { key: 'regdiag',   icon: '🔬', label: 'تشخيصات الانحدار (VIF)', short: 'VIF' },
   { key: 'mediation',  icon: '🔀', label: 'تحليل الوساطة',         short: 'وساطة' },
+  { key: 'moderation', icon: '⚙️', label: 'تحليل الاعتدال',        short: 'اعتدال' },
   { key: 'groups',     icon: '👥', label: 'مقارنة المجموعات',      short: 'مجموعات' },
+  { key: 'posthoc',   icon: '🔍', label: 'مقارنات بعدية (ANOVA)',  short: 'بعدية' },
+  { key: 'ttests',    icon: '📐', label: 'اختبارات t (ثلاثة أنواع)',short: 't-test' },
   { key: 'cronbach',    icon: 'α',  label: 'ثبات كرونباخ',           short: 'كرونباخ' },
+  { key: 'itemanalysis',icon: '📊', label: 'تحليل الفقرات',           short: 'فقرات' },
+  { key: 'efa',         icon: '🧩', label: 'التحليل العاملي (EFA)',   short: 'عاملي' },
   { key: 'normality',   icon: '📐', label: 'اختبار الاعتدالية',      short: 'اعتدالية' },
   { key: 'nonparam',    icon: '🔬', label: 'اختبارات لابارامترية',   short: 'لابارام' },
+  { key: 'chigof',      icon: 'χ²', label: 'حسن المطابقة (χ²)',       short: 'χ² GoF' },
+  { key: 'anovasum',    icon: '📊', label: 'ANOVA من الملخصات',        short: 'ANOVA-S' },
+  { key: 'ci',          icon: '📏', label: 'فترات الثقة (CI)',         short: 'CI' },
+  { key: 'icc',         icon: '🤝', label: 'اتفاق المحكّمين (ICC)',    short: 'ICC' },
+  { key: 'kappa',       icon: 'κ',  label: 'كاپا Cohen — الفئات',      short: 'κ' },
+  { key: 'hierreg',     icon: '📈', label: 'انحدار تسلسلي (ΔR²)',      short: 'ΔR²' },
+  { key: 'partialcorr', icon: '🔗', label: 'ارتباط جزئي (Matrix)',     short: 'جزئي' },
+  { key: 'twoprop',     icon: '⚖️', label: 'z-test نسبتَين',           short: 'z نسبة' },
+  { key: 'logreg',      icon: '🔢', label: 'انحدار لوجستي',            short: 'لوجستي' },
+  { key: 'omega',       icon: 'ω',  label: "Omega McDonald's ω",       short: 'ω' },
   { key: 'samplesize',  icon: '🎯', label: 'حجم العيّنة',            short: 'عيّنة' },
   { key: 'apa',         icon: '📝', label: 'منسّق APA',              short: 'APA' },
   { key: 'stats',       icon: '📊', label: 'اختبارات إحصائية',     short: 'إحصاء' },
@@ -2540,17 +5901,36 @@ const SUBTABS_AR = [
 ];
 const SUBTABS_EN = [
   { key: 'explorer',    icon: '📁', label: 'Data Explorer',       short: 'Explore' },
+  { key: 'desctable',   icon: '📋', label: 'Descriptive Table',    short: 'Table 1' },
   { key: 'freq',        icon: '📋', label: 'Frequency Table',     short: 'Freq' },
   { key: 'likert',      icon: '⚖️', label: 'Likert Scale',        short: 'Likert' },
   { key: 'timeseries',  icon: '📈', label: 'Time Series',         short: 'Time' },
+  { key: 'effectsize',  icon: '📏', label: 'Effect Size Converter', short: 'Effect' },
+  { key: 'outlier',     icon: '🚨', label: 'Outlier Detection',    short: 'Outliers' },
   { key: 'corr',        icon: '🔗', label: 'Correlation Matrix',  short: 'Corr' },
   { key: 'crosstab',    icon: '⊞',  label: 'Cross-Tabulation',   short: 'CrossTab' },
   { key: 'regression',  icon: '📉', label: 'Linear Regression',   short: 'Regress' },
+  { key: 'regdiag',    icon: '🔬', label: 'Regression Diagnostics (VIF)', short: 'VIF' },
   { key: 'mediation',   icon: '🔀', label: 'Mediation Analysis',  short: 'Mediate' },
+  { key: 'moderation',  icon: '⚙️', label: 'Moderation Analysis', short: 'Moderate' },
   { key: 'groups',      icon: '👥', label: 'Group Comparison',    short: 'Groups' },
+  { key: 'posthoc',     icon: '🔍', label: 'Post-Hoc Tests',       short: 'Post-Hoc' },
+  { key: 'ttests',      icon: '📐', label: 't-Tests (3 types)',     short: 't-tests' },
   { key: 'cronbach',    icon: 'α',  label: "Cronbach's Alpha",    short: 'Cronbach' },
+  { key: 'itemanalysis',icon: '📊', label: 'Item Analysis',         short: 'Items' },
+  { key: 'efa',         icon: '🧩', label: 'Factor Analysis (EFA)', short: 'EFA' },
   { key: 'normality',   icon: '📐', label: 'Normality Test',      short: 'Normal' },
   { key: 'nonparam',    icon: '🔬', label: 'Non-Parametric',      short: 'NonPar' },
+  { key: 'chigof',      icon: 'χ²', label: 'Chi-Square GoF',      short: 'χ² GoF' },
+  { key: 'anovasum',    icon: '📊', label: 'ANOVA from Summary',   short: 'ANOVA-S' },
+  { key: 'ci',          icon: '📏', label: 'Confidence Intervals', short: 'CI' },
+  { key: 'icc',         icon: '🤝', label: 'ICC (Rater Agreement)', short: 'ICC' },
+  { key: 'kappa',       icon: 'κ',  label: "Cohen's Kappa",        short: 'κ' },
+  { key: 'hierreg',     icon: '📈', label: 'Hierarchical Reg. (ΔR²)', short: 'ΔR²' },
+  { key: 'partialcorr', icon: '🔗', label: 'Partial Correlation',  short: 'Partial r' },
+  { key: 'twoprop',     icon: '⚖️', label: 'Two-Proportion z-test', short: '2-prop z' },
+  { key: 'logreg',      icon: '🔢', label: 'Logistic Regression',  short: 'Logistic' },
+  { key: 'omega',       icon: 'ω',  label: "McDonald's Omega (ω)", short: 'ω' },
   { key: 'samplesize',  icon: '🎯', label: 'Sample Size',         short: 'n Calc' },
   { key: 'apa',         icon: '📝', label: 'APA Formatter',       short: 'APA' },
   { key: 'stats',       icon: '📊', label: 'Statistical Tests',   short: 'Stats' },
@@ -2589,6 +5969,18 @@ export default function DataHub() {
       {/* Content */}
       <div style={{ padding: '22px 24px' }}>
         {sub === 'explorer'   && <DataAnalyzer />}
+        {sub === 'desctable' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              📋 {ar ? 'الجدول الوصفي الشامل (Table 1)' : 'Descriptive Statistics Table (Table 1)'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'n · M · SD · SE · الوسيط · Min–Max · الالتواء · التفرطح · رسم M±SD · نسخ TSV للـ Word أو Excel مباشرةً'
+                  : 'n · M · SD · SE · Median · Min–Max · Skewness · Kurtosis · M±SD chart · Copy as TSV for Word or Excel'}
+            </p>
+            <DescTable ar={ar} />
+          </>
+        )}
         {sub === 'freq'       && (
           <>
             <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -2657,6 +6049,42 @@ export default function DataHub() {
             <GroupComparison ar={ar} />
           </>
         )}
+        {sub === 'outlier' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🚨 {ar ? 'كشف القيم الشاذة (Outlier Detection)' : 'Outlier Detection'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'طريقتان: IQR (القيم خارج السياج × 1.5) و Z-score (|z| > عتبة) · مخطط صندوق · جدول تفصيلي ملوَّن · توزيع تكراري'
+                  : 'Two methods: IQR (values beyond 1.5×fence) and Z-score (|z| > threshold) · Box plot · Color-coded detail table · Histogram'}
+            </p>
+            <OutlierDetection ar={ar} />
+          </>
+        )}
+        {sub === 'effectsize' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              📏 {ar ? 'محوّل حجم الأثر' : 'Effect Size Converter'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? "أدخل أي مقياس لحجم الأثر واحصل على تحويل فوري لجميع المقاييس الأخرى · d · r · f · η² · OR · Fisher's z · Hedge's g"
+                  : "Enter any effect size metric and get instant conversions · d · r · f · η² · OR · Fisher's z · Hedge's g"}
+            </p>
+            <EffectSizeConverter ar={ar} />
+          </>
+        )}
+        {sub === 'moderation' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              ⚙️ {ar ? 'تحليل الاعتدال — Moderation Analysis' : 'Moderation Analysis (Interaction Effect)'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'يختبر هل يُغيّر W قوة/اتجاه علاقة X بـY · مخطط التفاعل · بسائط المنحدر عند W ± 1 انحراف · تتمركز X وW تلقائياً'
+                  : 'Tests whether W moderates the X→Y relationship · Interaction plot · Simple slopes at W ± 1 SD · X and W auto-centered'}
+            </p>
+            <ModerationAnalysis ar={ar} />
+          </>
+        )}
         {sub === 'mediation' && (
           <>
             <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -2667,6 +6095,174 @@ export default function DataHub() {
                   : 'Tests whether M mediates the X→Y relationship · Direct & indirect effects · Full vs. partial mediation'}
             </p>
             <MediationAnalysis ar={ar} />
+          </>
+        )}
+        {sub === 'ttests' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              📐 {ar ? 'اختبارات t — ثلاثة أنواع' : 't-Tests — Three Types'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'أحادي العينة (مقارنة بـ μ₀) · مزدوج قبل/بعد (فروق مرتبطة) · مستقل Welch (تباينات مختلفة) + اختبار Levene + Cohen\'s d + 95% CI'
+                  : 'One-sample (vs. μ₀) · Paired pre/post · Independent Welch (unequal var.) + Levene test + Cohen\'s d + 95% CI'}
+            </p>
+            <TTests ar={ar} />
+          </>
+        )}
+        {sub === 'posthoc' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🔍 {ar ? 'المقارنات البعدية — Bonferroni & Holm' : 'Post-Hoc Tests — Bonferroni & Holm'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'مقارنات زوجية بعد ANOVA الدال · تصحيح Bonferroni وHolm لضبط الخطأ من النوع الأول · حجم الأثر d لكوهن · مصفوفة الدلالة الملوّنة'
+                  : 'Pairwise comparisons after significant ANOVA · Bonferroni & Holm corrections for Type I error · Cohen\'s d effect size · Color-coded significance matrix'}
+            </p>
+            <PostHoc ar={ar} />
+          </>
+        )}
+        {sub === 'itemanalysis' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              📊 {ar ? 'تحليل الفقرات (Item Analysis)' : 'Item Analysis'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'الارتباط المصحَّح بالدرجة الكلية CITC · Alpha إذا حُذفت الفقرة · مؤشر الصعوبة P · مؤشر التمييز D · تقييم جودة كل فقرة'
+                  : 'Corrected Item-Total Correlation · Alpha if deleted · Difficulty index P · Discrimination index D · per-item quality rating'}
+            </p>
+            <ItemAnalysis ar={ar} />
+          </>
+        )}
+        {sub === 'efa' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🧩 {ar ? 'التحليل العاملي الاستكشافي (EFA)' : 'Exploratory Factor Analysis (EFA)'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'يكشف البنية الكامنة للمقياس · مخطط Scree · اختبار KMO وBartlett · جدول التشبعات مُلوَّن · القيم الذاتية والتباين المفسَّر'
+                  : 'Reveals latent structure · Scree plot · KMO & Bartlett test · Color-coded loading matrix · Eigenvalues & % variance explained'}
+            </p>
+            <FactorAnalysis ar={ar} />
+          </>
+        )}
+        {sub === 'ci' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              📏 {ar ? 'حاسبة فترات الثقة (Confidence Intervals)' : 'Confidence Interval Calculator'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'CI للمتوسط · CI للنسبة (Wilson) · CI لفرق المتوسطين (Welch SE) · CI لـ Pearson r (تحويل Fisher z) · مرئي كشريط'
+                  : 'CI for mean · CI for proportion (Wilson) · CI for diff. of means (Welch SE) · CI for Pearson r (Fisher z) · visual strip'}
+            </p>
+            <CICalc ar={ar} />
+          </>
+        )}
+        {sub === 'icc' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🤝 {ar ? 'معامل الارتباط الداخلي ICC — اتفاق المحكّمين والثبات' : 'Intraclass Correlation Coefficient (ICC)'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'ICC(1,1) · ICC(2,1) · ICC(3,1) · جدول Two-Way ANOVA · رسم ملفات المحكّمين · معيار Koo & Mae (2016) · يدعم بيانات CSV/Tab'
+                  : 'ICC(1,1) · ICC(2,1) · ICC(3,1) · Two-Way ANOVA table · rater profile chart · Koo & Mae (2016) thresholds · CSV/tab data'}
+            </p>
+            <IccCalc ar={ar} />
+          </>
+        )}
+        {sub === 'logreg' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🔢 {ar ? 'الانحدار اللوجستي (ثنائي المتغير التابع)' : 'Logistic Regression (Binary Outcome)'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'IRLS convergence · β / SE / z / p · Odds Ratio مع CI 95% · McFadden R² · Nagelkerke R² · AIC · AUC · دقة التصنيف · رسم OR'
+                  : 'IRLS convergence · β / SE / z / p · Odds Ratio with 95% CI · McFadden R² · Nagelkerke R² · AIC · AUC · classification accuracy · OR chart'}
+            </p>
+            <LogisticReg ar={ar} />
+          </>
+        )}
+        {sub === 'omega' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              ω {ar ? "موثوقية McDonald's Omega — بديل أدق لـ Cronbach's α" : "McDonald's Omega (ω) Reliability"}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'ω_t من نموذج عامل واحد · مقارنة مع α · تشبعات العامل الأول وتفرّدات الفقرات · بيانات خام (فقرات × مستجيبين) · رسم التشبعات'
+                  : 'ω_t from one-factor model · compare with α · first-factor loadings & uniqueness · raw item data (items × respondents) · loading chart'}
+            </p>
+            <OmegaRel ar={ar} />
+          </>
+        )}
+        {sub === 'partialcorr' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🔗 {ar ? 'مصفوفة الارتباط الجزئي' : 'Partial Correlation Matrix'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'يضبط كل ارتباط جميع المتغيرات الأخرى · مقارنة بـ Pearson العادي · اختبار t للدلالة · نجوم * ** *** · نسخ TSV · بيانات CSV/Tab'
+                  : 'Each partial r controls for all other variables · compare with zero-order Pearson · t-test for significance · * ** *** · copy TSV · CSV/tab data'}
+            </p>
+            <PartialCorr ar={ar} />
+          </>
+        )}
+        {sub === 'twoprop' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              ⚖️ {ar ? 'اختبار z لمقارنة نسبتَين' : 'Two-Proportion z-test'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'z-test مع احتمال مجمَّع · 90/95/99% CI للفرق (Wilson) · Cohen\'s h · Odds Ratio · Risk Ratio · طرف واحد أو طرفان · APA'
+                  : 'z-test with pooled proportion · 90/95/99% CI for diff · Cohen\'s h · Odds Ratio · Risk Ratio · one/two-tailed · APA'}
+            </p>
+            <TwoPropZ ar={ar} />
+          </>
+        )}
+        {sub === 'kappa' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              κ {ar ? 'كاپا Cohen — اتفاق الفئات بين المحكّمين' : "Cohen's Kappa — Categorical Inter-Rater Agreement"}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'كاپا عادي (للفئات الاسمية) · كاپا مرجّح خطي (للترتيبية) · مصفوفة الاتفاق · SE · 95% CI · z-test · معيار Landis & Koch (1977)'
+                  : 'Standard κ (nominal) · Weighted κ linear (ordinal) · Agreement matrix · SE · 95% CI · z-test · Landis & Koch (1977) thresholds'}
+            </p>
+            <CohenKappa ar={ar} />
+          </>
+        )}
+        {sub === 'hierreg' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              📈 {ar ? 'الانحدار التسلسلي الهرمي (ΔR²)' : 'Hierarchical Regression (ΔR² — F-change)'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'مقارنة نموذجَين متداخلَين · ΔR² = تباين إضافي مفسَّر بالبلوك 2 · ΔF ودلالته · معاملات β لكل بلوك · شريط التباين المفسَّر'
+                  : 'Compare nested models · ΔR² = additional variance from Block 2 · ΔF significance · β per block · visual variance bar'}
+            </p>
+            <HierarchReg ar={ar} />
+          </>
+        )}
+        {sub === 'chigof' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              χ² {ar ? 'اختبار حسن المطابقة (Goodness of Fit)' : 'Chi-Square Goodness of Fit'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'هل التوزيع الملاحظ يطابق المتوقع؟ · χ² = Σ(O−E)²/E · df = k−1 · Cohen\'s w · جدول المساهمات · رسم مقارن O/E'
+                  : 'Does observed distribution match expected? · χ² = Σ(O−E)²/E · df = k−1 · Cohen\'s w · cell contributions · O vs E chart'}
+            </p>
+            <ChiGoF ar={ar} />
+          </>
+        )}
+        {sub === 'anovasum' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              📊 {ar ? 'ANOVA أحادي الاتجاه من الإحصاءات الملخصة' : 'One-Way ANOVA from Summary Statistics'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'أدخل اسم المجموعة، n، M، SD لكل مجموعة · F · η² · ω² · جدول ANOVA · مقارنات Bonferroni البعدية · مفيد عند العمل من نتائج منشورة'
+                  : 'Enter group name, n, M, SD per row · F · η² · ω² · ANOVA table · Bonferroni post-hoc · useful when working from published results'}
+            </p>
+            <AnovaSummary ar={ar} />
           </>
         )}
         {sub === 'nonparam' && (
@@ -2727,6 +6323,18 @@ export default function DataHub() {
                   : 'Measures internal consistency of scale items · outputs α, corrected item-total correlations, and α-if-deleted for each item'}
             </p>
             <CronbachAlpha ar={ar} />
+          </>
+        )}
+        {sub === 'regdiag' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🔬 {ar ? 'تشخيصات الانحدار المتعدد' : 'Multiple Regression Diagnostics'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'VIF (كشف التعدد الخطي) · التسامح · إحصاء Durbin-Watson (الارتباط الذاتي) · رسم البواقي مقابل القيم المُناسَبة · مخطط QQ للبواقي'
+                  : 'VIF (multicollinearity) · Tolerance · Durbin-Watson (autocorrelation) · Residuals vs. Fitted · Q-Q plot of residuals'}
+            </p>
+            <RegDiagnostics ar={ar} />
           </>
         )}
         {sub === 'regression' && (
