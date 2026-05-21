@@ -10,6 +10,7 @@ import ReviewReport from "../components/muhakkim/ReviewReport";
 import About from "../components/muhakkim/About";
 import DiscussionPanel from "../components/muhakkim/DiscussionPanel";
 import DataAnalyzer from "../components/muhakkim/DataAnalyzer";
+import AIDetector from "../components/muhakkim/AIDetector";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3D Wireframe Sphere (canvas)
@@ -209,6 +210,7 @@ const TABS_AR = [
   { key:"upload",     icon:"📂", label:"رفع الملف",          shortLabel:"رفع" },
   { key:"proofread",  icon:"📝", label:"التدقيق اللغوي",      shortLabel:"تدقيق" },
   { key:"data",       icon:"📈", label:"تحليل البيانات",      shortLabel:"بيانات" },
+  { key:"aidetect",   icon:"🛡️", label:"كشف AI",              shortLabel:"كشف AI" },
   { key:"stats",      icon:"📊", label:"المخرجات الإحصائية",  shortLabel:"إحصاء" },
   { key:"equations",  icon:"🔢", label:"فاحص المعادلات",      shortLabel:"معادلات" },
   { key:"qr",         icon:"📷", label:"مولّد QR",            shortLabel:"QR" },
@@ -220,6 +222,7 @@ const TABS_EN = [
   { key:"upload",     icon:"📂", label:"File Upload",    shortLabel:"Upload" },
   { key:"proofread",  icon:"📝", label:"Proofreader",    shortLabel:"Proof" },
   { key:"data",       icon:"📈", label:"Data Analyzer",  shortLabel:"Data" },
+  { key:"aidetect",   icon:"🛡️", label:"AI Detector",    shortLabel:"AI Det." },
   { key:"stats",      icon:"📊", label:"Stat Parser",    shortLabel:"Stats" },
   { key:"equations",  icon:"🔢", label:"Equations",      shortLabel:"Eq" },
   { key:"qr",         icon:"📷", label:"QR Code",        shortLabel:"QR" },
@@ -661,6 +664,7 @@ export default function Muhakkim() {
         <div className="mhk-content mhk-fade" key={activeTab}>
           {activeTab === "upload"     && <FileUpload onExtracted={setExtractedText} onFileInfo={setFileInfo} extractedText={extractedText} />}
           {activeTab === "data"       && <DataAnalyzer />}
+          {activeTab === "aidetect"   && <AIDetector initialText={extractedText} />}
           {activeTab === "proofread"  && <Proofreader text={extractedText} />}
           {activeTab === "stats"      && <div className="mhk-inner"><StatParser /></div>}
           {activeTab === "equations"  && <div className="mhk-inner"><EquationChecker /></div>}
