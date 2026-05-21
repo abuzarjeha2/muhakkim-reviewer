@@ -1219,6 +1219,730 @@ function RegressionAnalysis({ ar }: { ar: boolean }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// ⑦  GROUP COMPARISON — t-test & ANOVA
+// ════════════════════════════════════════════════════════════════════════════
+function gStats(vals: number[]) {
+  const n = vals.length;
+  if (n === 0) return { n: 0, mean: 0, sd: 0, se: 0, min: 0, max: 0, median: 0 };
+  const m = avg(vals);
+  const sd = n > 1 ? Math.sqrt(vals.reduce((s, v) => s + (v - m) ** 2, 0) / (n - 1)) : 0;
+  const sorted = [...vals].sort((a, b) => a - b);
+  const med = n % 2 === 0 ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2 : sorted[Math.floor(n / 2)];
+  return { n, mean: r2(m), sd: r2(sd), se: r2(sd / Math.sqrt(n)), min: sorted[0], max: sorted[n - 1], median: r2(med) };
+}
+const GCOLORS = ['#C9A84C', '#5eead4', '#93c5fd', '#c4b5fd', '#4ade80', '#f87171', '#fb923c', '#fbbf24'];
+function dLabel(d: number, ar: boolean) { if (d < 0.2) return ar ? 'ضئيل' : 'Negligible'; if (d < 0.5) return ar ? 'صغير' : 'Small'; if (d < 0.8) return ar ? 'متوسط' : 'Medium'; if (d < 1.2) return ar ? 'كبير' : 'Large'; return ar ? 'كبير جداً' : 'Very Large'; }
+function e2Label(e: number, ar: boolean) { if (e < 0.01) return ar ? 'ضئيل' : 'Negligible'; if (e < 0.06) return ar ? 'صغير' : 'Small'; if (e < 0.14) return ar ? 'متوسط' : 'Medium'; return ar ? 'كبير' : 'Large'; }
+
+function GroupComparison({ ar }: { ar: boolean }) {
+  const [raw, setRaw] = useState('');
+  const [hasHeader, setHasHeader] = useState(true);
+  const [groupCol, setGroupCol] = useState(0);
+  const [valCol, setValCol] = useState(1);
+
+  const { headers, rows } = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim()).map(l => l.split(/[,;\t]/).map(v => v.trim()));
+    if (lines.length < 3) return { headers: [] as string[], rows: [] as string[][] };
+    if (hasHeader) return { headers: lines[0].map((h, i) => h || `C${i + 1}`), rows: lines.slice(1) };
+    return { headers: lines[0].map((_, i) => `C${i + 1}`), rows: lines };
+  }, [raw, hasHeader]);
+
+  const groups = useMemo(() => {
+    if (!rows.length) return [] as { name: string; vals: number[]; stats: ReturnType<typeof gStats> }[];
+    const map = new Map<string, number[]>();
+    for (const row of rows) {
+      const g = row[groupCol] ?? ''; const v = parseFloat(row[valCol]);
+      if (!g || isNaN(v)) continue;
+      if (!map.has(g)) map.set(g, []);
+      map.get(g)!.push(v);
+    }
+    return Array.from(map.entries()).map(([name, vals]) => ({ name, vals, stats: gStats(vals) }));
+  }, [rows, groupCol, valCol]);
+
+  const tResult = useMemo(() => {
+    if (groups.length !== 2) return null;
+    const [g1, g2] = groups;
+    const s1 = g1.stats, s2 = g2.stats;
+    if (s1.n < 2 || s2.n < 2 || (s1.sd === 0 && s2.sd === 0)) return null;
+    const se2 = (s1.sd ** 2) / s1.n + (s2.sd ** 2) / s2.n;
+    const se = Math.sqrt(se2); if (se === 0) return null;
+    const t = r2((s1.mean - s2.mean) / se);
+    const df = r2(se2 ** 2 / (((s1.sd ** 2 / s1.n) ** 2) / (s1.n - 1) + ((s2.sd ** 2 / s2.n) ** 2) / (s2.n - 1)));
+    const p = r2(Math.max(0.0001, 2 * (1 - normalCDF(Math.abs(t)))));
+    const d = r2(Math.abs(s1.mean - s2.mean) / (Math.sqrt((s1.sd ** 2 + s2.sd ** 2) / 2) || 1));
+    const ci95lo = r2((s1.mean - s2.mean) - 1.96 * se);
+    const ci95hi = r2((s1.mean - s2.mean) + 1.96 * se);
+    return { t, df, p, d, ci95lo, ci95hi };
+  }, [groups]);
+
+  const anova = useMemo(() => {
+    if (groups.length < 2) return null;
+    const N = groups.reduce((s, g) => s + g.stats.n, 0);
+    const grandMean = groups.reduce((s, g) => s + g.stats.mean * g.stats.n, 0) / N;
+    const SSbet = groups.reduce((s, g) => s + g.stats.n * (g.stats.mean - grandMean) ** 2, 0);
+    const SSwit = groups.reduce((s, g) => s + g.vals.reduce((ss, v) => ss + (v - g.stats.mean) ** 2, 0), 0);
+    const SStot = SSbet + SSwit; const k = groups.length;
+    const MSbet = SSbet / (k - 1); const MSwit = SSwit / (N - k);
+    const F = r2(MSbet / (MSwit || 1)); const eta2 = r2(SSbet / (SStot || 1));
+    const pF = r2(Math.max(0.0001, chiSqP(F * (k - 1), k - 1)));
+    return { N, k, F, pF, eta2, SSbet: r2(SSbet), SSwit: r2(SSwit), SStot: r2(SStot), MSbet: r2(MSbet), MSwit: r2(MSwit), df1: k - 1, df2: N - k };
+  }, [groups]);
+
+  const pairwise = useMemo(() => {
+    if (groups.length < 2) return [] as { a: string; b: string; diff: number; t: number; p: number }[];
+    const out: { a: string; b: string; diff: number; t: number; p: number }[] = [];
+    for (let i = 0; i < groups.length; i++) {
+      for (let j = i + 1; j < groups.length; j++) {
+        const s1 = groups[i].stats, s2 = groups[j].stats;
+        if (s1.n < 2 || s2.n < 2) continue;
+        const se = Math.sqrt((s1.sd ** 2) / s1.n + (s2.sd ** 2) / s2.n); if (se === 0) continue;
+        const t = r2((s1.mean - s2.mean) / se);
+        const p = r2(Math.max(0.0001, 2 * (1 - normalCDF(Math.abs(t)))));
+        out.push({ a: groups[i].name, b: groups[j].name, diff: r2(s1.mean - s2.mean), t, p });
+      }
+    }
+    return out;
+  }, [groups]);
+
+  const isT = groups.length === 2;
+
+  return (
+    <div>
+      {/* Input */}
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'flex-start' }}>
+        <div style={{ flex: 1, minWidth: 260 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.text, cursor: 'pointer', marginBottom: 6 }}>
+            <input type="checkbox" checked={hasHeader} onChange={e => setHasHeader(e.target.checked)} />
+            {ar ? 'الصف الأول = أسماء الأعمدة' : 'First row = column names'}
+          </label>
+          <p style={{ fontSize: 11, color: C.sub, margin: '0 0 4px' }}>
+            {ar ? 'CSV: عمود التسمية (المجموعة) + عمود القيمة الرقمية' : 'CSV: group label column + numeric value column'}
+          </p>
+          <TA value={raw} onChange={setRaw} rows={6}
+            placeholder={ar
+              ? 'المجموعة,الدرجة\nأ,82\nأ,75\nأ,90\nأ,88\nب,65\nب,70\nب,68\nج,55\nج,60\nج,58\nج,62'
+              : 'Group,Score\nA,82\nA,75\nA,90\nA,88\nB,65\nB,70\nB,68\nC,55\nC,60\nC,58\nC,62'} />
+        </div>
+        {headers.length >= 2 && (
+          <div style={{ minWidth: 190 }}>
+            <p style={{ fontSize: 11, color: C.sub, margin: '0 0 6px' }}>{ar ? 'عمود المجموعة' : 'Group column'}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 12 }}>
+              {headers.map((h, i) => (
+                <label key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer', color: groupCol === i ? C.gold : C.text }}>
+                  <input type="radio" name="gcol" checked={groupCol === i} onChange={() => setGroupCol(i)} />{h}
+                </label>
+              ))}
+            </div>
+            <p style={{ fontSize: 11, color: C.sub, margin: '0 0 6px' }}>{ar ? 'عمود القيمة' : 'Value column'}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {headers.map((h, i) => (
+                <label key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer', color: valCol === i ? C.blue : C.text }}>
+                  <input type="radio" name="vcol" checked={valCol === i} onChange={() => setValCol(i)} />{h}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {groups.length < 2 && <p style={{ textAlign: 'center', color: C.sub, fontSize: 13, padding: '24px 0' }}>{ar ? 'أدخل بيانات بمجموعتَين على الأقل' : 'Enter data with at least 2 groups'}</p>}
+
+      {groups.length >= 2 && (
+        <>
+          {/* Descriptive stats table */}
+          <div style={{ overflowX: 'auto', marginBottom: 14, borderRadius: 12, border: `1px solid ${C.border}`, background: C.card }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ background: 'rgba(201,168,76,0.08)' }}>
+                  {[ar ? 'المجموعة' : 'Group', 'n', ar ? 'المتوسط' : 'Mean', ar ? 'الانحراف ±' : '±SD', ar ? 'الخطأ' : 'SE', ar ? 'الوسيط' : 'Median', 'Min', 'Max'].map(h => (
+                    <th key={h} style={{ padding: '9px 10px', textAlign: 'center', color: C.gold, fontWeight: 700, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {groups.map((g, i) => (
+                  <tr key={g.name} style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                    <td style={{ padding: '7px 10px', fontWeight: 700 }}>
+                      <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: GCOLORS[i % GCOLORS.length], marginInlineEnd: 6 }} />
+                      <span style={{ color: GCOLORS[i % GCOLORS.length] }}>{g.name}</span>
+                    </td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center', color: C.sub }}>{g.stats.n}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center', fontWeight: 700 }}>{g.stats.mean}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center', color: C.sub }}>{g.stats.sd}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center', color: C.sub }}>{g.stats.se}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center' }}>{g.stats.median}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center', color: C.sub }}>{g.stats.min}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center', color: C.sub }}>{g.stats.max}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Bar chart of means */}
+          <ChartCard title={`📊 ${ar ? 'متوسطات المجموعات' : 'Group Means'}`}>
+            <ResponsiveContainer width="100%" height={190}>
+              <BarChart data={groups.map((g, i) => ({ name: g.name, mean: g.stats.mean, color: GCOLORS[i % GCOLORS.length] }))} margin={{ left: -10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <XAxis dataKey="name" tick={{ fill: C.sub, fontSize: 11 }} />
+                <YAxis tick={{ fill: C.sub, fontSize: 9 }} />
+                <Tooltip {...TT} formatter={(v: number) => [v, ar ? 'المتوسط' : 'Mean']} />
+                <Bar dataKey="mean" radius={[6, 6, 0, 0]}>
+                  {groups.map((_, i) => <Cell key={i} fill={GCOLORS[i % GCOLORS.length]} fillOpacity={0.85} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+
+          {/* Welch t-test */}
+          {isT && tResult && (
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16, marginTop: 12 }}>
+              <p style={{ fontWeight: 800, color: C.gold, margin: '0 0 12px', fontSize: 14 }}>
+                🧪 {ar ? "اختبار ويلش t (تباينات غير متساوية)" : "Welch's t-Test (unequal variances)"}
+              </p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                {[
+                  { l: 't', v: tResult.t, color: C.blue },
+                  { l: 'df', v: tResult.df, color: C.sub },
+                  { l: 'p', v: tResult.p <= 0.001 ? '<0.001' : tResult.p.toFixed(3), color: pLabel(tResult.p, ar).color },
+                  { l: "Cohen's d", v: tResult.d, color: C.purple },
+                  { l: '95% CI', v: `[${tResult.ci95lo}, ${tResult.ci95hi}]`, color: C.teal },
+                ].map(s => <Pill key={s.l} label={s.l} value={s.v} color={s.color} />)}
+                <div style={{ display: 'flex', alignItems: 'center', background: `${pLabel(tResult.p, ar).color}15`, border: `1px solid ${pLabel(tResult.p, ar).color}33`, borderRadius: 10, padding: '8px 14px', fontSize: 13, fontWeight: 700, color: pLabel(tResult.p, ar).color }}>{pLabel(tResult.p, ar).text}</div>
+              </div>
+              <p style={{ fontSize: 12, color: C.sub, margin: 0 }}>
+                {ar ? `حجم الأثر — Cohen's d = ${tResult.d}: ${dLabel(tResult.d, ar)}` : `Effect size — Cohen's d = ${tResult.d}: ${dLabel(tResult.d, ar)}`}
+              </p>
+            </div>
+          )}
+
+          {/* ANOVA */}
+          {anova && (
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16, marginTop: 12 }}>
+              <p style={{ fontWeight: 800, color: C.gold, margin: '0 0 12px', fontSize: 14 }}>
+                📊 {ar ? 'تحليل التباين الأحادي (One-Way ANOVA)' : 'One-Way ANOVA'}
+              </p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                {[
+                  { l: 'F', v: anova.F, color: C.blue },
+                  { l: `df(${anova.df1},${anova.df2})`, v: `${anova.df1}, ${anova.df2}`, color: C.sub },
+                  { l: 'p', v: anova.pF <= 0.001 ? '<0.001' : anova.pF.toFixed(3), color: pLabel(anova.pF, ar).color },
+                  { l: 'η²', v: anova.eta2, color: C.purple },
+                ].map(s => <Pill key={s.l} label={s.l} value={s.v} color={s.color} />)}
+                <div style={{ display: 'flex', alignItems: 'center', background: `${pLabel(anova.pF, ar).color}15`, border: `1px solid ${pLabel(anova.pF, ar).color}33`, borderRadius: 10, padding: '8px 14px', fontSize: 13, fontWeight: 700, color: pLabel(anova.pF, ar).color }}>{pLabel(anova.pF, ar).text}</div>
+              </div>
+              <p style={{ fontSize: 12, color: C.sub, margin: '0 0 12px' }}>
+                {ar ? `η² = ${anova.eta2} (${e2Label(anova.eta2, ar)})` : `η² = ${anova.eta2} (${e2Label(anova.eta2, ar)} effect)`}
+              </p>
+              {/* ANOVA table */}
+              <div style={{ overflowX: 'auto', borderRadius: 8, border: `1px solid ${C.border}` }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+                  <thead>
+                    <tr style={{ background: 'rgba(201,168,76,0.06)' }}>
+                      {[ar ? 'المصدر' : 'Source', 'SS', 'df', 'MS', 'F', 'p'].map(h => (
+                        <th key={h} style={{ padding: '7px 10px', textAlign: 'center', color: C.gold, fontWeight: 700, borderBottom: `1px solid ${C.border}` }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { src: ar ? 'بين المجموعات' : 'Between', ss: anova.SSbet, df: anova.df1, ms: anova.MSbet, f: anova.F, p: anova.pF as number | '' },
+                      { src: ar ? 'داخل المجموعات' : 'Within', ss: anova.SSwit, df: anova.df2, ms: anova.MSwit, f: '' as number | '', p: '' as number | '' },
+                      { src: ar ? 'الكلي' : 'Total', ss: anova.SStot, df: anova.df1 + anova.df2, ms: '' as number | '', f: '' as number | '', p: '' as number | '' },
+                    ].map((row, i) => (
+                      <tr key={row.src} style={{ background: i === 0 ? 'rgba(201,168,76,0.04)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                        <td style={{ padding: '6px 10px', fontWeight: i === 2 ? 700 : 400 }}>{row.src}</td>
+                        <td style={{ padding: '6px 10px', textAlign: 'center', color: C.sub }}>{row.ss}</td>
+                        <td style={{ padding: '6px 10px', textAlign: 'center', color: C.sub }}>{row.df}</td>
+                        <td style={{ padding: '6px 10px', textAlign: 'center', color: C.sub }}>{row.ms}</td>
+                        <td style={{ padding: '6px 10px', textAlign: 'center', color: C.blue, fontWeight: 700 }}>{row.f}</td>
+                        <td style={{ padding: '6px 10px', textAlign: 'center', color: typeof row.p === 'number' ? pLabel(row.p, ar).color : C.sub }}>{typeof row.p === 'number' ? (row.p <= 0.001 ? '<0.001' : row.p.toFixed(3)) : ''}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Pairwise comparisons */}
+          {pairwise.length > 1 && (
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16, marginTop: 12 }}>
+              <p style={{ fontWeight: 800, color: C.gold, margin: '0 0 6px', fontSize: 14 }}>🔀 {ar ? 'المقارنات الزوجية (LSD)' : 'Pairwise Comparisons (LSD)'}</p>
+              <p style={{ fontSize: 11, color: C.muted, margin: '0 0 10px' }}>{ar ? '⚠ بدون تصحيح بونفيروني — طبّقه عند الحاجة' : '⚠ No Bonferroni correction — apply if needed'}</p>
+              <div style={{ overflowX: 'auto', borderRadius: 8, border: `1px solid ${C.border}` }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ background: 'rgba(201,168,76,0.06)' }}>
+                      {[ar ? 'المقارنة' : 'Comparison', ar ? 'الفرق' : 'Diff', 't', 'p', ar ? 'الدلالة' : 'Sig.'].map(h => (
+                        <th key={h} style={{ padding: '7px 10px', textAlign: 'center', color: C.gold, fontWeight: 700, borderBottom: `1px solid ${C.border}` }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pairwise.map((pw, i) => {
+                      const pl = pLabel(pw.p, ar);
+                      return (
+                        <tr key={i} style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                          <td style={{ padding: '7px 10px', fontWeight: 600 }}>{pw.a} vs {pw.b}</td>
+                          <td style={{ padding: '7px 10px', textAlign: 'center', fontWeight: 700, color: pw.diff >= 0 ? C.green : C.red }}>{pw.diff > 0 ? '+' : ''}{pw.diff}</td>
+                          <td style={{ padding: '7px 10px', textAlign: 'center', color: C.blue }}>{pw.t}</td>
+                          <td style={{ padding: '7px 10px', textAlign: 'center', color: pl.color }}>{pw.p <= 0.001 ? '<0.001' : pw.p.toFixed(3)}</td>
+                          <td style={{ padding: '7px 10px', textAlign: 'center', fontSize: 11, color: pl.color, fontWeight: 600 }}>{pl.text.split('(')[0].trim()}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <p style={{ fontSize: 11, color: C.muted, marginTop: 10, textAlign: 'center' }}>
+            {ar ? '* قيم p تقريبية (التوزيع الطبيعي) · موثوقة لـ n≥30 لكل مجموعة' : '* Approximate p-values (normal approx.) · reliable for n≥30 per group'}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ⑧  CRONBACH'S ALPHA — Reliability Analysis
+// ════════════════════════════════════════════════════════════════════════════
+function alphaLabel(a: number, ar: boolean): { text: string; color: string } {
+  if (a >= 0.90) return { text: ar ? 'ممتاز (α≥0.90)' : 'Excellent (α≥0.90)', color: C.green };
+  if (a >= 0.80) return { text: ar ? 'جيد جداً (α≥0.80)' : 'Good (α≥0.80)', color: C.teal };
+  if (a >= 0.70) return { text: ar ? 'مقبول (α≥0.70)' : 'Acceptable (α≥0.70)', color: C.blue };
+  if (a >= 0.60) return { text: ar ? 'مشكوك (α≥0.60)' : 'Questionable (α≥0.60)', color: C.yellow };
+  return { text: ar ? 'غير مقبول (α<0.60)' : 'Unacceptable (α<0.60)', color: C.red };
+}
+
+function CronbachAlpha({ ar }: { ar: boolean }) {
+  const [raw, setRaw] = useState('');
+  const [hasHeader, setHasHeader] = useState(true);
+
+  const { items, matrix } = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim()).map(l => l.split(/[,;\t]/).map(v => v.trim()));
+    if (lines.length < 4) return { items: [] as string[], matrix: [] as number[][] };
+    let hdr: string[], dataRows: string[][];
+    if (hasHeader) { hdr = lines[0].map((h, i) => h || `F${i + 1}`); dataRows = lines.slice(1); }
+    else { hdr = lines[0].map((_, i) => `F${i + 1}`); dataRows = lines; }
+    const mat: number[][] = [];
+    for (const row of dataRows) {
+      const vals = row.map(v => parseFloat(v));
+      if (vals.length >= 2 && vals.every(v => !isNaN(v))) mat.push(vals);
+    }
+    if (mat.length < 3) return { items: [] as string[], matrix: [] as number[][] };
+    const cols = mat[0].length;
+    return { items: hdr.slice(0, cols), matrix: mat.map(r => r.slice(0, cols)) };
+  }, [raw, hasHeader]);
+
+  const result = useMemo(() => {
+    const n = matrix.length, k = items.length;
+    if (n < 3 || k < 2) return null;
+    const totals = matrix.map(row => row.reduce((s, v) => s + v, 0));
+    const totalMean = avg(totals);
+    const totalVar = totals.reduce((s, t) => s + (t - totalMean) ** 2, 0) / (n - 1);
+    if (totalVar === 0) return null;
+    const itemMeans = items.map((_, j) => avg(matrix.map(row => row[j])));
+    const itemVars = items.map((_, j) => {
+      const m = itemMeans[j];
+      return matrix.reduce((s, row) => s + (row[j] - m) ** 2, 0) / (n - 1);
+    });
+    const sumItemVars = itemVars.reduce((s, v) => s + v, 0);
+    const alpha = r2((k / (k - 1)) * (1 - sumItemVars / totalVar));
+
+    const itemStats = items.map((name, j) => {
+      const itemVals = matrix.map(row => row[j]);
+      const restScores = matrix.map((row, ri) => totals[ri] - row[j]);
+      const corr = r2(pearson(itemVals, restScores));
+      // Alpha-if-deleted
+      const remVars = itemVars.filter((_, i) => i !== j);
+      const remTotals = matrix.map(row => row.reduce((s, v, i) => i !== j ? s + v : s, 0));
+      const remTotalMean = avg(remTotals);
+      const remTotalVar = remTotals.reduce((s, t) => s + (t - remTotalMean) ** 2, 0) / (n - 1);
+      const remSumVars = remVars.reduce((s, v) => s + v, 0);
+      const km1 = k - 1;
+      const aid = r2(km1 > 1 && remTotalVar > 0 ? (km1 / (km1 - 1)) * (1 - remSumVars / remTotalVar) : 0);
+      return { name, mean: r2(itemMeans[j]), sd: r2(Math.sqrt(itemVars[j])), corr, aid };
+    });
+
+    return { alpha, k, n, totalVar: r2(totalVar), sumItemVars: r2(sumItemVars), itemStats };
+  }, [matrix, items]);
+
+  const corrData = result ? result.itemStats.map(s => ({ name: s.name.length > 8 ? s.name.slice(0, 8) + '…' : s.name, corr: s.corr, aid: s.aid })) : [];
+
+  return (
+    <div>
+      <div style={{ marginBottom: 14 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.text, cursor: 'pointer', marginBottom: 6 }}>
+          <input type="checkbox" checked={hasHeader} onChange={e => setHasHeader(e.target.checked)} />
+          {ar ? 'الصف الأول = أسماء الفقرات' : 'First row = item names'}
+        </label>
+        <p style={{ fontSize: 11, color: C.sub, margin: '0 0 4px' }}>
+          {ar ? 'CSV: كل عمود = فقرة (بند)، كل صف = مستجيب — القيم رقمية فقط' : 'CSV: each column = item, each row = respondent — numeric values only'}
+        </p>
+        <TA value={raw} onChange={setRaw} rows={6}
+          placeholder={ar
+            ? 'ف1,ف2,ف3,ف4,ف5\n4,3,4,5,4\n3,3,3,4,3\n5,4,5,5,5\n2,2,3,2,3\n4,4,4,3,4\n3,3,4,4,3'
+            : 'I1,I2,I3,I4,I5\n4,3,4,5,4\n3,3,3,4,3\n5,4,5,5,5\n2,2,3,2,3\n4,4,4,3,4\n3,3,4,4,3'} />
+      </div>
+
+      {!result && items.length === 0 && <p style={{ textAlign: 'center', color: C.sub, fontSize: 13, padding: '24px 0' }}>{ar ? 'أدخل بيانات فقرات المقياس (3 مستجيبين على الأقل و2 فقرة)' : 'Enter scale item data (at least 3 respondents and 2 items)'}</p>}
+      {items.length > 0 && !result && <p style={{ textAlign: 'center', color: C.red, fontSize: 13, padding: '12px 0' }}>{ar ? 'تحقق من البيانات — يجب أن تكون جميع القيم أرقاماً' : 'Check data — all values must be numeric'}</p>}
+
+      {result && (
+        <>
+          {/* Summary */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: `${alphaLabel(result.alpha, ar).color}18`, border: `2px solid ${alphaLabel(result.alpha, ar).color}55`, borderRadius: 14, padding: '12px 20px' }}>
+              <span style={{ fontSize: 13, color: C.sub }}>α Cronbach</span>
+              <span style={{ fontSize: 28, fontWeight: 900, color: alphaLabel(result.alpha, ar).color }}>{result.alpha}</span>
+            </div>
+            {[
+              { l: ar ? 'الفقرات' : 'Items (k)', v: result.k, color: C.blue },
+              { l: ar ? 'المستجيبون' : 'Respondents (n)', v: result.n, color: C.sub },
+              { l: ar ? 'تباين المجموع' : 'Total Var.', v: result.totalVar, color: C.purple },
+              { l: ar ? 'مجموع تباين الفقرات' : 'Sum Item Var.', v: result.sumItemVars, color: C.sub },
+            ].map(s => <Pill key={s.l} label={s.l} value={s.v} color={s.color} />)}
+            <div style={{ display: 'flex', alignItems: 'center', background: `${alphaLabel(result.alpha, ar).color}15`, border: `1px solid ${alphaLabel(result.alpha, ar).color}33`, borderRadius: 10, padding: '8px 16px', fontSize: 13, fontWeight: 700, color: alphaLabel(result.alpha, ar).color }}>
+              {alphaLabel(result.alpha, ar).text}
+            </div>
+          </div>
+
+          {/* Item statistics table */}
+          <div style={{ overflowX: 'auto', marginBottom: 14, borderRadius: 12, border: `1px solid ${C.border}`, background: C.card }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ background: 'rgba(201,168,76,0.08)' }}>
+                  {[ar ? 'الفقرة' : 'Item', ar ? 'المتوسط' : 'Mean', ar ? 'الانحراف' : 'SD',
+                    ar ? 'ارتباط الفقرة بالكلي المصحَّح' : 'Corrected Item-Total r',
+                    ar ? 'α عند حذف الفقرة' : 'α if Item Deleted'].map(h => (
+                    <th key={h} style={{ padding: '9px 12px', textAlign: 'center', color: C.gold, fontWeight: 700, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {result.itemStats.map((s, i) => {
+                  const corrColor = s.corr >= 0.4 ? C.green : s.corr >= 0.3 ? C.teal : s.corr >= 0.2 ? C.yellow : C.red;
+                  const aidColor = s.aid > result.alpha ? C.red : C.green;
+                  return (
+                    <tr key={s.name} style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                      <td style={{ padding: '7px 12px', fontWeight: 700, color: C.gold }}>{s.name}</td>
+                      <td style={{ padding: '7px 12px', textAlign: 'center' }}>{s.mean}</td>
+                      <td style={{ padding: '7px 12px', textAlign: 'center', color: C.sub }}>{s.sd}</td>
+                      <td style={{ padding: '7px 12px', textAlign: 'center' }}>
+                        <span style={{ background: `${corrColor}15`, color: corrColor, borderRadius: 6, padding: '2px 12px', fontWeight: 700 }}>{s.corr}</span>
+                      </td>
+                      <td style={{ padding: '7px 12px', textAlign: 'center' }}>
+                        <span style={{ color: aidColor, fontWeight: 700 }}>{s.aid}</span>
+                        {s.aid > result.alpha && <span style={{ fontSize: 10, color: C.red, marginInlineStart: 4 }}>▲ {ar ? 'يرفع α' : 'raises α'}</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Correlation bar chart */}
+          <ChartCard title={`📊 ${ar ? 'ارتباط كل فقرة بالمقياس الكلي (المصحَّح)' : 'Corrected Item-Total Correlations'}`}>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={corrData} margin={{ left: -10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <XAxis dataKey="name" tick={{ fill: C.sub, fontSize: 10 }} />
+                <YAxis domain={[-0.2, 1]} tick={{ fill: C.sub, fontSize: 9 }} />
+                <Tooltip {...TT} formatter={(v: number, name: string) => [v, name === 'corr' ? (ar ? 'ارتباط الفقرة' : 'Item-Total r') : (ar ? 'α عند الحذف' : 'α if Deleted')]} />
+                <ReferenceLine y={0.3} stroke={C.yellow} strokeDasharray="4 2" label={{ value: '0.3', fill: C.yellow, fontSize: 9 }} />
+                <Bar dataKey="corr" name="corr" radius={[4, 4, 0, 0]}>
+                  {corrData.map((d, i) => <Cell key={i} fill={d.corr >= 0.3 ? C.teal : C.red} fillOpacity={0.8} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+
+          {/* Interpretation guide */}
+          <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {([['≥0.90', ar ? 'ممتاز' : 'Excellent', C.green], ['≥0.80', ar ? 'جيد جداً' : 'Good', C.teal], ['≥0.70', ar ? 'مقبول' : 'Acceptable', C.blue], ['≥0.60', ar ? 'مشكوك' : 'Questionable', C.yellow], ['<0.60', ar ? 'مشكلة' : 'Unacceptable', C.red]] as [string, string, string][]).map(([range, label, color]) => (
+              <span key={range} style={{ fontSize: 11, color, background: `${color}10`, border: `1px solid ${color}25`, borderRadius: 8, padding: '4px 10px' }}>{range}: {label}</span>
+            ))}
+            <span style={{ fontSize: 11, color: C.muted, marginInlineStart: 'auto' }}>
+              {ar ? '· ارتباط الفقرة بالكلي ≥0.3 مقبول · الفقرات التي ترفع α عند حذفها يُنصح بمراجعتها' : '· Item-total r ≥0.3 acceptable · items raising α if deleted should be reviewed'}
+            </span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ⑨  SAMPLE SIZE CALCULATOR
+// ════════════════════════════════════════════════════════════════════════════
+function zInv(p: number): number {
+  if (p <= 0) return -Infinity; if (p >= 1) return Infinity; if (Math.abs(p - 0.5) < 1e-10) return 0;
+  const sign = p > 0.5 ? 1 : -1, q = Math.min(p, 1 - p);
+  const t = Math.sqrt(-2 * Math.log(q));
+  const num = 2.515517 + 0.802853 * t + 0.010328 * t * t;
+  const den = 1 + 1.432788 * t + 0.189269 * t * t + 0.001308 * t * t * t;
+  return sign * (t - num / den);
+}
+
+type TestType = 'ttest' | 'corr' | 'chisq' | 'prop';
+type APATest = 'desc' | 'ttest' | 'anova' | 'corr' | 'chisq' | 'reg';
+function calcN(type: TestType, alpha: number, pw: number, twoTailed: boolean,
+               d: number, rVal: number, w: number, p1: number, p2: number): number | null {
+  const za = zInv(twoTailed ? 1 - alpha / 2 : 1 - alpha);
+  const zb = zInv(pw);
+  if (!isFinite(za) || !isFinite(zb)) return null;
+  switch (type) {
+    case 'ttest': if (d <= 0) return null; return Math.ceil(2 * ((za + zb) / d) ** 2);
+    case 'corr': { const ar = Math.abs(rVal); if (ar <= 0 || ar >= 1) return null; const zr = 0.5 * Math.log((1 + ar) / (1 - ar)); return Math.ceil((za + zb) ** 2 / zr ** 2 + 3); }
+    case 'chisq': if (w <= 0) return null; return Math.ceil((za + zb) ** 2 / w ** 2);
+    case 'prop': { if (p1 === p2 || p1 <= 0 || p1 >= 1 || p2 <= 0 || p2 >= 1) return null; const pb = (p1 + p2) / 2; const num = (za * Math.sqrt(2 * pb * (1 - pb)) + zb * Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2))) ** 2; return Math.ceil(num / (p1 - p2) ** 2); }
+  }
+}
+
+function SampleSizeCalc({ ar }: { ar: boolean }) {
+  const [type, setType] = useState<TestType>('ttest');
+  const [alpha, setAlpha] = useState(0.05);
+  const [power, setPower] = useState(0.80);
+  const [twoTailed, setTwoTailed] = useState(true);
+  const [d, setD] = useState(0.5);
+  const [rVal, setRVal] = useState(0.3);
+  const [w, setW] = useState(0.3);
+  const [p1, setP1] = useState(0.5);
+  const [p2, setP2] = useState(0.35);
+
+  const n = calcN(type, alpha, power, twoTailed, d, rVal, w, p1, p2);
+  const powerRows = [0.70, 0.80, 0.90, 0.95].map(pw => ({ pw, n: calcN(type, alpha, pw, twoTailed, d, rVal, w, p1, p2) }));
+  const isGroup = type === 'ttest' || type === 'prop';
+
+  const NumInput = ({ label, value, onChange, min = 0.01, max = 99, step = 0.05 }: { label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number }) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <label style={{ fontSize: 11, color: C.sub }}>{label}</label>
+      <input type="number" value={value} min={min} max={max} step={step} onChange={e => onChange(parseFloat(e.target.value) || 0)}
+        style={{ width: 90, background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 8, padding: '6px 10px', color: C.text, fontSize: 13, fontFamily: 'inherit' }} />
+    </div>
+  );
+
+  const TYPES = [
+    { key: 'ttest' as TestType, label: ar ? 'اختبار t (مجموعتان)' : 'Two-sample t-test' },
+    { key: 'corr' as TestType,  label: ar ? 'معامل الارتباط r' : 'Pearson Correlation' },
+    { key: 'chisq' as TestType, label: ar ? 'اختبار كاي مربع' : 'Chi-Square Test' },
+    { key: 'prop' as TestType,  label: ar ? 'مقارنة نسبتَين' : 'Two Proportions' },
+  ];
+
+  const BENCHMARKS: Record<TestType, { s: string; m: string; l: string }> = {
+    ttest: { s: 'd=0.2', m: 'd=0.5', l: 'd=0.8' },
+    corr:  { s: 'r=0.1', m: 'r=0.3', l: 'r=0.5' },
+    chisq: { s: 'w=0.1', m: 'w=0.3', l: 'w=0.5' },
+    prop:  { s: '5%', m: '10–15%', l: '>20%' },
+  };
+
+  return (
+    <div>
+      {/* Test type */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+        {TYPES.map(tp => (
+          <button key={tp.key} onClick={() => setType(tp.key)} style={{ background: type === tp.key ? 'linear-gradient(135deg,rgba(201,168,76,0.2),rgba(245,215,142,0.08))' : 'rgba(255,255,255,0.03)', border: `1px solid ${type === tp.key ? 'rgba(201,168,76,0.5)' : C.border}`, color: type === tp.key ? C.gold : C.sub, borderRadius: 10, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            {tp.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Parameters */}
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 20, padding: '14px 16px', background: C.card, border: `1px solid ${C.border}`, borderRadius: 12 }}>
+        <NumInput label={ar ? 'مستوى α' : 'Alpha (α)'} value={alpha} onChange={setAlpha} min={0.001} max={0.2} step={0.005} />
+        <NumInput label={ar ? 'القدرة (1-β)' : 'Power (1−β)'} value={power} onChange={setPower} min={0.5} max={0.999} step={0.05} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <label style={{ fontSize: 11, color: C.sub }}>{ar ? 'الاتجاه' : 'Tails'}</label>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[[true, ar ? 'ثنائي' : '2-tailed'], [false, ar ? 'أحادي' : '1-tailed']].map(([v, lbl]) => (
+              <label key={String(v)} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, cursor: 'pointer', color: twoTailed === v ? C.gold : C.text }}>
+                <input type="radio" checked={twoTailed === v} onChange={() => setTwoTailed(v as boolean)} />{lbl as string}
+              </label>
+            ))}
+          </div>
+        </div>
+        {type === 'ttest' && <NumInput label={ar ? 'حجم الأثر d' : "Cohen's d"} value={d} onChange={setD} min={0.01} max={3} step={0.1} />}
+        {type === 'corr'  && <NumInput label={ar ? 'معامل r' : 'Correlation r'} value={rVal} onChange={setRVal} min={0.01} max={0.99} step={0.05} />}
+        {type === 'chisq' && <NumInput label={ar ? 'حجم الأثر w' : "Cohen's w"} value={w} onChange={setW} min={0.01} max={2} step={0.05} />}
+        {type === 'prop'  && <>
+          <NumInput label={ar ? 'النسبة p₁' : 'Proportion p₁'} value={p1} onChange={setP1} min={0.01} max={0.99} step={0.05} />
+          <NumInput label={ar ? 'النسبة p₂' : 'Proportion p₂'} value={p2} onChange={setP2} min={0.01} max={0.99} step={0.05} />
+        </>}
+      </div>
+
+      {/* Main result */}
+      {n !== null ? (
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
+          <div style={{ background: 'linear-gradient(135deg,rgba(201,168,76,0.15),rgba(245,215,142,0.05))', border: `2px solid rgba(201,168,76,0.45)`, borderRadius: 16, padding: '16px 28px', textAlign: 'center' }}>
+            <div style={{ fontSize: 11, color: C.sub, marginBottom: 4 }}>{ar ? 'الحجم المطلوب' : 'Required n'} {isGroup ? (ar ? 'لكل مجموعة' : 'per group') : ''}</div>
+            <div style={{ fontSize: 48, fontWeight: 900, color: C.gold, lineHeight: 1 }}>{n}</div>
+            {isGroup && <div style={{ fontSize: 12, color: C.sub, marginTop: 4 }}>{ar ? 'الإجمالي' : 'Total'}: <strong style={{ color: C.text }}>{n * 2}</strong></div>}
+          </div>
+          <div style={{ flex: 1, minWidth: 200, fontSize: 13, color: C.sub, lineHeight: 1.8 }}>
+            <div>α = <strong style={{ color: C.text }}>{alpha}</strong> · {ar ? 'قدرة' : 'Power'} = <strong style={{ color: C.text }}>{Math.round(power * 100)}%</strong> · {twoTailed ? (ar ? 'ثنائي الاتجاه' : '2-tailed') : (ar ? 'أحادي الاتجاه' : '1-tailed')}</div>
+            <div style={{ fontSize: 11, color: C.muted }}>{ar ? '* يُنصح بإضافة 10–15% تعويضاً عن الفاقد المتوقع' : '* Add 10–15% buffer for expected attrition'}</div>
+          </div>
+        </div>
+      ) : <p style={{ color: C.red, fontSize: 13, margin: '0 0 16px' }}>{ar ? 'تحقق من المدخلات (لا تكون متطرفة)' : 'Check inputs (avoid extreme values)'}</p>}
+
+      {/* Power table */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12 }}>
+        <div style={{ borderRadius: 12, border: `1px solid ${C.border}`, background: C.card, overflow: 'hidden' }}>
+          <div style={{ padding: '10px 14px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 13, color: C.gold }}>{ar ? 'جدول القدرة الإحصائية' : 'Power Table'}</div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                <th style={{ padding: '8px 14px', textAlign: ar ? 'right' : 'left', color: C.sub, fontWeight: 600 }}>{ar ? 'القدرة' : 'Power'}</th>
+                <th style={{ padding: '8px 14px', textAlign: 'center', color: C.sub, fontWeight: 600 }}>{ar ? 'n' + (isGroup ? ' (لكل مجموعة)' : '') : 'n' + (isGroup ? ' per group' : '')}</th>
+                {isGroup && <th style={{ padding: '8px 14px', textAlign: 'center', color: C.sub, fontWeight: 600 }}>{ar ? 'الإجمالي' : 'Total n'}</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {powerRows.map(({ pw, n: ni }) => (
+                <tr key={pw} style={{ background: Math.abs(pw - power) < 0.001 ? 'rgba(201,168,76,0.08)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                  <td style={{ padding: '8px 14px', fontWeight: Math.abs(pw - power) < 0.001 ? 800 : 400, color: Math.abs(pw - power) < 0.001 ? C.gold : C.text }}>{Math.round(pw * 100)}%</td>
+                  <td style={{ padding: '8px 14px', textAlign: 'center', fontWeight: 700, color: C.blue }}>{ni ?? '—'}</td>
+                  {isGroup && <td style={{ padding: '8px 14px', textAlign: 'center', color: C.sub }}>{ni != null ? ni * 2 : '—'}</td>}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Benchmark */}
+        <div style={{ borderRadius: 12, border: `1px solid ${C.border}`, background: C.card, overflow: 'hidden' }}>
+          <div style={{ padding: '10px 14px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 13, color: C.gold }}>{ar ? 'مرجع حجم الأثر (Cohen)' : 'Effect Size Reference (Cohen)'}</div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <tbody>
+              {([[ar ? 'صغير' : 'Small', BENCHMARKS[type].s, C.blue], [ar ? 'متوسط' : 'Medium', BENCHMARKS[type].m, C.teal], [ar ? 'كبير' : 'Large', BENCHMARKS[type].l, C.green]] as [string,string,string][]).map(([lbl, val, col]) => (
+                <tr key={lbl} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                  <td style={{ padding: '9px 14px', color: col, fontWeight: 700 }}>{lbl}</td>
+                  <td style={{ padding: '9px 14px', textAlign: 'center', color: C.text }}>{val}</td>
+                </tr>
+              ))}
+              <tr>
+                <td colSpan={2} style={{ padding: '8px 14px', fontSize: 11, color: C.muted }}>
+                  {ar ? '· ينصح كوهين بـ Power=0.80 وα=0.05 كحد أدنى للأبحاث الاجتماعية'
+                      : '· Cohen recommends Power=0.80 & α=0.05 as minimum for social science research'}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ⑩  APA RESULTS FORMATTER
+// ════════════════════════════════════════════════════════════════════════════
+function APAFormatter({ ar }: { ar: boolean }) {
+  const [test, setTest] = useState<APATest>('ttest');
+  const [copied, setCopied] = useState<'en' | 'ar' | null>(null);
+  const [pv, setPv] = useState('0.023'); const [nv, setNv] = useState('60');
+  const [tv, setTv] = useState('2.45'); const [dfv, setDfv] = useState('58'); const [dv, setDv] = useState('0.63'); const [ci1, setCi1] = useState('2.10'); const [ci2, setCi2] = useState('15.40');
+  const [Fv, setFv] = useState('4.82'); const [df1, setDf1] = useState('2'); const [df2, setDf2] = useState('87'); const [eta2, setEta2] = useState('0.10');
+  const [rv, setRv] = useState('0.42');
+  const [chi2, setChi2] = useState('8.76'); const [chiDf, setChiDf] = useState('2'); const [vv, setVv] = useState('0.27');
+  const [M, setM] = useState('72.5'); const [SD, setSD] = useState('11.3');
+  const [R2, setR2] = useState('0.34'); const [bv, setBv] = useState('0.52'); const [bSE, setBSE] = useState('0.12'); const [btv, setBtv] = useState('4.33'); const [bdf, setBdf] = useState('57');
+
+  const f2 = (x: string) => { const n = parseFloat(x); return isNaN(n) ? '?' : Math.abs(n).toFixed(2).replace(/^0\./, '.'); };
+  const fP = (x: string) => { const n = parseFloat(x); if (isNaN(n)) return 'p = ?'; return n < 0.001 ? 'p < .001' : `p = ${n.toFixed(3).replace('0.', '.')}`; };
+  const sig = (x: string, ar2: boolean) => { const n = parseFloat(x); if (isNaN(n)) return ''; if (n < 0.001) return ar2 ? 'دال إحصائياً (p < .001)' : 'statistically significant (p < .001)'; if (n < 0.05) return ar2 ? `دال إحصائياً (${fP(x)})` : `statistically significant (${fP(x)})`; return ar2 ? 'غير دال إحصائياً (p > .05)' : 'not statistically significant (p > .05)'; };
+
+  const enResult = (() => {
+    switch (test) {
+      case 'desc':  return `M = ${f2(M)}, SD = ${f2(SD)}, n = ${nv}`;
+      case 'ttest': return `t(${dfv}) = ${f2(tv)}, ${fP(pv)}, d = ${f2(dv)}, 95% CI [${f2(ci1)}, ${f2(ci2)}]`;
+      case 'anova': return `F(${df1}, ${df2}) = ${f2(Fv)}, ${fP(pv)}, η² = ${f2(eta2)}`;
+      case 'corr':  return `r(${Math.max(0, parseInt(nv) - 2)}) = ${f2(rv)}, ${fP(pv)}`;
+      case 'chisq': return `χ²(${chiDf}, N = ${nv}) = ${f2(chi2)}, ${fP(pv)}, V = ${f2(vv)}`;
+      case 'reg':   return `R² = ${f2(R2)}, F(${df1}, ${df2}) = ${f2(Fv)}, ${fP(pv)}\nβ = ${f2(bv)}, SE = ${f2(bSE)}, t(${bdf}) = ${f2(btv)}, ${fP(pv)}`;
+    }
+  })();
+
+  const arResult = (() => {
+    switch (test) {
+      case 'desc':  return `المتوسط = ${f2(M)}، الانحراف المعياري = ${f2(SD)}، الحجم (ن) = ${nv}`;
+      case 'ttest': return `t(${dfv}) = ${f2(tv)}، ${fP(pv)}، d = ${f2(dv)}، فترة الثقة 95% [${f2(ci1)}، ${f2(ci2)}]\nالنتيجة: ${sig(pv, true)}`;
+      case 'anova': return `F(${df1}، ${df2}) = ${f2(Fv)}، ${fP(pv)}، η² = ${f2(eta2)}\nالنتيجة: ${sig(pv, true)}`;
+      case 'corr':  return `r(${Math.max(0, parseInt(nv) - 2)}) = ${f2(rv)}، ${fP(pv)}\nالنتيجة: ${sig(pv, true)}`;
+      case 'chisq': return `χ²(${chiDf}، ن = ${nv}) = ${f2(chi2)}، ${fP(pv)}، V = ${f2(vv)}\nالنتيجة: ${sig(pv, true)}`;
+      case 'reg':   return `R² = ${f2(R2)}، F(${df1}، ${df2}) = ${f2(Fv)}، ${fP(pv)}\nβ = ${f2(bv)}، خطأ معياري = ${f2(bSE)}، t(${bdf}) = ${f2(btv)}، ${fP(pv)}\nالنتيجة: ${sig(pv, true)}`;
+    }
+  })();
+
+  const copyText = (text: string, which: 'en' | 'ar') => {
+    navigator.clipboard.writeText(text).then(() => { setCopied(which); setTimeout(() => setCopied(null), 2000); });
+  };
+
+  const FI = ({ label, value, onChange, w = 80 }: { label: string; value: string; onChange: (v: string) => void; w?: number }) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <label style={{ fontSize: 10, color: C.sub }}>{label}</label>
+      <input value={value} onChange={e => onChange(e.target.value)} style={{ width: w, background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 7, padding: '5px 8px', color: C.text, fontSize: 12, fontFamily: 'inherit' }} />
+    </div>
+  );
+
+  const TESTS: { key: APATest; label: string }[] = [
+    { key: 'desc',  label: ar ? 'وصفي' : 'Descriptive' },
+    { key: 'ttest', label: ar ? 'اختبار t' : 't-test' },
+    { key: 'anova', label: 'ANOVA' },
+    { key: 'corr',  label: ar ? 'ارتباط r' : 'Correlation' },
+    { key: 'chisq', label: 'χ²' },
+    { key: 'reg',   label: ar ? 'انحدار' : 'Regression' },
+  ];
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+        {TESTS.map(tp => (
+          <button key={tp.key} onClick={() => setTest(tp.key)} style={{ background: test === tp.key ? 'linear-gradient(135deg,rgba(201,168,76,0.2),rgba(245,215,142,0.08))' : 'rgba(255,255,255,0.03)', border: `1px solid ${test === tp.key ? 'rgba(201,168,76,0.5)' : C.border}`, color: test === tp.key ? C.gold : C.sub, borderRadius: 10, padding: '7px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .2s' }}>
+            {tp.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20, padding: '14px 16px', background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, alignItems: 'flex-end' }}>
+        {(test !== 'desc') && <FI label="p-value" value={pv} onChange={setPv} />}
+        {(test === 'desc' || test === 'corr' || test === 'chisq') && <FI label="n" value={nv} onChange={setNv} w={70} />}
+        {test === 'desc'  && <><FI label="M" value={M} onChange={setM} /><FI label="SD" value={SD} onChange={setSD} /></>}
+        {test === 'ttest' && <><FI label="t" value={tv} onChange={setTv} /><FI label="df" value={dfv} onChange={setDfv} w={65} /><FI label="d" value={dv} onChange={setDv} /><FI label="CI lower" value={ci1} onChange={setCi1} /><FI label="CI upper" value={ci2} onChange={setCi2} /></>}
+        {test === 'anova' && <><FI label="F" value={Fv} onChange={setFv} /><FI label="df₁" value={df1} onChange={setDf1} w={60} /><FI label="df₂" value={df2} onChange={setDf2} w={60} /><FI label="η²" value={eta2} onChange={setEta2} /></>}
+        {test === 'corr'  && <FI label="r" value={rv} onChange={setRv} />}
+        {test === 'chisq' && <><FI label="χ²" value={chi2} onChange={setChi2} /><FI label="df" value={chiDf} onChange={setChiDf} w={60} /><FI label="V" value={vv} onChange={setVv} /></>}
+        {test === 'reg'   && <><FI label="R²" value={R2} onChange={setR2} /><FI label="F" value={Fv} onChange={setFv} /><FI label="df₁" value={df1} onChange={setDf1} w={60} /><FI label="df₂" value={df2} onChange={setDf2} w={60} /><FI label="β" value={bv} onChange={setBv} /><FI label="SE(β)" value={bSE} onChange={setBSE} /><FI label="t(β)" value={btv} onChange={setBtv} /><FI label="df_t" value={bdf} onChange={setBdf} w={60} /></>}
+      </div>
+
+      {([{ lang: 'APA (English)', text: enResult, color: C.blue, which: 'en' as const }, { lang: ar ? 'ترجمة عربية' : 'Arabic Translation', text: arResult, color: C.gold, which: 'ar' as const }]).map(({ lang, text, color, which }) => (
+        <div key={lang} style={{ marginBottom: 12, background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', background: `${color}08`, borderBottom: `1px solid ${C.border}` }}>
+            <span style={{ fontWeight: 700, fontSize: 13, color }}>{lang}</span>
+            <button onClick={() => copyText(text, which)} style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.border}`, borderRadius: 8, padding: '4px 14px', color: copied === which ? C.green : C.sub, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', transition: 'color .2s' }}>
+              {copied === which ? (ar ? '✓ تم النسخ' : '✓ Copied') : (ar ? 'نسخ' : 'Copy')}
+            </button>
+          </div>
+          <div style={{ padding: '14px 16px', fontFamily: 'monospace', fontSize: 13.5, color: C.text, whiteSpace: 'pre-wrap', lineHeight: 1.9, direction: which === 'ar' ? 'rtl' : 'ltr', textAlign: which === 'ar' ? 'right' : 'left' }}>
+            {text}
+          </div>
+        </div>
+      ))}
+
+      <p style={{ fontSize: 11, color: C.muted, margin: 0 }}>
+        {ar ? '* الصيغة وفق APA 7th Edition · منزلتان عشريتان (p-value: ثلاث) · بدون صفر قبل النقطة لـ r و p و η² و β'
+            : '* Format follows APA 7th Edition · 2 decimal places (p-values: 3) · leading zero omitted for r, p, η², β'}
+      </p>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // ── DATAHUB MAIN ─────────────────────────────────────────────────────────────
 // ════════════════════════════════════════════════════════════════════════════
 const SUBTABS_AR = [
@@ -1229,19 +1953,27 @@ const SUBTABS_AR = [
   { key: 'corr',       icon: '🔗', label: 'مصفوفة الارتباط',      short: 'ارتباط' },
   { key: 'crosstab',   icon: '⊞',  label: 'جدول التقاطع',         short: 'تقاطع' },
   { key: 'regression', icon: '📉', label: 'تحليل الانحدار',        short: 'انحدار' },
-  { key: 'stats',      icon: '📊', label: 'اختبارات إحصائية',     short: 'إحصاء' },
-  { key: 'equations',  icon: '🔢', label: 'المعادلات',             short: 'معادلات' },
+  { key: 'groups',     icon: '👥', label: 'مقارنة المجموعات',      short: 'مجموعات' },
+  { key: 'cronbach',    icon: 'α',  label: 'ثبات كرونباخ',           short: 'كرونباخ' },
+  { key: 'samplesize',  icon: '🎯', label: 'حجم العيّنة',            short: 'عيّنة' },
+  { key: 'apa',         icon: '📝', label: 'منسّق APA',              short: 'APA' },
+  { key: 'stats',       icon: '📊', label: 'اختبارات إحصائية',     short: 'إحصاء' },
+  { key: 'equations',   icon: '🔢', label: 'المعادلات',             short: 'معادلات' },
 ];
 const SUBTABS_EN = [
-  { key: 'explorer',   icon: '📁', label: 'Data Explorer',       short: 'Explore' },
-  { key: 'freq',       icon: '📋', label: 'Frequency Table',     short: 'Freq' },
-  { key: 'likert',     icon: '⚖️', label: 'Likert Scale',        short: 'Likert' },
-  { key: 'timeseries', icon: '📈', label: 'Time Series',         short: 'Time' },
-  { key: 'corr',       icon: '🔗', label: 'Correlation Matrix',  short: 'Corr' },
-  { key: 'crosstab',   icon: '⊞',  label: 'Cross-Tabulation',   short: 'CrossTab' },
-  { key: 'regression', icon: '📉', label: 'Linear Regression',   short: 'Regress' },
-  { key: 'stats',      icon: '📊', label: 'Statistical Tests',   short: 'Stats' },
-  { key: 'equations',  icon: '🔢', label: 'Equations',           short: 'Eq' },
+  { key: 'explorer',    icon: '📁', label: 'Data Explorer',       short: 'Explore' },
+  { key: 'freq',        icon: '📋', label: 'Frequency Table',     short: 'Freq' },
+  { key: 'likert',      icon: '⚖️', label: 'Likert Scale',        short: 'Likert' },
+  { key: 'timeseries',  icon: '📈', label: 'Time Series',         short: 'Time' },
+  { key: 'corr',        icon: '🔗', label: 'Correlation Matrix',  short: 'Corr' },
+  { key: 'crosstab',    icon: '⊞',  label: 'Cross-Tabulation',   short: 'CrossTab' },
+  { key: 'regression',  icon: '📉', label: 'Linear Regression',   short: 'Regress' },
+  { key: 'groups',      icon: '👥', label: 'Group Comparison',    short: 'Groups' },
+  { key: 'cronbach',    icon: 'α',  label: "Cronbach's Alpha",    short: 'Cronbach' },
+  { key: 'samplesize',  icon: '🎯', label: 'Sample Size',         short: 'n Calc' },
+  { key: 'apa',         icon: '📝', label: 'APA Formatter',       short: 'APA' },
+  { key: 'stats',       icon: '📊', label: 'Statistical Tests',   short: 'Stats' },
+  { key: 'equations',   icon: '🔢', label: 'Equations',           short: 'Eq' },
 ];
 
 export default function DataHub() {
@@ -1330,6 +2062,54 @@ export default function DataHub() {
                   : 'Analyze association between 2 categorical variables · auto-computes χ², p-value & Cramér\'s V'}
             </p>
             <CrossTab ar={ar} />
+          </>
+        )}
+        {sub === 'groups' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              👥 {ar ? 'مقارنة المجموعات — اختبار t ويلش وتحليل ANOVA' : 'Group Comparison — Welch t-Test & One-Way ANOVA'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'مجموعتان → اختبار t ويلش + Cohen\'s d · 3 مجموعات أو أكثر → ANOVA + η² + مقارنات زوجية'
+                  : '2 groups → Welch t-test + Cohen\'s d · 3+ groups → ANOVA + η² + pairwise LSD'}
+            </p>
+            <GroupComparison ar={ar} />
+          </>
+        )}
+        {sub === 'apa' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              📝 {ar ? 'منسّق نتائج APA 7th Edition' : 'APA 7th Edition Results Formatter'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'أدخل إحصاءاتك فيُنتج النص الجاهز للنشر بصيغة APA 7 — t-test · ANOVA · ارتباط · كاي² · انحدار · وصفي'
+                  : 'Enter your statistics and get publication-ready APA 7 text — t-test · ANOVA · correlation · χ² · regression · descriptive'}
+            </p>
+            <APAFormatter ar={ar} />
+          </>
+        )}
+        {sub === 'samplesize' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🎯 {ar ? 'حاسبة حجم العيّنة (تحليل القدرة الإحصائية)' : 'Sample Size Calculator (Power Analysis)'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'تحسب الحجم الأدنى للعيّنة لضمان القدرة الإحصائية · t-test · ارتباط · كاي مربع · نسبتَان'
+                  : 'Computes minimum sample size for statistical power · t-test · correlation · chi-square · proportions'}
+            </p>
+            <SampleSizeCalc ar={ar} />
+          </>
+        )}
+        {sub === 'cronbach' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              α {ar ? 'تحليل الثبات — معامل ألفا كرونباخ' : "Reliability Analysis — Cronbach's Alpha"}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'يقيس اتساق بنود المقياس الداخلي · يُخرج α وارتباط كل فقرة بالمقياس الكلي وقيمة α عند حذف كل فقرة'
+                  : 'Measures internal consistency of scale items · outputs α, corrected item-total correlations, and α-if-deleted for each item'}
+            </p>
+            <CronbachAlpha ar={ar} />
           </>
         )}
         {sub === 'regression' && (
