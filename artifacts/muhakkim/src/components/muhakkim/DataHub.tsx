@@ -2614,6 +2614,518 @@ function BinomialTest({ ar }: { ar: boolean }) {
   );
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// ── ANCOVA ───────────────────────────────────────────────────────────────
+function Ancova({ ar }: { ar: boolean }) {
+  const DEF = `Group,Covariate,Outcome
+A,68,78
+A,72,82
+A,65,73
+A,71,81
+A,67,76
+B,73,85
+B,69,80
+B,74,86
+B,66,77
+B,70,83
+C,76,90
+C,68,82
+C,74,87
+C,70,84
+C,72,85`;
+  const [raw, setRaw] = useState(DEF);
+
+  const result = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 5) return null;
+    const sep = lines[0].includes('\t') ? '\t' : ',';
+    const firstCells = lines[0].trim().split(sep);
+    const hasHeader = firstCells.some(v => isNaN(parseFloat(v.trim())));
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+    const rows = dataLines.map(l => {
+      const cells = l.trim().split(sep);
+      return { g: cells[0]?.trim() ?? '', x: parseFloat(cells[1]?.trim() ?? ''), y: parseFloat(cells[2]?.trim() ?? '') };
+    }).filter(r => r.g && isFinite(r.x) && isFinite(r.y));
+    if (rows.length < 6) return null;
+    const groups = [...new Set(rows.map(r => r.g))].sort();
+    const k = groups.length;
+    if (k < 2) return null;
+    const n = rows.length;
+    const yArr = rows.map(r => r.y), xArr = rows.map(r => r.x);
+
+    // Full model: Y ~ 1 + cov + d1 + ... + d(k-1)
+    const Xfull = rows.map(r => [1, r.x, ...groups.slice(0, k - 1).map(g => r.g === g ? 1 : 0)]);
+    // Reduced: Y ~ 1 + cov
+    const Xcov = rows.map(r => [1, r.x]);
+
+    const full = olsWithSE(Xfull, yArr);
+    const cov = olsWithSE(Xcov, yArr);
+    if (!full || !cov) return null;
+
+    const yhat_full = Xfull.map(row => row.reduce((s, v, i) => s + v * full.beta[i], 0));
+    const yhat_cov = Xcov.map(row => row.reduce((s, v, i) => s + v * cov.beta[i], 0));
+    const SS_err_full = yArr.reduce((s, v, i) => s + (v - yhat_full[i]) ** 2, 0);
+    const SS_err_cov = yArr.reduce((s, v, i) => s + (v - yhat_cov[i]) ** 2, 0);
+    const SS_group = SS_err_cov - SS_err_full;
+    const df_g = k - 1, df_e = n - k - 1;
+    const F = (SS_group / df_g) / Math.max(1e-10, SS_err_full / df_e);
+    const pv = 1 - chiSqP(F * df_g, df_g);
+    const partial_eta2 = SS_group / (SS_group + SS_err_full);
+    const xMean = avg(xArr);
+    const adjMeans = groups.map(g => {
+      const row = [1, xMean, ...groups.slice(0, k - 1).map(gg => g === gg ? 1 : 0)];
+      return row.reduce((s, v, i) => s + v * full.beta[i], 0);
+    });
+    const rawMeans = groups.map(g => avg(rows.filter(r => r.g === g).map(r => r.y)));
+    const slope = full.beta[1], slopeSE = full.se[1];
+    const t_slope = slope / Math.max(1e-10, slopeSE);
+    const p_slope = 2 * (1 - normalCDF(Math.abs(t_slope)));
+    const pFmt = (p: number) => p < 0.001 ? '< .001' : p.toFixed(3);
+    const R2_full = 1 - SS_err_full / yArr.reduce((s, v) => s + (v - avg(yArr)) ** 2, 0);
+    const nByG = groups.map(g => rows.filter(r => r.g === g).length);
+    return { n, k, groups, F, df_g, df_e, pv, partial_eta2, adjMeans, rawMeans, slope, slopeSE, t_slope, p_slope, xMean, pFmt, R2_full, nByG };
+  }, [raw]);
+
+  const pC = (p: number) => p < 0.05 ? C.green : C.red;
+
+  return (
+    <div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+          {ar ? 'ثلاثة أعمدة: المجموعة (نصي) · المتغير المصاحب (رقمي) · المتغير التابع (رقمي) · فاصلة أو tab'
+            : 'Three columns: Group (text) · Covariate (numeric) · Outcome (numeric) · comma or tab separated'}
+        </label>
+        <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={7}
+          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 11, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+      </div>
+
+      {!result && <p style={{ color: C.muted, fontSize: 13 }}>{ar ? 'يلزم ≥ 2 مجموعات و ≥ 6 مشاهدات' : 'Need ≥ 2 groups and ≥ 6 observations'}</p>}
+      {result && (
+        <>
+          <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 12 }}>
+            {[
+              { l: `F(${result.df_g},${result.df_e})`, v: result.F.toFixed(3), c: C.text },
+              { l: 'p', v: result.pFmt(result.pv), c: pC(result.pv) },
+              { l: 'Partial η²', v: result.partial_eta2.toFixed(4), c: result.partial_eta2 >= 0.14 ? C.green : result.partial_eta2 >= 0.06 ? C.gold : C.teal },
+              { l: 'R² (full)', v: result.R2_full.toFixed(4), c: C.blue },
+              { l: `β (${ar ? 'مصاحب' : 'covariate'})`, v: result.slope.toFixed(4), c: C.sub },
+              { l: 'p (covariate)', v: result.pFmt(result.p_slope), c: pC(result.p_slope) },
+              { l: `x̄ (${ar ? 'مصاحب' : 'cov'})`, v: result.xMean.toFixed(3), c: C.muted },
+              { l: 'N', v: String(result.n) },
+            ].map(({ l, v, c }) => (
+              <div key={l} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '6px 12px', textAlign: 'center', minWidth: 80 }}>
+                <div style={{ fontSize: 9, color: C.sub }}>{l}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: c ?? C.text }}>{v}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Adjusted vs raw means */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 12 }}>
+            <div style={{ padding: '8px 14px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 12, color: C.gold }}>
+              {ar ? 'المتوسطات المعدَّلة (عند x̄ للمصاحب) مقابل الخام' : 'Adjusted Means (at grand x̄) vs Raw Means'}
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                {[ar ? 'المجموعة' : 'Group', 'n', ar ? 'متوسط خام' : 'Raw Mean', ar ? 'متوسط معدَّل' : 'Adj. Mean', ar ? 'الفرق' : 'Diff'].map(h => (
+                  <th key={h} style={{ padding: '6px 10px', textAlign: 'center', color: C.sub, fontWeight: 600 }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {result.groups.map((g, i) => (
+                  <tr key={g} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding: '6px 10px', fontWeight: 700, color: C.text }}>{g}</td>
+                    <td style={{ padding: '6px 10px', textAlign: 'center', color: C.muted }}>{result.nByG[i]}</td>
+                    <td style={{ padding: '6px 10px', textAlign: 'center', color: C.sub }}>{result.rawMeans[i].toFixed(3)}</td>
+                    <td style={{ padding: '6px 10px', textAlign: 'center', color: C.teal, fontWeight: 700 }}>{result.adjMeans[i].toFixed(3)}</td>
+                    <td style={{ padding: '6px 10px', textAlign: 'center', color: result.adjMeans[i] - result.rawMeans[i] >= 0 ? C.teal : '#f97316' }}>
+                      {(result.adjMeans[i] - result.rawMeans[i] >= 0 ? '+' : '')}{(result.adjMeans[i] - result.rawMeans[i]).toFixed(3)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Chart: adjusted means */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, marginBottom: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: C.gold, marginBottom: 10 }}>
+              {ar ? 'المتوسطات المعدَّلة (ذهبي) مقابل الخام (رمادي)' : 'Adjusted (gold) vs Raw (gray) Means'}
+            </div>
+            <ResponsiveContainer width="100%" height={160}>
+              <BarChart data={result.groups.map((g, i) => ({ name: g, adj: +result.adjMeans[i].toFixed(3), raw: +result.rawMeans[i].toFixed(3) }))} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: C.sub }} />
+                <YAxis tick={{ fontSize: 9, fill: C.sub }} width={36} />
+                <Tooltip contentStyle={{ background: '#0d172d', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 11 }} />
+                <Bar dataKey="raw" fill="rgba(255,255,255,0.2)" radius={4} name={ar ? 'خام' : 'Raw'} />
+                <Bar dataKey="adj" fill={C.gold} radius={4} name={ar ? 'معدَّل' : 'Adjusted'} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '10px 14px', fontSize: 11, color: C.sub }}>
+            <strong style={{ color: C.gold }}>APA: </strong>
+            {ar
+              ? `بعد ضبط المتغير المصاحب (β = ${result.slope.toFixed(3)}, p = ${result.pFmt(result.p_slope)})، أشار تحليل التغاير إلى ${result.pv < 0.05 ? 'أثر جماعي دال' : 'أثر جماعي غير دال'}، F(${result.df_g}, ${result.df_e}) = ${result.F.toFixed(2)}, p = ${result.pFmt(result.pv)}, Partial η² = ${result.partial_eta2.toFixed(3)}`
+              : `After controlling for the covariate (β = ${result.slope.toFixed(3)}, p = ${result.pFmt(result.p_slope)}), a one-way ANCOVA revealed a ${result.pv < 0.05 ? 'significant' : 'non-significant'} group effect, F(${result.df_g}, ${result.df_e}) = ${result.F.toFixed(2)}, p = ${result.pFmt(result.pv)}, partial η² = ${result.partial_eta2.toFixed(3)}`}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── DIAGNOSTIC ACCURACY ───────────────────────────────────────────────────
+function DiagnosticAccuracy({ ar }: { ar: boolean }) {
+  const [tpS, setTP] = useState('45'); const [fpS, setFP] = useState('10');
+  const [fnS, setFN] = useState('5');  const [tnS, setTN] = useState('40');
+  const [prev, setPrev] = useState('50');
+
+  const result = useMemo(() => {
+    const TP = parseInt(tpS), FP = parseInt(fpS), FN = parseInt(fnS), TN = parseInt(tnS);
+    const prevalence = parseFloat(prev) / 100;
+    if ([TP,FP,FN,TN].some(v => !isFinite(v) || v < 0)) return null;
+    const N = TP+FP+FN+TN; if (N < 4) return null;
+    const sens   = TP / Math.max(1, TP+FN);
+    const spec   = TN / Math.max(1, TN+FP);
+    const ppv    = TP / Math.max(1, TP+FP);
+    const npv    = TN / Math.max(1, TN+FN);
+    const acc    = (TP+TN) / N;
+    const lr_pos = sens / Math.max(1e-10, 1-spec);
+    const lr_neg = (1-sens) / Math.max(1e-10, spec);
+    const dor    = lr_pos / Math.max(1e-10, lr_neg);
+    const youden = sens + spec - 1;
+    const f1     = 2*TP / Math.max(1, 2*TP+FP+FN);
+    const mcc    = (TP*TN - FP*FN) / Math.max(1e-10, Math.sqrt((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN)));
+    const bacc   = (sens + spec) / 2;
+    // Bayesian PPV/NPV at specified prevalence
+    const ppv_prev = (sens * prevalence) / Math.max(1e-10, (sens*prevalence + (1-spec)*(1-prevalence)));
+    const npv_prev = (spec * (1-prevalence)) / Math.max(1e-10, (spec*(1-prevalence) + (1-sens)*prevalence));
+    // Wilson CI
+    const wCI = (p: number, n: number): [number,number] => {
+      const z = 1.96, d = 1+z*z/n, c = (p+z*z/(2*n))/d, h = (z/d)*Math.sqrt(p*(1-p)/n+z*z/(4*n*n));
+      return [Math.max(0,c-h), Math.min(1,c+h)];
+    };
+    const [sLo,sHi] = wCI(sens,TP+FN); const [spLo,spHi] = wCI(spec,TN+FP);
+    const [pLo,pHi] = wCI(ppv,TP+FP);  const [nLo,nHi] = wCI(npv,TN+FN);
+    const pFmt = (p: number) => p.toFixed(4);
+    return { TP,FP,FN,TN,N,sens,spec,ppv,npv,acc,lr_pos,lr_neg,dor,youden,f1,mcc,bacc,ppv_prev,npv_prev,prevalence,sLo,sHi,spLo,spHi,pLo,pHi,nLo,nHi,pFmt };
+  }, [tpS, fpS, fnS, tnS, prev]);
+
+  const cellIn = (val: string, set: (v: string) => void, lbl: string, color: string) => (
+    <div style={{ textAlign: 'center' }}>
+      <div style={{ fontSize: 10, color: C.sub, marginBottom: 3 }}>{lbl}</div>
+      <input type="number" min="0" value={val} onChange={e => set(e.target.value)}
+        style={{ width: 72, background: `${color}22`, border: `1px solid ${color}66`, borderRadius: 8, padding: '8px 4px', color, fontSize: 20, fontWeight: 800, direction: 'ltr', textAlign: 'center' }} />
+    </div>
+  );
+
+  return (
+    <div>
+      {/* 2x2 grid */}
+      <div style={{ marginBottom: 14 }}>
+        <table style={{ borderCollapse: 'collapse', marginBottom: 8 }}>
+          <thead><tr>
+            <th style={{ padding: '4px 10px', fontSize: 11, color: C.sub }}></th>
+            <th style={{ padding: '4px 10px', fontSize: 12, color: C.green, fontWeight: 700 }}>{ar ? 'مرضي (فعلي +)' : 'Disease + (actual)'}</th>
+            <th style={{ padding: '4px 10px', fontSize: 12, color: C.red, fontWeight: 700 }}>{ar ? 'سليم (فعلي −)' : 'Disease − (actual)'}</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td style={{ padding: '6px 10px', fontSize: 12, color: C.gold, fontWeight: 700 }}>{ar ? 'اختبار +' : 'Test +'}</td>
+              <td style={{ padding: '6px 8px' }}>{cellIn(tpS, setTP, 'TP', C.green)}</td>
+              <td style={{ padding: '6px 8px' }}>{cellIn(fpS, setFP, 'FP', C.red)}</td>
+            </tr>
+            <tr>
+              <td style={{ padding: '6px 10px', fontSize: 12, color: C.gold, fontWeight: 700 }}>{ar ? 'اختبار −' : 'Test −'}</td>
+              <td style={{ padding: '6px 8px' }}>{cellIn(fnS, setFN, 'FN', '#f97316')}</td>
+              <td style={{ padding: '6px 8px' }}>{cellIn(tnS, setTN, 'TN', C.teal)}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <label style={{ fontSize: 11, color: C.sub }}>{ar ? 'معدل الانتشار الفعلي (%) للـ PPV/NPV بياني:' : 'Prevalence (%) for Bayesian PPV/NPV:'}</label>
+          <input type="number" min="1" max="99" value={prev} onChange={e => setPrev(e.target.value)}
+            style={{ width: 64, background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 7, padding: '4px 8px', color: C.text, fontSize: 13, direction: 'ltr' }} />
+          <span style={{ color: C.sub, fontSize: 11 }}>%</span>
+        </div>
+      </div>
+
+      {result && (
+        <>
+          {/* Primary metrics */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(115px,1fr))', gap: 9, marginBottom: 12 }}>
+            {[
+              { l: ar ? 'الحساسية' : 'Sensitivity', v: `${(result.sens*100).toFixed(1)}%`, sub: `[${(result.sLo*100).toFixed(1)}, ${(result.sHi*100).toFixed(1)}]`, c: C.green },
+              { l: ar ? 'النوعية' : 'Specificity', v: `${(result.spec*100).toFixed(1)}%`, sub: `[${(result.spLo*100).toFixed(1)}, ${(result.spHi*100).toFixed(1)}]`, c: C.teal },
+              { l: 'PPV', v: `${(result.ppv*100).toFixed(1)}%`, sub: `[${(result.pLo*100).toFixed(1)}, ${(result.pHi*100).toFixed(1)}]`, c: C.gold },
+              { l: 'NPV', v: `${(result.npv*100).toFixed(1)}%`, sub: `[${(result.nLo*100).toFixed(1)}, ${(result.nHi*100).toFixed(1)}]`, c: C.blue },
+              { l: ar ? 'الدقة' : 'Accuracy', v: `${(result.acc*100).toFixed(1)}%`, c: C.sub },
+              { l: 'LR+', v: result.lr_pos.toFixed(3), c: result.lr_pos >= 10 ? C.green : result.lr_pos >= 5 ? C.gold : C.sub },
+              { l: 'LR−', v: result.lr_neg.toFixed(3), c: result.lr_neg <= 0.1 ? C.green : result.lr_neg <= 0.2 ? C.gold : C.sub },
+              { l: 'DOR', v: result.dor.toFixed(2), c: C.purple },
+              { l: "Youden's J", v: result.youden.toFixed(4), c: result.youden >= 0.5 ? C.green : result.youden >= 0.3 ? C.gold : C.red },
+              { l: 'F1 Score', v: result.f1.toFixed(4), c: C.teal },
+              { l: 'MCC', v: result.mcc.toFixed(4), c: C.blue },
+              { l: 'Balanced Acc', v: `${(result.bacc*100).toFixed(1)}%`, c: C.sub },
+            ].map(({ l, v, sub, c }) => (
+              <div key={l} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: '7px 10px', textAlign: 'center' }}>
+                <div style={{ fontSize: 9, color: C.sub, marginBottom: 2 }}>{l}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: c }}>{v}</div>
+                {sub && <div style={{ fontSize: 9, color: C.muted, marginTop: 1 }}>{sub}</div>}
+              </div>
+            ))}
+          </div>
+
+          {/* Bayesian PPV/NPV */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, marginBottom: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: C.gold, marginBottom: 8 }}>
+              {ar ? `PPV/NPV عند انتشار ${prev}% (بايزي)` : `Bayesian PPV/NPV at ${prev}% prevalence`}
+            </div>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontSize: 10, color: C.sub }}>{ar ? 'PPV بياني' : 'Bayesian PPV'}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: C.gold }}>{(result.ppv_prev*100).toFixed(1)}%</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: C.sub }}>{ar ? 'NPV بياني' : 'Bayesian NPV'}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: C.teal }}>{(result.npv_prev*100).toFixed(1)}%</div>
+              </div>
+              <div style={{ fontSize: 11, color: C.muted, alignSelf: 'center', maxWidth: 240 }}>
+                {ar ? 'يختلف عن PPV/NPV من الجدول الذي يعكس انتشار العيّنة فقط'
+                    : 'Differs from table PPV/NPV which reflects sample prevalence only'}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '10px 14px', fontSize: 11, color: C.sub }}>
+            <strong style={{ color: C.gold }}>APA: </strong>
+            {ar
+              ? `أظهر الاختبار حساسية = ${(result.sens*100).toFixed(1)}% (95% CI [${(result.sLo*100).toFixed(1)}, ${(result.sHi*100).toFixed(1)}])، ونوعية = ${(result.spec*100).toFixed(1)}% (95% CI [${(result.spLo*100).toFixed(1)}, ${(result.spHi*100).toFixed(1)}])، LR+ = ${result.lr_pos.toFixed(2)}، DOR = ${result.dor.toFixed(2)}، Youden's J = ${result.youden.toFixed(3)}`
+              : `The test demonstrated sensitivity = ${(result.sens*100).toFixed(1)}% (95% CI [${(result.sLo*100).toFixed(1)}, ${(result.sHi*100).toFixed(1)}]), specificity = ${(result.spec*100).toFixed(1)}% (95% CI [${(result.spLo*100).toFixed(1)}, ${(result.spHi*100).toFixed(1)}]), LR+ = ${result.lr_pos.toFixed(2)}, DOR = ${result.dor.toFixed(2)}, Youden's J = ${result.youden.toFixed(3)}`}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── TWO-WAY ANOVA ─────────────────────────────────────────────────────────
+function TwoWayAnova({ ar }: { ar: boolean }) {
+  const DEF = `A,B,Y
+a1,b1,23
+a1,b1,25
+a1,b2,28
+a1,b2,30
+a2,b1,19
+a2,b1,21
+a2,b2,31
+a2,b2,33
+a3,b1,15
+a3,b1,17
+a3,b2,24
+a3,b2,26`;
+  const [raw, setRaw] = useState(DEF);
+
+  const result = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 5) return null;
+    const sep = lines[0].includes('\t') ? '\t' : ',';
+    const firstCells = lines[0].trim().split(sep);
+    const hasHeader = firstCells.some(v => isNaN(parseFloat(v.trim())));
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+    const rows = dataLines.map(l => {
+      const cells = l.trim().split(sep);
+      return { a: cells[0]?.trim() ?? '', b: cells[1]?.trim() ?? '', y: parseFloat(cells[2]?.trim() ?? '') };
+    }).filter(r => r.a && r.b && isFinite(r.y));
+    if (rows.length < 6) return null;
+    const levA = [...new Set(rows.map(r => r.a))].sort();
+    const levB = [...new Set(rows.map(r => r.b))].sort();
+    const nA = levA.length, nB = levB.length;
+    if (nA < 2 || nB < 2) return null;
+
+    const n = rows.length;
+    const Y = rows.map(r => r.y);
+    const grandMean = avg(Y);
+    const SS_total = Y.reduce((s, v) => s + (v - grandMean) ** 2, 0);
+
+    // Cell means
+    const cellMean = (a: string, b: string) => {
+      const vals = rows.filter(r => r.a === a && r.b === b).map(r => r.y);
+      return vals.length ? avg(vals) : 0;
+    };
+    const margA = levA.map(a => avg(rows.filter(r => r.a === a).map(r => r.y)));
+    const margB = levB.map(b => avg(rows.filter(r => r.b === b).map(r => r.y)));
+    const nA_arr = levA.map(a => rows.filter(r => r.a === a).length);
+    const nB_arr = levB.map(b => rows.filter(r => r.b === b).length);
+
+    // SS using regression (Type-III via contrast approach)
+    // Build design matrix: 1 + A_dummies + B_dummies + AB_dummies
+    const dA = levA.slice(0, nA - 1);
+    const dB = levB.slice(0, nB - 1);
+    const dAB: [string,string][] = [];
+    for (const a of dA) for (const b of dB) dAB.push([a,b]);
+
+    const buildX = (incA: boolean, incB: boolean, incAB: boolean) =>
+      rows.map(r => [
+        1,
+        ...(incA ? dA.map(a => r.a === a ? 1 : 0) : []),
+        ...(incB ? dB.map(b => r.b === b ? 1 : 0) : []),
+        ...(incAB ? dAB.map(([a,b]) => r.a === a && r.b === b ? 1 : 0) : []),
+      ]);
+
+    const fit = (X: number[][]) => {
+      const o = olsWithSE(X, Y);
+      if (!o) return null;
+      const res = Y.map((v, i) => v - X[i].reduce((s, x, j) => s + x * o.beta[j], 0));
+      return res.reduce((s, v) => s + v*v, 0);
+    };
+
+    const SS_full   = fit(buildX(true,  true,  true))  ?? SS_total;
+    const SS_noA    = fit(buildX(false, true,  true))  ?? SS_total;
+    const SS_noB    = fit(buildX(true,  false, true))  ?? SS_total;
+    const SS_noAB   = fit(buildX(true,  true,  false)) ?? SS_total;
+
+    const SS_A  = SS_noA  - SS_full;
+    const SS_B  = SS_noB  - SS_full;
+    const SS_AB = SS_noAB - SS_full;
+    const SS_err = SS_full;
+
+    const df_A = nA-1, df_B = nB-1, df_AB = (nA-1)*(nB-1);
+    const df_err = n - nA*nB;
+    if (df_err < 1) return null;
+    const MS_err = SS_err / df_err;
+    const F_A  = (SS_A  / df_A)  / Math.max(1e-10, MS_err);
+    const F_B  = (SS_B  / df_B)  / Math.max(1e-10, MS_err);
+    const F_AB = (SS_AB / df_AB) / Math.max(1e-10, MS_err);
+    const p_A  = 1 - chiSqP(F_A  * df_A,  df_A);
+    const p_B  = 1 - chiSqP(F_B  * df_B,  df_B);
+    const p_AB = 1 - chiSqP(F_AB * df_AB, df_AB);
+    const eta2_A  = SS_A  / SS_total;
+    const eta2_B  = SS_B  / SS_total;
+    const eta2_AB = SS_AB / SS_total;
+
+    const pFmt = (p: number) => p < 0.001 ? '< .001' : p.toFixed(3);
+    const stars = (p: number) => p < 0.001 ? '***' : p < 0.01 ? '**' : p < 0.05 ? '*' : '';
+
+    // Cell means for interaction plot
+    const interactionData = levB.map(b => {
+      const row: Record<string,string|number> = { b };
+      levA.forEach(a => { row[a] = +cellMean(a, b).toFixed(3); });
+      return row;
+    });
+
+    return { n, nA, nB, levA, levB, margA, margB, nA_arr, nB_arr, SS_A, SS_B, SS_AB, SS_err, SS_total, df_A, df_B, df_AB, df_err, F_A, F_B, F_AB, p_A, p_B, p_AB, eta2_A, eta2_B, eta2_AB, MS_err, interactionData, pFmt, stars };
+  }, [raw]);
+
+  const pC = (p: number) => p < 0.05 ? C.green : C.red;
+  const COLORS = [C.teal, C.gold, C.blue, C.purple, C.green, C.red];
+
+  return (
+    <div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+          {ar ? 'ثلاثة أعمدة: العامل A (نصي) · العامل B (نصي) · المتغير التابع (رقمي) · كل مجموعة خلية بصف منفصل'
+            : 'Three columns: Factor A (text) · Factor B (text) · Outcome (numeric) · each cell observation on its own row'}
+        </label>
+        <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={7}
+          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 11, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+      </div>
+
+      {!result && <p style={{ color: C.muted, fontSize: 13 }}>{ar ? 'يلزم 2+ مستويات لكل عامل و ≥ 6 مشاهدات' : 'Need 2+ levels per factor and ≥ 6 observations'}</p>}
+      {result && (
+        <>
+          {/* ANOVA table */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 12 }}>
+            <div style={{ padding: '8px 14px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 12, color: C.gold }}>
+              {ar ? 'جدول تحليل التباين ثنائي الاتجاه (Type III SS)' : 'Two-Way ANOVA Table (Type III SS)'}
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+              <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                {[ar?'المصدر':'Source','SS','df','MS','F','p','η²'].map(h => (
+                  <th key={h} style={{ padding: '5px 8px', textAlign: 'center', color: C.sub, fontWeight: 600 }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {[
+                  { src: ar?'العامل A':'Factor A', SS: result.SS_A, df: result.df_A, F: result.F_A, p: result.p_A, eta2: result.eta2_A },
+                  { src: ar?'العامل B':'Factor B', SS: result.SS_B, df: result.df_B, F: result.F_B, p: result.p_B, eta2: result.eta2_B },
+                  { src: ar?'التفاعل A×B':'A×B Interaction', SS: result.SS_AB, df: result.df_AB, F: result.F_AB, p: result.p_AB, eta2: result.eta2_AB },
+                  { src: ar?'الخطأ':'Error', SS: result.SS_err, df: result.df_err, F: null, p: null, eta2: null },
+                  { src: ar?'الكلي':'Total', SS: result.SS_total, df: result.n-1, F: null, p: null, eta2: null },
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: i===4?'rgba(201,168,76,0.04)':i===2?'rgba(139,92,246,0.06)':i<3?'rgba(94,234,212,0.03)':'transparent' }}>
+                    <td style={{ padding:'5px 8px', fontWeight:i<3?700:400, color:i===2?C.purple:i<3?C.teal:i===4?C.gold:C.sub }}>{row.src}</td>
+                    <td style={{ padding:'5px 8px', textAlign:'center', color:C.sub }}>{row.SS.toFixed(3)}</td>
+                    <td style={{ padding:'5px 8px', textAlign:'center', color:C.sub }}>{row.df}</td>
+                    <td style={{ padding:'5px 8px', textAlign:'center', color:C.sub }}>{row.F!=null?(row.SS/row.df).toFixed(3):'—'}</td>
+                    <td style={{ padding:'5px 8px', textAlign:'center', color:C.sub }}>{row.F!=null?row.F.toFixed(3):'—'}</td>
+                    <td style={{ padding:'5px 8px', textAlign:'center', color:row.p!=null?pC(row.p):C.muted, fontWeight:row.p!=null&&row.p<0.05?700:400 }}>
+                      {row.p!=null?`${result.pFmt(row.p)}${result.stars(row.p)}`:'—'}
+                    </td>
+                    <td style={{ padding:'5px 8px', textAlign:'center', color:C.muted }}>{row.eta2!=null?row.eta2.toFixed(4):'—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Interaction plot */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, marginBottom: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: result.p_AB < 0.05 ? C.purple : C.gold, marginBottom: 10 }}>
+              {ar ? `رسم التفاعل A×B ${result.p_AB < 0.05 ? '— التفاعل دال ✓' : ''}` : `A×B Interaction Plot ${result.p_AB < 0.05 ? '— Significant interaction ✓' : ''}`}
+            </div>
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={result.interactionData} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="b" tick={{ fontSize: 10, fill: C.sub }} label={{ value: ar?'مستويات B':'Factor B levels', position:'insideBottom', offset:-4, fontSize:10, fill:C.sub }} />
+                <YAxis tick={{ fontSize: 9, fill: C.sub }} width={36} />
+                <Tooltip contentStyle={{ background: '#0d172d', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 11 }} />
+                {result.levA.map((a, i) => (
+                  <Line key={a} type="monotone" dataKey={a} name={`A=${a}`} stroke={COLORS[i % COLORS.length]} strokeWidth={2} dot={{ r: 4, fill: COLORS[i % COLORS.length] }} />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Marginal means */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+            {[
+              { title: ar?'متوسطات العامل A (هامشية)':'Factor A Marginal Means', levs: result.levA, means: result.margA, ns: result.nA_arr, color: C.teal },
+              { title: ar?'متوسطات العامل B (هامشية)':'Factor B Marginal Means', levs: result.levB, means: result.margB, ns: result.nB_arr, color: C.blue },
+            ].map(({ title, levs, means, ns, color }) => (
+              <div key={title} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden' }}>
+                <div style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.03)', fontSize: 11, fontWeight: 700, color }}>{title}</div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+                  <tbody>
+                    {levs.map((l, i) => (
+                      <tr key={l} style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                        <td style={{ padding: '4px 10px', color: C.text, fontWeight: 700 }}>{l}</td>
+                        <td style={{ padding: '4px 10px', textAlign: 'center', color: C.muted, fontSize: 10 }}>n={ns[i]}</td>
+                        <td style={{ padding: '4px 10px', textAlign: 'right', color, fontWeight: 700 }}>{means[i].toFixed(3)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '10px 14px', fontSize: 11, color: C.sub }}>
+            <strong style={{ color: C.gold }}>APA: </strong>
+            {ar
+              ? `كشف تحليل التباين ثنائي الاتجاه عن: أثر A ${result.p_A<0.05?'دال':'غير دال'} F(${result.df_A},${result.df_err})=${result.F_A.toFixed(2)}, p=${result.pFmt(result.p_A)}, η²=${result.eta2_A.toFixed(3)}؛ أثر B ${result.p_B<0.05?'دال':'غير دال'} F(${result.df_B},${result.df_err})=${result.F_B.toFixed(2)}, p=${result.pFmt(result.p_B)}, η²=${result.eta2_B.toFixed(3)}؛ التفاعل A×B ${result.p_AB<0.05?'دال':'غير دال'} F(${result.df_AB},${result.df_err})=${result.F_AB.toFixed(2)}, p=${result.pFmt(result.p_AB)}, η²=${result.eta2_AB.toFixed(3)}`
+              : `A two-way ANOVA revealed: ${result.p_A<0.05?'significant':'non-significant'} main effect of A, F(${result.df_A},${result.df_err})=${result.F_A.toFixed(2)}, p=${result.pFmt(result.p_A)}, η²=${result.eta2_A.toFixed(3)}; ${result.p_B<0.05?'significant':'non-significant'} main effect of B, F(${result.df_B},${result.df_err})=${result.F_B.toFixed(2)}, p=${result.pFmt(result.p_B)}, η²=${result.eta2_B.toFixed(3)}; ${result.p_AB<0.05?'significant':'non-significant'} A×B interaction, F(${result.df_AB},${result.df_err})=${result.F_AB.toFixed(2)}, p=${result.pFmt(result.p_AB)}, η²=${result.eta2_AB.toFixed(3)}`}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function sigmoid(x: number) { return 1 / (1 + Math.exp(-Math.max(-500, Math.min(500, x)))); }
 function logisticFit(X: number[][], y: number[]) {
   const n = X.length, k = X[0].length;
@@ -6341,6 +6853,9 @@ const SUBTABS_AR = [
   { key: 'rmmanova',    icon: '🔁', label: 'مقاييس متكررة (RM ANOVA)', short: 'RM' },
   { key: 'fisher',      icon: '🐟', label: "Fisher's Exact Test",      short: 'Fisher' },
   { key: 'binomtest',   icon: '🎲', label: 'اختبار ثنائي الحد',       short: 'Binom' },
+  { key: 'ancova',      icon: '🎛️', label: 'تحليل التغاير (ANCOVA)',  short: 'ANCOVA' },
+  { key: 'diagacc',     icon: '🩺', label: 'دقة التشخيص',            short: 'Diagn.' },
+  { key: 'twoway',      icon: '⊞',  label: 'ANOVA ثنائي الاتجاه',    short: '2-Way' },
   { key: 'samplesize',  icon: '🎯', label: 'حجم العيّنة',            short: 'عيّنة' },
   { key: 'apa',         icon: '📝', label: 'منسّق APA',              short: 'APA' },
   { key: 'stats',       icon: '📊', label: 'اختبارات إحصائية',     short: 'إحصاء' },
@@ -6381,6 +6896,9 @@ const SUBTABS_EN = [
   { key: 'rmmanova',    icon: '🔁', label: 'Repeated Measures ANOVA', short: 'RM-ANOVA' },
   { key: 'fisher',      icon: '🐟', label: "Fisher's Exact Test", short: 'Fisher' },
   { key: 'binomtest',   icon: '🎲', label: 'Binomial Test',       short: 'Binom' },
+  { key: 'ancova',      icon: '🎛️', label: 'ANCOVA',              short: 'ANCOVA' },
+  { key: 'diagacc',     icon: '🩺', label: 'Diagnostic Accuracy', short: 'Diagn.' },
+  { key: 'twoway',      icon: '⊞',  label: 'Two-Way ANOVA',       short: '2-Way' },
   { key: 'samplesize',  icon: '🎯', label: 'Sample Size',         short: 'n Calc' },
   { key: 'apa',         icon: '📝', label: 'APA Formatter',       short: 'APA' },
   { key: 'stats',       icon: '📊', label: 'Statistical Tests',   short: 'Stats' },
@@ -6677,6 +7195,42 @@ export default function DataHub() {
                   : 'Exact test: does observed proportion differ from p₀? · exact binomial p-value · Wilson CI · Cohen\'s h effect size · probability distribution chart'}
             </p>
             <BinomialTest ar={ar} />
+          </>
+        )}
+        {sub === 'ancova' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🎛️ {ar ? 'تحليل التغاير (ANCOVA — One-Way)' : 'Analysis of Covariance (One-Way ANCOVA)'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'F للأثر الجماعي بعد ضبط المتغير المصاحب · Partial η² · المتوسطات المعدَّلة (عند x̄) مقابل الخام · ميل المصاحب وأهميته · R² للنموذج الكامل'
+                  : 'F for group effect after controlling covariate · Partial η² · Adjusted means at grand x̄ vs raw · Covariate slope significance · Full model R²'}
+            </p>
+            <Ancova ar={ar} />
+          </>
+        )}
+        {sub === 'diagacc' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🩺 {ar ? 'دقة التشخيص (Sensitivity / Specificity / PPV / NPV)' : 'Diagnostic Accuracy (Sensitivity / Specificity / PPV / NPV)'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'جدول 2×2 · حساسية · نوعية · PPV / NPV · LR+ / LR− · DOR · Youden\'s J · F1 · MCC · PPV/NPV بايزي عند انتشار مخصص · CI 95% Wilson'
+                  : '2×2 table · Sensitivity · Specificity · PPV / NPV · LR+ / LR− · DOR · Youden\'s J · F1 · MCC · Bayesian PPV/NPV at custom prevalence · 95% CI'}
+            </p>
+            <DiagnosticAccuracy ar={ar} />
+          </>
+        )}
+        {sub === 'twoway' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              ⊞ {ar ? 'تحليل التباين ثنائي الاتجاه (Two-Way ANOVA)' : 'Two-Way ANOVA (Factorial)'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'Type III SS · أثر A · أثر B · تفاعل A×B · η² لكل مصدر · متوسطات هامشية · رسم التفاعل · مصمَّم لعيّنات متوازنة وغير متوازنة (OLS)'
+                  : 'Type III SS via OLS · Factor A effect · Factor B effect · A×B interaction · η² per source · marginal means · interaction plot · balanced & unbalanced'}
+            </p>
+            <TwoWayAnova ar={ar} />
           </>
         )}
         {sub === 'partialcorr' && (
