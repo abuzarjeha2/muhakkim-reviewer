@@ -6,7 +6,7 @@ import EquationChecker from './EquationChecker';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, ReferenceLine,
-  ComposedChart,
+  ComposedChart, ScatterChart, Scatter,
 } from 'recharts';
 import { Plus, Trash2 } from 'lucide-react';
 
@@ -3119,6 +3119,524 @@ a3,b2,26`;
             {ar
               ? `كشف تحليل التباين ثنائي الاتجاه عن: أثر A ${result.p_A<0.05?'دال':'غير دال'} F(${result.df_A},${result.df_err})=${result.F_A.toFixed(2)}, p=${result.pFmt(result.p_A)}, η²=${result.eta2_A.toFixed(3)}؛ أثر B ${result.p_B<0.05?'دال':'غير دال'} F(${result.df_B},${result.df_err})=${result.F_B.toFixed(2)}, p=${result.pFmt(result.p_B)}, η²=${result.eta2_B.toFixed(3)}؛ التفاعل A×B ${result.p_AB<0.05?'دال':'غير دال'} F(${result.df_AB},${result.df_err})=${result.F_AB.toFixed(2)}, p=${result.pFmt(result.p_AB)}, η²=${result.eta2_AB.toFixed(3)}`
               : `A two-way ANOVA revealed: ${result.p_A<0.05?'significant':'non-significant'} main effect of A, F(${result.df_A},${result.df_err})=${result.F_A.toFixed(2)}, p=${result.pFmt(result.p_A)}, η²=${result.eta2_A.toFixed(3)}; ${result.p_B<0.05?'significant':'non-significant'} main effect of B, F(${result.df_B},${result.df_err})=${result.F_B.toFixed(2)}, p=${result.pFmt(result.p_B)}, η²=${result.eta2_B.toFixed(3)}; ${result.p_AB<0.05?'significant':'non-significant'} A×B interaction, F(${result.df_AB},${result.df_err})=${result.F_AB.toFixed(2)}, p=${result.pFmt(result.p_AB)}, η²=${result.eta2_AB.toFixed(3)}`}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── BLAND-ALTMAN ─────────────────────────────────────────────────────────
+function BlandAltman({ ar }: { ar: boolean }) {
+  const DEF = `Method1,Method2
+120,125
+130,128
+115,118
+140,138
+125,127
+135,132
+110,115
+145,142
+128,130
+122,124
+138,136
+118,121
+132,130
+142,140
+127,129`;
+  const [raw, setRaw] = useState(DEF);
+  const [ciPct, setCiPct] = useState(95);
+
+  const result = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 4) return null;
+    const sep = lines[0].includes('\t') ? '\t' : ',';
+    const firstCells = lines[0].trim().split(sep);
+    const hasHeader = firstCells.some(v => isNaN(parseFloat(v.trim())));
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+    const rows = dataLines.map(l => {
+      const c = l.trim().split(sep);
+      return { m1: parseFloat(c[0]?.trim() ?? ''), m2: parseFloat(c[1]?.trim() ?? '') };
+    }).filter(r => isFinite(r.m1) && isFinite(r.m2));
+    if (rows.length < 5) return null;
+    const n = rows.length;
+    const means = rows.map(r => (r.m1 + r.m2) / 2);
+    const diffs = rows.map(r => r.m1 - r.m2);
+    const bias = avg(diffs);
+    const sd_diff = Math.sqrt(diffs.reduce((s, d) => s + (d - bias) ** 2, 0) / (n - 1));
+    const z = ciPct === 99 ? 2.576 : ciPct === 90 ? 1.645 : 1.960;
+    const loa_lo = bias - 1.96 * sd_diff;
+    const loa_hi = bias + 1.96 * sd_diff;
+    // CI for bias
+    const se_bias = sd_diff / Math.sqrt(n);
+    const bias_lo = bias - z * se_bias, bias_hi = bias + z * se_bias;
+    // CI for LoA using Bland-Altman formula: SE_LoA = sqrt(3*s²/n)
+    const se_loa = Math.sqrt(3 * sd_diff * sd_diff / n);
+    const loa_lo_lo = loa_lo - z * se_loa, loa_lo_hi = loa_lo + z * se_loa;
+    const loa_hi_lo = loa_hi - z * se_loa, loa_hi_hi = loa_hi + z * se_loa;
+    // Proportional bias: Pearson r(mean, diff)
+    const r_prop = pearson(means, diffs);
+    const t_prop = r_prop * Math.sqrt(n - 2) / Math.max(1e-10, Math.sqrt(1 - r_prop * r_prop));
+    const p_prop = 2 * (1 - normalCDF(Math.abs(t_prop)));
+    // % within LoA
+    const within = diffs.filter(d => d >= loa_lo && d <= loa_hi).length;
+    const pctWithin = within / n;
+    const pFmt = (p: number) => p < 0.001 ? '< .001' : p.toFixed(3);
+    const plotData = rows.map((_, i) => ({ x: +means[i].toFixed(3), diff: +diffs[i].toFixed(3) }));
+    return { n, bias, sd_diff, loa_lo, loa_hi, bias_lo, bias_hi, loa_lo_lo, loa_lo_hi, loa_hi_lo, loa_hi_hi, r_prop, p_prop, within, pctWithin, pFmt, plotData, ciPct };
+  }, [raw, ciPct]);
+
+  return (
+    <div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+          {ar ? 'عمودان: القياس بالطريقة 1 · القياس بالطريقة 2 (نفس المشارك في كل صف)'
+            : 'Two columns: Method 1 measurement · Method 2 measurement (same subject per row)'}
+        </label>
+        <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={6}
+          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 11, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14, alignItems: 'center' }}>
+        <span style={{ color: C.sub, fontSize: 12 }}>CI:</span>
+        {[90, 95, 99].map(c => (
+          <button key={c} onClick={() => setCiPct(c)} style={{ background: ciPct === c ? 'rgba(94,234,212,0.2)' : 'rgba(255,255,255,0.04)', border: `1px solid ${ciPct === c ? C.teal : C.border}`, borderRadius: 7, padding: '5px 12px', color: ciPct === c ? C.teal : C.sub, cursor: 'pointer', fontFamily: 'inherit', fontWeight: ciPct === c ? 700 : 400, fontSize: 12 }}>{c}%</button>
+        ))}
+      </div>
+
+      {!result && <p style={{ color: C.muted, fontSize: 13 }}>{ar ? 'يلزم ≥ 5 أزواج قياسات' : 'Need ≥ 5 measurement pairs'}</p>}
+      {result && (
+        <>
+          <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 12 }}>
+            {[
+              { l: ar ? 'التحيّز (Bias)' : 'Mean Bias', v: result.bias.toFixed(4), c: Math.abs(result.bias) < result.sd_diff * 0.5 ? C.teal : C.gold },
+              { l: `${result.ciPct}% CI (Bias)`, v: `[${result.bias_lo.toFixed(3)}, ${result.bias_hi.toFixed(3)}]`, c: C.blue },
+              { l: 'SD (diff)', v: result.sd_diff.toFixed(4), c: C.sub },
+              { l: 'LoA lower', v: result.loa_lo.toFixed(4), c: C.red },
+              { l: 'LoA upper', v: result.loa_hi.toFixed(4), c: C.red },
+              { l: ar ? 'داخل LoA' : 'Within LoA', v: `${(result.pctWithin * 100).toFixed(1)}%`, c: result.pctWithin >= 0.95 ? C.green : C.gold },
+              { l: 'r (prop. bias)', v: result.r_prop.toFixed(4), c: Math.abs(result.r_prop) > 0.3 ? C.red : C.teal },
+              { l: 'p (prop. bias)', v: result.pFmt(result.p_prop), c: result.p_prop < 0.05 ? C.red : C.green },
+              { l: 'n', v: String(result.n) },
+            ].map(({ l, v, c }) => (
+              <div key={l} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '6px 12px', textAlign: 'center', minWidth: 80 }}>
+                <div style={{ fontSize: 9, color: C.sub }}>{l}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: c ?? C.text }}>{v}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Bland-Altman plot */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, marginBottom: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: C.gold, marginBottom: 8 }}>
+              {ar ? 'رسم Bland-Altman (الفرق مقابل المتوسط)' : 'Bland-Altman Plot (Difference vs Mean)'}
+            </div>
+            <ResponsiveContainer width="100%" height={220}>
+              <ScatterChart margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="x" type="number" name={ar ? 'المتوسط' : 'Mean'} tick={{ fontSize: 9, fill: C.sub }}
+                  label={{ value: ar ? 'متوسط الطريقتين' : 'Mean of two methods', position: 'insideBottom', offset: -12, fontSize: 10, fill: C.sub }} />
+                <YAxis dataKey="diff" type="number" name={ar ? 'الفرق' : 'Diff'} tick={{ fontSize: 9, fill: C.sub }} width={38}
+                  label={{ value: ar ? 'M1 − M2' : 'M1 − M2', angle: -90, position: 'insideLeft', fontSize: 10, fill: C.sub }} />
+                <Tooltip contentStyle={{ background: '#0d172d', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 10 }}
+                  formatter={(v: number) => v.toFixed(3)} />
+                <ReferenceLine y={result.bias} stroke={C.gold} strokeWidth={2} strokeDasharray="8 3" label={{ value: `Bias=${result.bias.toFixed(2)}`, fontSize: 9, fill: C.gold, position: 'right' }} />
+                <ReferenceLine y={result.loa_hi} stroke={C.red} strokeWidth={1.5} strokeDasharray="4 4" label={{ value: `+1.96SD=${result.loa_hi.toFixed(2)}`, fontSize: 9, fill: C.red, position: 'right' }} />
+                <ReferenceLine y={result.loa_lo} stroke={C.red} strokeWidth={1.5} strokeDasharray="4 4" label={{ value: `−1.96SD=${result.loa_lo.toFixed(2)}`, fontSize: 9, fill: C.red, position: 'right' }} />
+                <ReferenceLine y={0} stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
+                <Scatter data={result.plotData} fill={C.teal} opacity={0.85} r={5} />
+              </ScatterChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* LoA CI table */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 12 }}>
+            <div style={{ padding: '7px 14px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 12, color: C.gold }}>
+              {ar ? `حدود الاتفاق مع CI ${result.ciPct}%` : `Limits of Agreement with ${result.ciPct}% CI`}
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+              <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                {['', ar ? 'التقدير' : 'Estimate', `${result.ciPct}% CI`].map(h => (
+                  <th key={h} style={{ padding: '5px 12px', textAlign: 'center', color: C.sub }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {[
+                  { l: ar ? 'التحيّز' : 'Bias (mean diff)', v: result.bias, lo: result.bias_lo, hi: result.bias_hi, c: C.gold },
+                  { l: ar ? 'الحد الأعلى للاتفاق' : 'Upper LoA', v: result.loa_hi, lo: result.loa_hi_lo, hi: result.loa_hi_hi, c: C.red },
+                  { l: ar ? 'الحد الأدنى للاتفاق' : 'Lower LoA', v: result.loa_lo, lo: result.loa_lo_lo, hi: result.loa_lo_hi, c: C.red },
+                ].map(row => (
+                  <tr key={row.l} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding: '6px 12px', color: row.c, fontWeight: 700 }}>{row.l}</td>
+                    <td style={{ padding: '6px 12px', textAlign: 'center', color: C.text, fontWeight: 700 }}>{row.v.toFixed(4)}</td>
+                    <td style={{ padding: '6px 12px', textAlign: 'center', color: C.sub }}>[{row.lo.toFixed(3)}, {row.hi.toFixed(3)}]</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '10px 14px', fontSize: 11, color: C.sub }}>
+            <strong style={{ color: C.gold }}>APA: </strong>
+            {ar
+              ? `كشف تحليل Bland-Altman عن تحيّز = ${result.bias.toFixed(3)} (${result.ciPct}% CI [${result.bias_lo.toFixed(3)}, ${result.bias_hi.toFixed(3)}])، وحدود اتفاق (95%) = [${result.loa_lo.toFixed(3)}, ${result.loa_hi.toFixed(3)}]؛ بلغت نسبة القياسات داخل الحدود ${(result.pctWithin * 100).toFixed(1)}%؛ ${result.p_prop < 0.05 ? 'وُجد تحيّز تناسبي دال' : 'لا يوجد تحيّز تناسبي'} (r = ${result.r_prop.toFixed(3)}, p = ${result.pFmt(result.p_prop)})`
+              : `Bland-Altman analysis revealed a mean bias of ${result.bias.toFixed(3)} (${result.ciPct}% CI [${result.bias_lo.toFixed(3)}, ${result.bias_hi.toFixed(3)}]), with 95% limits of agreement [${result.loa_lo.toFixed(3)}, ${result.loa_hi.toFixed(3)}]; ${(result.pctWithin * 100).toFixed(1)}% of observations lay within the limits; ${result.p_prop < 0.05 ? 'a significant proportional bias was detected' : 'no significant proportional bias was detected'} (r = ${result.r_prop.toFixed(3)}, p = ${result.pFmt(result.p_prop)})`}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── POLYNOMIAL REGRESSION ────────────────────────────────────────────────
+function PolyReg({ ar }: { ar: boolean }) {
+  const DEF = `x,y
+1,2.1
+2,3.9
+3,8.2
+4,14.1
+5,22.3
+6,32.5
+7,44.8
+8,59.2
+9,75.9
+10,94.7`;
+  const [raw, setRaw] = useState(DEF);
+  const [maxDeg, setMaxDeg] = useState(2);
+
+  const result = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 4) return null;
+    const sep = lines[0].includes('\t') ? '\t' : ',';
+    const firstCells = lines[0].trim().split(sep);
+    const hasHeader = firstCells.some(v => isNaN(parseFloat(v.trim())));
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+    const rows = dataLines.map(l => {
+      const c = l.trim().split(sep);
+      return [parseFloat(c[0]?.trim() ?? ''), parseFloat(c[1]?.trim() ?? '')];
+    }).filter(r => r.every(isFinite));
+    if (rows.length < 4) return null;
+    const xArr = rows.map(r => r[0]), yArr = rows.map(r => r[1]);
+    const n = xArr.length;
+    const yMean = avg(yArr);
+    const SS_tot = yArr.reduce((s, v) => s + (v - yMean) ** 2, 0);
+
+    const fits: { deg: number; beta: number[]; R2: number; R2adj: number; AIC: number; BIC: number; RMSE: number }[] = [];
+    for (let d = 1; d <= Math.min(maxDeg, 5, n - 2); d++) {
+      const X = xArr.map(xi => Array.from({ length: d + 1 }, (_, k) => xi ** k));
+      const o = olsWithSE(X, yArr);
+      if (!o) continue;
+      const yhat = X.map(row => row.reduce((s, v, i) => s + v * o.beta[i], 0));
+      const SS_err = yArr.reduce((s, v, i) => s + (v - yhat[i]) ** 2, 0);
+      const R2 = 1 - SS_err / SS_tot;
+      const R2adj = 1 - (1 - R2) * (n - 1) / Math.max(1, n - d - 1);
+      const p = d + 1;
+      const AIC = n * Math.log(SS_err / n) + 2 * p;
+      const BIC = n * Math.log(SS_err / n) + p * Math.log(n);
+      const RMSE = Math.sqrt(SS_err / n);
+      fits.push({ deg: d, beta: o.beta, R2, R2adj, AIC, BIC, RMSE });
+    }
+    if (!fits.length) return null;
+
+    const bestAIC = fits.reduce((b, f) => f.AIC < b.AIC ? f : b);
+    const selected = fits[maxDeg - 1] ?? fits[fits.length - 1];
+
+    // Fitted curve for selected degree
+    const xMin = Math.min(...xArr), xMax = Math.max(...xArr);
+    const curveX = Array.from({ length: 120 }, (_, i) => xMin + i * (xMax - xMin) / 119);
+    const curveData = curveX.map(xi => ({
+      x: +xi.toFixed(4),
+      fit: +selected.beta.reduce((s, b, k) => s + b * xi ** k, 0).toFixed(5),
+    }));
+    const scatterData = rows.map(r => ({ x: r[0], y: r[1] }));
+    const residuals = rows.map(r => ({
+      x: r[0],
+      res: +(r[1] - selected.beta.reduce((s, b, k) => s + b * r[0] ** k, 0)).toFixed(4),
+    }));
+
+    const eqStr = (beta: number[]) => beta.map((b, k) => {
+      const bStr = b.toFixed(4);
+      if (k === 0) return bStr;
+      if (k === 1) return `${b >= 0 ? ' + ' : ' - '}${Math.abs(b).toFixed(4)}x`;
+      return `${b >= 0 ? ' + ' : ' - '}${Math.abs(b).toFixed(4)}x^${k}`;
+    }).join('');
+
+    return { n, fits, selected, bestAIC, curveData, scatterData, residuals, xMin, xMax, eqStr };
+  }, [raw, maxDeg]);
+
+  const degColors = [C.teal, C.gold, C.blue, C.purple, C.green];
+
+  return (
+    <div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+          {ar ? 'عمودان: x (مستقل) · y (تابع) · فاصلة أو tab' : 'Two columns: x (predictor) · y (outcome) · comma or tab separated'}
+        </label>
+        <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={6}
+          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 11, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+        <span style={{ color: C.sub, fontSize: 12 }}>{ar ? 'أقصى درجة:' : 'Max degree:'}</span>
+        {[1, 2, 3, 4, 5].map(d => (
+          <button key={d} onClick={() => setMaxDeg(d)} style={{ background: maxDeg === d ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.04)', border: `1px solid ${maxDeg === d ? C.gold : C.border}`, borderRadius: 7, padding: '5px 12px', color: maxDeg === d ? C.gold : C.sub, cursor: 'pointer', fontFamily: 'inherit', fontWeight: maxDeg === d ? 700 : 400, fontSize: 13 }}>{d}</button>
+        ))}
+        {result && <span style={{ fontSize: 11, color: C.muted, marginLeft: 8 }}>{ar ? 'أفضل AIC: درجة' : 'Best AIC: degree'} {result.bestAIC.deg}</span>}
+      </div>
+
+      {!result && <p style={{ color: C.muted, fontSize: 13 }}>{ar ? 'يلزم ≥ 4 نقاط' : 'Need ≥ 4 data points'}</p>}
+      {result && (
+        <>
+          {/* Model comparison */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 12 }}>
+            <div style={{ padding: '7px 14px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 12, color: C.gold }}>
+              {ar ? 'مقارنة النماذج' : 'Model Comparison'}
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+              <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                {[ar ? 'الدرجة' : 'Degree', 'R²', 'R² adj', 'AIC', 'BIC', 'RMSE'].map(h => (
+                  <th key={h} style={{ padding: '5px 10px', textAlign: 'center', color: C.sub }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {result.fits.map((f, i) => (
+                  <tr key={f.deg} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: f.deg === maxDeg ? 'rgba(94,234,212,0.06)' : f.deg === result.bestAIC.deg ? 'rgba(201,168,76,0.06)' : 'transparent' }}>
+                    <td style={{ padding: '5px 10px', textAlign: 'center', color: degColors[i % degColors.length], fontWeight: 700 }}>
+                      {f.deg} {f.deg === result.bestAIC.deg ? '★' : ''}
+                    </td>
+                    <td style={{ padding: '5px 10px', textAlign: 'center', color: f.R2 >= 0.9 ? C.green : f.R2 >= 0.7 ? C.gold : C.sub, fontWeight: 700 }}>{f.R2.toFixed(4)}</td>
+                    <td style={{ padding: '5px 10px', textAlign: 'center', color: C.sub }}>{f.R2adj.toFixed(4)}</td>
+                    <td style={{ padding: '5px 10px', textAlign: 'center', color: f.deg === result.bestAIC.deg ? C.gold : C.muted }}>{f.AIC.toFixed(2)}</td>
+                    <td style={{ padding: '5px 10px', textAlign: 'center', color: C.muted }}>{f.BIC.toFixed(2)}</td>
+                    <td style={{ padding: '5px 10px', textAlign: 'center', color: C.sub }}>{f.RMSE.toFixed(4)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Equation */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '10px 14px', marginBottom: 12 }}>
+            <div style={{ fontSize: 10, color: C.sub, marginBottom: 4 }}>{ar ? `معادلة الدرجة ${maxDeg}:` : `Degree-${maxDeg} equation:`}</div>
+            <div style={{ fontSize: 12, fontFamily: 'monospace', color: C.teal, wordBreak: 'break-all' }}>ŷ = {result.eqStr(result.selected.beta)}</div>
+          </div>
+
+          {/* Fitted curve + scatter */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, marginBottom: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: C.gold, marginBottom: 8 }}>
+              {ar ? `المنحنى المناسب (درجة ${maxDeg})` : `Fitted Curve (degree ${maxDeg})`}
+            </div>
+            <ResponsiveContainer width="100%" height={200}>
+              <ComposedChart margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="x" type="number" domain={['auto', 'auto']} tick={{ fontSize: 9, fill: C.sub }} />
+                <YAxis tick={{ fontSize: 9, fill: C.sub }} width={36} />
+                <Tooltip contentStyle={{ background: '#0d172d', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 10 }} formatter={(v: number) => v.toFixed(4)} />
+                <Line data={result.curveData} type="monotone" dataKey="fit" stroke={C.gold} strokeWidth={2} dot={false} name={ar ? 'مناسب' : 'Fitted'} />
+                <Scatter data={result.scatterData} dataKey="y" fill={C.teal} opacity={0.9} name={ar ? 'ملاحَظ' : 'Observed'} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Residuals */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, marginBottom: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: C.gold, marginBottom: 8 }}>{ar ? 'رسم البواقي' : 'Residuals'}</div>
+            <ResponsiveContainer width="100%" height={130}>
+              <ScatterChart margin={{ top: 4, right: 12, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis dataKey="x" type="number" domain={['auto', 'auto']} tick={{ fontSize: 9, fill: C.sub }} />
+                <YAxis dataKey="res" type="number" tick={{ fontSize: 9, fill: C.sub }} width={36} />
+                <ReferenceLine y={0} stroke={C.gold} strokeWidth={1.5} strokeDasharray="6 3" />
+                <Tooltip contentStyle={{ background: '#0d172d', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 10 }} formatter={(v: number) => v.toFixed(4)} />
+                <Scatter data={result.residuals} fill={C.teal} opacity={0.8} r={4} />
+              </ScatterChart>
+            </ResponsiveContainer>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── ROC CURVE ────────────────────────────────────────────────────────────
+function RocCurve({ ar }: { ar: boolean }) {
+  const DEF = `Label,Score
+1,0.92
+1,0.88
+1,0.85
+1,0.79
+1,0.74
+1,0.71
+1,0.68
+1,0.62
+1,0.58
+1,0.45
+0,0.83
+0,0.76
+0,0.64
+0,0.57
+0,0.48
+0,0.42
+0,0.35
+0,0.28
+0,0.22
+0,0.15`;
+  const [raw, setRaw] = useState(DEF);
+
+  const result = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 4) return null;
+    const sep = lines[0].includes('\t') ? '\t' : ',';
+    const firstCells = lines[0].trim().split(sep);
+    const hasHeader = firstCells.some(v => isNaN(parseFloat(v.trim())));
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+    const rows = dataLines.map(l => {
+      const c = l.trim().split(sep);
+      return { label: parseFloat(c[0]?.trim() ?? ''), score: parseFloat(c[1]?.trim() ?? '') };
+    }).filter(r => isFinite(r.label) && isFinite(r.score) && (r.label === 0 || r.label === 1));
+    if (rows.length < 6) return null;
+
+    const nP = rows.filter(r => r.label === 1).length;
+    const nN = rows.filter(r => r.label === 0).length;
+    if (nP < 2 || nN < 2) return null;
+
+    // Sort by score descending
+    const sorted = [...rows].sort((a, b) => b.score - a.score);
+    const thresholds = [...new Set(sorted.map(r => r.score))].sort((a, b) => b - a);
+
+    const rocPoints: { thr: number; sens: number; spec: number; fpr: number; j: number }[] = [];
+    for (const thr of thresholds) {
+      const TP = rows.filter(r => r.label === 1 && r.score >= thr).length;
+      const FP = rows.filter(r => r.label === 0 && r.score >= thr).length;
+      const sens = TP / nP;
+      const spec = (nN - FP) / nN;
+      const fpr = 1 - spec;
+      rocPoints.push({ thr, sens, spec, fpr, j: sens + spec - 1 });
+    }
+    // Add (0,0) and (1,1)
+    const allPts = [{ fpr: 0, sens: 0 }, ...rocPoints.map(p => ({ fpr: p.fpr, sens: p.sens })), { fpr: 1, sens: 1 }];
+
+    // AUC via trapezoidal rule
+    let auc = 0;
+    for (let i = 1; i < allPts.length; i++) {
+      auc += (allPts[i].fpr - allPts[i-1].fpr) * (allPts[i].sens + allPts[i-1].sens) / 2;
+    }
+    auc = Math.abs(auc);
+
+    // 95% CI for AUC (Hanley-McNeil)
+    const A = auc;
+    const Q1 = A / (2 - A);
+    const Q2 = 2 * A * A / (1 + A);
+    const se_auc = Math.sqrt((A * (1 - A) + (nP - 1) * (Q1 - A * A) + (nN - 1) * (Q2 - A * A)) / (nP * nN));
+    const auc_lo = Math.max(0, A - 1.96 * se_auc), auc_hi = Math.min(1, A + 1.96 * se_auc);
+
+    // Optimal cutoff (max Youden J)
+    const best = rocPoints.reduce((b, p) => p.j > b.j ? p : b, rocPoints[0]);
+
+    // TP/FP/FN/TN at optimal
+    const TP_opt = rows.filter(r => r.label === 1 && r.score >= best.thr).length;
+    const FP_opt = rows.filter(r => r.label === 0 && r.score >= best.thr).length;
+    const FN_opt = nP - TP_opt, TN_opt = nN - FP_opt;
+
+    const pFmt = (p: number) => p < 0.001 ? '< .001' : p.toFixed(3);
+    const chartData = allPts.map(p => ({ fpr: +p.fpr.toFixed(4), sens: +p.sens.toFixed(4) }));
+    return { nP, nN, n: nP + nN, auc, auc_lo, auc_hi, se_auc, best, TP_opt, FP_opt, FN_opt, TN_opt, rocPoints, chartData, pFmt };
+  }, [raw]);
+
+  const aucColor = (a: number) => a >= 0.9 ? C.green : a >= 0.8 ? C.teal : a >= 0.7 ? C.gold : a >= 0.6 ? '#f97316' : C.red;
+
+  return (
+    <div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+          {ar ? 'عمودان: التصنيف الفعلي (0 أو 1) · درجة الاحتمالية (0–1) · كل مشاهدة في صف'
+            : 'Two columns: Actual label (0 or 1) · Probability score (0–1) · one observation per row'}
+        </label>
+        <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={7}
+          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 9, padding: '8px 12px', color: C.text, fontSize: 11, fontFamily: 'monospace', direction: 'ltr', resize: 'vertical', boxSizing: 'border-box' }} />
+      </div>
+
+      {!result && <p style={{ color: C.muted, fontSize: 13 }}>{ar ? 'يلزم ≥ 6 مشاهدات بتصنيف 0/1' : 'Need ≥ 6 observations with 0/1 labels'}</p>}
+      {result && (
+        <>
+          <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 12 }}>
+            {[
+              { l: 'AUC', v: result.auc.toFixed(4), c: aucColor(result.auc), big: true },
+              { l: '95% CI (AUC)', v: `[${result.auc_lo.toFixed(4)}, ${result.auc_hi.toFixed(4)}]`, c: C.blue },
+              { l: ar ? 'قاطع أمثل (Youden)' : 'Optimal Cutoff', v: result.best.thr.toFixed(4), c: C.gold },
+              { l: ar ? 'حساسية عنده' : 'Sensitivity@opt', v: `${(result.best.sens * 100).toFixed(1)}%`, c: C.green },
+              { l: ar ? 'نوعية عنده' : 'Specificity@opt', v: `${(result.best.spec * 100).toFixed(1)}%`, c: C.teal },
+              { l: "Youden's J", v: result.best.j.toFixed(4), c: C.purple },
+              { l: `n+ / n−`, v: `${result.nP} / ${result.nN}`, c: C.sub },
+              { l: 'n', v: String(result.n) },
+            ].map(({ l, v, c, big }) => (
+              <div key={l} style={{ background: C.card, border: `1px solid ${big ? aucColor(result.auc) : C.border}`, borderRadius: 10, padding: '6px 12px', textAlign: 'center', minWidth: 80 }}>
+                <div style={{ fontSize: 9, color: C.sub }}>{l}</div>
+                <div style={{ fontSize: big ? 22 : 12, fontWeight: 700, color: c }}>{v}</div>
+                {big && <div style={{ fontSize: 10, color: aucColor(result.auc), fontWeight: 600 }}>
+                  {result.auc >= 0.9 ? (ar ? 'ممتاز' : 'Excellent') : result.auc >= 0.8 ? (ar ? 'جيد جداً' : 'Good') : result.auc >= 0.7 ? (ar ? 'مقبول' : 'Fair') : result.auc >= 0.6 ? (ar ? 'ضعيف' : 'Poor') : (ar ? 'فاشل' : 'Fail')}
+                </div>}
+              </div>
+            ))}
+          </div>
+
+          {/* ROC curve */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, marginBottom: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: C.gold, marginBottom: 8 }}>
+              {ar ? `منحنى ROC · AUC = ${result.auc.toFixed(4)}` : `ROC Curve · AUC = ${result.auc.toFixed(4)}`}
+            </div>
+            <ResponsiveContainer width="100%" height={240}>
+              <ComposedChart data={result.chartData} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="fpr" type="number" domain={[0, 1]} tick={{ fontSize: 9, fill: C.sub }}
+                  label={{ value: ar ? 'معدل إيجابية كاذبة (1−Spec)' : 'False Positive Rate (1−Specificity)', position: 'insideBottom', offset: -12, fontSize: 10, fill: C.sub }} />
+                <YAxis dataKey="sens" type="number" domain={[0, 1]} tick={{ fontSize: 9, fill: C.sub }} width={32}
+                  label={{ value: ar ? 'الحساسية' : 'Sensitivity (TPR)', angle: -90, position: 'insideLeft', fontSize: 10, fill: C.sub }} />
+                <Tooltip contentStyle={{ background: '#0d172d', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 10 }} formatter={(v: number) => v.toFixed(4)} />
+                {/* Diagonal reference */}
+                <ReferenceLine segment={[{ x: 0, y: 0 }, { x: 1, y: 1 }]} stroke="rgba(255,255,255,0.2)" strokeDasharray="4 4" />
+                {/* Optimal point */}
+                <ReferenceLine x={1 - result.best.spec} stroke={C.gold} strokeWidth={1} strokeDasharray="3 3" />
+                <ReferenceLine y={result.best.sens} stroke={C.gold} strokeWidth={1} strokeDasharray="3 3" />
+                <Line type="monotone" dataKey="sens" stroke={aucColor(result.auc)} strokeWidth={2.5} dot={false} name="ROC" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Confusion matrix at optimal threshold */}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 12 }}>
+            <div style={{ padding: '7px 14px', background: 'rgba(201,168,76,0.07)', fontWeight: 700, fontSize: 12, color: C.gold }}>
+              {ar ? `مصفوفة الالتباس عند القاطع الأمثل (${result.best.thr.toFixed(4)})` : `Confusion Matrix at Optimal Cutoff (${result.best.thr.toFixed(4)})`}
+            </div>
+            <div style={{ padding: 16 }}>
+              <table style={{ borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead><tr>
+                  <th style={{ padding: '4px 12px', color: C.sub }}></th>
+                  <th style={{ padding: '4px 12px', color: C.green, fontWeight: 700 }}>{ar ? 'مرضي (فعلي)' : 'Actual +'}</th>
+                  <th style={{ padding: '4px 12px', color: C.red, fontWeight: 700 }}>{ar ? 'سليم (فعلي)' : 'Actual −'}</th>
+                </tr></thead>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '6px 12px', color: C.gold, fontWeight: 700 }}>{ar ? 'تنبؤ +' : 'Pred +'}</td>
+                    <td style={{ padding: '6px 12px', textAlign: 'center', color: C.green, fontSize: 20, fontWeight: 800 }}>{result.TP_opt}</td>
+                    <td style={{ padding: '6px 12px', textAlign: 'center', color: C.red, fontSize: 20, fontWeight: 800 }}>{result.FP_opt}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '6px 12px', color: C.gold, fontWeight: 700 }}>{ar ? 'تنبؤ −' : 'Pred −'}</td>
+                    <td style={{ padding: '6px 12px', textAlign: 'center', color: '#f97316', fontSize: 20, fontWeight: 800 }}>{result.FN_opt}</td>
+                    <td style={{ padding: '6px 12px', textAlign: 'center', color: C.teal, fontSize: 20, fontWeight: 800 }}>{result.TN_opt}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, padding: '10px 14px', fontSize: 11, color: C.sub }}>
+            <strong style={{ color: C.gold }}>APA: </strong>
+            {ar
+              ? `أظهر تحليل منحنى ROC أداءً ${result.auc >= 0.9 ? 'ممتازاً' : result.auc >= 0.8 ? 'جيداً' : result.auc >= 0.7 ? 'مقبولاً' : 'ضعيفاً'} بمساحة تحت المنحنى AUC = ${result.auc.toFixed(4)} (95% CI [${result.auc_lo.toFixed(4)}, ${result.auc_hi.toFixed(4)}]). القاطع الأمثل = ${result.best.thr.toFixed(4)} أعطى حساسية = ${(result.best.sens * 100).toFixed(1)}% ونوعية = ${(result.best.spec * 100).toFixed(1)}% (Youden's J = ${result.best.j.toFixed(4)})`
+              : `ROC curve analysis demonstrated ${result.auc >= 0.9 ? 'excellent' : result.auc >= 0.8 ? 'good' : result.auc >= 0.7 ? 'fair' : 'poor'} discriminability with AUC = ${result.auc.toFixed(4)} (95% CI [${result.auc_lo.toFixed(4)}, ${result.auc_hi.toFixed(4)}]). The optimal cutoff of ${result.best.thr.toFixed(4)} yielded sensitivity = ${(result.best.sens * 100).toFixed(1)}% and specificity = ${(result.best.spec * 100).toFixed(1)}% (Youden's J = ${result.best.j.toFixed(4)})`}
           </div>
         </>
       )}
@@ -6856,6 +7374,9 @@ const SUBTABS_AR = [
   { key: 'ancova',      icon: '🎛️', label: 'تحليل التغاير (ANCOVA)',  short: 'ANCOVA' },
   { key: 'diagacc',     icon: '🩺', label: 'دقة التشخيص',            short: 'Diagn.' },
   { key: 'twoway',      icon: '⊞',  label: 'ANOVA ثنائي الاتجاه',    short: '2-Way' },
+  { key: 'blandaltman', icon: '📐', label: 'Bland-Altman (LoA)',      short: 'B-A' },
+  { key: 'polyreg',     icon: '〰️', label: 'انحدار متعدد الحدود',    short: 'Poly' },
+  { key: 'roc',         icon: '📈', label: 'منحنى ROC / AUC',        short: 'ROC' },
   { key: 'samplesize',  icon: '🎯', label: 'حجم العيّنة',            short: 'عيّنة' },
   { key: 'apa',         icon: '📝', label: 'منسّق APA',              short: 'APA' },
   { key: 'stats',       icon: '📊', label: 'اختبارات إحصائية',     short: 'إحصاء' },
@@ -6899,6 +7420,9 @@ const SUBTABS_EN = [
   { key: 'ancova',      icon: '🎛️', label: 'ANCOVA',              short: 'ANCOVA' },
   { key: 'diagacc',     icon: '🩺', label: 'Diagnostic Accuracy', short: 'Diagn.' },
   { key: 'twoway',      icon: '⊞',  label: 'Two-Way ANOVA',       short: '2-Way' },
+  { key: 'blandaltman', icon: '📐', label: 'Bland-Altman (LoA)',  short: 'B-A' },
+  { key: 'polyreg',     icon: '〰️', label: 'Polynomial Regression', short: 'Poly' },
+  { key: 'roc',         icon: '📈', label: 'ROC Curve / AUC',     short: 'ROC' },
   { key: 'samplesize',  icon: '🎯', label: 'Sample Size',         short: 'n Calc' },
   { key: 'apa',         icon: '📝', label: 'APA Formatter',       short: 'APA' },
   { key: 'stats',       icon: '📊', label: 'Statistical Tests',   short: 'Stats' },
@@ -7231,6 +7755,42 @@ export default function DataHub() {
                   : 'Type III SS via OLS · Factor A effect · Factor B effect · A×B interaction · η² per source · marginal means · interaction plot · balanced & unbalanced'}
             </p>
             <TwoWayAnova ar={ar} />
+          </>
+        )}
+        {sub === 'blandaltman' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              📐 {ar ? 'رسم Bland-Altman — حدود الاتفاق (Limits of Agreement)' : 'Bland-Altman Plot — Method Agreement'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'التحيّز + SD · حدود الاتفاق (±1.96 SD) مع CI · اختبار التحيّز التناسبي (Pearson r) · نسبة القياسات داخل الحدود · رسم تبعثري تفاعلي'
+                  : 'Mean bias ± SD · Limits of Agreement (±1.96 SD) with CI · proportional bias test (Pearson r) · % within LoA · interactive scatter plot'}
+            </p>
+            <BlandAltman ar={ar} />
+          </>
+        )}
+        {sub === 'polyreg' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              〰️ {ar ? 'الانحدار متعدد الحدود (Polynomial Regression)' : 'Polynomial Regression'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'درجة 1–5 · R² / R² adj / AIC / BIC / RMSE · مقارنة النماذج (★ أفضل AIC) · المعادلة · رسم المنحنى المناسب · رسم البواقي'
+                  : 'Degree 1–5 · R² / R² adj / AIC / BIC / RMSE · model comparison (★ best AIC) · equation · fitted curve · residuals chart'}
+            </p>
+            <PolyReg ar={ar} />
+          </>
+        )}
+        {sub === 'roc' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              📈 {ar ? 'منحنى ROC — مساحة تحت المنحنى (AUC)' : 'ROC Curve — Area Under the Curve (AUC)'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 16px' }}>
+              {ar ? 'AUC مع 95% CI (Hanley-McNeil) · القاطع الأمثل (Youden\'s J) · حساسية ونوعية عند القاطع · مصفوفة الالتباس · رسم ROC تفاعلي'
+                  : 'AUC with 95% CI (Hanley-McNeil) · optimal cutoff (Youden\'s J) · sensitivity & specificity at cutoff · confusion matrix · interactive ROC plot'}
+            </p>
+            <RocCurve ar={ar} />
           </>
         )}
         {sub === 'partialcorr' && (
