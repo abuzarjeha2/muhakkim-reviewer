@@ -10,6 +10,7 @@ import DiscussionPanel from "../components/muhakkim/DiscussionPanel";
 import AIDetector from "../components/muhakkim/AIDetector";
 import CitationPlagiarism from "../components/muhakkim/CitationPlagiarism";
 import DataHub from "../components/muhakkim/DataHub";
+import ServicesPortal from "../components/muhakkim/ServicesPortal";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3D Wireframe Sphere (canvas)
@@ -215,6 +216,7 @@ const TABS_AR = [
   { key:"report",     icon:"📋", label:"تقرير التحكيم",       shortLabel:"تقرير" },
   { key:"discussion", icon:"💬", label:"لوحة المناقشة",       shortLabel:"مناقشة" },
   { key:"about",      icon:"ℹ️",  label:"عن البرنامج",         shortLabel:"عن" },
+  { key:"services",   icon:"🏢", label:"خدماتنا الإحصائية",   shortLabel:"خدمات" },
 ];
 const TABS_EN = [
   { key:"upload",     icon:"📂", label:"File Upload",    shortLabel:"Upload" },
@@ -226,6 +228,7 @@ const TABS_EN = [
   { key:"report",     icon:"📋", label:"Review Report",  shortLabel:"Report" },
   { key:"discussion", icon:"💬", label:"Discussion",     shortLabel:"Chat" },
   { key:"about",      icon:"ℹ️",  label:"About",          shortLabel:"About" },
+  { key:"services",   icon:"🏢", label:"Our Services",   shortLabel:"Services" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -669,6 +672,7 @@ export default function Muhakkim() {
           {activeTab === "report"     && <div className="mhk-inner"><ReviewReport /></div>}
           {activeTab === "discussion" && <div className="mhk-inner"><DiscussionPanel text={extractedText} fileName={fileInfo?.name ?? ""} /></div>}
           {activeTab === "about"      && <div className="mhk-inner"><About /></div>}
+          {activeTab === "services"   && <div className="mhk-inner"><ServicesPortal /></div>}
         </div>
       </div>
     </div>
