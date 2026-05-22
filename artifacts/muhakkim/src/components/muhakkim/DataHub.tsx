@@ -8124,12 +8124,640 @@ function APAFormatter({ ar }: { ar: boolean }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// ── META-ANALYSIS ────────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+function MetaAnalysis({ ar }: { ar: boolean }) {
+  const DEF_AR = 'الدراسة\tحجم الأثر\tالخطأ المعياري\nدراسة أ\t0.45\t0.12\nدراسة ب\t0.30\t0.09\nدراسة ج\t0.62\t0.15\nدراسة د\t0.38\t0.11\nدراسة ه\t0.55\t0.13';
+  const DEF_EN = 'Study\tES\tSE\nSmith 2020\t0.45\t0.12\nJones 2021\t0.30\t0.09\nLee 2022\t0.62\t0.15\nMueller 2023\t0.38\t0.11\nPark 2024\t0.55\t0.13';
+  const [raw, setRaw] = useState(ar ? DEF_AR : DEF_EN);
+  const ttStyle = { background: '#0d172d', border: `1px solid ${C.border}`, fontSize: 11 };
+
+  const studies = useMemo(() => raw.trim().split('\n').slice(1).map(l => {
+    const [name, d, se] = l.split(/[\t,]+/);
+    return { name: (name || '?').trim(), d: +d, se: +se };
+  }).filter(s => isFinite(s.d) && isFinite(s.se) && s.se > 0), [raw]);
+
+  const meta = useMemo(() => {
+    const k = studies.length;
+    if (k < 2) return null;
+    const wi = studies.map(s => 1 / s.se ** 2);
+    const Sw = wi.reduce((a, b) => a + b, 0);
+    const esFix = studies.reduce((a, s, i) => a + wi[i] * s.d, 0) / Sw;
+    const seFix = Math.sqrt(1 / Sw);
+    const Q = studies.reduce((a, s, i) => a + wi[i] * (s.d - esFix) ** 2, 0);
+    const df = k - 1;
+    const pQ = chiSqP(Q, df);
+    const I2 = Q > df ? ((Q - df) / Q) * 100 : 0;
+    const c = Sw - wi.reduce((a, w) => a + w ** 2, 0) / Sw;
+    const tau2 = Math.max(0, (Q - df) / c);
+    const wiR = studies.map(s => 1 / (s.se ** 2 + tau2));
+    const SwR = wiR.reduce((a, b) => a + b, 0);
+    const esRand = studies.reduce((a, s, i) => a + wiR[i] * s.d, 0) / SwR;
+    const seRand = Math.sqrt(1 / SwR);
+    const pFix  = 2 * (1 - normalCDF(Math.abs(esFix  / seFix)));
+    const pRand = 2 * (1 - normalCDF(Math.abs(esRand / seRand)));
+    return { wi, wiR, esFix, seFix, esRand, seRand, Q, df, pQ, I2, tau2, pFix, pRand, k };
+  }, [studies]);
+
+  const fp = useMemo(() => {
+    if (!meta || studies.length < 2) return null;
+    const mL = 162, mR = 175, mT = 12, mB = 48, rowH = 24;
+    const W = 580, plotW = W - mL - mR;
+    const all = studies.flatMap(s => [s.d - 1.96 * s.se, s.d + 1.96 * s.se]).concat([meta.esFix, meta.esRand]);
+    const xMin = Math.min(...all), xMax = Math.max(...all);
+    const pad = (xMax - xMin) * 0.18 || 0.5;
+    const xL = xMin - pad, xR = xMax + pad;
+    const xs = (v: number) => mL + (v - xL) / (xR - xL) * plotW;
+    const maxW = Math.max(...meta.wi);
+    const H = (studies.length + 3) * rowH + mT + mB;
+    return { W, H, xs, x0: xs(0), maxW, mL, mR, mT, mB, rowH, xL, xR };
+  }, [meta, studies]);
+
+  return (
+    <div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+          {ar ? 'أدخل البيانات (TSV): الدراسة | حجم الأثر | SE' : 'Enter data (TSV): Study | Effect Size | SE'}
+        </label>
+        <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={7}
+          style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: `1px solid ${C.border}`, borderRadius: 8, padding: '8px 12px', color: C.text, fontFamily: 'inherit', fontSize: 11, boxSizing: 'border-box', resize: 'vertical', direction: 'ltr' }}/>
+      </div>
+      {meta ? (
+        <div>
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: '12px 16px', marginBottom: 14, fontSize: 11 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 8 }}>
+              <div>
+                <div style={{ fontWeight: 800, color: C.gold, marginBottom: 4 }}>{ar ? 'الآثار الثابتة' : 'Fixed Effects'}</div>
+                <span style={{ color: C.sub }}>ES = </span><b style={{ color: C.text }}>{meta.esFix.toFixed(3)}</b>
+                <span style={{ color: C.sub }}> 95% CI [</span><b style={{ color: C.text }}>{(meta.esFix - 1.96 * meta.seFix).toFixed(3)}, {(meta.esFix + 1.96 * meta.seFix).toFixed(3)}</b><span style={{ color: C.sub }}>]</span>
+                <span style={{ color: C.sub }}> p = </span><b style={{ color: meta.pFix < 0.05 ? C.gold : C.sub }}>{meta.pFix < 0.001 ? '<.001' : meta.pFix.toFixed(3)}</b>
+              </div>
+              <div>
+                <div style={{ fontWeight: 800, color: '#5eead4', marginBottom: 4 }}>{ar ? 'الآثار العشوائية (D-L)' : 'Random Effects (D-L)'}</div>
+                <span style={{ color: C.sub }}>ES = </span><b style={{ color: C.text }}>{meta.esRand.toFixed(3)}</b>
+                <span style={{ color: C.sub }}> 95% CI [</span><b style={{ color: C.text }}>{(meta.esRand - 1.96 * meta.seRand).toFixed(3)}, {(meta.esRand + 1.96 * meta.seRand).toFixed(3)}</b><span style={{ color: C.sub }}>]</span>
+                <span style={{ color: C.sub }}> p = </span><b style={{ color: meta.pRand < 0.05 ? '#5eead4' : C.sub }}>{meta.pRand < 0.001 ? '<.001' : meta.pRand.toFixed(3)}</b>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+              <span style={{ color: C.sub }}>Q({meta.df}) = <b style={{ color: C.text }}>{meta.Q.toFixed(2)}</b></span>
+              <span style={{ color: C.sub }}>p(Q) = <b style={{ color: C.text }}>{meta.pQ.toFixed(3)}</b></span>
+              <span style={{ color: C.sub }}>I² = <b style={{ color: meta.I2 > 75 ? '#f87171' : meta.I2 > 50 ? C.gold : '#4ade80' }}>{meta.I2.toFixed(1)}%</b></span>
+              <span style={{ color: C.sub }}>τ² = <b style={{ color: C.text }}>{meta.tau2.toFixed(4)}</b></span>
+              <span style={{ color: C.sub }}>k = <b style={{ color: C.text }}>{meta.k}</b></span>
+            </div>
+          </div>
+          {fp && (() => {
+            const ticks = Array.from({ length: 5 }, (_, i) => fp.xL + i * (fp.xR - fp.xL) / 4);
+            return (
+              <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14, marginBottom: 14, overflowX: 'auto' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.gold, marginBottom: 8 }}>🌲 Forest Plot</div>
+                <svg width={fp.W} height={fp.H} style={{ direction: 'ltr', display: 'block' }}>
+                  <line x1={fp.x0} y1={fp.mT} x2={fp.x0} y2={fp.H - fp.mB} stroke="rgba(255,255,255,0.12)" strokeDasharray="3 2"/>
+                  {ticks.map((v, i) => {
+                    const x = fp.xs(v);
+                    return (
+                      <g key={i}>
+                        <line x1={x} y1={fp.H - fp.mB} x2={x} y2={fp.H - fp.mB + 5} stroke={C.sub}/>
+                        <text x={x} y={fp.H - fp.mB + 16} textAnchor="middle" fill={C.sub} fontSize={9}>{v.toFixed(2)}</text>
+                      </g>
+                    );
+                  })}
+                  <text x={fp.mL + (fp.W - fp.mL - fp.mR) / 2} y={fp.H - 8} textAnchor="middle" fill={C.sub} fontSize={10}>{ar ? 'حجم الأثر' : 'Effect Size'}</text>
+                  {studies.map((s, i) => {
+                    const y = fp.mT + i * fp.rowH + fp.rowH / 2;
+                    const sq = Math.sqrt(meta.wi[i] / fp.maxW) * 7 + 2;
+                    const lo = fp.xs(s.d - 1.96 * s.se), hi = fp.xs(s.d + 1.96 * s.se), cx = fp.xs(s.d);
+                    return (
+                      <g key={i}>
+                        <text x={fp.mL - 8} y={y + 4} textAnchor="end" fill={C.sub} fontSize={10}>{s.name}</text>
+                        <line x1={lo} y1={y} x2={hi} y2={y} stroke="#93c5fd" strokeWidth={1.5}/>
+                        <line x1={lo} y1={y - 4} x2={lo} y2={y + 4} stroke="#93c5fd" strokeWidth={1.5}/>
+                        <line x1={hi} y1={y - 4} x2={hi} y2={y + 4} stroke="#93c5fd" strokeWidth={1.5}/>
+                        <rect x={cx - sq / 2} y={y - sq / 2} width={sq} height={sq} fill={C.gold}/>
+                        <text x={fp.W - fp.mR + 6} y={y + 4} fill={C.sub} fontSize={9}>{s.d.toFixed(2)} [{(s.d - 1.96 * s.se).toFixed(2)}, {(s.d + 1.96 * s.se).toFixed(2)}]</text>
+                      </g>
+                    );
+                  })}
+                  {(() => {
+                    const y = fp.mT + studies.length * fp.rowH + fp.rowH / 2;
+                    const lo = fp.xs(meta.esFix - 1.96 * meta.seFix), hi = fp.xs(meta.esFix + 1.96 * meta.seFix), cx = fp.xs(meta.esFix);
+                    return (
+                      <g>
+                        <line x1={fp.mL - 8} y1={y} x2={fp.W - fp.mR} y2={y} stroke="rgba(255,255,255,0.06)"/>
+                        <text x={fp.mL - 8} y={y + 4} textAnchor="end" fill={C.gold} fontSize={10} fontWeight="bold">{ar ? 'مجمَّع (ثابت)' : 'Pooled (Fixed)'}</text>
+                        <polygon points={`${cx},${y - 6} ${hi},${y} ${cx},${y + 6} ${lo},${y}`} fill={C.gold} opacity={0.85}/>
+                      </g>
+                    );
+                  })()}
+                  {(() => {
+                    const y = fp.mT + (studies.length + 1) * fp.rowH + fp.rowH / 2;
+                    const lo = fp.xs(meta.esRand - 1.96 * meta.seRand), hi = fp.xs(meta.esRand + 1.96 * meta.seRand), cx = fp.xs(meta.esRand);
+                    return (
+                      <g>
+                        <text x={fp.mL - 8} y={y + 4} textAnchor="end" fill="#5eead4" fontSize={10} fontWeight="bold">{ar ? 'مجمَّع (عشوائي)' : 'Pooled (Random)'}</text>
+                        <polygon points={`${cx},${y - 6} ${hi},${y} ${cx},${y + 6} ${lo},${y}`} fill="#5eead4" opacity={0.85}/>
+                      </g>
+                    );
+                  })()}
+                </svg>
+              </div>
+            );
+          })()}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.gold, marginBottom: 6 }}>🔺 {ar ? 'Funnel Plot — اختبار تحيّز النشر' : 'Funnel Plot — Publication Bias Check'}</div>
+            <ResponsiveContainer width="100%" height={220}>
+              <ScatterChart margin={{ top: 4, right: 24, left: 0, bottom: 20 }} style={{ direction: 'ltr' }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)"/>
+                <XAxis type="number" dataKey="es" name={ar ? 'حجم الأثر' : 'Effect Size'} tick={{ fill: C.sub, fontSize: 10 }}
+                  label={{ value: ar ? 'حجم الأثر' : 'Effect Size', position: 'insideBottom', offset: -8, fill: C.sub, fontSize: 10 }}/>
+                <YAxis type="number" dataKey="se" name="SE" reversed tick={{ fill: C.sub, fontSize: 10 }}
+                  label={{ value: 'SE', angle: -90, position: 'insideLeft', fill: C.sub, fontSize: 10 }}/>
+                <Tooltip contentStyle={ttStyle} cursor={{ strokeDasharray: '3 3' }} formatter={(v: number) => v.toFixed(3)}/>
+                <ReferenceLine x={meta.esRand} stroke="#5eead4" strokeDasharray="4 3"/>
+                <Scatter data={studies.map(s => ({ es: s.d, se: s.se }))} fill={C.gold}/>
+              </ScatterChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      ) : (
+        <p style={{ color: C.sub, fontSize: 12 }}>{ar ? 'أدخل دراستَين على الأقل' : 'Enter at least 2 studies'}</p>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── PCA (Principal Component Analysis) ───────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+function PcaAnalysis({ ar }: { ar: boolean }) {
+  const [raw, setRaw] = useState('');
+  const ttStyle = { background: '#0d172d', border: `1px solid ${C.border}`, fontSize: 11 };
+
+  const parsed = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim());
+    if (!lines.length) return null;
+    const first = lines[0].split(/[\t,\s]+/);
+    const hasHdr = isNaN(+first[0]);
+    const headers = hasHdr ? first : first.map((_, i) => `V${i + 1}`);
+    const p = headers.length;
+    const rows = (hasHdr ? lines.slice(1) : lines)
+      .map(l => l.trim().split(/[\t,\s]+/).map(Number).slice(0, p))
+      .filter(r => r.length === p && r.every(v => isFinite(v)));
+    if (rows.length < p + 1 || p < 2) return null;
+    return { headers, rows, n: rows.length, p };
+  }, [raw]);
+
+  const pca = useMemo(() => {
+    if (!parsed) return null;
+    const { headers, rows, n } = parsed;
+    const means = headers.map((_, j) => rows.reduce((a, r) => a + r[j], 0) / n);
+    const stds  = headers.map((_, j) => {
+      const col = rows.map(r => r[j]);
+      return Math.sqrt(col.reduce((a, v) => a + (v - means[j]) ** 2, 0) / (n - 1));
+    });
+    const Z = rows.map(r => r.map((v, j) => stds[j] > 1e-10 ? (v - means[j]) / stds[j] : 0));
+    const R = faCorrMat(Z);
+    const { values: eigVals, vectors: eigVecs } = jacobiEigen(R);
+    const eigV = eigVals.map(v => Math.max(0, v));
+    const tot  = eigV.reduce((a, b) => a + b, 0) || 1;
+    const pctVar = eigV.map(v => (v / tot) * 100);
+    const cumVar = pctVar.reduce<number[]>((acc, v) => [...acc, (acc.at(-1) ?? 0) + v], []);
+    const scores = Z.map(row => [0, 1].map(k => row.reduce((a, v, j) => a + v * (eigVecs[k]?.[j] ?? 0), 0)));
+    return { eigV, eigVecs, pctVar, cumVar, scores, p: parsed.p, headers };
+  }, [parsed]);
+
+  return (
+    <div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+          {ar ? 'البيانات الرقمية (CSV/TSV) رأس اختياري — ≥ عمودَين:' : 'Numeric data (CSV/TSV) optional header — ≥ 2 columns:'}
+        </label>
+        <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={5}
+          placeholder={'X1,X2,X3\n2.1,3.4,1.2\n3.5,2.1,4.3\n1.0,5.0,2.0\n...'}
+          style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: `1px solid ${C.border}`, borderRadius: 8, padding: '8px 12px', color: C.text, fontFamily: 'inherit', fontSize: 11, boxSizing: 'border-box', resize: 'vertical', direction: 'ltr' }}/>
+        {parsed && <span style={{ fontSize: 10, color: C.sub }}>n = {parsed.n}, p = {parsed.p}</span>}
+        {raw && !parsed && <span style={{ fontSize: 10, color: '#f87171' }}>{ar ? 'يلزم: ≥ عمودَين، صفوف > p، أرقام فقط' : 'Need: ≥2 cols, rows > p, all numeric'}</span>}
+      </div>
+      {pca && (
+        <div>
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 14px', marginBottom: 12, overflowX: 'auto' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.gold, marginBottom: 6 }}>{ar ? 'القيم الذاتية والتباين المُفسَّر' : 'Eigenvalues & Variance Explained'}</div>
+            <table style={{ borderCollapse: 'collapse', fontSize: 11, width: '100%' }}>
+              <thead>
+                <tr>{['PC', ar ? 'القيمة الذاتية' : 'Eigenvalue', ar ? 'تباين %' : 'Var %', ar ? 'تراكمي %' : 'Cum %'].map(h => (
+                  <th key={h} style={{ color: C.gold, fontWeight: 700, padding: '4px 10px', borderBottom: `1px solid ${C.border}`, textAlign: 'center' }}>{h}</th>
+                ))}</tr>
+              </thead>
+              <tbody>
+                {pca.eigV.map((v, i) => (
+                  <tr key={i} style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent' }}>
+                    <td style={{ color: C.text, padding: '4px 10px', textAlign: 'center', fontWeight: 600 }}>PC{i + 1}</td>
+                    <td style={{ color: '#93c5fd', padding: '4px 10px', textAlign: 'center' }}>{v.toFixed(4)}</td>
+                    <td style={{ padding: '4px 10px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>
+                        <div style={{ background: 'rgba(201,168,76,0.5)', height: 6, width: `${Math.round(Math.min(pca.pctVar[i], 100) * 0.55)}px`, borderRadius: 3, minWidth: 3 }}/>
+                        <span style={{ color: C.text }}>{pca.pctVar[i].toFixed(1)}%</span>
+                      </div>
+                    </td>
+                    <td style={{ color: pca.cumVar[i] >= 80 ? '#4ade80' : C.text, padding: '4px 10px', textAlign: 'center', fontWeight: pca.cumVar[i] >= 80 ? 700 : 400 }}>{pca.cumVar[i].toFixed(1)}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.gold, marginBottom: 6 }}>{ar ? 'رسم Scree — القيم الذاتية' : 'Scree Plot — Eigenvalues'}</div>
+            <ResponsiveContainer width="100%" height={190}>
+              <ComposedChart data={pca.eigV.map((v, i) => ({ pc: `PC${i + 1}`, eig: +v.toFixed(3) }))}
+                margin={{ top: 4, right: 20, left: 0, bottom: 4 }} style={{ direction: 'ltr' }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)"/>
+                <XAxis dataKey="pc" tick={{ fill: C.sub, fontSize: 10 }}/>
+                <YAxis tick={{ fill: C.sub, fontSize: 10 }}/>
+                <Tooltip contentStyle={ttStyle}/>
+                <ReferenceLine y={1} stroke={C.gold} strokeDasharray="4 3" label={{ value: 'Kaiser = 1', fill: C.gold, fontSize: 9, position: 'right' }}/>
+                <Bar dataKey="eig" fill="rgba(147,197,253,0.35)" maxBarSize={32} name={ar ? 'القيمة الذاتية' : 'Eigenvalue'}/>
+                <Line type="monotone" dataKey="eig" stroke="#93c5fd" dot={{ fill: C.gold, r: 4 }} strokeWidth={2} name=" "/>
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 14px', marginBottom: 12, overflowX: 'auto' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.gold, marginBottom: 6 }}>{ar ? 'مصفوفة التشبعات (Component Loadings)' : 'Component Loading Matrix'}</div>
+            <table style={{ borderCollapse: 'collapse', fontSize: 11 }}>
+              <thead>
+                <tr>
+                  <th style={{ color: C.sub, padding: '3px 10px', textAlign: 'start' }}>{ar ? 'المتغير' : 'Variable'}</th>
+                  {pca.eigV.slice(0, Math.min(pca.p, 6)).map((_, k) => (
+                    <th key={k} style={{ color: C.gold, padding: '3px 10px', textAlign: 'center' }}>PC{k + 1}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {pca.headers.map((h, vi) => (
+                  <tr key={vi}>
+                    <td style={{ color: C.text, padding: '3px 10px', fontWeight: 600 }}>{h}</td>
+                    {pca.eigVecs.slice(0, Math.min(pca.p, 6)).map((comp, k) => {
+                      const v = comp[vi] ?? 0;
+                      return <td key={k} style={{ color: Math.abs(v) >= 0.4 ? C.gold : C.sub, padding: '3px 10px', textAlign: 'center', fontWeight: Math.abs(v) >= 0.4 ? 700 : 400 }}>{v.toFixed(3)}</td>;
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {pca.scores.length >= 3 && (
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.gold, marginBottom: 6 }}>
+                {ar ? `Biplot — PC1 (${pca.pctVar[0]?.toFixed(1)}%) × PC2 (${pca.pctVar[1]?.toFixed(1)}%)` : `Biplot — PC1 (${pca.pctVar[0]?.toFixed(1)}%) × PC2 (${pca.pctVar[1]?.toFixed(1)}%)`}
+              </div>
+              <ResponsiveContainer width="100%" height={250}>
+                <ScatterChart margin={{ top: 4, right: 20, left: 0, bottom: 20 }} style={{ direction: 'ltr' }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)"/>
+                  <XAxis type="number" dataKey="pc1" name="PC1" tick={{ fill: C.sub, fontSize: 10 }}
+                    label={{ value: `PC1 (${pca.pctVar[0]?.toFixed(1)}%)`, position: 'insideBottom', offset: -8, fill: C.sub, fontSize: 10 }}/>
+                  <YAxis type="number" dataKey="pc2" name="PC2" tick={{ fill: C.sub, fontSize: 10 }}
+                    label={{ value: `PC2 (${pca.pctVar[1]?.toFixed(1)}%)`, angle: -90, position: 'insideLeft', fill: C.sub, fontSize: 10 }}/>
+                  <Tooltip contentStyle={ttStyle} formatter={(v: number) => v.toFixed(3)}/>
+                  <ReferenceLine x={0} stroke="rgba(255,255,255,0.12)"/>
+                  <ReferenceLine y={0} stroke="rgba(255,255,255,0.12)"/>
+                  <Scatter data={pca.scores.map((s, i) => ({ pc1: +s[0].toFixed(3), pc2: +s[1].toFixed(3), i: i + 1 }))} fill={C.gold} opacity={0.8}/>
+                </ScatterChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── KAPLAN-MEIER SURVIVAL ANALYSIS ───────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+const KM_DEF_AR = `الوقت\tالحدث\tالمجموعة
+5\t1\tتجريبي
+10\t0\tتجريبي
+12\t1\tتجريبي
+18\t1\tتجريبي
+20\t0\tتجريبي
+25\t1\tتجريبي
+8\t1\tضابط
+15\t1\tضابط
+16\t0\tضابط
+22\t1\tضابط
+28\t0\tضابط
+30\t1\tضابط`;
+
+const KM_DEF_EN = `time\tevent\tgroup
+5\t1\tTreatment
+10\t0\tTreatment
+12\t1\tTreatment
+18\t1\tTreatment
+20\t0\tTreatment
+25\t1\tTreatment
+8\t1\tControl
+15\t1\tControl
+16\t0\tControl
+22\t1\tControl
+28\t0\tControl
+30\t1\tControl`;
+
+function kmEstimate(obs: { time: number; event: number }[]): { t: number[]; s: number[]; lo: number[]; hi: number[] } {
+  const sorted = [...obs].sort((a, b) => a.time - b.time);
+  const t = [0], s = [1], lo = [1], hi = [1];
+  let S = 1, nRisk = sorted.length, gw = 0;
+  for (let i = 0; i < sorted.length; ) {
+    const time = sorted[i].time;
+    let j = i, d = 0;
+    while (j < sorted.length && sorted[j].time === time) { if (sorted[j].event === 1) d++; j++; }
+    if (d > 0) {
+      S *= (1 - d / nRisk);
+      if (nRisk > d) gw += d / (nRisk * (nRisk - d));
+      const se = S * Math.sqrt(gw);
+      const ll = Math.log(-Math.log(Math.max(S, 1e-9)));
+      const dlt = se > 0 && S > 0 ? 1.96 * se / (S * Math.abs(Math.log(Math.max(S, 1e-9)))) : 0;
+      t.push(time); s.push(+S.toFixed(4));
+      lo.push(+Math.max(0, Math.exp(-Math.exp(ll + dlt))).toFixed(4));
+      hi.push(+Math.min(1, Math.exp(-Math.exp(ll - dlt))).toFixed(4));
+    }
+    nRisk -= (j - i); i = j;
+  }
+  return { t, s, lo, hi };
+}
+
+function logRankTest(obs: { time: number; event: number; group: string }[], g1: string, g2: string): { chi2: number; p: number } {
+  const events = [...new Set(obs.filter(o => o.event === 1).map(o => o.time))].sort((a, b) => a - b);
+  let U = 0, V = 0;
+  for (const ev of events) {
+    const n1 = obs.filter(o => o.group === g1 && o.time >= ev).length;
+    const n2 = obs.filter(o => o.group === g2 && o.time >= ev).length;
+    const n = n1 + n2; if (n < 2) continue;
+    const d1 = obs.filter(o => o.group === g1 && o.time === ev && o.event === 1).length;
+    const d  = d1 + obs.filter(o => o.group === g2 && o.time === ev && o.event === 1).length;
+    U += d1 - n1 * d / n;
+    V += n1 * n2 * d * (n - d) / (n * n * Math.max(n - 1, 1));
+  }
+  const chi2 = V > 1e-10 ? U * U / V : 0;
+  return { chi2, p: chiSqP(chi2, 1) };
+}
+
+function KaplanMeier({ ar }: { ar: boolean }) {
+  const [raw, setRaw] = useState(ar ? KM_DEF_AR : KM_DEF_EN);
+  const ttStyle = { background: '#0d172d', border: `1px solid ${C.border}`, fontSize: 11 };
+
+  const obs = useMemo(() => raw.trim().split('\n').slice(1).map(l => {
+    const [time, event, group] = l.split(/[\t,]+/);
+    return { time: +time, event: +event, group: (group || 'All').trim() };
+  }).filter(r => isFinite(r.time) && (r.event === 0 || r.event === 1)), [raw]);
+
+  const groups  = useMemo(() => [...new Set(obs.map(o => o.group))], [obs]);
+  const hasGrps = groups.length >= 2;
+
+  const curves = useMemo(() => (hasGrps ? groups : ['All']).map(g => {
+    const sub = hasGrps ? obs.filter(o => o.group === g) : obs;
+    return { group: g, ...kmEstimate(sub) };
+  }), [obs, groups, hasGrps]);
+
+  const lr = useMemo(() => (hasGrps && groups.length === 2 ? logRankTest(obs, groups[0], groups[1]) : null), [obs, groups, hasGrps]);
+
+  const chartData = useMemo(() => {
+    const allT = [...new Set(curves.flatMap(c => c.t))].sort((a, b) => a - b);
+    return allT.map(time => {
+      const row: Record<string, number | null> = { t: time };
+      curves.forEach(c => {
+        const idx = c.t.reduceRight((a: number, ct: number, i: number) => a === -1 && ct <= time ? i : a, -1);
+        row[c.group]            = idx >= 0 ? c.s[idx]  : null;
+        row[`${c.group}_lo`]    = idx >= 0 ? c.lo[idx] : null;
+        row[`${c.group}_hi`]    = idx >= 0 ? c.hi[idx] : null;
+      });
+      return row;
+    });
+  }, [curves]);
+
+  const COLS = [C.gold, '#5eead4', '#f87171', '#c4b5fd'];
+
+  return (
+    <div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+          {ar ? 'البيانات (TSV): وقت | حدث (1=حدث، 0=مراقَب) | مجموعة (اختياري)' : 'Data (TSV): time | event (1=event, 0=censored) | group (optional)'}
+        </label>
+        <textarea value={raw} onChange={e => setRaw(e.target.value)} rows={7}
+          style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: `1px solid ${C.border}`, borderRadius: 8, padding: '8px 12px', color: C.text, fontFamily: 'inherit', fontSize: 11, boxSizing: 'border-box', resize: 'vertical', direction: 'ltr' }}/>
+      </div>
+      {obs.length >= 3 ? (
+        <div>
+          {lr && (
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 16px', marginBottom: 12, fontSize: 11 }}>
+              <b style={{ color: C.gold }}>{ar ? 'اختبار Log-Rank' : 'Log-Rank Test'}</b>
+              <span style={{ color: C.sub, marginInlineStart: 10 }}>χ²(1) = </span><b style={{ color: C.text }}>{lr.chi2.toFixed(3)}</b>
+              <span style={{ color: C.sub }}>, p = </span><b style={{ color: lr.p < 0.05 ? '#4ade80' : C.sub }}>{lr.p < 0.001 ? '<.001' : lr.p.toFixed(3)}</b>
+              {lr.p < 0.05 && <span style={{ color: '#4ade80', marginInlineStart: 8 }}>{ar ? '(فروق دالة)' : '(significant)'}</span>}
+            </div>
+          )}
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.gold, marginBottom: 6 }}>
+            📈 {ar ? 'منحنى Kaplan-Meier للبقاء' : 'Kaplan-Meier Survival Curve'}
+          </div>
+          <ResponsiveContainer width="100%" height={290}>
+            <LineChart data={chartData} margin={{ top: 4, right: 20, left: 0, bottom: 20 }} style={{ direction: 'ltr' }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)"/>
+              <XAxis dataKey="t" type="number" tick={{ fill: C.sub, fontSize: 10 }}
+                label={{ value: ar ? 'الوقت' : 'Time', position: 'insideBottom', offset: -8, fill: C.sub, fontSize: 10 }}/>
+              <YAxis domain={[0, 1]} tick={{ fill: C.sub, fontSize: 10 }}
+                label={{ value: 'S(t)', angle: -90, position: 'insideLeft', fill: C.sub, fontSize: 10 }}/>
+              <Tooltip contentStyle={ttStyle} formatter={(v: number) => v.toFixed(4)}/>
+              <Legend/>
+              <ReferenceLine y={0.5} stroke="rgba(255,255,255,0.12)" strokeDasharray="3 2"/>
+              {curves.map((c, i) => (
+                <Line key={c.group} type="stepAfter" dataKey={c.group} stroke={COLS[i % COLS.length]} dot={false} strokeWidth={2.5} connectNulls={false} isAnimationActive={false}/>
+              ))}
+              {curves.map((c, i) => (
+                <Line key={`lo_${c.group}`} type="stepAfter" dataKey={`${c.group}_lo`} stroke={COLS[i % COLS.length]} dot={false} strokeWidth={1} strokeDasharray="3 2" strokeOpacity={0.35} legendType="none" isAnimationActive={false}/>
+              ))}
+              {curves.map((c, i) => (
+                <Line key={`hi_${c.group}`} type="stepAfter" dataKey={`${c.group}_hi`} stroke={COLS[i % COLS.length]} dot={false} strokeWidth={1} strokeDasharray="3 2" strokeOpacity={0.35} legendType="none" isAnimationActive={false}/>
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 14px', marginTop: 10, fontSize: 11 }}>
+            <b style={{ color: C.gold }}>{ar ? 'الوسيط الزمني للبقاء:' : 'Median Survival Time:'}</b>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 5 }}>
+              {curves.map((c, i) => {
+                const medIdx = c.s.findIndex(sv => sv <= 0.5);
+                const med = medIdx >= 0 ? c.t[medIdx] : (ar ? 'لم يُبلَغ' : 'Not reached');
+                return <span key={i}><b style={{ color: COLS[i % COLS.length] }}>{c.group}:</b> <span style={{ color: C.text }}>{med}</span></span>;
+              })}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <p style={{ color: C.sub, fontSize: 12 }}>{ar ? 'أدخل 3 ملاحظات على الأقل' : 'Enter at least 3 observations'}</p>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── K-MEANS CLUSTER ANALYSIS ─────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+function kMeansRun(data: number[][], K: number): { assignments: number[]; centroids: number[][]; wcss: number } {
+  const n = data.length, dim = data[0].length;
+  const cents: number[][] = [data[Math.floor(Math.random() * n)]];
+  for (let i = 1; i < K; i++) {
+    const dists = data.map(p => Math.min(...cents.map(c => c.reduce((a, v, j) => a + (v - p[j]) ** 2, 0))));
+    const total = dists.reduce((a, b) => a + b, 0) || 1;
+    let r = Math.random() * total, idx = 0;
+    for (; idx < n - 1 && r > 0; idx++) r -= dists[idx];
+    cents.push([...data[idx]]);
+  }
+  let assignments = new Array<number>(n).fill(0);
+  for (let iter = 0; iter < 150; iter++) {
+    const newA = data.map(p => {
+      let best = 0, bestD = Infinity;
+      for (let c = 0; c < K; c++) { const d = cents[c].reduce((a, v, j) => a + (v - p[j]) ** 2, 0); if (d < bestD) { bestD = d; best = c; } }
+      return best;
+    });
+    if (newA.every((a, i) => a === assignments[i])) break;
+    assignments = newA;
+    for (let c = 0; c < K; c++) {
+      const pts = data.filter((_, i) => assignments[i] === c);
+      if (!pts.length) continue;
+      cents[c] = Array.from({ length: dim }, (_, j) => pts.reduce((a, p) => a + p[j], 0) / pts.length);
+    }
+  }
+  const wcss = data.reduce((a, p, i) => a + cents[assignments[i]].reduce((s, v, j) => s + (v - p[j]) ** 2, 0), 0);
+  return { assignments, centroids: cents, wcss };
+}
+
+function KmCluster({ ar }: { ar: boolean }) {
+  const [raw, setRaw]     = useState('');
+  const [k, setK]         = useState(3);
+  const [running, setRunning] = useState(false);
+  const [res, setRes] = useState<{ assignments: number[]; centroids: number[][]; elbow: { k: number; wcss: number }[] } | null>(null);
+  const ttStyle = { background: '#0d172d', border: `1px solid ${C.border}`, fontSize: 11 };
+  const COLS = ['#C9A84C', '#5eead4', '#f87171', '#c4b5fd', '#4ade80', '#93c5fd', '#fb923c', '#a78bfa'];
+
+  const parsed = useMemo(() => {
+    const lines = raw.trim().split('\n').filter(l => l.trim());
+    if (!lines.length) return null;
+    const first = lines[0].split(/[\t,\s]+/);
+    const hasHdr = isNaN(+first[0]);
+    const headers = hasHdr ? first : first.map((_, i) => `V${i + 1}`);
+    const p = headers.length;
+    const rows = (hasHdr ? lines.slice(1) : lines)
+      .map(l => l.trim().split(/[\t,\s]+/).map(Number).slice(0, p))
+      .filter(r => r.length >= 2 && r.every(v => isFinite(v)));
+    if (!rows.length) return null;
+    return { headers, rows, p: Math.min(p, rows[0]?.length ?? p) };
+  }, [raw]);
+
+  const run = () => {
+    if (!parsed || parsed.rows.length < k + 1) return;
+    setRunning(true);
+    setTimeout(() => {
+      const data = parsed.rows;
+      const elbow = Array.from({ length: Math.min(8, data.length - 1) }, (_, ki) => {
+        const best = Array.from({ length: 5 }, () => kMeansRun(data, ki + 1)).reduce((a, b) => b.wcss < a.wcss ? b : a);
+        return { k: ki + 1, wcss: +best.wcss.toFixed(2) };
+      });
+      const best = Array.from({ length: 7 }, () => kMeansRun(data, k)).reduce((a, b) => b.wcss < a.wcss ? b : a);
+      setRes({ assignments: best.assignments, centroids: best.centroids, elbow });
+      setRunning(false);
+    }, 30);
+  };
+
+  return (
+    <div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ fontSize: 11, color: C.sub, display: 'block', marginBottom: 4 }}>
+          {ar ? 'البيانات (CSV/TSV) — ≥ عمودَين رقميَّين (رأس اختياري):' : 'Data (CSV/TSV) — ≥ 2 numeric columns (optional header):'}
+        </label>
+        <textarea value={raw} onChange={e => { setRaw(e.target.value); setRes(null); }} rows={5}
+          placeholder={'X1,X2\n2.1,3.4\n3.5,2.1\n1.2,4.5\n5.0,1.0\n4.8,4.7\n...'}
+          style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: `1px solid ${C.border}`, borderRadius: 8, padding: '8px 12px', color: C.text, fontFamily: 'inherit', fontSize: 11, boxSizing: 'border-box', resize: 'vertical', direction: 'ltr' }}/>
+        {parsed && <span style={{ fontSize: 10, color: C.sub }}>n = {parsed.rows.length}, p = {parsed.p}</span>}
+      </div>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 11, color: C.sub }}>{ar ? 'K (عدد العناقيد):' : 'K (clusters):'}</span>
+        <input type="number" value={k} onChange={e => setK(Math.max(2, Math.min(10, +e.target.value)))} min={2} max={10}
+          style={{ width: 58, background: 'rgba(0,0,0,0.3)', border: `1px solid ${C.border}`, borderRadius: 6, padding: '4px 8px', color: C.text, fontFamily: 'inherit', fontSize: 12 }}/>
+        <button onClick={run} disabled={running || !parsed || parsed.rows.length < k + 1}
+          style={{ background: running ? 'rgba(255,255,255,0.04)' : 'rgba(201,168,76,0.18)', border: `1px solid ${running ? C.border : C.gold}`, borderRadius: 8, padding: '8px 18px', color: running ? C.sub : C.gold, cursor: running ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700 }}>
+          {running ? (ar ? 'جارٍ التجميع...' : 'Clustering…') : (ar ? `▶ K-Means (k = ${k})` : `▶ K-Means (k = ${k})`)}
+        </button>
+      </div>
+      {res && parsed && (
+        <div>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.gold, marginBottom: 6 }}>
+              🔧 {ar ? 'منحنى المرفق (Elbow) — اختر K عند نقطة الانكسار' : 'Elbow Curve — choose K at the bend point'}
+            </div>
+            <ResponsiveContainer width="100%" height={190}>
+              <ComposedChart data={res.elbow} margin={{ top: 4, right: 20, left: 0, bottom: 4 }} style={{ direction: 'ltr' }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)"/>
+                <XAxis dataKey="k" tick={{ fill: C.sub, fontSize: 10 }} label={{ value: 'k', position: 'insideBottom', offset: -4, fill: C.sub, fontSize: 10 }}/>
+                <YAxis tick={{ fill: C.sub, fontSize: 10 }} label={{ value: 'WCSS', angle: -90, position: 'insideLeft', fill: C.sub, fontSize: 10 }}/>
+                <Tooltip contentStyle={ttStyle}/>
+                <ReferenceLine x={k} stroke={C.gold} strokeDasharray="4 3" label={{ value: `k=${k}`, fill: C.gold, fontSize: 9 }}/>
+                <Line type="monotone" dataKey="wcss" stroke="#93c5fd" dot={{ fill: C.gold, r: 4 }} strokeWidth={2} name="WCSS"/>
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+          {parsed.rows[0]?.length >= 2 && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.gold, marginBottom: 6 }}>
+                🔷 {ar ? `مخطط التبعثر — ${parsed.rows.length} نقطة في ${k} عناقيد` : `Scatter Plot — ${parsed.rows.length} points · ${k} clusters`}
+              </div>
+              <ResponsiveContainer width="100%" height={260}>
+                <ScatterChart margin={{ top: 4, right: 20, left: 0, bottom: 20 }} style={{ direction: 'ltr' }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)"/>
+                  <XAxis type="number" dataKey="x" name={parsed.headers[0] ?? 'X1'} tick={{ fill: C.sub, fontSize: 10 }}/>
+                  <YAxis type="number" dataKey="y" name={parsed.headers[1] ?? 'X2'} tick={{ fill: C.sub, fontSize: 10 }}/>
+                  <Tooltip contentStyle={ttStyle} cursor={{ strokeDasharray: '3 3' }}/>
+                  <Legend/>
+                  {Array.from({ length: k }, (_, ci) => (
+                    <Scatter key={ci} name={ar ? `عنقود ${ci + 1}` : `Cluster ${ci + 1}`}
+                      data={parsed.rows.filter((_, i) => res.assignments[i] === ci).map(r => ({ x: r[0], y: r[1] }))}
+                      fill={COLS[ci % COLS.length]} opacity={0.85}/>
+                  ))}
+                </ScatterChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 14px', fontSize: 11 }}>
+            <b style={{ color: C.gold }}>{ar ? 'ملخص العناقيد:' : 'Cluster Summary:'}</b>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 8 }}>
+              {Array.from({ length: k }, (_, ci) => {
+                const cnt = res.assignments.filter(a => a === ci).length;
+                return (
+                  <div key={ci} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '6px 12px' }}>
+                    <div style={{ color: COLS[ci % COLS.length], fontWeight: 700, marginBottom: 2 }}>{ar ? `عنقود ${ci + 1}` : `Cluster ${ci + 1}`}</div>
+                    <div style={{ color: C.text }}>n = {cnt} ({(cnt / parsed.rows.length * 100).toFixed(1)}%)</div>
+                    <div style={{ color: C.sub, fontSize: 10 }}>
+                      {ar ? 'مركز: ' : 'centroid: '}[{res.centroids[ci]?.slice(0, 4).map(v => v.toFixed(2)).join(', ')}{(res.centroids[ci]?.length ?? 0) > 4 ? '…' : ''}]
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // ── DATAHUB MAIN ─────────────────────────────────────────────────────────────
 // ════════════════════════════════════════════════════════════════════════════
 const SUBTABS_AR = [
   { key: 'wizard',     icon: '🧭', label: 'مرشد الاختيار الإحصائي', short: 'مرشد' },
   { key: 'explorer',   icon: '📁', label: 'مستكشف البيانات',     short: 'استكشاف' },
   { key: 'tsadvanced', icon: '📡', label: 'نماذج السلاسل الزمنية المتقدمة', short: 'ARIMA' },
+  { key: 'meta',       icon: '🌲', label: 'تحليل ميتا (Meta-Analysis)',        short: 'ميتا' },
+  { key: 'pca',        icon: '🔵', label: 'المكوّنات الرئيسية (PCA)',          short: 'PCA' },
+  { key: 'survival',   icon: '📈', label: 'تحليل البقاء (Kaplan-Meier)',       short: 'بقاء' },
+  { key: 'cluster',    icon: '🔷', label: 'تحليل عنقودي (K-Means)',            short: 'عنقود' },
   { key: 'desctable',  icon: '📋', label: 'جدول وصفي شامل',       short: 'جدول 1' },
   { key: 'freq',       icon: '📋', label: 'جدول تكراري',          short: 'تكراري' },
   { key: 'likert',     icon: '⚖️', label: 'مقياس ليكرت',          short: 'ليكرت' },
@@ -8177,7 +8805,11 @@ const SUBTABS_AR = [
 const SUBTABS_EN = [
   { key: 'wizard',      icon: '🧭', label: 'Analysis Wizard',     short: 'Wizard' },
   { key: 'explorer',    icon: '📁', label: 'Data Explorer',       short: 'Explore' },
-  { key: 'tsadvanced',  icon: '📡', label: 'Advanced Time Series Models', short: 'ARIMA' },
+  { key: 'tsadvanced',  icon: '📡', label: 'Advanced Time Series Models',    short: 'ARIMA' },
+  { key: 'meta',        icon: '🌲', label: 'Meta-Analysis (Forest + Funnel)', short: 'Meta' },
+  { key: 'pca',         icon: '🔵', label: 'Principal Component Analysis',   short: 'PCA' },
+  { key: 'survival',    icon: '📈', label: 'Survival Analysis (Kaplan-Meier)', short: 'Survival' },
+  { key: 'cluster',     icon: '🔷', label: 'K-Means Cluster Analysis',       short: 'Cluster' },
   { key: 'desctable',   icon: '📋', label: 'Descriptive Table',    short: 'Table 1' },
   { key: 'freq',        icon: '📋', label: 'Frequency Table',     short: 'Freq' },
   { key: 'likert',      icon: '⚖️', label: 'Likert Scale',        short: 'Likert' },
@@ -8323,6 +8955,58 @@ export default function DataHub() {
                 : 'ARIMA / SARIMA · Moving Averages (SMA/EMA/WMA) · Holt-Winters seasonal · Spectral Analysis (FFT) · Neural Network MLP · ACF/PACF diagnostics'}
             </p>
             <AdvTimeSeries ar={ar} />
+          </>
+        )}
+        {sub === 'meta' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🌲 {ar ? 'تحليل ميتا (Meta-Analysis)' : 'Meta-Analysis'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 18px' }}>
+              {ar
+                ? 'آثار ثابتة · آثار عشوائية DerSimonian-Laird · Forest Plot · Funnel Plot · تجانس التباين (Q, I², τ²)'
+                : 'Fixed & Random Effects (D-L) · Forest Plot · Funnel Plot · Heterogeneity (Q, I², τ²)'}
+            </p>
+            <MetaAnalysis ar={ar} />
+          </>
+        )}
+        {sub === 'pca' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🔵 {ar ? 'تحليل المكوّنات الرئيسية (PCA)' : 'Principal Component Analysis (PCA)'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 18px' }}>
+              {ar
+                ? 'تحويل البيانات · القيم والمتجهات الذاتية · مصفوفة التشبعات · رسم Scree · معيار Kaiser · Biplot (PC1 × PC2)'
+                : 'Standardize → Eigen-decomposition · Loading matrix · Scree plot · Kaiser rule · Biplot (PC1 × PC2)'}
+            </p>
+            <PcaAnalysis ar={ar} />
+          </>
+        )}
+        {sub === 'survival' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              📈 {ar ? 'تحليل البقاء — Kaplan-Meier' : 'Survival Analysis — Kaplan-Meier'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 18px' }}>
+              {ar
+                ? 'منحنى KM مع CI 95% (Greenwood) · اختبار Log-Rank بين المجموعات · الوسيط الزمني للبقاء · دعم البيانات المُراقَبة (Censored)'
+                : 'KM curve with 95% CI (Greenwood) · Log-Rank test · Median survival time · Censored observations support'}
+            </p>
+            <KaplanMeier ar={ar} />
+          </>
+        )}
+        {sub === 'cluster' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🔷 {ar ? 'التحليل العنقودي — K-Means' : 'K-Means Cluster Analysis'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 18px' }}>
+              {ar
+                ? 'K-Means++ تهيئة ذكية · منحنى المرفق (Elbow/WCSS) لاختيار K الأمثل · مخطط تبعثر ملوَّن · ملخص العناقيد وأحجامها ومراكزها'
+                : 'K-Means++ init · Elbow curve (WCSS) for optimal K · Colour-coded scatter plot · Cluster sizes & centroids'}
+            </p>
+            <KmCluster ar={ar} />
           </>
         )}
         {sub === 'corr'       && (
