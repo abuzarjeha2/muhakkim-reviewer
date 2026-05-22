@@ -3644,6 +3644,796 @@ function RocCurve({ ar }: { ar: boolean }) {
   );
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// ── ADVANCED TIME SERIES — module-level math helpers ─────────────────────
+function tsDiff(x: number[], d: number): number[] {
+  let y = [...x];
+  for (let i = 0; i < d; i++) y = y.slice(1).map((v, j) => v - y[j]);
+  return y;
+}
+function tsUndiff(diffed: number[], lastOrig: number, d: number): number[] {
+  let r = [...diffed];
+  for (let di = 0; di < d; di++) {
+    const out: number[] = [lastOrig];
+    for (let t = 0; t < r.length; t++) out.push(r[t] + out[out.length - 1]);
+    r = out.slice(1);
+  }
+  return r;
+}
+function tsAcf(x: number[], maxL: number): number[] {
+  const n = x.length, mu = x.reduce((a, b) => a + b, 0) / n;
+  const v = x.reduce((a, b) => a + (b - mu) ** 2, 0);
+  if (v < 1e-14) return new Array(maxL + 1).fill(0);
+  return Array.from({ length: maxL + 1 }, (_, k) => {
+    let c = 0; for (let t = k; t < n; t++) c += (x[t] - mu) * (x[t - k] - mu); return c / v;
+  });
+}
+function tsPacf(acfV: number[], maxL: number): number[] {
+  const res = [1, acfV[1] ?? 0]; let phi = [acfV[1] ?? 0];
+  for (let k = 2; k <= maxL; k++) {
+    let num = acfV[k] ?? 0, den = 1;
+    for (let j = 1; j < k; j++) { num -= (phi[j - 1] ?? 0) * (acfV[k - j] ?? 0); den -= (phi[j - 1] ?? 0) * (acfV[j] ?? 0); }
+    const pk = Math.abs(den) > 1e-12 ? num / den : 0;
+    phi = [...Array.from({ length: k - 1 }, (_, j) => (phi[j] ?? 0) - pk * (phi[k - 2 - j] ?? 0)), pk];
+    res.push(pk);
+  }
+  return res;
+}
+function tsYW(acfV: number[], p: number): number[] {
+  if (p === 0) return [];
+  let phi = [acfV[1] ?? 0], v = 1 - (acfV[1] ?? 0) ** 2;
+  for (let k = 2; k <= p; k++) {
+    let num = acfV[k] ?? 0;
+    for (let j = 1; j < k; j++) num -= (phi[j - 1] ?? 0) * (acfV[k - j] ?? 0);
+    const pk = v > 1e-12 ? num / v : 0;
+    phi = [...Array.from({ length: k - 1 }, (_, j) => (phi[j] ?? 0) - pk * (phi[k - 2 - j] ?? 0)), pk];
+    v *= (1 - pk ** 2);
+  }
+  return phi;
+}
+function tsFft(re: number[], im: number[]): [number[], number[]] {
+  const n = re.length, bits = Math.round(Math.log2(n));
+  const oR = [...re], oI = [...im];
+  for (let i = 0; i < n; i++) {
+    let r = 0; for (let b = 0; b < bits; b++) if ((i >> b) & 1) r |= 1 << (bits - 1 - b);
+    if (r > i) { [oR[i], oR[r]] = [oR[r], oR[i]]; [oI[i], oI[r]] = [oI[r], oI[i]]; }
+  }
+  for (let s = 1; s <= bits; s++) {
+    const m = 1 << s, mh = m >> 1, wr0 = Math.cos(-2 * Math.PI / m), wi0 = Math.sin(-2 * Math.PI / m);
+    for (let k = 0; k < n; k += m) {
+      let wr = 1, wi = 0;
+      for (let j = 0; j < mh; j++) {
+        const tr = wr * oR[k+j+mh] - wi * oI[k+j+mh], ti = wr * oI[k+j+mh] + wi * oR[k+j+mh];
+        oR[k+j+mh] = oR[k+j]-tr; oI[k+j+mh] = oI[k+j]-ti; oR[k+j] += tr; oI[k+j] += ti;
+        [wr, wi] = [wr*wr0 - wi*wi0, wr*wi0 + wi*wr0];
+      }
+    }
+  }
+  return [oR, oI];
+}
+function tsSpectrum(x: number[]): { freq: number; period: number; power: number }[] {
+  const mu = x.reduce((a, b) => a + b, 0) / x.length;
+  let n = 1; while (n < x.length) n <<= 1;
+  const re = [...x.map(v => v - mu), ...new Array(n - x.length).fill(0)];
+  const [fR, fI] = tsFft(re, new Array(n).fill(0));
+  const half = n >> 1;
+  return Array.from({ length: half - 1 }, (_, k) => {
+    const ki = k + 1, freq = ki / n, power = (fR[ki] ** 2 + fI[ki] ** 2) / (n * n);
+    return { freq: +freq.toFixed(5), period: +(1 / freq).toFixed(2), power: +power.toFixed(8) };
+  }).sort((a, b) => b.power - a.power);
+}
+type ArimaResult = { phi: number[]; theta: number[]; sigma: number; aic: number; bic: number; fcast: { t: number; f: number; lo: number; hi: number }[]; fitted: { t: number; v: number }[]; acfV: number[]; pacfV: number[] };
+function tsArima(y: number[], p: number, d: number, q: number, sD: number, sPer: number, h: number): ArimaResult {
+  // Differencing
+  let yd = tsDiff(y, d);
+  if (sD > 0 && sPer > 1) yd = tsDiff(yd, sD * sPer).filter((_, i) => i % 1 === 0); // simple seasonal diff approximation
+  const n = yd.length;
+  const mu = yd.reduce((a, b) => a + b, 0) / n;
+  const yc = yd.map(v => v - mu);
+  // ACF / PACF for identification
+  const maxL = Math.min(20, Math.floor(n / 2) - 1);
+  const acfV = tsAcf(yc, Math.max(maxL, p + q));
+  const pacfV = tsPacf(acfV, Math.max(maxL, p));
+  // AR via Yule-Walker
+  const phi = tsYW(acfV, p);
+  // Compute AR residuals
+  const resids: number[] = new Array(n).fill(0);
+  for (let t = p; t < n; t++) {
+    let yhat = 0; for (let i = 0; i < p; i++) yhat += (phi[i] ?? 0) * yc[t - 1 - i];
+    resids[t] = yc[t] - yhat;
+  }
+  // MA via gradient descent on innovations
+  let theta = new Array(q).fill(0.1);
+  if (q > 0) {
+    for (let iter = 0; iter < 80; iter++) {
+      const innov: number[] = new Array(n).fill(0);
+      for (let t = 0; t < n; t++) {
+        let yh = 0;
+        for (let i = 0; i < p && t-1-i >= 0; i++) yh += (phi[i] ?? 0) * yc[t-1-i];
+        for (let j = 0; j < q && t-1-j >= 0; j++) yh += (theta[j] ?? 0) * innov[t-1-j];
+        innov[t] = yc[t] - yh;
+      }
+      const gr = new Array(q).fill(0);
+      for (let t = q; t < n; t++) for (let j = 0; j < q; j++) if (t-1-j >= 0) gr[j] += -2 * innov[t] * innov[t-1-j];
+      for (let j = 0; j < q; j++) theta[j] -= 0.005 * gr[j] / n;
+    }
+  }
+  // Final innovations & sigma
+  const innov: number[] = new Array(n).fill(0);
+  const fitted: { t: number; v: number }[] = [];
+  for (let t = 0; t < n; t++) {
+    let yh = mu;
+    for (let i = 0; i < p && t-1-i >= 0; i++) yh += (phi[i] ?? 0) * yc[t-1-i];
+    for (let j = 0; j < q && t-1-j >= 0; j++) yh += (theta[j] ?? 0) * innov[t-1-j];
+    innov[t] = yc[t] - (yh - mu);
+    fitted.push({ t: d + t, v: yh });
+  }
+  const nEff = Math.max(n - p - q, 1);
+  const sigma2 = innov.slice(Math.max(p, q)).reduce((a, b) => a + b * b, 0) / nEff;
+  const sigma = Math.sqrt(sigma2);
+  const aic = nEff * Math.log(Math.max(sigma2, 1e-14)) + 2 * (p + q + 2);
+  const bic = nEff * Math.log(Math.max(sigma2, 1e-14)) + Math.log(nEff) * (p + q + 2);
+  // Forecast
+  const extYc = [...yc]; const extInn = [...innov];
+  const fcastD: number[] = [];
+  for (let hi = 0; hi < h; hi++) {
+    let yh = mu;
+    for (let i = 0; i < p; i++) yh += (phi[i] ?? 0) * (extYc[extYc.length-1-i] ?? 0);
+    for (let j = 0; j < q; j++) yh += (theta[j] ?? 0) * (extInn[extInn.length-1-j] ?? 0);
+    fcastD.push(yh); extYc.push(yh - mu); extInn.push(0);
+  }
+  const lastOrig = y[y.length - 1];
+  const fcastOrig = tsUndiff(fcastD, lastOrig, d);
+  const fcast = fcastOrig.map((f, i) => ({ t: y.length + i, f: +f.toFixed(4), lo: +(f - 1.96 * sigma * Math.sqrt(i + 1)).toFixed(4), hi: +(f + 1.96 * sigma * Math.sqrt(i + 1)).toFixed(4) }));
+  return { phi, theta, sigma, aic, bic, fcast, fitted, acfV: acfV.slice(0, maxL + 1), pacfV: pacfV.slice(0, maxL + 1) };
+}
+function tsHoltWinters(x: number[], alpha: number, beta: number, gamma: number, m: number, h: number) {
+  if (x.length < 2 * m) return { fitted: [] as number[], fcast: [] as number[], rmse: 0 };
+  const L0 = x.slice(0, m).reduce((a, b) => a + b, 0) / m;
+  const T0 = ((x.slice(m, 2*m).reduce((a, b) => a + b, 0) / m) - L0) / m;
+  const S = Array.from({ length: m }, (_, i) => x[i] - L0);
+  const fitted: number[] = []; let Lt = L0, Tt = T0;
+  for (let t = 0; t < x.length; t++) {
+    const sm = S[((t - m) % m + m) % m];
+    const Ln = alpha * (x[t] - sm) + (1 - alpha) * (Lt + Tt);
+    const Tn = beta * (Ln - Lt) + (1 - beta) * Tt;
+    S[t % m] = gamma * (x[t] - Lt - Tt) + (1 - gamma) * sm;
+    fitted.push(Lt + Tt + sm); Lt = Ln; Tt = Tn;
+  }
+  const res = fitted.map((f, i) => f - x[i]); const rmse = Math.sqrt(res.reduce((a, b) => a + b*b, 0) / fitted.length);
+  const fcast = Array.from({ length: h }, (_, i) => +(Lt + (i+1)*Tt + S[((x.length+i) % m + m) % m]).toFixed(4));
+  return { fitted: fitted.map(v => +v.toFixed(4)), fcast, rmse: +rmse.toFixed(4) };
+}
+function tsMlp(x: number[], lag: number, hidden: number, epochs: number) {
+  if (x.length <= lag + 1) return null;
+  const mn = Math.min(...x), mx = Math.max(...x), range = mx - mn || 1;
+  const xn = x.map(v => (v - mn) / range);
+  const Xs: number[][] = [], ys: number[] = [];
+  for (let t = lag; t < xn.length; t++) { Xs.push(xn.slice(t - lag, t)); ys.push(xn[t]); }
+  const rng = () => (Math.random() - 0.5) * 0.4;
+  let W1 = Array.from({ length: hidden }, () => Array.from({ length: lag }, rng));
+  let b1 = new Array(hidden).fill(0);
+  let W2 = Array.from({ length: hidden }, rng), b2 = 0;
+  const relu = (v: number) => Math.max(0, v);
+  for (let ep = 0; ep < epochs; ep++) {
+    const dW1 = W1.map(r => r.map(() => 0)); const db1 = new Array(hidden).fill(0);
+    const dW2 = new Array(hidden).fill(0); let db2 = 0;
+    for (let s = 0; s < Xs.length; s++) {
+      const h = W1.map((row, j) => relu(row.reduce((a, v, k) => a + v * Xs[s][k], b1[j])));
+      const out = W2.reduce((a, v, j) => a + v * h[j], b2), err = out - ys[s];
+      db2 += err; W2.forEach((_, j) => { dW2[j] += err * h[j]; });
+      h.forEach((hj, j) => {
+        const pre = W1[j].reduce((a, v, k) => a + v * Xs[s][k], b1[j]);
+        const delta = err * W2[j] * (pre > 0 ? 1 : 0);
+        db1[j] += delta; Xs[s].forEach((xk, k) => { dW1[j][k] += delta * xk; });
+      });
+    }
+    const lr = 0.005 / (1 + ep / 500), nS = Xs.length;
+    W1 = W1.map((row, j) => row.map((w, k) => w - lr * dW1[j][k] / nS));
+    b1 = b1.map((b, j) => b - lr * db1[j] / nS);
+    W2 = W2.map((w, j) => w - lr * dW2[j] / nS); b2 -= lr * db2 / nS;
+  }
+  const predict = (inp: number[]) => {
+    const h = W1.map((row, j) => relu(row.reduce((a, v, k) => a + v * inp[k], b1[j])));
+    return W2.reduce((a, v, j) => a + v * h[j], b2);
+  };
+  const fitted = Xs.map(inp => +(predict(inp) * range + mn).toFixed(4));
+  const res2 = fitted.map((f, i) => (f - (ys[i] * range + mn)) ** 2);
+  const rmse = +(Math.sqrt(res2.reduce((a, b) => a + b) / fitted.length)).toFixed(4);
+  const buf = [...xn.slice(-lag)]; const fcast: number[] = [];
+  for (let i = 0; i < 12; i++) { const p = predict(buf); fcast.push(+(p * range + mn).toFixed(4)); buf.push(p); buf.shift(); }
+  return { fitted, fcast, rmse, lag };
+}
+// ── ADVANCED TIME SERIES COMPONENT
+function AdvTimeSeries({ ar }: { ar: boolean }) {
+  const [raw, setRaw] = useState('');
+  const [model, setModel] = useState<'ma'|'exp'|'arima'|'spectral'|'nn'>('ma');
+  const [smaW, setSmaW] = useState(5);
+  const [emaA, setEmaA] = useState(0.3);
+  const [ariP, setAriP] = useState(1);
+  const [ariD, setAriD] = useState(1);
+  const [ariQ, setAriQ] = useState(0);
+  const [ariSD, setAriSD] = useState(0);
+  const [ariSPer, setAriSPer] = useState(12);
+  const [ariH, setAriH] = useState(12);
+  const [hwAlpha, setHwAlpha] = useState(0.3);
+  const [hwBeta, setHwBeta] = useState(0.1);
+  const [hwGamma, setHwGamma] = useState(0.2);
+  const [hwM, setHwM] = useState(12);
+  const [hwH, setHwH] = useState(12);
+  const [nnLag, setNnLag] = useState(6);
+  const [nnHid, setNnHid] = useState(10);
+  const [nnEp, setNnEp] = useState(800);
+  const [running, setRunning] = useState(false);
+  const [res, setRes] = useState<Record<string, unknown> | null>(null);
+  const parse = (s: string) => s.split(/[\s,;\n\t]+/).map(Number).filter(v => !isNaN(v) && String(v) !== '');
+  const series = parse(raw);
+  const maxLag = Math.min(20, Math.max(0, Math.floor(series.length / 2) - 1));
+  const acfVals = series.length >= 4 ? tsAcf(series, maxLag) : [];
+  const pacfVals = acfVals.length > 1 ? tsPacf(acfVals, maxLag) : [];
+  const ci95 = series.length > 0 ? 1.96 / Math.sqrt(series.length) : 0.2;
+  const run = () => {
+    if (series.length < 4) return;
+    setRunning(true);
+    setTimeout(() => {
+      if (model === 'arima') setRes(tsArima(series, ariP, ariD, ariQ, ariSD, ariSPer, ariH) as unknown as Record<string, unknown>);
+      else if (model === 'exp') setRes(tsHoltWinters(series, hwAlpha, hwBeta, hwGamma, hwM, hwH) as unknown as Record<string, unknown>);
+      else if (model === 'nn') setRes(tsMlp(series, nnLag, nnHid, nnEp) as unknown as Record<string, unknown>);
+      else if (model === 'spectral') setRes({ spec: tsSpectrum(series) });
+      setRunning(false);
+    }, 20);
+  };
+  const sma = (x: number[], w: number) => x.map((_, i) => i < w-1 ? null : x.slice(i-w+1, i+1).reduce((a,b)=>a+b,0)/w);
+  const emaFn = (x: number[], a: number) => { const r=[x[0]]; for (let t=1;t<x.length;t++) r.push(a*x[t]+(1-a)*r[t-1]); return r; };
+  const wma = (x: number[], w: number) => x.map((_, i) => { if(i<w-1) return null; const tot=w*(w+1)/2; return x.slice(i-w+1,i+1).reduce((a,v,j)=>a+v*(j+1),0)/tot; });
+  const btnStyle = (active: boolean): React.CSSProperties => ({ padding:'6px 13px', borderRadius:8, border:`1px solid ${active?C.gold:C.border}`, background:active?'rgba(201,168,76,0.15)':'transparent', color:active?C.gold:C.sub, cursor:'pointer', fontFamily:'inherit', fontSize:11, fontWeight:600 });
+  const inp: React.CSSProperties = { width:58, background:'rgba(0,0,0,0.3)', border:`1px solid ${C.border}`, borderRadius:6, padding:'4px 8px', color:C.text, fontFamily:'inherit', fontSize:12, marginInlineStart:6 };
+  const lbl: React.CSSProperties = { fontSize:11, color:C.sub };
+  const MODELS = [
+    { k:'ma',       lab: ar ? '📉 المتوسطات المتحركة' : '📉 Moving Averages' },
+    { k:'exp',      lab: ar ? '📊 تمهيد أسي (Holt-Winters)' : '📊 Exponential Smoothing' },
+    { k:'arima',    lab: ar ? '🔄 ARIMA / SARIMA' : '🔄 ARIMA / SARIMA' },
+    { k:'spectral', lab: ar ? '🌊 التحليل الطيفي (FFT)' : '🌊 Spectral Analysis (FFT)' },
+    { k:'nn',       lab: ar ? '🧠 شبكة عصبية (MLP)' : '🧠 Neural Network (MLP)' },
+  ];
+  const chartProps = { style:{ direction:'ltr' as const }, margin:{ top:4, right:12, left:0, bottom:4 } };
+  const ttStyle = { background:'#0d172d', border:`1px solid ${C.border}`, fontSize:11 };
+  const axTick = { fill:C.sub, fontSize:10 };
+  const grid = <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />;
+  return (
+    <div>
+      {/* Data input */}
+      <div style={{ marginBottom:14 }}>
+        <label style={{ ...lbl, display:'block', marginBottom:4 }}>{ar ? 'البيانات (مفصولة بمسافة أو فاصلة أو سطر جديد):' : 'Data (space, comma, or newline separated):'}</label>
+        <textarea value={raw} onChange={e=>{ setRaw(e.target.value); setRes(null); }} rows={3} placeholder={ar?'مثال: 112 118 132 129 121 135 …':'e.g. 112 118 132 129 121 135 …'}
+          style={{ width:'100%', background:'rgba(0,0,0,0.3)', border:`1px solid ${C.border}`, borderRadius:8, padding:'8px 12px', color:C.text, fontFamily:'inherit', fontSize:12, boxSizing:'border-box', resize:'vertical' }} />
+        {series.length > 0 && <span style={{ fontSize:10, color:C.sub }}>{ar?`n = ${series.length} قيمة`:`n = ${series.length} observations`}</span>}
+      </div>
+      {/* Model tabs */}
+      <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:18 }}>
+        {MODELS.map(m => <button key={m.k} onClick={()=>{ setModel(m.k as typeof model); setRes(null); }} style={btnStyle(model===m.k)}>{m.lab}</button>)}
+      </div>
+
+      {/* ── Moving Averages ── */}
+      {model === 'ma' && (() => {
+        const s = series;
+        const sv = sma(s, smaW), ev = s.length>=2?emaFn(s,emaA):[], wv = wma(s, smaW);
+        const chartData = s.map((v,i)=>({ t:i+1, actual:v, SMA:sv[i]??null, EMA:ev[i]??null, WMA:wv[i]??null }));
+        const rmseE = s.length>=2 ? +(Math.sqrt(ev.reduce((a,e,i)=>(i>0?a+(e-s[i])**2:a),0)/Math.max(s.length-1,1))).toFixed(4) : 0;
+        return (
+          <div>
+            <div style={{ display:'flex', gap:14, flexWrap:'wrap', marginBottom:12, alignItems:'center' }}>
+              <span style={lbl}>{ar?'نافذة SMA/WMA:':'SMA/WMA window:'}</span>
+              <input type="number" value={smaW} onChange={e=>setSmaW(Math.max(2,Math.min(50,+e.target.value)))} min={2} max={50} style={inp} />
+              <span style={{ ...lbl, marginInlineStart:10 }}>α (EMA):</span>
+              <input type="number" value={emaA} onChange={e=>setEmaA(Math.max(0.01,Math.min(0.99,+e.target.value)))} step={0.05} min={0.01} max={0.99} style={inp} />
+            </div>
+            {s.length < 4 ? <p style={{ color:C.sub, fontSize:12 }}>{ar?'أدخل بيانات (4 قيم على الأقل)':'Enter data (min 4 values)'}</p> : (
+              <>
+                <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 14px', marginBottom:12, fontSize:11 }}>
+                  <b style={{ color:C.gold }}>SMA({smaW})</b><span style={{ color:C.sub }}> — {ar?'متوسط بسيط بأوزان متساوية':'Simple average — equal weights'}</span>&ensp;|&ensp;
+                  <b style={{ color:'#5eead4' }}>EMA(α={emaA})</b><span style={{ color:C.sub }}> — {ar?`تمهيد أسي — RMSE=${rmseE}`:`Exponential weights — RMSE=${rmseE}`}</span>&ensp;|&ensp;
+                  <b style={{ color:'#c4b5fd' }}>WMA({smaW})</b><span style={{ color:C.sub }}> — {ar?'أوزان خطية — أحدث = أعلى':'Linear weights — recent = heavier'}</span>
+                </div>
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={chartData} {...chartProps}>
+                    {grid}<XAxis dataKey="t" tick={axTick}/><YAxis tick={axTick}/>
+                    <Tooltip contentStyle={ttStyle}/><Legend />
+                    <Line type="monotone" dataKey="actual" stroke="#93c5fd" dot={false} strokeWidth={1.5} name={ar?'الأصلي':'Actual'}/>
+                    <Line type="monotone" dataKey="SMA" stroke={C.gold} dot={false} strokeWidth={2} name={`SMA(${smaW})`}/>
+                    <Line type="monotone" dataKey="EMA" stroke="#5eead4" dot={false} strokeWidth={2} name={`EMA(α=${emaA})`}/>
+                    <Line type="monotone" dataKey="WMA" stroke="#c4b5fd" dot={false} strokeWidth={2} name={`WMA(${smaW})`}/>
+                  </LineChart>
+                </ResponsiveContainer>
+              </>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* ── Holt-Winters ── */}
+      {model === 'exp' && (
+        <div>
+          <div style={{ display:'flex', gap:12, flexWrap:'wrap', marginBottom:12, alignItems:'center' }}>
+            {([['α (Level)', hwAlpha, setHwAlpha],['β (Trend)', hwBeta, setHwBeta],['γ (Season)', hwGamma, setHwGamma]] as [string,number,React.Dispatch<React.SetStateAction<number>>][]).map(([l,v,fn])=>(
+              <span key={l} style={{ display:'flex', alignItems:'center', gap:4 }}><span style={lbl}>{l}:</span><input type="number" value={v} onChange={e=>fn(Math.max(0.01,Math.min(0.99,+e.target.value)))} step={0.05} min={0.01} max={0.99} style={inp}/></span>
+            ))}
+            <span style={{ display:'flex', alignItems:'center', gap:4 }}><span style={lbl}>{ar?'الموسم m:':'Season m:'}</span><input type="number" value={hwM} onChange={e=>setHwM(Math.max(2,Math.min(52,+e.target.value)))} min={2} max={52} style={inp}/></span>
+            <span style={{ display:'flex', alignItems:'center', gap:4 }}><span style={lbl}>{ar?'التوقعات h:':'Forecast h:'}</span><input type="number" value={hwH} onChange={e=>setHwH(Math.max(1,Math.min(60,+e.target.value)))} min={1} max={60} style={inp}/></span>
+          </div>
+          <button onClick={run} disabled={running||series.length<2*hwM} style={{ background:running?'rgba(255,255,255,0.04)':'rgba(201,168,76,0.18)', border:`1px solid ${running?C.border:C.gold}`, borderRadius:8, padding:'8px 20px', color:running?C.sub:C.gold, cursor:running?'default':'pointer', fontFamily:'inherit', fontSize:12, fontWeight:700, marginBottom:16 }}>
+            {running?(ar?'جارٍ الحساب...':'Computing…'):(ar?'▶ تشغيل Holt-Winters':'▶ Run Holt-Winters')}
+          </button>
+          {series.length < 2*hwM && <p style={{ fontSize:11, color:C.sub }}>{ar?`يلزم n ≥ ${2*hwM} (2 × m)`:`Need n ≥ ${2*hwM} (2 × season)`}</p>}
+          {res && (() => {
+            const hw = res as { fitted:number[]; fcast:number[]; rmse:number };
+            const histData = series.map((v,i)=>({ t:i+1, actual:v, fitted:hw.fitted[i]??null }));
+            const fcData = hw.fcast.map((f,i)=>({ t:series.length+i+1, forecast:f }));
+            const all = [...histData.map(d=>({...d,forecast:null})), ...fcData.map(d=>({...d,actual:null,fitted:null}))];
+            return (
+              <div>
+                <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:'9px 14px', marginBottom:10, fontSize:11 }}>
+                  <span style={{ color:C.sub }}>Holt-Winters Additive · α={hwAlpha} β={hwBeta} γ={hwGamma} m={hwM}</span>
+                  <span style={{ color:C.gold, marginInlineStart:16, fontWeight:700 }}>RMSE = {hw.rmse}</span>
+                </div>
+                <ResponsiveContainer width="100%" height={260}>
+                  <ComposedChart data={all} {...chartProps}>
+                    {grid}<XAxis dataKey="t" tick={axTick}/><YAxis tick={axTick}/>
+                    <Tooltip contentStyle={ttStyle}/><Legend/>
+                    <Line type="monotone" dataKey="actual" stroke="#93c5fd" dot={false} strokeWidth={2} name={ar?'الأصلي':'Actual'}/>
+                    <Line type="monotone" dataKey="fitted" stroke="#4ade80" dot={false} strokeWidth={1.5} name={ar?'مضبَّط':'Fitted'}/>
+                    <Line type="monotone" dataKey="forecast" stroke={C.gold} dot={false} strokeWidth={2} strokeDasharray="5 5" name={ar?'التوقع':'Forecast'}/>
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* ── ARIMA / SARIMA ── */}
+      {model === 'arima' && (
+        <div>
+          {/* ACF / PACF for identification */}
+          {series.length >= 8 && acfVals.length > 1 && (
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:14 }}>
+              {([['ACF', acfVals],['PACF', pacfVals]] as [string,number[]][]).map(([title, vals]) => (
+                <div key={title} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 12px' }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:C.gold, marginBottom:6 }}>{title} {ar?'(لتحديد الرتبة)':'(for order identification)'}</div>
+                  <ResponsiveContainer width="100%" height={100}>
+                    <ComposedChart data={vals.slice(1).map((v,i)=>({ lag:i+1, r:+v.toFixed(3) }))} {...chartProps} margin={{ top:2, right:8, left:-20, bottom:2 }}>
+                      <XAxis dataKey="lag" tick={{ fill:C.sub, fontSize:9 }} label={{ value:'lag', position:'insideBottom', fill:C.sub, fontSize:9 }}/>
+                      <YAxis domain={[-1,1]} tick={{ fill:C.sub, fontSize:9 }}/>
+                      <ReferenceLine y={ci95} stroke="rgba(201,168,76,0.45)" strokeDasharray="3 2"/>
+                      <ReferenceLine y={-ci95} stroke="rgba(201,168,76,0.45)" strokeDasharray="3 2"/>
+                      <ReferenceLine y={0} stroke="rgba(255,255,255,0.15)"/>
+                      <Bar dataKey="r" fill="#93c5fd" maxBarSize={10}/>
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Parameters */}
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:'12px 16px', marginBottom:14 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:C.sub, marginBottom:10 }}>ARIMA(p,d,q) {ariSD>0?`× SARIMA(0,${ariSD},0)[${ariSPer}]`:''}</div>
+            <div style={{ display:'flex', gap:12, flexWrap:'wrap', alignItems:'center' }}>
+              {([['p — AR', ariP, setAriP,0,8],['d — I', ariD, setAriD,0,3],['q — MA', ariQ, setAriQ,0,8],['h — Forecast', ariH, setAriH,1,60]] as [string,number,React.Dispatch<React.SetStateAction<number>>,number,number][]).map(([l,v,fn,mn,mx])=>(
+                <span key={l} style={{ display:'flex', alignItems:'center', gap:4 }}><span style={lbl}>{l}:</span><input type="number" value={v} onChange={e=>fn(Math.max(mn,Math.min(mx,+e.target.value)))} min={mn} max={mx} style={inp}/></span>
+              ))}
+            </div>
+            <div style={{ display:'flex', gap:12, flexWrap:'wrap', alignItems:'center', marginTop:10 }}>
+              <span style={{ fontSize:10, color:C.muted }}>{ar?'تفاضل موسمي (اختياري):':'Seasonal differencing (optional):'}</span>
+              {([['D季', ariSD, setAriSD,0,2],['s (Period)', ariSPer, setAriSPer,2,52]] as [string,number,React.Dispatch<React.SetStateAction<number>>,number,number][]).map(([l,v,fn,mn,mx])=>(
+                <span key={l} style={{ display:'flex', alignItems:'center', gap:4 }}><span style={lbl}>{l}:</span><input type="number" value={v} onChange={e=>fn(Math.max(mn,Math.min(mx,+e.target.value)))} min={mn} max={mx} style={inp}/></span>
+              ))}
+            </div>
+          </div>
+          <button onClick={run} disabled={running||series.length<Math.max(ariP,ariQ)+ariD+2} style={{ background:running?'rgba(255,255,255,0.04)':'rgba(201,168,76,0.18)', border:`1px solid ${running?C.border:C.gold}`, borderRadius:8, padding:'8px 20px', color:running?C.sub:C.gold, cursor:running?'default':'pointer', fontFamily:'inherit', fontSize:12, fontWeight:700, marginBottom:16 }}>
+            {running?(ar?'جارٍ التهيئة...':'Fitting…'):(ar?`▶ تهيئة ARIMA(${ariP},${ariD},${ariQ})`:`▶ Fit ARIMA(${ariP},${ariD},${ariQ})`)}
+          </button>
+          {res && (() => {
+            const r = res as ArimaResult;
+            const histD = series.map((v,i)=>({ t:i+1, actual:v, fitted: r.fitted.find(f=>f.t===i)?.v??null }));
+            const fcD = r.fcast.map(f=>({ t:f.t+1, forecast:f.f, hi95:f.hi, lo95:f.lo }));
+            const all = [...histD.map(d=>({...d,forecast:null,hi95:null,lo95:null})), ...fcD.map(d=>({...d,actual:null,fitted:null}))];
+            return (
+              <div>
+                <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 14px', marginBottom:10, fontSize:11, display:'flex', gap:14, flexWrap:'wrap' }}>
+                  <span style={{ color:C.sub }}>ARIMA({ariP},{ariD},{ariQ})</span>
+                  <span><span style={{ color:C.sub }}>σ=</span><b style={{ color:C.gold }}>{r.sigma.toFixed(4)}</b></span>
+                  <span><span style={{ color:C.sub }}>AIC=</span><b style={{ color:C.text }}>{r.aic.toFixed(1)}</b></span>
+                  <span><span style={{ color:C.sub }}>BIC=</span><b style={{ color:C.text }}>{r.bic.toFixed(1)}</b></span>
+                  {r.phi.length>0 && <span><span style={{ color:C.sub }}>φ: </span>{r.phi.map((v,i)=><b key={i} style={{ color:'#93c5fd', marginInlineEnd:6 }}>φ{i+1}={v.toFixed(3)}</b>)}</span>}
+                  {r.theta.length>0 && <span><span style={{ color:C.sub }}>θ: </span>{r.theta.map((v,i)=><b key={i} style={{ color:'#5eead4', marginInlineEnd:6 }}>θ{i+1}={v.toFixed(3)}</b>)}</span>}
+                </div>
+                <ResponsiveContainer width="100%" height={260}>
+                  <ComposedChart data={all} {...chartProps}>
+                    {grid}<XAxis dataKey="t" tick={axTick}/><YAxis tick={axTick}/>
+                    <Tooltip contentStyle={ttStyle}/><Legend/>
+                    <Line type="monotone" dataKey="actual" stroke="#93c5fd" dot={false} strokeWidth={2} name={ar?'الأصلي':'Actual'}/>
+                    <Line type="monotone" dataKey="fitted" stroke="#4ade80" dot={false} strokeWidth={1} name={ar?'مضبَّط':'Fitted'}/>
+                    <Line type="monotone" dataKey="forecast" stroke={C.gold} dot={false} strokeWidth={2} strokeDasharray="5 4" name={ar?'التوقع':'Forecast'}/>
+                    <Line type="monotone" dataKey="hi95" stroke="rgba(201,168,76,0.3)" dot={false} strokeWidth={1} name="95% Hi"/>
+                    <Line type="monotone" dataKey="lo95" stroke="rgba(201,168,76,0.3)" dot={false} strokeWidth={1} name="95% Lo"/>
+                  </ComposedChart>
+                </ResponsiveContainer>
+                <div style={{ marginTop:10, fontSize:11, color:C.sub }}>
+                  <b style={{ color:C.text }}>{ar?'التوقعات:':'Forecasts:'}</b>{' '}
+                  {r.fcast.slice(0,6).map((f,i)=><span key={i} style={{ marginInlineEnd:10 }}>t+{i+1}: <b style={{ color:C.gold }}>{f.f}</b> [{f.lo}, {f.hi}]</span>)}
+                  {r.fcast.length>6 && <span style={{ color:C.muted }}>…</span>}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* ── Spectral Analysis ── */}
+      {model === 'spectral' && (() => {
+        if (series.length < 4) return <p style={{ color:C.sub, fontSize:12 }}>{ar?'أدخل بيانات (4 قيم على الأقل)':'Enter data (min 4 values)'}</p>;
+        const spec = tsSpectrum(series).slice(0, Math.min(60, Math.floor(series.length/2)-1));
+        const top5 = [...spec].sort((a,b)=>b.power-a.power).slice(0,5);
+        const chartData = spec.map(s=>({ freq:s.freq, power:+(s.power*1e6).toFixed(4) }));
+        return (
+          <div>
+            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:'11px 16px', marginBottom:14, fontSize:11 }}>
+              <div style={{ color:C.gold, fontWeight:700, marginBottom:6 }}>{ar?'أبرز 5 ترددات (أعلى طاقة طيفية):':'Top 5 dominant frequencies (highest spectral power):'}</div>
+              <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
+                {top5.map((s,i)=>(
+                  <div key={i} style={{ background:'rgba(255,255,255,0.04)', borderRadius:7, padding:'5px 10px' }}>
+                    <span style={{ color:i===0?C.gold:C.text, fontWeight:700 }}>f={s.freq}</span>
+                    <span style={{ color:C.sub }}> → T≈</span><span style={{ color:'#5eead4' }}>{s.period}</span>
+                    <span style={{ color:C.sub }}> · P={+(s.power*1e6).toFixed(2)}×10⁻⁶</span>
+                    {i===0&&<span style={{ background:'rgba(201,168,76,0.2)', color:C.gold, borderRadius:4, padding:'1px 5px', marginInlineStart:5 }}>{ar?'مهيمن':'Dominant'}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={250}>
+              <ComposedChart data={chartData} {...chartProps}>
+                {grid}<XAxis dataKey="freq" tick={axTick} label={{ value:ar?'التردد':'Frequency', position:'insideBottom', offset:-2, fill:C.sub, fontSize:10 }}/>
+                <YAxis tick={axTick} label={{ value:'Power ×10⁻⁶', angle:-90, position:'insideLeft', fill:C.sub, fontSize:9 }}/>
+                <Tooltip contentStyle={ttStyle} formatter={(v:number)=>[v, ar?'طاقة':'Power']}/>
+                <Bar dataKey="power" fill="#93c5fd" maxBarSize={8} name={ar?'الطاقة الطيفية':'Spectral Power'}/>
+                <ReferenceLine x={top5[0]?.freq} stroke={C.gold} strokeWidth={2} strokeDasharray="4 3" label={{ value:ar?'ذروة':'Peak', fill:C.gold, fontSize:10 }}/>
+              </ComposedChart>
+            </ResponsiveContainer>
+            <div style={{ fontSize:11, color:C.sub, marginTop:8 }}>
+              {ar?`التردد f يمتد من 0 إلى 0.5 (بالدورات لكل وحدة زمنية). الدورة T = 1/f. تم تطبيق FFT على أقرب أس للعدد 2 (n=${Math.pow(2,Math.ceil(Math.log2(series.length)))}).`
+                :`Frequency f spans 0–0.5 (cycles per time unit). Period T = 1/f. FFT applied with zero-padding to nearest power of 2 (n=${Math.pow(2,Math.ceil(Math.log2(series.length)))}).`}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Neural Network ── */}
+      {model === 'nn' && (
+        <div>
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:'12px 16px', marginBottom:12 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:C.sub, marginBottom:8 }}>
+              {ar?`المعمارية: Input(${nnLag}) → Hidden(${nnHid}, ReLU) → Output(1)  ·  تدريب بـ SGD مع تناقص معدل التعلم`
+                :`Architecture: Input(${nnLag}) → Hidden(${nnHid}, ReLU) → Output(1)  ·  SGD with learning-rate decay`}
+            </div>
+            <div style={{ display:'flex', gap:12, flexWrap:'wrap', alignItems:'center' }}>
+              {([['Lag (window)', nnLag, setNnLag,1,24],['Hidden units', nnHid, setNnHid,2,32],['Epochs', nnEp, setNnEp,200,3000]] as [string,number,React.Dispatch<React.SetStateAction<number>>,number,number][]).map(([l,v,fn,mn,mx])=>(
+                <span key={l} style={{ display:'flex', alignItems:'center', gap:4 }}><span style={lbl}>{l}:</span><input type="number" value={v} onChange={e=>fn(Math.max(mn,Math.min(mx,+e.target.value)))} min={mn} max={mx} step={l.startsWith('Ep')?100:1} style={{ ...inp, width:l.startsWith('Ep')?70:55 }}/></span>
+              ))}
+            </div>
+          </div>
+          <button onClick={run} disabled={running||series.length<=nnLag+1} style={{ background:running?'rgba(255,255,255,0.04)':'rgba(201,168,76,0.18)', border:`1px solid ${running?C.border:C.gold}`, borderRadius:8, padding:'8px 20px', color:running?C.sub:C.gold, cursor:running?'default':'pointer', fontFamily:'inherit', fontSize:12, fontWeight:700, marginBottom:16 }}>
+            {running?(ar?'جارٍ التدريب...':'Training…'):(ar?`▶ تدريب MLP (${nnEp} دورة)`:`▶ Train MLP (${nnEp} epochs)`)}
+          </button>
+          {res && Array.isArray(res.fitted) && (() => {
+            const r = res as { fitted:number[]; fcast:number[]; rmse:number; lag:number };
+            const offset = r.lag;
+            const all = [
+              ...series.map((v,i)=>({ t:i+1, actual:v, fitted:i>=offset?r.fitted[i-offset]??null:null, forecast:null })),
+              ...r.fcast.map((f,i)=>({ t:series.length+i+1, actual:null, fitted:null, forecast:f })),
+            ];
+            return (
+              <div>
+                <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:'9px 14px', marginBottom:10, fontSize:11 }}>
+                  <span style={{ color:C.sub }}>Train RMSE: </span><b style={{ color:C.gold }}>{r.rmse}</b>
+                  <span style={{ color:C.sub, marginInlineStart:16 }}>{ar?`توقع 12 خطوة للأمام (نافذة إبطاء=${r.lag})`:`12-step ahead forecast (lag window=${r.lag})`}</span>
+                </div>
+                <ResponsiveContainer width="100%" height={260}>
+                  <ComposedChart data={all} {...chartProps}>
+                    {grid}<XAxis dataKey="t" tick={axTick}/><YAxis tick={axTick}/>
+                    <Tooltip contentStyle={ttStyle}/><Legend/>
+                    <Line type="monotone" dataKey="actual" stroke="#93c5fd" dot={false} strokeWidth={2} name={ar?'الأصلي':'Actual'}/>
+                    <Line type="monotone" dataKey="fitted" stroke="#4ade80" dot={false} strokeWidth={1.5} name={ar?'مضبَّط (تدريب)':'Fitted (train)'}/>
+                    <Line type="monotone" dataKey="forecast" stroke={C.gold} dot={false} strokeWidth={2} strokeDasharray="5 4" name={ar?'التوقع (12 خطوة)':'Forecast (12 steps)'}/>
+                  </ComposedChart>
+                </ResponsiveContainer>
+                <div style={{ marginTop:8, fontSize:11, color:C.sub }}>
+                  <b style={{ color:C.text }}>{ar?'التوقعات:':'Forecasts:'}</b>{' '}
+                  {r.fcast.map((f,i)=><span key={i} style={{ marginInlineEnd:8 }}>t+{i+1}: <b style={{ color:C.gold }}>{f}</b></span>)}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ── STATISTICAL DECISION WIZARD ──────────────────────────────────────────
+function StatWizard({ ar, onGo }: { ar: boolean; onGo: (key: string) => void }) {
+  type QNode = { type: 'q'; q: [string, string]; opts: { l: [string, string]; next: string }[] };
+  type RNode = { type: 'r'; tools: { key: string; name: [string, string]; desc: [string, string] }[] };
+  type WNode = QNode | RNode;
+
+  const NODES: Record<string, WNode> = {
+    start: { type: 'q', q: ['ما هدفك الرئيسي من التحليل الإحصائي؟', 'What is your main research goal?'], opts: [
+      { l: ['📋 وصف البيانات وتلخيصها', '📋 Describe & summarize data'], next: 'r_describe' },
+      { l: ['⚖️ مقارنة مجموعات أو شروط', '⚖️ Compare groups or conditions'], next: 'q_groups' },
+      { l: ['🔗 دراسة العلاقات والارتباطات', '🔗 Explore relationships / correlations'], next: 'q_relation' },
+      { l: ['📈 التنبؤ بمتغير تابع', '📈 Predict an outcome variable (regression)'], next: 'q_predict' },
+      { l: ['📏 قياس الموثوقية والصدق', '📏 Measure reliability or validity'], next: 'q_reliability' },
+      { l: ['🤝 الاتفاق بين المحكّمين أو أساليب القياس', '🤝 Rater agreement or method agreement'], next: 'q_agreement' },
+      { l: ['🩺 دقة التشخيص / التصنيف', '🩺 Diagnostic accuracy / classification'], next: 'r_diagnostic' },
+    ]},
+
+    // ── Describe
+    r_describe: { type: 'r', tools: [
+      { key: 'desctable', name: ['جدول الإحصاءات الوصفية', 'Descriptive Statistics Table'], desc: ['المتوسط، الانحراف، الوسيط، الربيعيات', 'Mean, SD, Median, Percentiles'] },
+      { key: 'freq',      name: ['الجداول التكرارية', 'Frequency Tables'], desc: ['التكرارات والنسب المئوية', 'Frequencies & percentages'] },
+      { key: 'likert',    name: ['بيانات ليكرت', 'Likert Analyzer'], desc: ['رسم ومتوسطات المقياس', 'Likert charts & means'] },
+      { key: 'timeseries',name: ['السلاسل الزمنية', 'Time Series'], desc: ['اتجاهات عبر الزمن', 'Trends over time'] },
+    ]},
+
+    // ── Compare groups
+    q_groups: { type: 'q', q: ['كم عدد المجموعات؟', 'How many groups?'], opts: [
+      { l: ['مجموعة واحدة — مقارنة بقيمة ثابتة', 'One group — compare to fixed value'], next: 'q_onesample' },
+      { l: ['مجموعتان', 'Two groups'], next: 'q_two_outcome' },
+      { l: ['ثلاث مجموعات أو أكثر', 'Three or more groups'], next: 'q_multi_design' },
+    ]},
+
+    q_onesample: { type: 'q', q: ['نوع المتغير التابع؟', 'Outcome variable type?'], opts: [
+      { l: ['متصل رقمي (طبيعي)', 'Continuous — normally distributed'], next: 'r_onesample_t' },
+      { l: ['نسبة مئوية / نجاحات (ثنائي)', 'Proportion / successes (binary)'], next: 'r_binom' },
+    ]},
+    r_onesample_t: { type: 'r', tools: [{ key: 'ttests', name: ['t أحادي العيّنة', 'One-Sample t-test'], desc: ['H₀: μ = μ₀ — Cohen\'s d + CI', 'H₀: μ = μ₀ — Cohen\'s d + CI'] }] },
+    r_binom:       { type: 'r', tools: [
+      { key: 'binomtest', name: ['الاختبار ثنائي الحد الدقيق', 'Exact Binomial Test'], desc: ['H₀: p = p₀، p دقيق + Wilson CI', 'H₀: p = p₀, exact p + Wilson CI'] },
+      { key: 'twoprop',  name: ['z-test نسبتَين', 'Two-Proportion z-test'], desc: ['مقارنة نسبتَين مستقلتَين', 'Compare two independent proportions'] },
+    ]},
+
+    q_two_outcome: { type: 'q', q: ['نوع المتغير التابع؟', 'Outcome variable type?'], opts: [
+      { l: ['متصل رقمي', 'Continuous (numeric)'], next: 'q_two_paired' },
+      { l: ['ترتيبي (ليكرت، رتب)', 'Ordinal (Likert, ranks)'], next: 'r_mwu' },
+      { l: ['فئوي / ثنائي (نعم/لا)', 'Categorical / Binary (yes/no)'], next: 'q_two_cat_n' },
+    ]},
+
+    q_two_paired: { type: 'q', q: ['المجموعتان مستقلتان أم مترابطتان؟', 'Independent or paired/repeated?'], opts: [
+      { l: ['مستقلتان — مجموعتان مختلفتان', 'Independent — different subjects'], next: 'q_two_norm' },
+      { l: ['مترابطتان — قبل/بعد أو أزواج', 'Paired — before/after or matched pairs'], next: 'q_paired_norm' },
+    ]},
+
+    q_two_norm: { type: 'q', q: ['هل البيانات موزّعة طبيعياً؟', 'Are the data normally distributed?'], opts: [
+      { l: ['نعم (أو n > 30)', 'Yes (or n > 30, CLT applies)'], next: 'r_indep_t' },
+      { l: ['لا / غير معروف / ترتيبية', 'No / Unknown / Ordinal'], next: 'r_mwu' },
+    ]},
+    r_indep_t: { type: 'r', tools: [
+      { key: 'ttests',    name: ['t المستقل', 'Independent t-test'], desc: ['Levene + Cohen\'s d + 95% CI', 'Levene + Cohen\'s d + 95% CI'] },
+      { key: 'effectsize',name: ['حجم الأثر', 'Effect Size'], desc: ['تحويل بين d, g, r, η², OR', 'Convert between d, g, r, η², OR'] },
+    ]},
+    r_mwu: { type: 'r', tools: [{ key: 'nonparam', name: ['Mann-Whitney U (غير باراميتري)', 'Mann-Whitney U (non-parametric)'], desc: ['بديل لـ t المستقل — رتب', 'Non-parametric alternative to independent t'] }] },
+
+    q_paired_norm: { type: 'q', q: ['هل الفروق موزّعة طبيعياً؟', 'Are the differences normally distributed?'], opts: [
+      { l: ['نعم', 'Yes'], next: 'r_paired_t' },
+      { l: ['لا / ترتيبية', 'No / Ordinal'], next: 'r_wilcoxon' },
+    ]},
+    r_paired_t:  { type: 'r', tools: [{ key: 'ttests', name: ['t المترابط', 'Paired t-test'], desc: ['قبل/بعد — Cohen\'s d للفروق', 'Before/after — Cohen\'s d for differences'] }] },
+    r_wilcoxon:  { type: 'r', tools: [{ key: 'nonparam', name: ['Wilcoxon Signed-Rank', 'Wilcoxon Signed-Rank'], desc: ['بديل غير باراميتري للـ t المترابط', 'Non-parametric alternative to paired t'] }] },
+
+    q_two_cat_n: { type: 'q', q: ['حجم العيّنة وتوقع الخلايا؟', 'Sample size and expected cell counts?'], opts: [
+      { l: ['صغيرة أو خلية متوقعة < 5', 'Small sample or expected cell < 5'], next: 'r_fisher' },
+      { l: ['كبيرة — جميع الخلايا ≥ 5', 'Large — all expected cells ≥ 5'], next: 'r_chisq' },
+    ]},
+    r_fisher: { type: 'r', tools: [{ key: 'fisher', name: ["Fisher's Exact Test", "Fisher's Exact Test"], desc: ['p دقيق hypergeometric + OR + CI', 'Exact hypergeometric p + OR + CI'] }] },
+    r_chisq:  { type: 'r', tools: [{ key: 'crosstab', name: ['اختبار χ² للاستقلالية', 'Chi-Square Test of Independence'], desc: ['χ², df, p, Cramér\'s V', 'χ², df, p, Cramér\'s V'] }] },
+
+    q_multi_design: { type: 'q', q: ['ما تصميم الدراسة؟', 'What is the study design?'], opts: [
+      { l: ['مجموعات مستقلة (بين-مجموعات)', 'Independent groups (between-subjects)'], next: 'q_multi_cov' },
+      { l: ['نفس المشاركين — قياس متكرر عبر شروط/أوقات', 'Same subjects — repeated measures / time points'], next: 'r_rm' },
+      { l: ['عاملان أو أكثر (factorial) — 2×2، 2×3…', 'Two or more factors (factorial) — 2×2, 2×3…'], next: 'r_twoway' },
+    ]},
+
+    q_multi_cov: { type: 'q', q: ['هل يوجد متغير مصاحب (covariate) تريد ضبطه؟', 'Is there a covariate to control for?'], opts: [
+      { l: ['نعم — ANCOVA', 'Yes — ANCOVA'], next: 'r_ancova' },
+      { l: ['لا — البيانات طبيعية', 'No — data is normal'], next: 'r_anova' },
+      { l: ['لا — غير طبيعية / ترتيبية', 'No — non-normal or ordinal'], next: 'r_kw' },
+    ]},
+    r_ancova: { type: 'r', tools: [{ key: 'ancova',   name: ['تحليل التغاير ANCOVA', 'One-Way ANCOVA'], desc: ['مقارنة المجموعات مع ضبط المصاحب + Partial η²', 'Group comparison controlling covariate + Partial η²'] }] },
+    r_anova:  { type: 'r', tools: [
+      { key: 'groupcomp', name: ['مقارنة المجموعات', 'Group Comparison (One-Way ANOVA)'], desc: ['F, η², Levene, BarChart', 'F, η², Levene, BarChart'] },
+      { key: 'posthoc',   name: ['مقارنات بعدية', 'Post-Hoc Tests'], desc: ['Bonferroni / Tukey بين كل الأزواج', 'Bonferroni / Tukey pairwise'] },
+    ]},
+    r_kw:     { type: 'r', tools: [{ key: 'nonparam', name: ['Kruskal-Wallis', 'Kruskal-Wallis'], desc: ['بديل غير باراميتري لـ ANOVA أحادي الاتجاه', 'Non-parametric one-way ANOVA alternative'] }] },
+    r_rm:     { type: 'r', tools: [{ key: 'rmmanova', name: ['تحليل التباين للمقاييس المتكررة', 'Repeated Measures ANOVA'], desc: ['Greenhouse-Geisser ε + Bonferroni post-hoc', 'Greenhouse-Geisser ε + Bonferroni post-hoc'] }] },
+    r_twoway: { type: 'r', tools: [{ key: 'twoway',   name: ['ANOVA ثنائي الاتجاه', 'Two-Way ANOVA (Factorial)'], desc: ['أثر A + B + تفاعل A×B + رسم التفاعل', 'Factor A, B, A×B interaction + interaction plot'] }] },
+
+    // ── Relationships
+    q_relation: { type: 'q', q: ['نوع المتغيرات؟', 'What type are the variables?'], opts: [
+      { l: ['كلاهما متصل — بحث عن ارتباط', 'Both continuous — seeking correlation'], next: 'q_relation_norm' },
+      { l: ['متصل مع ضبط متغيرات أخرى (ارتباط جزئي)', 'Continuous — controlling for others (partial correlation)'], next: 'r_partial' },
+      { l: ['فئوي × فئوي', 'Categorical × Categorical'], next: 'q_two_cat_n' },
+      { l: ['متنبئ → متغير تابع (انحدار)', 'Predictor → Outcome (regression)'], next: 'q_predict' },
+    ]},
+
+    q_relation_norm: { type: 'q', q: ['هل البيانات طبيعية؟', 'Are the data normally distributed?'], opts: [
+      { l: ['نعم', 'Yes'], next: 'r_pearson' },
+      { l: ['لا / ترتيبية / رتب', 'No / Ordinal / Ranks'], next: 'r_spearman' },
+    ]},
+    r_pearson:  { type: 'r', tools: [
+      { key: 'corr',   name: ['مصفوفة الارتباط — Pearson', 'Correlation Matrix (Pearson)'], desc: ['r مع نجوم الدلالة ورسم حرارة', 'r with significance stars & heatmap'] },
+      { key: 'ci',     name: ['CI لمعامل الارتباط r', 'CI for Pearson r'], desc: ['Fisher z → فترة ثقة 95%', 'Fisher z → 95% confidence interval'] },
+    ]},
+    r_spearman: { type: 'r', tools: [{ key: 'nonparam', name: ['Spearman ρ', 'Spearman ρ'], desc: ['ارتباط الرتب للبيانات الترتيبية / غير الطبيعية', 'Rank-based correlation for ordinal / non-normal data'] }] },
+    r_partial:  { type: 'r', tools: [{ key: 'partialcorr', name: ['الارتباط الجزئي Matrix', 'Partial Correlation Matrix'], desc: ['كل r بعد ضبط كل المتغيرات الأخرى', 'Each r controlling for all other variables'] }] },
+
+    // ── Predict
+    q_predict: { type: 'q', q: ['نوع المتغير التابع؟', 'Outcome variable type?'], opts: [
+      { l: ['متصل رقمي', 'Continuous (numeric)'], next: 'q_predict_cont' },
+      { l: ['ثنائي (نعم/لا، نجاح/فشل)', 'Binary (yes/no, 0/1)'], next: 'r_logistic' },
+    ]},
+
+    q_predict_cont: { type: 'q', q: ['نوع الانحدار؟', 'What type of regression?'], opts: [
+      { l: ['خطي بسيط أو متعدد المتنبئات', 'Simple or multiple linear'], next: 'r_regression' },
+      { l: ['تسلسلي — بلوك بلوك (ΔR²)', 'Hierarchical — blocks (ΔR²)'], next: 'r_hierreg' },
+      { l: ['وساطة — تأثير غير مباشر (ab)', 'Mediation — indirect effect (ab)'], next: 'r_mediation' },
+      { l: ['تعديل — تفاعل X × مُعدِّل', 'Moderation — X × Moderator interaction'], next: 'r_moderation' },
+      { l: ['منحنٍ / تربيعي أو أعلى', 'Curvilinear / quadratic or higher'], next: 'r_poly' },
+    ]},
+    r_regression: { type: 'r', tools: [
+      { key: 'regression', name: ['الانحدار الخطي OLS', 'OLS Linear Regression'], desc: ['β, SE, t, p, R², adjusted R²', 'β, SE, t, p, R², adjusted R²'] },
+      { key: 'regdiag',    name: ['تشخيص الانحدار', 'Regression Diagnostics'], desc: ['VIF للتعددية الخطية، Durbin-Watson', 'VIF for multicollinearity, Durbin-Watson'] },
+    ]},
+    r_hierreg:   { type: 'r', tools: [{ key: 'hierreg',    name: ['الانحدار التسلسلي ΔR²', 'Hierarchical Regression ΔR²'], desc: ['الزيادة في R² عند كل بلوك + ΔF', 'R² increment per block + ΔF test'] }] },
+    r_mediation: { type: 'r', tools: [{ key: 'mediation',  name: ['تحليل الوساطة', 'Mediation Analysis'], desc: ['Bootstrap للأثر غير المباشر (ab)', 'Bootstrap confidence interval for indirect effect (ab)'] }] },
+    r_moderation:{ type: 'r', tools: [{ key: 'moderation', name: ['تحليل التعديل', 'Moderation Analysis'], desc: ['تفاعل X×W + منحنيات البساطة', 'X×W interaction + simple slopes'] }] },
+    r_poly:      { type: 'r', tools: [{ key: 'polyreg',    name: ['الانحدار متعدد الحدود', 'Polynomial Regression'], desc: ['درجة 1–5، AIC لاختيار النموذج الأنسب', 'Degree 1–5, AIC-based model selection'] }] },
+    r_logistic:  { type: 'r', tools: [
+      { key: 'logreg', name: ['الانحدار اللوجستي', 'Logistic Regression'], desc: ['Odds Ratio + CI + McFadden R² + AUC', 'Odds Ratio + CI + McFadden R² + AUC'] },
+      { key: 'roc',    name: ['منحنى ROC / AUC', 'ROC Curve / AUC'], desc: ['قيّم أداء النموذج بمنحنى ROC', 'Evaluate model performance with ROC curve'] },
+    ]},
+
+    // ── Reliability
+    q_reliability: { type: 'q', q: ['ماذا تريد تقييمه؟', 'What do you want to assess?'], opts: [
+      { l: ['الاتساق الداخلي للمقياس', 'Scale internal consistency'], next: 'r_cronbach' },
+      { l: ['تحليل الفقرات (الصعوبة، التمييز، r المصحَّح)', 'Item analysis (difficulty, discrimination, corrected r)'], next: 'r_item' },
+      { l: ['البنية العاملية — كشف العوامل الكامنة (EFA)', 'Factor structure — discover latent factors (EFA)'], next: 'r_efa' },
+      { l: ['الاتساق بين المحكّمين — بيانات فئوية', 'Inter-rater reliability — categorical ratings'], next: 'r_kappa' },
+      { l: ['الاتساق بين المحكّمين — بيانات متصلة', 'Inter-rater reliability — continuous ratings'], next: 'r_icc' },
+    ]},
+    r_cronbach: { type: 'r', tools: [
+      { key: 'cronbach',    name: ["Cronbach's α", "Cronbach's α"], desc: ['α مع CI 95% + α لو حُذفت الفقرة', 'α with 95% CI + α-if-item-deleted'] },
+      { key: 'omega',       name: ["McDonald's ω", "McDonald's ω"], desc: ['بديل أكثر دقة من ألفا', 'More accurate reliability estimate than α'] },
+    ]},
+    r_item:  { type: 'r', tools: [{ key: 'itemanalysis', name: ['تحليل الفقرات', 'Item Analysis'], desc: ['الصعوبة، التمييز، r المصحَّح، KR-20', 'Difficulty, discrimination, corrected r, KR-20'] }] },
+    r_efa:   { type: 'r', tools: [{ key: 'efa',          name: ['التحليل العاملي الاستكشافي EFA', 'Exploratory Factor Analysis (EFA)'], desc: ['Scree plot + تشبعات العوامل + اختبار بارتلت', 'Scree plot + factor loadings + Bartlett test'] }] },
+    r_kappa: { type: 'r', tools: [{ key: 'kappa',        name: ["Cohen's Kappa κ", "Cohen's Kappa κ"], desc: ['اتفاق مصحَّح للصدفة — عادي أو مرجَّح', 'Chance-corrected agreement — unweighted or weighted'] }] },
+    r_icc:   { type: 'r', tools: [{ key: 'icc',          name: ['ICC — معامل الارتباط الداخلي', 'Intraclass Correlation (ICC)'], desc: ['ICC(1,1) / (2,1) / (3,1) مع CI 95%', 'ICC(1,1) / (2,1) / (3,1) with 95% CI'] }] },
+
+    // ── Agreement
+    q_agreement: { type: 'q', q: ['نوع بيانات التقييم؟', 'Type of rating data?'], opts: [
+      { l: ['فئوية — تصنيفات أو درجات', 'Categorical — labels or scores'], next: 'r_kappa' },
+      { l: ['متصلة — قياسات رقمية من محكّمَين', 'Continuous — numeric ratings from 2 raters'], next: 'r_icc' },
+      { l: ['مقارنة طريقتَي قياس (جهازَين أو أسلوبَين)', 'Compare two measurement methods (two devices or tools)'], next: 'r_blandaltman' },
+    ]},
+    r_blandaltman: { type: 'r', tools: [
+      { key: 'blandaltman', name: ['Bland-Altman — حدود الاتفاق', 'Bland-Altman — Limits of Agreement (LoA)'], desc: ['التحيّز ± 1.96 SD + رسم تفاعلي', 'Bias ± 1.96 SD + interactive scatter plot'] },
+      { key: 'icc',         name: ['ICC للتحقق', 'ICC for verification'], desc: ['ثبات القياس المتصل', 'Continuous measurement reliability'] },
+    ]},
+
+    // ── Diagnostic
+    r_diagnostic: { type: 'r', tools: [
+      { key: 'diagacc', name: ['دقة التشخيص', 'Diagnostic Accuracy'], desc: ['Sens / Spec / PPV / NPV / LR / DOR / Youden / F1 / MCC', 'Sens / Spec / PPV / NPV / LR / DOR / Youden / F1 / MCC'] },
+      { key: 'roc',     name: ['منحنى ROC / AUC', 'ROC Curve / AUC'], desc: ['AUC مع CI، القاطع الأمثل (Youden J)', 'AUC with CI, optimal cutoff (Youden\'s J)'] },
+      { key: 'logreg',  name: ['الانحدار اللوجستي', 'Logistic Regression'], desc: ['نموذج تنبؤي مع OR وAUC', 'Predictive model with OR and AUC'] },
+    ]},
+  };
+
+  const [path, setPath] = useState<string[]>(['start']);
+  const current = path[path.length - 1];
+  const node = NODES[current];
+
+  const select = (next: string) => setPath(p => [...p, next]);
+  const back   = () => setPath(p => p.length > 1 ? p.slice(0, -1) : p);
+  const reset  = () => setPath(['start']);
+
+  // Breadcrumb labels
+  const crumbs = path.map((id, i) => {
+    if (i === 0) return ar ? 'البداية' : 'Start';
+    const parent = NODES[path[i - 1]];
+    if (parent?.type === 'q') {
+      const opt = parent.opts.find(o => o.next === id);
+      if (opt) return (ar ? opt.l[0] : opt.l[1]).replace(/^[^\s]+\s/, ''); // strip emoji
+    }
+    return id;
+  });
+
+  if (!node) return null;
+
+  const btnBase: React.CSSProperties = { background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: 11, padding: '13px 18px', color: C.text, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, textAlign: ar ? 'right' : 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 10, transition: 'background 0.12s, border-color 0.12s', width: '100%' };
+
+  return (
+    <div>
+      {/* Breadcrumb */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 18, alignItems: 'center' }}>
+        {crumbs.map((lbl, i) => (
+          <React.Fragment key={i}>
+            <span onClick={() => i < crumbs.length - 1 ? setPath(path.slice(0, i + 1)) : undefined}
+              style={{ fontSize: 11, color: i === crumbs.length - 1 ? C.gold : C.muted, cursor: i < crumbs.length - 1 ? 'pointer' : 'default', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {lbl}
+            </span>
+            {i < crumbs.length - 1 && <span style={{ color: C.muted, fontSize: 10 }}>›</span>}
+          </React.Fragment>
+        ))}
+      </div>
+
+      {node.type === 'q' && (
+        <div>
+          <div style={{ background: C.card, border: `2px solid ${C.border}`, borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
+            <div style={{ fontSize: 17, fontWeight: 800, color: C.text, marginBottom: 20, lineHeight: 1.4 }}>
+              {ar ? node.q[0] : node.q[1]}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              {node.opts.map((opt, i) => (
+                <button key={i} onClick={() => select(opt.next)} style={btnBase}
+                  onMouseEnter={e => { const el = e.currentTarget; el.style.background = 'rgba(201,168,76,0.12)'; el.style.borderColor = C.gold; }}
+                  onMouseLeave={e => { const el = e.currentTarget; el.style.background = 'rgba(255,255,255,0.04)'; el.style.borderColor = 'rgba(201,168,76,0.18)'; }}>
+                  <span style={{ fontSize: 18, color: C.gold, flexShrink: 0 }}>›</span>
+                  <span>{ar ? opt.l[0] : opt.l[1]}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          {path.length > 1 && (
+            <button onClick={back} style={{ background: 'transparent', border: `1px solid ${C.border}`, borderRadius: 8, padding: '7px 16px', color: C.sub, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}>
+              {ar ? '← رجوع' : '← Back'}
+            </button>
+          )}
+        </div>
+      )}
+
+      {node.type === 'r' && (
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.gold, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 18 }}>✓</span>
+            {ar ? 'الأدوات الموصى بها لهدفك:' : 'Recommended tools for your goal:'}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginBottom: 18 }}>
+            {node.tools.map((tool, i) => (
+              <div key={tool.key} style={{ background: C.card, border: `1px solid ${i === 0 ? C.gold + '55' : C.border}`, borderRadius: 14, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 160 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: i === 0 ? C.gold : C.text, marginBottom: 3 }}>
+                    {i === 0 && <span style={{ fontSize: 11, background: 'rgba(201,168,76,0.2)', color: C.gold, borderRadius: 5, padding: '1px 6px', marginInlineEnd: 8, fontWeight: 700 }}>{ar ? 'مقترح' : 'Primary'}</span>}
+                    {ar ? tool.name[0] : tool.name[1]}
+                  </div>
+                  <div style={{ fontSize: 11, color: C.sub }}>{ar ? tool.desc[0] : tool.desc[1]}</div>
+                </div>
+                <button onClick={() => onGo(tool.key)}
+                  style={{ background: i === 0 ? 'rgba(201,168,76,0.18)' : 'rgba(255,255,255,0.05)', border: `1px solid ${i === 0 ? C.gold : C.border}`, borderRadius: 9, padding: '9px 20px', color: i === 0 ? C.gold : C.sub, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  {ar ? 'افتح الأداة ←' : 'Open Tool →'}
+                </button>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button onClick={back} style={{ background: 'transparent', border: `1px solid ${C.border}`, borderRadius: 8, padding: '7px 16px', color: C.sub, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}>{ar ? '← رجوع' : '← Back'}</button>
+            <button onClick={reset} style={{ background: 'transparent', border: `1px solid ${C.border}`, borderRadius: 8, padding: '7px 16px', color: C.muted, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}>{ar ? '↺ ابدأ من جديد' : '↺ Start over'}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function sigmoid(x: number) { return 1 / (1 + Math.exp(-Math.max(-500, Math.min(500, x)))); }
 function logisticFit(X: number[][], y: number[]) {
   const n = X.length, k = X[0].length;
@@ -7337,7 +8127,9 @@ function APAFormatter({ ar }: { ar: boolean }) {
 // ── DATAHUB MAIN ─────────────────────────────────────────────────────────────
 // ════════════════════════════════════════════════════════════════════════════
 const SUBTABS_AR = [
+  { key: 'wizard',     icon: '🧭', label: 'مرشد الاختيار الإحصائي', short: 'مرشد' },
   { key: 'explorer',   icon: '📁', label: 'مستكشف البيانات',     short: 'استكشاف' },
+  { key: 'tsadvanced', icon: '📡', label: 'نماذج السلاسل الزمنية المتقدمة', short: 'ARIMA' },
   { key: 'desctable',  icon: '📋', label: 'جدول وصفي شامل',       short: 'جدول 1' },
   { key: 'freq',       icon: '📋', label: 'جدول تكراري',          short: 'تكراري' },
   { key: 'likert',     icon: '⚖️', label: 'مقياس ليكرت',          short: 'ليكرت' },
@@ -7383,7 +8175,9 @@ const SUBTABS_AR = [
   { key: 'equations',   icon: '🔢', label: 'المعادلات',             short: 'معادلات' },
 ];
 const SUBTABS_EN = [
+  { key: 'wizard',      icon: '🧭', label: 'Analysis Wizard',     short: 'Wizard' },
   { key: 'explorer',    icon: '📁', label: 'Data Explorer',       short: 'Explore' },
+  { key: 'tsadvanced',  icon: '📡', label: 'Advanced Time Series Models', short: 'ARIMA' },
   { key: 'desctable',   icon: '📋', label: 'Descriptive Table',    short: 'Table 1' },
   { key: 'freq',        icon: '📋', label: 'Frequency Table',     short: 'Freq' },
   { key: 'likert',      icon: '⚖️', label: 'Likert Scale',        short: 'Likert' },
@@ -7460,6 +8254,19 @@ export default function DataHub() {
 
       {/* Content */}
       <div style={{ padding: '22px 24px' }}>
+        {sub === 'wizard' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🧭 {ar ? 'مرشد الاختيار الإحصائي' : 'Statistical Analysis Wizard'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 20px' }}>
+              {ar
+                ? 'أجب على أسئلة بسيطة حول بياناتك وهدف بحثك وسيرشدك المرشد إلى الاختبار أو الأداة المناسبة مباشرةً'
+                : 'Answer a few simple questions about your data and research goal — the wizard will guide you to the right tool and open it directly'}
+            </p>
+            <StatWizard ar={ar} onGo={setSub} />
+          </>
+        )}
         {sub === 'explorer'   && <DataAnalyzer />}
         {sub === 'desctable' && (
           <>
@@ -7503,6 +8310,19 @@ export default function DataHub() {
                   : 'Moving averages · OLS trend line · Growth rates · Forecasting'}
             </p>
             <TimeSeriesAnalyzer ar={ar} />
+          </>
+        )}
+        {sub === 'tsadvanced' && (
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              📡 {ar ? 'نماذج السلاسل الزمنية المتقدمة' : 'Advanced Time Series Models'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.sub, margin: '0 0 18px' }}>
+              {ar
+                ? 'ARIMA / SARIMA · متوسطات متحركة (SMA/EMA/WMA) · Holt-Winters الموسمي · التحليل الطيفي FFT · شبكة عصبية MLP · ACF/PACF للتشخيص'
+                : 'ARIMA / SARIMA · Moving Averages (SMA/EMA/WMA) · Holt-Winters seasonal · Spectral Analysis (FFT) · Neural Network MLP · ACF/PACF diagnostics'}
+            </p>
+            <AdvTimeSeries ar={ar} />
           </>
         )}
         {sub === 'corr'       && (
