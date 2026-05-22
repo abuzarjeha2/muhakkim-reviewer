@@ -29,6 +29,34 @@ interface SectionResult {
   fixesAr: string[];
 }
 
+interface AiIssue {
+  type: 'spelling' | 'grammar' | 'style' | 'vocabulary' | 'punctuation';
+  severity: 'error' | 'warning' | 'info';
+  original: string;
+  suggestion: string;
+  explanation: string;
+  dictVerified?: boolean;
+}
+
+interface DictResult {
+  word: string;
+  found: boolean;
+  definition: string;
+  synonyms: string[];
+  antonyms: string[];
+  examples: string[];
+  partOfSpeech: string;
+  note?: string;
+}
+
+interface SummaryResult {
+  short: string;
+  bullets: string[];
+  academic: string;
+  originalWordCount: number;
+  summaryWordCount: number;
+}
+
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const WORDS_PER_PAGE = 270;
 
@@ -338,10 +366,27 @@ export default function Proofreader({ text: initialText = '' }: ProofreaderProps
   const [issues, setIssues] = useState<Issue[]>([]);
   const [sections, setSections] = useState<SectionResult[]>([]);
   const [hasRun, setHasRun] = useState(false);
-  const [activeTab, setActiveTab] = useState<'language' | 'structure' | 'report'>('language');
+  const [activeTab, setActiveTab] = useState<'language' | 'structure' | 'report' | 'ai' | 'dict' | 'summarize'>('language');
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
+
+  // AI state
+  const [aiIssues, setAiIssues] = useState<AiIssue[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiScore, setAiScore] = useState<number | null>(null);
+  const [aiSummaryText, setAiSummaryText] = useState("");
+  const [aiError, setAiError] = useState("");
+  // Dictionary state
+  const [dictWord, setDictWord] = useState("");
+  const [dictResult, setDictResult] = useState<DictResult | null>(null);
+  const [dictLoading, setDictLoading] = useState(false);
+  const [dictError, setDictError] = useState("");
+  // Summarize state
+  const [summaryResult, setSummaryResult] = useState<SummaryResult | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryMode, setSummaryMode] = useState<'short' | 'bullets' | 'academic'>('short');
+  const [summaryError, setSummaryError] = useState("");
 
   useEffect(() => {
     if (initialText && !hasRun) setText(initialText);
@@ -371,6 +416,73 @@ export default function Proofreader({ text: initialText = '' }: ProofreaderProps
   const copyText = () => {
     navigator.clipboard.writeText(text);
     toast({ title: lang === 'ar' ? 'تم نسخ النص' : 'Text copied' });
+  };
+
+  const runAIProofread = async () => {
+    if (!text.trim()) return;
+    setAiLoading(true);
+    setAiError("");
+    setAiIssues([]);
+    setAiScore(null);
+    setAiSummaryText("");
+    try {
+      const res = await fetch("/api/ai/proofread-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, lang }),
+      });
+      if (!res.ok) throw new Error("Server error");
+      const data = await res.json();
+      setAiIssues(data.issues ?? []);
+      setAiScore(data.score ?? null);
+      setAiSummaryText(data.summary ?? "");
+    } catch {
+      setAiError(lang === 'ar' ? 'فشل الاتصال بالخادم. حاول مجدداً.' : 'Failed to connect to server. Please try again.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const lookupWord = async () => {
+    if (!dictWord.trim()) return;
+    setDictLoading(true);
+    setDictError("");
+    setDictResult(null);
+    try {
+      const res = await fetch("/api/ai/define", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ word: dictWord, lang }),
+      });
+      if (!res.ok) throw new Error("Server error");
+      const data = await res.json();
+      setDictResult(data);
+    } catch {
+      setDictError(lang === 'ar' ? 'فشل البحث. حاول مجدداً.' : 'Lookup failed. Please try again.');
+    } finally {
+      setDictLoading(false);
+    }
+  };
+
+  const runSummarize = async () => {
+    if (!text.trim()) return;
+    setSummaryLoading(true);
+    setSummaryError("");
+    setSummaryResult(null);
+    try {
+      const res = await fetch("/api/ai/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, lang }),
+      });
+      if (!res.ok) throw new Error("Server error");
+      const data = await res.json();
+      setSummaryResult(data);
+    } catch {
+      setSummaryError(lang === 'ar' ? 'فشل التلخيص. حاول مجدداً.' : 'Summarization failed. Please try again.');
+    } finally {
+      setSummaryLoading(false);
+    }
   };
 
   const printReport = () => {
@@ -527,6 +639,361 @@ export default function Proofreader({ text: initialText = '' }: ProofreaderProps
             )}
           </div>
         </div>
+
+        {/* ─── AI Tools Section ─── */}
+        {text.trim().length > 20 && (
+          <div style={{ ...S.card, marginTop: 16 }}>
+            {/* AI Tool Tab Bar */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 16, background: '#060d1a', borderRadius: 10, padding: 5, border: '1px solid #ffffff08' }}>
+              {[
+                { key: 'ai',       icon: '🤖', ar: 'تدقيق AI',  en: 'AI Proofread' },
+                { key: 'dict',     icon: '📚', ar: 'القاموس',   en: 'Dictionary' },
+                { key: 'summarize',icon: '✂️', ar: 'تلخيص',     en: 'Summarize' },
+              ].map(t => (
+                <button key={t.key}
+                  style={{
+                    flex: 1,
+                    background: activeTab === t.key ? 'linear-gradient(135deg,#93c5fd22,#93c5fd11)' : 'transparent',
+                    border: activeTab === t.key ? '1px solid #93c5fd44' : '1px solid transparent',
+                    borderRadius: 8, padding: '8px 10px',
+                    color: activeTab === t.key ? '#93c5fd' : '#64748b',
+                    fontWeight: activeTab === t.key ? 700 : 500,
+                    fontSize: 12, cursor: 'pointer', transition: 'all .2s', fontFamily: 'inherit',
+                  }}
+                  onClick={() => setActiveTab(t.key as typeof activeTab)}
+                >
+                  {t.icon} {lang === 'ar' ? t.ar : t.en}
+                </button>
+              ))}
+            </div>
+
+            {/* AI Proofread Panel */}
+            {activeTab === 'ai' && (
+              <div>
+                <p style={{ color: '#64748b', fontSize: 13, marginBottom: 14, lineHeight: 1.7 }}>
+                  {lang === 'ar'
+                    ? 'تدقيق لغوي عميق بالذكاء الاصطناعي مع التحقق من القواميس العربية والإنجليزية — يكشف الأخطاء الإملائية والنحوية والأسلوبية'
+                    : 'Deep AI proofreading with Arabic & English dictionary verification — detects spelling, grammar, and style errors'}
+                </p>
+                <button
+                  className="mhk-btn-p"
+                  style={{ ...S.btnPrimary, background: 'linear-gradient(135deg,#93c5fd,#60a5fa)', boxShadow: '0 4px 20px #93c5fd44', opacity: aiLoading ? 0.7 : 1 }}
+                  onClick={runAIProofread}
+                  disabled={aiLoading}
+                >
+                  {aiLoading
+                    ? <><div style={S.spinner} />{lang === 'ar' ? ' AI يحلل النص…' : ' AI analyzing…'}</>
+                    : <><span>🤖</span>{lang === 'ar' ? ' تشغيل تدقيق AI' : ' Run AI Proofread'}</>
+                  }
+                </button>
+
+                {aiError && (
+                  <div style={{ marginTop: 12, background: '#1f0a0a', border: '1px solid #ef444433', borderRadius: 10, padding: '10px 14px', color: '#ef4444', fontSize: 13 }}>
+                    ⚠️ {aiError}
+                  </div>
+                )}
+
+                {aiScore !== null && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 14, background: '#060d1a', borderRadius: 10, padding: '12px 16px', border: '1px solid #ffffff08' }}>
+                    <div style={{
+                      width: 52, height: 52, borderRadius: '50%',
+                      background: `conic-gradient(${aiScore >= 80 ? '#10b981' : aiScore >= 55 ? '#f59e0b' : '#ef4444'} ${aiScore * 3.6}deg, #1e2940 0deg)`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#060d1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: aiScore >= 80 ? '#10b981' : aiScore >= 55 ? '#f59e0b' : '#ef4444' }}>{aiScore}</div>
+                    </div>
+                    <div>
+                      <div style={{ color: '#e2e8f0', fontWeight: 700, fontSize: 14 }}>
+                        {lang === 'ar' ? 'نتيجة الجودة اللغوية' : 'Language Quality Score'}
+                      </div>
+                      {aiSummaryText && <div style={{ color: '#64748b', fontSize: 12, marginTop: 3, lineHeight: 1.6 }}>{aiSummaryText}</div>}
+                    </div>
+                  </div>
+                )}
+
+                {aiIssues.length > 0 && (
+                  <div style={{ marginTop: 14 }}>
+                    <p style={{ color: '#94a3b8', fontSize: 12, marginBottom: 10 }}>
+                      {lang === 'ar' ? `تم اكتشاف ${aiIssues.length} ملاحظة لغوية:` : `Found ${aiIssues.length} language issues:`}
+                    </p>
+                    <div style={{ maxHeight: 420, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {aiIssues.map((issue, i) => {
+                        const sc = issue.severity === 'error' ? '#ef4444' : issue.severity === 'warning' ? '#f59e0b' : '#60a5fa';
+                        const typeLabel: Record<string, { ar: string; en: string }> = {
+                          spelling:    { ar: 'إملاء', en: 'Spelling' },
+                          grammar:     { ar: 'نحو', en: 'Grammar' },
+                          style:       { ar: 'أسلوب', en: 'Style' },
+                          vocabulary:  { ar: 'مفردات', en: 'Vocabulary' },
+                          punctuation: { ar: 'ترقيم', en: 'Punctuation' },
+                        };
+                        return (
+                          <div key={i} style={{ background: '#060d1a', border: `1px solid ${sc}33`, borderRadius: 10, overflow: 'hidden' }}>
+                            <div style={{ padding: '10px 14px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                                <span style={{ background: sc + '22', color: sc, borderRadius: 5, padding: '2px 8px', fontSize: 10, fontWeight: 800 }}>
+                                  {lang === 'ar' ? typeLabel[issue.type]?.ar : typeLabel[issue.type]?.en}
+                                </span>
+                                {issue.dictVerified && (
+                                  <span style={{ background: '#10b98122', color: '#10b981', borderRadius: 5, padding: '2px 8px', fontSize: 10, fontWeight: 600 }}>
+                                    📖 {lang === 'ar' ? 'محقق من القاموس' : 'Dict. verified'}
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 8, alignItems: 'center' }}>
+                                <div style={{ background: '#1f0a0a', borderRadius: 7, padding: '7px 10px', border: '1px solid #ef444422' }}>
+                                  <p style={{ fontSize: 10, color: '#ef4444', fontWeight: 700, margin: '0 0 2px' }}>
+                                    {lang === 'ar' ? '❌ الأصل' : '❌ Original'}
+                                  </p>
+                                  <p style={{ fontSize: 12, color: '#94a3b8', margin: 0, fontFamily: 'monospace' }}>{issue.original}</p>
+                                </div>
+                                <span style={{ color: '#475569', fontSize: 16 }}>→</span>
+                                <div style={{ background: '#0a1f15', borderRadius: 7, padding: '7px 10px', border: '1px solid #10b98122' }}>
+                                  <p style={{ fontSize: 10, color: '#10b981', fontWeight: 700, margin: '0 0 2px' }}>
+                                    {lang === 'ar' ? '✅ المقترح' : '✅ Suggestion'}
+                                  </p>
+                                  <p style={{ fontSize: 12, color: '#94a3b8', margin: 0, fontFamily: 'monospace' }}>{issue.suggestion}</p>
+                                </div>
+                              </div>
+                              {issue.explanation && (
+                                <p style={{ fontSize: 12, color: '#475569', marginTop: 6, lineHeight: 1.6, fontStyle: 'italic' }}>
+                                  💡 {issue.explanation}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {!aiLoading && aiIssues.length === 0 && aiScore !== null && (
+                  <div style={{ marginTop: 12, textAlign: 'center', padding: '20px 0' }}>
+                    <div style={{ fontSize: 36 }}>✅</div>
+                    <p style={{ color: '#10b981', fontWeight: 700, marginTop: 8 }}>
+                      {lang === 'ar' ? 'لا مشكلات لغوية! النص ممتاز.' : 'No language issues! Text looks great.'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Dictionary Panel */}
+            {activeTab === 'dict' && (
+              <div>
+                <p style={{ color: '#64748b', fontSize: 13, marginBottom: 14, lineHeight: 1.7 }}>
+                  {lang === 'ar'
+                    ? 'ابحث في القاموس العربي أو الإنجليزي — تعريف، مترادفات، أضداد، وأمثلة أكاديمية'
+                    : 'Search Arabic or English dictionary — definition, synonyms, antonyms, and academic examples'}
+                </p>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <input
+                    value={dictWord}
+                    onChange={e => setDictWord(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && lookupWord()}
+                    placeholder={lang === 'ar' ? 'اكتب كلمة للبحث…' : 'Type a word to look up…'}
+                    style={{ flex: 1, background: '#060d1a', border: '1px solid #ffffff15', borderRadius: 10, color: '#e2e8f0', fontSize: 14, padding: '10px 14px', fontFamily: 'inherit', outline: 'none' }}
+                  />
+                  <button
+                    className="mhk-btn-p"
+                    style={{ ...S.btnPrimary, background: 'linear-gradient(135deg,#5eead4,#2dd4bf)', boxShadow: '0 4px 20px #5eead433', padding: '10px 18px', opacity: dictLoading ? 0.7 : 1 }}
+                    onClick={lookupWord}
+                    disabled={dictLoading || !dictWord.trim()}
+                  >
+                    {dictLoading ? <div style={S.spinner} /> : '🔍'}
+                  </button>
+                </div>
+
+                {dictError && (
+                  <div style={{ marginTop: 12, background: '#1f0a0a', border: '1px solid #ef444433', borderRadius: 10, padding: '10px 14px', color: '#ef4444', fontSize: 13 }}>
+                    ⚠️ {dictError}
+                  </div>
+                )}
+
+                {dictResult && (
+                  <div style={{ marginTop: 14 }}>
+                    {!dictResult.found ? (
+                      <div style={{ background: '#1f0a0a', border: '1px solid #ef444433', borderRadius: 10, padding: 16, textAlign: 'center' }}>
+                        <div style={{ fontSize: 32 }}>❓</div>
+                        <p style={{ color: '#ef4444', fontWeight: 600, marginTop: 8 }}>
+                          {lang === 'ar' ? `لم يُعثر على "${dictResult.word}" في القاموس` : `"${dictResult.word}" not found in dictionary`}
+                        </p>
+                      </div>
+                    ) : (
+                      <div style={{ background: '#060d1a', border: '1px solid #5eead433', borderRadius: 12, overflow: 'hidden' }}>
+                        {/* Word header */}
+                        <div style={{ background: 'linear-gradient(135deg,#5eead422,#2dd4bf11)', padding: '14px 18px', borderBottom: '1px solid #5eead422' }}>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+                            <span style={{ color: '#5eead4', fontSize: 22, fontWeight: 800 }}>{dictResult.word}</span>
+                            <span style={{ background: '#5eead422', color: '#5eead4', borderRadius: 5, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{dictResult.partOfSpeech}</span>
+                          </div>
+                          <p style={{ color: '#94a3b8', fontSize: 13, marginTop: 6, lineHeight: 1.7, marginBottom: 0 }}>{dictResult.definition}</p>
+                        </div>
+                        <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                          {dictResult.synonyms?.length > 0 && (
+                            <div>
+                              <p style={{ color: '#10b981', fontSize: 12, fontWeight: 700, marginBottom: 7 }}>✅ {lang === 'ar' ? 'المترادفات' : 'Synonyms'}</p>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                {dictResult.synonyms.map((s, i) => (
+                                  <span key={i}
+                                    onClick={() => { setDictWord(s); }}
+                                    style={{ background: '#10b98122', color: '#10b981', border: '1px solid #10b98133', borderRadius: 6, padding: '3px 10px', fontSize: 12, cursor: 'pointer' }}
+                                  >{s}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {dictResult.antonyms?.length > 0 && (
+                            <div>
+                              <p style={{ color: '#f87171', fontSize: 12, fontWeight: 700, marginBottom: 7 }}>⇔ {lang === 'ar' ? 'الأضداد' : 'Antonyms'}</p>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                {dictResult.antonyms.map((a, i) => (
+                                  <span key={i} style={{ background: '#ef444422', color: '#f87171', border: '1px solid #ef444433', borderRadius: 6, padding: '3px 10px', fontSize: 12 }}>{a}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {dictResult.examples?.length > 0 && (
+                            <div>
+                              <p style={{ color: '#93c5fd', fontSize: 12, fontWeight: 700, marginBottom: 7 }}>📖 {lang === 'ar' ? 'أمثلة' : 'Examples'}</p>
+                              {dictResult.examples.map((ex, i) => (
+                                <p key={i} style={{ color: '#64748b', fontSize: 12, lineHeight: 1.7, margin: '0 0 4px', fontStyle: 'italic' }}>— {ex}</p>
+                              ))}
+                            </div>
+                          )}
+                          {dictResult.note && (
+                            <div style={{ background: '#C9A84C11', border: '1px solid #C9A84C33', borderRadius: 8, padding: '8px 12px' }}>
+                              <p style={{ color: '#C9A84C', fontSize: 12, margin: 0, lineHeight: 1.7 }}>💡 {dictResult.note}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Summarize Panel */}
+            {activeTab === 'summarize' && (
+              <div>
+                <p style={{ color: '#64748b', fontSize: 13, marginBottom: 14, lineHeight: 1.7 }}>
+                  {lang === 'ar'
+                    ? 'تلخيص ذكي للنص بثلاث صيغ: قصير، نقاط رئيسية، ومستخلص أكاديمي'
+                    : 'Smart text summarization in three formats: short, key points, and academic abstract'}
+                </p>
+
+                {/* Mode Selector */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+                  {[
+                    { key: 'short',    ar: '📄 تلخيص قصير',       en: '📄 Short Summary' },
+                    { key: 'bullets',  ar: '📌 نقاط رئيسية',      en: '📌 Key Points' },
+                    { key: 'academic', ar: '🎓 مستخلص أكاديمي',   en: '🎓 Academic Abstract' },
+                  ].map(m => (
+                    <button key={m.key}
+                      onClick={() => setSummaryMode(m.key as typeof summaryMode)}
+                      style={{
+                        background: summaryMode === m.key ? '#c4b5fd22' : 'transparent',
+                        color: summaryMode === m.key ? '#c4b5fd' : '#64748b',
+                        border: summaryMode === m.key ? '1px solid #c4b5fd44' : '1px solid #ffffff11',
+                        borderRadius: 8, padding: '6px 14px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                      }}
+                    >
+                      {lang === 'ar' ? m.ar : m.en}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  className="mhk-btn-p"
+                  style={{ ...S.btnPrimary, background: 'linear-gradient(135deg,#c4b5fd,#a78bfa)', boxShadow: '0 4px 20px #c4b5fd44', opacity: summaryLoading ? 0.7 : 1 }}
+                  onClick={runSummarize}
+                  disabled={summaryLoading}
+                >
+                  {summaryLoading
+                    ? <><div style={S.spinner} />{lang === 'ar' ? ' AI يلخص…' : ' AI summarizing…'}</>
+                    : <><span>✂️</span>{lang === 'ar' ? ' تلخيص بالذكاء الاصطناعي' : ' AI Summarize'}</>
+                  }
+                </button>
+
+                {summaryError && (
+                  <div style={{ marginTop: 12, background: '#1f0a0a', border: '1px solid #ef444433', borderRadius: 10, padding: '10px 14px', color: '#ef4444', fontSize: 13 }}>
+                    ⚠️ {summaryError}
+                  </div>
+                )}
+
+                {summaryResult && (
+                  <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {/* Word count info */}
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      {[
+                        { label: lang === 'ar' ? 'الأصل' : 'Original', value: summaryResult.originalWordCount, color: '#64748b' },
+                        { label: lang === 'ar' ? 'الملخص' : 'Summary', value: summaryResult.summaryWordCount, color: '#c4b5fd' },
+                        { label: lang === 'ar' ? 'الاختصار' : 'Reduction',
+                          value: summaryResult.originalWordCount > 0 ? `${Math.round((1 - summaryResult.summaryWordCount / summaryResult.originalWordCount) * 100)}%` : '–',
+                          color: '#10b981' },
+                      ].map(s => (
+                        <div key={s.label} style={{ flex: 1, background: '#060d1a', borderRadius: 8, padding: '10px', textAlign: 'center', border: '1px solid #ffffff08' }}>
+                          <div style={{ color: s.color, fontWeight: 800, fontSize: 16 }}>{s.value}</div>
+                          <div style={{ color: '#475569', fontSize: 11, marginTop: 2 }}>{s.label}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Short summary */}
+                    {summaryMode === 'short' && summaryResult.short && (
+                      <div style={{ background: '#060d1a', border: '1px solid #c4b5fd33', borderRadius: 12, padding: '16px 18px' }}>
+                        <p style={{ color: '#c4b5fd', fontWeight: 700, fontSize: 12, marginBottom: 8 }}>
+                          📄 {lang === 'ar' ? 'الملخص القصير' : 'Short Summary'}
+                        </p>
+                        <p style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.8, margin: 0 }}>{summaryResult.short}</p>
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(summaryResult.short); toast({ title: lang === 'ar' ? 'تم النسخ' : 'Copied' }); }}
+                          style={{ marginTop: 10, background: 'transparent', color: '#64748b', border: '1px solid #ffffff11', borderRadius: 6, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}
+                        >
+                          📋 {lang === 'ar' ? 'نسخ' : 'Copy'}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Bullets */}
+                    {summaryMode === 'bullets' && summaryResult.bullets?.length > 0 && (
+                      <div style={{ background: '#060d1a', border: '1px solid #c4b5fd33', borderRadius: 12, padding: '16px 18px' }}>
+                        <p style={{ color: '#c4b5fd', fontWeight: 700, fontSize: 12, marginBottom: 12 }}>
+                          📌 {lang === 'ar' ? 'النقاط الرئيسية' : 'Key Points'}
+                        </p>
+                        <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {summaryResult.bullets.map((b, i) => (
+                            <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                              <span style={{ color: '#c4b5fd', fontWeight: 800, flexShrink: 0, marginTop: 1 }}>•</span>
+                              <span style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.7 }}>{b}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Academic abstract */}
+                    {summaryMode === 'academic' && summaryResult.academic && (
+                      <div style={{ background: '#060d1a', border: '1px solid #c4b5fd33', borderRadius: 12, padding: '16px 18px' }}>
+                        <p style={{ color: '#c4b5fd', fontWeight: 700, fontSize: 12, marginBottom: 8 }}>
+                          🎓 {lang === 'ar' ? 'المستخلص الأكاديمي' : 'Academic Abstract'}
+                        </p>
+                        <p style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.9, margin: 0 }}>{summaryResult.academic}</p>
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(summaryResult.academic); toast({ title: lang === 'ar' ? 'تم النسخ' : 'Copied' }); }}
+                          style={{ marginTop: 10, background: 'transparent', color: '#64748b', border: '1px solid #ffffff11', borderRadius: 6, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}
+                        >
+                          📋 {lang === 'ar' ? 'نسخ' : 'Copy'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Stats Row */}
         {hasRun && (
