@@ -11,6 +11,7 @@ import AIDetector from "../components/muhakkim/AIDetector";
 import CitationPlagiarism from "../components/muhakkim/CitationPlagiarism";
 import DataHub from "../components/muhakkim/DataHub";
 import ServicesPortal from "../components/muhakkim/ServicesPortal";
+import ResearchSearch from "../components/muhakkim/ResearchSearch";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tool definitions
@@ -25,6 +26,7 @@ const TOOLS = [
   { key: "qr",         icon: "📷", ar: "مولّد QR",           en: "QR Generator",          color: "#e879f9", bg: "#e879f9" },
   { key: "discussion", icon: "💬", ar: "لوحة المناقشة",      en: "Discussion",            color: "#4ade80", bg: "#4ade80" },
   { key: "services",   icon: "🏢", ar: "خدماتنا الإحصائية",  en: "Our Services",          color: "#C9A84C", bg: "#C9A84C" },
+  { key: "research",   icon: "🔭", ar: "بحث علمي",            en: "Research Search",       color: "#a78bfa", bg: "#a78bfa" },
   { key: "about",      icon: "ℹ️",  ar: "عن البرنامج",        en: "About",                 color: "#94a3b8", bg: "#94a3b8" },
 ];
 
@@ -229,6 +231,7 @@ export default function Muhakkim() {
           {activeTab === "qr"         && <div className="mhk-inner"><QRGenerator /></div>}
           {activeTab === "report"     && <div className="mhk-inner"><ReviewReport /></div>}
           {activeTab === "discussion" && <div className="mhk-inner"><DiscussionPanel text={extractedText} fileName={fileInfo?.name ?? ""} /></div>}
+          {activeTab === "research"   && <ResearchSearch />}
           {activeTab === "about"      && <div className="mhk-inner"><About /></div>}
           {activeTab === "services"   && <div className="mhk-inner"><ServicesPortal /></div>}
         </div>

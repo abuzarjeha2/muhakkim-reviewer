@@ -5,6 +5,7 @@ import aiDetectRouter from "./ai/detect";
 import aiProofreadRouter from "./ai/proofread-text";
 import aiDefineRouter from "./ai/define";
 import aiSummarizeRouter from "./ai/summarize";
+import researchSearchRouter from "./research/search";
 import citationFormatRouter from "./citation/format";
 import citationPlagiarismRouter from "./citation/plagiarism";
 
@@ -16,6 +17,7 @@ router.use(aiDetectRouter);
 router.use(aiProofreadRouter);
 router.use(aiDefineRouter);
 router.use(aiSummarizeRouter);
+router.use(researchSearchRouter);
 router.use(citationFormatRouter);
 router.use(citationPlagiarismRouter);
 
