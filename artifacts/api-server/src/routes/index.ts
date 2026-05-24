@@ -6,6 +6,7 @@ import aiProofreadRouter from "./ai/proofread-text";
 import aiDefineRouter from "./ai/define";
 import aiSummarizeRouter from "./ai/summarize";
 import researchSearchRouter from "./research/search";
+import thesisRolesRouter from "./thesis/roles";
 import citationFormatRouter from "./citation/format";
 import citationPlagiarismRouter from "./citation/plagiarism";
 
@@ -18,6 +19,7 @@ router.use(aiProofreadRouter);
 router.use(aiDefineRouter);
 router.use(aiSummarizeRouter);
 router.use(researchSearchRouter);
+router.use(thesisRolesRouter);
 router.use(citationFormatRouter);
 router.use(citationPlagiarismRouter);
 

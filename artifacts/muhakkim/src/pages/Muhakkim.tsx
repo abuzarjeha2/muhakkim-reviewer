@@ -12,6 +12,7 @@ import CitationPlagiarism from "../components/muhakkim/CitationPlagiarism";
 import DataHub        from "../components/muhakkim/DataHub";
 import ServicesPortal from "../components/muhakkim/ServicesPortal";
 import ResearchSearch from "../components/muhakkim/ResearchSearch";
+import ThesisRoles    from "../components/muhakkim/ThesisRoles";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -49,9 +50,10 @@ const GROUPS: ToolGroup[] = [
     descEn: "Upload papers, write review reports and discussion notes",
     color: "#C9A84C",
     tools: [
-      { key: "upload",     icon: "📂", ar: "رفع الملف",       en: "Upload File",     descAr: "رفع PDF أو Word لاستخراج النص",       descEn: "Upload PDF or Word to extract text" },
-      { key: "report",     icon: "📋", ar: "تقرير التحكيم",   en: "Review Report",   descAr: "إنشاء تقرير تحكيم منظّم ومفصّل",      descEn: "Generate a structured review report" },
-      { key: "discussion", icon: "💬", ar: "لوحة المناقشة",   en: "Discussion",      descAr: "تدوين ملاحظات ونقاط النقاش",          descEn: "Take discussion notes on the paper" },
+      { key: "upload",     icon: "📂", ar: "رفع الملف",             en: "Upload File",       descAr: "رفع PDF أو Word لاستخراج النص",                       descEn: "Upload PDF or Word to extract text" },
+      { key: "thesis",     icon: "🎓", ar: "تحليل حسب الدور",      en: "Role-Based Analysis", descAr: "مشرف · مناقش داخلي · خارجي · باحث — تحليل وحلول عملية", descEn: "Supervisor · Internal · External · Researcher — analysis & solutions" },
+      { key: "report",     icon: "📋", ar: "تقرير التحكيم",         en: "Review Report",     descAr: "إنشاء تقرير تحكيم منظّم ومفصّل",                      descEn: "Generate a structured review report" },
+      { key: "discussion", icon: "💬", ar: "لوحة المناقشة",         en: "Discussion",        descAr: "تدوين ملاحظات ونقاط النقاش",                          descEn: "Take discussion notes on the paper" },
     ],
   },
   {
@@ -414,6 +416,7 @@ export default function Muhakkim() {
       {activeTab && (
         <div className="mhk-fade" key={activeTab} style={{ maxWidth: 900, margin: "0 auto" }}>
           {activeTab === "upload"     && <FileUpload onExtracted={setExtractedText} onFileInfo={setFileInfo} extractedText={extractedText} />}
+          {activeTab === "thesis"     && <ThesisRoles text={extractedText} />}
           {activeTab === "proofread"  && <Proofreader text={extractedText} />}
           {activeTab === "datalab"    && <DataHub />}
           {activeTab === "aidetect"   && <AIDetector initialText={extractedText} />}
