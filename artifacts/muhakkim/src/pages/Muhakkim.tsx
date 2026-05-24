@@ -79,8 +79,8 @@ const GROUPS: ToolGroup[] = [
     descEn: "QR code generator and app information",
     color: "#e879f9", gradient: "135deg,#e879f920,#a855f718",
     tools: [
-      { key: "qr",    icon: "📷", ar: "مولّد QR",    en: "QR Generator", descAr: "توليد رموز QR للروابط والنصوص", descEn: "Generate QR codes for links & text" },
-      { key: "about", icon: "ℹ️",  ar: "عن البرنامج", en: "About",         descAr: "معلومات ومميزات منصة محكّم",    descEn: "About the Muhakkim platform" },
+      { key: "qr",    icon: "📷", ar: "مولّد QR",    en: "QR Generator", descAr: "توليد رموز QR للروابط والنصوص",       descEn: "Generate QR codes for links & text" },
+      { key: "about", icon: "👨‍🏫", ar: "من أنا | تواصل", en: "About Me",    descAr: "السيرة الذاتية وقنوات يوتيوب وتيك توك", descEn: "CV, YouTube & TikTok channels" },
     ],
   },
 ];
