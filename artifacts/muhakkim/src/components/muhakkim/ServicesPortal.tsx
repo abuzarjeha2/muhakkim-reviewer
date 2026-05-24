@@ -88,16 +88,13 @@ const C = {
     },
     about: {
       title: "من نحن",
-      subtitle: "فريق متخصص في الاستشارات الإحصائية والبحث العلمي",
-      story: "تأسست شركتنا لخدمة الباحثين والأكاديميين في المملكة العربية السعودية والوطن العربي، بهدف تقديم دعم إحصائي احترافي يرتقي بمستوى الأبحاث العلمية. نؤمن بأن كل باحث يستحق التميّز.",
-      mission: "رسالتنا",
-      missionText: "تمكين الباحثين من تحقيق أعلى مستويات الجودة في أبحاثهم العلمية من خلال تقديم خدمات إحصائية متكاملة وموثوقة.",
+      subtitle: "أستاذ مساعد في الإحصاء · خبرة أكاديمية وبحثية تتجاوز ٢٠ عاماً",
+      story: "د. أبوذر يوسف علي أحمد — أستاذ مساعد في الإحصاء بالجامعة الإسلامية في مينيسوتا وكلية الغد للعلوم التطبيقية. حاصل على دكتوراه في الإحصاء ولديه خبرة تدريسية وبحثية في جامعات سعودية وعالمية كبرى. يقدّم خدمات استشارية متكاملة للباحثين وطلاب الدراسات العليا.",
+      mission: "رسالتي",
+      missionText: "تمكين الباحثين من تحقيق أعلى مستويات الجودة في أبحاثهم العلمية من خلال خدمات إحصائية متكاملة وموثوقة مبنية على خبرة أكاديمية حقيقية.",
       values: ["الدقة العلمية", "الأمانة والنزاهة", "الالتزام بالمواعيد", "السرية التامة", "الجودة المستمرة"],
       team: [
-        { name: "د. محمد العنزي", role: "المؤسس والمدير التنفيذي", bg: "#C9A84C" },
-        { name: "أ. ريم الشمري", role: "كبيرة المحللين الإحصائيين", bg: "#93c5fd" },
-        { name: "د. علي القحطاني", role: "مستشار المناهج البحثية", bg: "#5eead4" },
-        { name: "أ. دانة السعيد", role: "متخصصة الترجمة العلمية", bg: "#c4b5fd" },
+        { name: "د. أبوذر يوسف علي أحمد", role: "أستاذ مساعد في الإحصاء · مستشار أكاديمي", bg: "#C9A84C" },
       ],
     },
     contact: {
@@ -207,16 +204,13 @@ const C = {
     },
     about: {
       title: "About Us",
-      subtitle: "A team specializing in statistical consulting and academic research",
-      story: "Our company was founded to serve researchers and academics in Saudi Arabia and the Arab world, with the goal of providing professional statistical support that elevates the quality of scientific research. We believe every researcher deserves excellence.",
-      mission: "Our Mission",
-      missionText: "To empower researchers to achieve the highest quality in their scientific work through comprehensive, reliable statistical services.",
+      subtitle: "Assistant Professor of Statistics · 20+ years of academic & research experience",
+      story: "Dr. Abuzar Yousef Ali Ahmed — Assistant Professor of Statistics at the Islamic University of Minnesota and Al-Ghad College of Applied Sciences. He holds a Ph.D. in Statistics and brings over two decades of teaching and research experience across leading Saudi and international universities. He offers comprehensive statistical consulting for researchers and graduate students.",
+      mission: "My Mission",
+      missionText: "To empower researchers to achieve the highest quality in their scientific work through comprehensive, reliable statistical services grounded in genuine academic expertise.",
       values: ["Scientific Accuracy", "Integrity & Honesty", "Commitment to Deadlines", "Full Confidentiality", "Continuous Quality"],
       team: [
-        { name: "Dr. Mohammed Al-Anzi", role: "Founder & CEO", bg: "#C9A84C" },
-        { name: "Reem Al-Shamri", role: "Senior Statistical Analyst", bg: "#93c5fd" },
-        { name: "Dr. Ali Al-Qahtani", role: "Research Methods Consultant", bg: "#5eead4" },
-        { name: "Dana Al-Saeed", role: "Scientific Translation Specialist", bg: "#c4b5fd" },
+        { name: "Dr. Abuzar Yousef Ali Ahmed", role: "Assistant Professor of Statistics · Academic Consultant", bg: "#C9A84C" },
       ],
     },
     contact: {
@@ -546,44 +540,93 @@ function TrainingPage({ t, onContact }: { t: typeof C.ar; onContact: () => void 
 
 // ─── Page: About ──────────────────────────────────────────────────────────────
 function AboutPage({ t }: { t: typeof C.ar }) {
+  const isAr = t.about.title === "من نحن";
   const valueColors = ["#C9A84C", "#93c5fd", "#5eead4", "#c4b5fd", "#4ade80"];
+
+  const STATS = isAr
+    ? [{ v: "+٢٠", l: "سنة خبرة" }, { v: "١٢", l: "بحثاً منشوراً" }, { v: "٧+", l: "جامعات" }, { v: "٢٦", l: "مكتبة رقمية" }]
+    : [{ v: "20+", l: "Years Exp." }, { v: "12", l: "Publications" }, { v: "7+", l: "Universities" }, { v: "26", l: "Libraries" }];
+
+  const BADGES = isAr
+    ? ["🎓 دكتوراه إحصاء", "📊 تحليل سلاسل زمنية", "🌍 عربي · إنجليزي", "🏛️ جامعة مينيسوتا الإسلامية"]
+    : ["🎓 Ph.D. Statistics", "📊 Time Series Analysis", "🌍 Arabic · English", "🏛️ Islamic Univ. of Minnesota"];
+
   return (
     <div>
       <h2 style={{ color: G, fontSize: 22, fontWeight: 800, marginBottom: 6 }}>{t.about.title}</h2>
-      <p style={{ color: "#64748b", fontSize: 13, marginBottom: 24 }}>{t.about.subtitle}</p>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
-        <div style={cardStyle({ padding: "24px 20px" })}>
-          <h3 style={{ color: G, fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
-            {t.about.title === "من نحن" ? "قصتنا" : "Our Story"}
-          </h3>
-          <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.8 }}>{t.about.story}</p>
+      <p style={{ color: "#64748b", fontSize: 13, marginBottom: 20 }}>{t.about.subtitle}</p>
+
+      {/* ── Profile hero card ── */}
+      <div style={{ ...cardStyle({ padding: "28px 24px", marginBottom: 16 }), background: "linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.04))", border: "1px solid rgba(201,168,76,0.3)", display: "flex", alignItems: "flex-start", gap: 20, flexWrap: "wrap" }}>
+        {/* Avatar */}
+        <div style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg,#C9A84C,#b45309)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, flexShrink: 0, boxShadow: "0 4px 20px rgba(201,168,76,0.35)" }}>
+          👨‍🏫
         </div>
-        <div style={cardStyle({ padding: "24px 20px" })}>
-          <h3 style={{ color: "#93c5fd", fontSize: 16, fontWeight: 700, marginBottom: 12 }}>{t.about.mission}</h3>
-          <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.8 }}>{t.about.missionText}</p>
-          <div style={{ marginTop: 16 }}>
-            <h4 style={{ color: "#5eead4", fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
-              {t.about.title === "من نحن" ? "قيمنا" : "Our Values"}
-            </h4>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {t.about.values.map((v, i) => (
-                <span key={i} style={{ background: `${valueColors[i % valueColors.length]}18`, color: valueColors[i % valueColors.length], border: `1px solid ${valueColors[i % valueColors.length]}33`, borderRadius: 6, padding: "3px 10px", fontSize: 12 }}>{v}</span>
-              ))}
-            </div>
+        {/* Info */}
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ color: G, fontWeight: 900, fontSize: 20, marginBottom: 4 }}>
+            {isAr ? "د. أبوذر يوسف علي أحمد" : "Dr. Abuzar Yousef Ali Ahmed"}
           </div>
+          <div style={{ color: "#94a3b8", fontSize: 13, marginBottom: 14 }}>
+            {isAr ? "أستاذ مساعد في الإحصاء · مستشار أكاديمي" : "Assistant Professor of Statistics · Academic Consultant"}
+          </div>
+          {/* Stats row */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
+            {STATS.map(s => (
+              <div key={s.l} style={{ background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.25)", borderRadius: 10, padding: "8px 12px", textAlign: "center", minWidth: 56 }}>
+                <div style={{ color: G, fontWeight: 900, fontSize: 16, lineHeight: 1 }}>{s.v}</div>
+                <div style={{ color: "#64748b", fontSize: 10, marginTop: 2 }}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+          {/* Badges */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+            {BADGES.map(b => (
+              <span key={b} style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.22)", borderRadius: 8, padding: "4px 10px", color: "#c9a84c", fontSize: 11.5, fontWeight: 600 }}>{b}</span>
+            ))}
+          </div>
+        </div>
+        {/* Channels */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, flexShrink: 0 }}>
+          <a href="https://www.youtube.com/@D.Abuzar" target="_blank" rel="noopener noreferrer"
+            style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 10, padding: "8px 12px", textDecoration: "none" }}>
+            <span style={{ fontSize: 18 }}>▶️</span>
+            <div>
+              <div style={{ color: "#ef4444", fontWeight: 700, fontSize: 12 }}>YouTube</div>
+              <div style={{ color: "#94a3b8", fontSize: 10, fontFamily: "monospace" }}>@D.Abuzar</div>
+            </div>
+          </a>
+          <a href="https://www.tiktok.com/@dr.abuzar79" target="_blank" rel="noopener noreferrer"
+            style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(13,148,136,0.1)", border: "1px solid rgba(13,148,136,0.25)", borderRadius: 10, padding: "8px 12px", textDecoration: "none" }}>
+            <span style={{ fontSize: 18 }}>🎵</span>
+            <div>
+              <div style={{ color: "#0d9488", fontWeight: 700, fontSize: 12 }}>TikTok</div>
+              <div style={{ color: "#94a3b8", fontSize: 10, fontFamily: "monospace" }}>@dr.abuzar79</div>
+            </div>
+          </a>
         </div>
       </div>
-      <h3 style={{ color: "#e2e8f0", fontSize: 18, fontWeight: 700, marginBottom: 16 }}>
-        {t.about.title === "من نحن" ? "فريق العمل" : "Our Team"}
-      </h3>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 14 }}>
-        {t.about.team.map((m, i) => (
-          <div key={i} style={{ ...cardStyle({ padding: "20px 16px", textAlign: "center" }) }}>
-            <Avatar name={m.name} bg={m.bg} size={60} />
-            <div style={{ marginTop: 12, color: "#e2e8f0", fontSize: 14, fontWeight: 600 }}>{m.name}</div>
-            <div style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>{m.role}</div>
+
+      {/* ── Story + Mission ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+        <div style={cardStyle({ padding: "20px 18px" })}>
+          <h3 style={{ color: G, fontSize: 15, fontWeight: 700, marginBottom: 10 }}>
+            {isAr ? "نبذة تعريفية" : "About"}
+          </h3>
+          <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.8, margin: 0 }}>{t.about.story}</p>
+        </div>
+        <div style={cardStyle({ padding: "20px 18px" })}>
+          <h3 style={{ color: "#93c5fd", fontSize: 15, fontWeight: 700, marginBottom: 10 }}>{t.about.mission}</h3>
+          <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.8, margin: "0 0 14px" }}>{t.about.missionText}</p>
+          <h4 style={{ color: "#5eead4", fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
+            {isAr ? "قيمي" : "My Values"}
+          </h4>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+            {t.about.values.map((v, i) => (
+              <span key={i} style={{ background: `${valueColors[i % valueColors.length]}18`, color: valueColors[i % valueColors.length], border: `1px solid ${valueColors[i % valueColors.length]}33`, borderRadius: 6, padding: "3px 10px", fontSize: 12 }}>{v}</span>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );
