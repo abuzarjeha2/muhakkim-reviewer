@@ -373,56 +373,83 @@ export default function SmartReview() {
                   </div>
                 )}
 
-                {/* Findings list — note + page + AI suggestion */}
-                {result.findings.length > 0 && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 14 }}>
-                    {result.findings.map((f, i) => {
-                      const m = sevMeta[f.severity];
-                      return (
-                        <div key={i} style={{ background: "#fff", border: `1.5px solid ${m.border}`, borderRadius: 12, overflow: "hidden" }}>
-                          {/* Header */}
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "10px 14px", background: m.bg, borderBottom: `1px solid ${m.border}`, flexWrap: "wrap" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                              <span style={{ background: "#fff", border: `1.5px solid ${m.border}`, color: m.color, fontWeight: 900, fontSize: 11, padding: "3px 9px", borderRadius: 7 }}>#{i + 1}</span>
-                              <span style={{ display: "flex", alignItems: "center", gap: 4, background: "#fff", border: `1.5px solid ${m.border}`, color: m.color, fontWeight: 700, fontSize: 11, padding: "3px 9px", borderRadius: 7 }}>
-                                {m.icon} {ar ? m.labelAr : m.labelEn}
+                {/* Findings grouped by page (ascending) */}
+                {result.findings.length > 0 && (() => {
+                  const sorted = [...result.findings].sort((a, b) => a.page - b.page);
+                  const groups: { page: number; items: typeof sorted }[] = [];
+                  for (const f of sorted) {
+                    const last = groups[groups.length - 1];
+                    if (last && last.page === f.page) last.items.push(f);
+                    else groups.push({ page: f.page, items: [f] });
+                  }
+                  let counter = 0;
+                  return (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 18, marginBottom: 14 }}>
+                      {groups.map(g => (
+                        <div key={g.page} style={{ background: "#fff", border: "1.5px solid #e8ecf4", borderRadius: 14, overflow: "hidden" }}>
+                          {/* Page header */}
+                          <div style={{ background: "linear-gradient(135deg,#1e293b,#334155)", color: "#fff", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              <span style={{ fontSize: 20 }}>📄</span>
+                              <span style={{ fontWeight: 900, fontSize: 16 }}>
+                                {ar ? `الصفحة ${g.page}` : `Page ${g.page}`}
                               </span>
-                              {f.section && (
-                                <span style={{ background: "#fff", border: "1.5px solid #e8ecf4", color: NAVY, fontWeight: 700, fontSize: 11, padding: "3px 9px", borderRadius: 7 }}>
-                                  {f.section}
-                                </span>
-                              )}
                             </div>
-                            <span style={{ display: "flex", alignItems: "center", gap: 4, background: "#1e293b", color: "#fff", fontWeight: 800, fontSize: 11, padding: "4px 10px", borderRadius: 7 }}>
-                              📄 {ar ? "صفحة" : "Page"} {f.page}
+                            <span style={{ background: "rgba(255,255,255,0.15)", borderRadius: 8, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
+                              {g.items.length} {ar ? (g.items.length === 1 ? "ملاحظة" : "ملاحظات") : (g.items.length === 1 ? "finding" : "findings")}
                             </span>
                           </div>
 
-                          {/* Body */}
-                          <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
-                            {f.quote && (
-                              <div style={{ background: "#f8faff", borderInlineStart: "3px solid #c7d4f0", padding: "8px 12px", borderRadius: 6, fontSize: 12, color: "#475569", fontStyle: "italic", lineHeight: 1.7 }}>
-                                «{f.quote}»
-                              </div>
-                            )}
-                            <div>
-                              <div style={{ fontSize: 11, fontWeight: 800, color: NAVY, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                                📝 {ar ? "الملاحظة" : "Note"}
-                              </div>
-                              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.85, color: "#1e293b" }}>{f.note}</p>
-                            </div>
-                            <div style={{ background: "linear-gradient(135deg,#f0f9ff,#ecfeff)", border: "1.5px solid #bae6fd", borderRadius: 10, padding: "10px 12px" }}>
-                              <div style={{ fontSize: 11, fontWeight: 800, color: "#0369a1", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: 6 }}>
-                                🤖 {ar ? "الحل المقترح بالذكاء الاصطناعي" : "AI-Suggested Fix"}
-                              </div>
-                              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.85, color: "#0c4a6e", whiteSpace: "pre-wrap" }}>{f.suggestion || (ar ? "—" : "—")}</p>
-                            </div>
+                          {/* Findings on this page */}
+                          <div style={{ display: "flex", flexDirection: "column" }}>
+                            {g.items.map((f, idx) => {
+                              counter += 1;
+                              const m = sevMeta[f.severity];
+                              return (
+                                <div key={idx} style={{ padding: "14px 16px", borderTop: idx > 0 ? "1px dashed #e8ecf4" : "none" }}>
+                                  {/* Meta row */}
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                                    <span style={{ background: m.bg, border: `1.5px solid ${m.border}`, color: m.color, fontWeight: 900, fontSize: 11, padding: "3px 9px", borderRadius: 7 }}>
+                                      #{counter}
+                                    </span>
+                                    <span style={{ display: "flex", alignItems: "center", gap: 4, background: m.bg, border: `1.5px solid ${m.border}`, color: m.color, fontWeight: 700, fontSize: 11, padding: "3px 9px", borderRadius: 7 }}>
+                                      {m.icon} {ar ? m.labelAr : m.labelEn}
+                                    </span>
+                                    {f.section && (
+                                      <span style={{ background: "#f8faff", border: "1.5px solid #e8ecf4", color: NAVY, fontWeight: 700, fontSize: 11, padding: "3px 9px", borderRadius: 7 }}>
+                                        {f.section}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {f.quote && (
+                                    <div style={{ background: "#f8faff", borderInlineStart: "3px solid #c7d4f0", padding: "8px 12px", borderRadius: 6, fontSize: 12, color: "#475569", fontStyle: "italic", lineHeight: 1.7, marginBottom: 10 }}>
+                                      «{f.quote}»
+                                    </div>
+                                  )}
+
+                                  <div style={{ marginBottom: 10 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: NAVY, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                                      📝 {ar ? "الملاحظة" : "Note"}
+                                    </div>
+                                    <p style={{ margin: 0, fontSize: 13, lineHeight: 1.85, color: "#1e293b" }}>{f.note}</p>
+                                  </div>
+
+                                  <div style={{ background: "linear-gradient(135deg,#f0f9ff,#ecfeff)", border: "1.5px solid #bae6fd", borderRadius: 10, padding: "10px 12px" }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: "#0369a1", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: 6 }}>
+                                      🤖 {ar ? "الحل المقترح بالذكاء الاصطناعي" : "AI-Suggested Fix"}
+                                    </div>
+                                    <p style={{ margin: 0, fontSize: 13, lineHeight: 1.85, color: "#0c4a6e", whiteSpace: "pre-wrap" }}>{f.suggestion}</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  );
+                })()}
 
                 {/* Final recommendations */}
                 {result.recommendations.length > 0 && (

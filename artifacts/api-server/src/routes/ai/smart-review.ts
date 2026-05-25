@@ -82,7 +82,10 @@ router.post("/ai/smart-review", async (req, res) => {
 قواعد صارمة:
 - لكل ملاحظة يجب أن يكون هناك "page" برقم صفحة محدد (لا تستخدم 0 أو نص).
 - "suggestion" يجب أن تكون عملية وليست عامة — اقترح صياغة بديلة، اختباراً إحصائياً محدداً، مرجعاً، أو خطوة منهجية.
-- اعرض 8-15 ملاحظة على الأقل موزعة على المحاور المختارة، مرتبة من الأهم إلى الأقل.
+- امسح الرسالة صفحةً صفحةً بالترتيب من الأولى إلى الأخيرة، وارصد كل ملاحظة في موضعها الفعلي.
+- رتّب مصفوفة "findings" تصاعدياً حسب رقم الصفحة (صفحة 1 أولاً، ثم 2، ثم 3 ... إلخ).
+- لا تتجاوز أي صفحة فيها مشكلة واضحة. يمكن أن تحتوي الصفحة الواحدة على أكثر من ملاحظة.
+- استخرج 12-25 ملاحظة موزعة على كامل الصفحات وعلى المحاور المختارة.
 - "section" يجب أن تطابق إحدى المحاور المختارة حرفياً.`
     : `You are an expert academic professor reviewing theses. You identify methodological gaps and errors with high precision and suggest practical fixes.
 You will receive thesis text divided into pages headed by [Page N]. Every finding MUST cite the actual page number where the issue appears.
@@ -107,7 +110,10 @@ Reply with pure JSON only, no prose outside:
 Strict rules:
 - Every finding MUST have an integer "page" (no 0, no string).
 - "suggestion" must be specific and actionable — propose alternative wording, a concrete statistical test, a reference, or a methodological step.
-- Provide at least 8-15 findings across the selected sections, ordered most-to-least important.
+- Scan the thesis page-by-page from first to last; record each finding at its true page.
+- ORDER the "findings" array by ascending page number (page 1 first, then 2, then 3 ...).
+- Do not skip any page that has a clear issue. A single page may contain multiple findings.
+- Extract 12-25 findings spanning the full document and the selected sections.
 - "section" must exactly match one of the selected sections.`;
 
   const userPrompt = isAr
@@ -196,7 +202,8 @@ ${pageBlocks}`;
           suggestion,
         };
       })
-      .filter((x): x is { section: string; severity: "high" | "medium" | "low"; page: number; quote: string; note: string; suggestion: string } => x !== null);
+      .filter((x): x is { section: string; severity: "high" | "medium" | "low"; page: number; quote: string; note: string; suggestion: string } => x !== null)
+      .sort((a, b) => a.page - b.page);
 
     const rawCount = Array.isArray(parsed.findings) ? parsed.findings.length : 0;
     if (rawCount > 0 && findings.length === 0) {
