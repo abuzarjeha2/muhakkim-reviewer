@@ -18,6 +18,10 @@ import SectionReview     from "../components/muhakkim/SectionReview";
 import AutoReview        from "../components/muhakkim/AutoReview";
 import PlatformReview    from "../components/muhakkim/PlatformReview";
 import LocalReview       from "../components/muhakkim/LocalReview";
+import AIWriter          from "../components/muhakkim/AIWriter";
+import Paraphraser       from "../components/muhakkim/Paraphraser";
+import FindTopics        from "../components/muhakkim/FindTopics";
+import ChatPDF           from "../components/muhakkim/ChatPDF";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface SubTool { key: string; icon: string; ar: string; en: string; descAr: string; descEn: string; }
@@ -51,8 +55,10 @@ const GROUPS: ToolGroup[] = [
     descEn: "AI proofreading, dictionary & citation",
     color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe",
     tools: [
-      { key: "proofread", icon: "📝", ar: "التدقيق اللغوي", en: "Proofreader",           descAr: "تدقيق عميق بالذكاء الاصطناعي وقاموس وتلخيص", descEn: "Deep AI proofread, dictionary & summarise" },
-      { key: "citation",  icon: "📖", ar: "اقتباس وانتحال", en: "Citation & Plagiarism", descAr: "تنسيق المراجع وكشف الانتحال",                 descEn: "Format references & detect plagiarism" },
+      { key: "proofread",   icon: "📝", ar: "التدقيق اللغوي",   en: "Proofreader",           descAr: "تدقيق عميق بالذكاء الاصطناعي وقاموس وتلخيص", descEn: "Deep AI proofread, dictionary & summarise" },
+      { key: "aiwriter",    icon: "✍️", ar: "كاتب أكاديمي ذكي", en: "AI Writer",             descAr: "ولّد مقدمات، مراجعات، خواتم، ومستخلصات بحثية", descEn: "Generate intros, lit reviews, conclusions & abstracts" },
+      { key: "paraphraser", icon: "🔄", ar: "معيد الصياغة",      en: "Paraphraser",           descAr: "أعد صياغة النصوص بـ٥ أساليب مختلفة",          descEn: "Rewrite text in 5 different styles" },
+      { key: "citation",    icon: "📖", ar: "اقتباس وانتحال",    en: "Citation & Plagiarism", descAr: "تنسيق المراجع وكشف الانتحال",                 descEn: "Format references & detect plagiarism" },
     ],
   },
   {
@@ -80,7 +86,9 @@ const GROUPS: ToolGroup[] = [
     descEn: "Search millions of papers & 26 libraries",
     color: "#5b21b6", bg: "#f5f3ff", border: "#ddd6fe",
     tools: [
-      { key: "research", icon: "🔭", ar: "البحث والمكتبات", en: "Research & Libraries", descAr: "Semantic Scholar · OpenAlex · CrossRef · ٢٦ مكتبة", descEn: "Semantic Scholar · OpenAlex · CrossRef · 26 libs" },
+      { key: "research",   icon: "🔭", ar: "البحث والمكتبات",   en: "Research & Libraries", descAr: "Semantic Scholar · OpenAlex · CrossRef · ٢٦ مكتبة", descEn: "Semantic Scholar · OpenAlex · CrossRef · 26 libs" },
+      { key: "findtopics", icon: "🎯", ar: "اكتشف موضوعات",    en: "Find Topics",          descAr: "اقتراح ١٠ موضوعات بحثية حسب التخصص والاهتمامات",   descEn: "Suggest 10 research topics by field & interests" },
+      { key: "chatpdf",    icon: "💬", ar: "دردشة مع PDF",       en: "Chat with PDF",        descAr: "ارفع ورقة بحثية واسأل الذكاء الاصطناعي عنها",     descEn: "Upload a paper and chat with AI about it" },
     ],
   },
   {
@@ -396,6 +404,10 @@ export default function Muhakkim() {
           {activeTab === "autoreview"     && <AutoReview />}
           {activeTab === "platformreview" && <PlatformReview />}
           {activeTab === "localreview"   && <LocalReview />}
+          {activeTab === "aiwriter"      && <AIWriter />}
+          {activeTab === "paraphraser"   && <Paraphraser />}
+          {activeTab === "findtopics"    && <FindTopics />}
+          {activeTab === "chatpdf"       && <ChatPDF />}
           {activeTab === "upload"     && <FileUpload onExtracted={setExtractedText} onFileInfo={setFileInfo} extractedText={extractedText} />}
           {activeTab === "thesis"     && <ThesisRoles text={extractedText} />}
           {activeTab === "proofread"  && <Proofreader text={extractedText} />}
