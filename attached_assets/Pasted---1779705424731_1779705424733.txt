@@ -1,0 +1,246 @@
+لا يمكن تشغيل المشروع من ملف واحد، ولكني سأعطيك نصاً واحداً يحتوي على جميع الملفات الثلاثة مع فواصل واضحة، يمكنك نسخه كاملاً، ثم إنشاء الملفات بنفسك يدوياً حسب الشرح الموجود داخل النص.
+
+انسخ النص التالي بالكامل، واحفظه في ملف مثلاً project_export.txt، ثم اتبع التعليمات داخله:
+
+```
+===========================================================
+# ملف 1: requirements.txt
+# انسخ محتوى هذا القسم واحفظه في ملف باسم requirements.txt
+===========================================================
+Flask==2.3.3
+openai==0.28.0
+python-dotenv==1.0.0
+
+===========================================================
+# ملف 2: app.py
+# انسخ محتوى هذا القسم واحفظه في ملف باسم app.py
+===========================================================
+import os
+import json
+from flask import Flask, render_template, request, jsonify
+import openai
+from dotenv import load_dotenv
+
+load_dotenv()
+app = Flask(__name__)
+
+# ضع مفتاح API الخاص بك هنا أو في ملف .env
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+def review_section(section_name, section_text, custom_prompt):
+    if not section_text or section_text.strip() == "":
+        return "لم يتم إدخال نص لهذا القسم."
+    
+    prompt = f"""أنت خبير أكاديمي متخصص في مراجعة رسائل الماجستير والدكتوراه. 
+المطلوب: مراجعة قسم "{section_name}" التالي وتقديم ملاحظات دقيقة حول:
+- الأخطاء المنهجية والمحتوى
+- الفجوات أو النواقص
+- نقاط الضعف والقوة
+- اقتراحات للتحسين
+يُرجى أن تكون الملاحظات واضحة ومحددة.
+
+{custom_prompt}
+
+نص القسم:
+{section_text}
+
+الملاحظات:
+"""
+    
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "أنت أستاذ جامعي خبير في الإشراف على رسائل الدراسات العليا."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.5,
+            max_tokens=1000
+        )
+        return response.choices[0].message['content'].strip()
+    except Exception as e:
+        return f"حدث خطأ أثناء مراجعة القسم: {str(e)}"
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/review', methods=['POST'])
+def review():
+    data = request.json
+    
+    sections = {
+        "العنوان": {
+            "text": data.get("title", ""),
+            "prompt": "راجع دقة العنوان ومدى تعبيره عن محتوى الرسالة، واقترح تحسينات إن وجدت."
+        },
+        "الفهرس": {
+            "text": data.get("index", ""),
+            "prompt": "راجع تنظيم الفهرس وتسلسل الموضوعات، وهل يعكس هيكل الرسالة بشكل منطقي؟"
+        },
+        "المستخلص": {
+            "text": data.get("abstract", ""),
+            "prompt": "راجع شمولية المستخلص: المشكلة، الأهداف، المنهج، النتائج، والتوصيات. حدد الفجوات."
+        },
+        "الإطار النظري": {
+            "text": data.get("theoretical", ""),
+            "prompt": "راجع تغطية الأدبيات السابقة، حدد الثغرات النظرية، وتقييم تكامل النظريات مع موضوع الرسالة."
+        },
+        "المنهجية": {
+            "text": data.get("methodology", ""),
+            "prompt": "راجع تصميم البحث، أدوات جمع البيانات، العينة، الأساليب الإحصائية، ومدى ملاءمتها للإجابة عن الأسئلة."
+        },
+        "تحليل البيانات": {
+            "text": data.get("analysis", ""),
+            "prompt": "راجع دقة التحليل، وضوح النتائج الإحصائية أو النوعية، وتطابقها مع أسئلة البحث."
+        },
+        "النتائج": {
+            "text": data.get("results", ""),
+            "prompt": "راجع عرض النتائج وارتباطها بالفرضيات والأهداف، ومدى تفسيرها بشكل غير منحاز."
+        },
+        "التوصيات": {
+            "text": data.get("recommendations", ""),
+            "prompt": "راجع مدى واقعية التوصيات وارتباطها بنتائج الدراسة، وأهميتها للتطبيق أو الأبحاث المستقبلية."
+        },
+        "الفرضيات": {
+            "text": data.get("hypotheses", ""),
+            "prompt": "راجع صياغة الفرضيات، قابليتها للاختبار، واتساقها مع المنهجية."
+        },
+        "الأهداف": {
+            "text": data.get("objectives", ""),
+            "prompt": "راجع وضوح الأهداف وقابليتها للتحقق، ومدى تغطيتها لمشكلة البحث."
+        }
+    }
+    
+    results = {}
+    for section_name, section_info in sections.items():
+        review_text = review_section(section_name, section_info["text"], section_info["prompt"])
+        results[section_name] = review_text
+    
+    return jsonify(results)
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+===========================================================
+# ملف 3: templates/index.html
+# أنشئ مجلداً باسم templates، ثم انسخ محتوى هذا القسم واحفظه داخل المجلد باسم index.html
+===========================================================
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مراجعة رسائل الماجستير والدكتوراه بالذكاء الاصطناعي</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #f0f2f5; margin: 0; padding: 20px; }
+        .container { max-width: 1400px; margin: auto; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 25px; }
+        h1 { color: #1e3c72; text-align: center; margin-bottom: 10px; }
+        .sub { text-align: center; color: #2c5282; margin-bottom: 30px; }
+        .sections-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 20px; }
+        .card { background: #fefefe; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; }
+        .card-header { background: #1e3c72; color: white; padding: 12px 16px; font-weight: bold; font-size: 1.1rem; }
+        .card-body { padding: 16px; }
+        textarea { width: 100%; min-height: 180px; padding: 12px; border: 1px solid #cbd5e0; border-radius: 12px; font-size: 14px; resize: vertical; font-family: monospace; }
+        .review-btn { background: #2b6cb0; color: white; border: none; padding: 8px 16px; border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 12px; }
+        .review-btn:hover { background: #2c5282; }
+        .review-result { margin-top: 16px; background: #f1f5f9; padding: 12px; border-radius: 12px; font-size: 14px; white-space: pre-wrap; max-height: 250px; overflow-y: auto; border-right: 4px solid #2b6cb0; }
+        .global-actions { text-align: center; margin: 30px 0 20px; }
+        .global-btn { background: #2f855a; color: white; border: none; padding: 12px 32px; border-radius: 40px; font-size: 16px; font-weight: bold; margin: 0 10px; cursor: pointer; }
+        .global-btn.reset { background: #718096; }
+        .status { text-align: center; margin: 15px; font-weight: bold; color: #2d3748; }
+        footer { text-align: center; margin-top: 35px; font-size: 13px; color: #4a5568; }
+        @media (max-width: 950px) { .sections-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📘 مراجعة رسائل الماجستير والدكتوراه</h1>
+    <div class="sub">✍️ باستخدام الذكاء الاصطناعي - ملاحظات دقيقة للأخطاء والفجوات</div>
+    <div class="global-actions">
+        <button class="global-btn" id="reviewAllBtn">🔍 مراجعة جميع الأقسام</button>
+        <button class="global-btn reset" id="resetBtn">🗑️ مسح جميع الحقول</button>
+    </div>
+    <div id="statusMsg" class="status"></div>
+    <div class="sections-grid" id="sectionsContainer"></div>
+    <footer>⚠️ يتطلب مفتاح API صحيح من OpenAI (يُضاف في ملف .env أو مباشرة في app.py)</footer>
+</div>
+<script>
+    const sections = [
+        { id: "title", label: "🏷️ العنوان" }, { id: "index", label: "📑 الفهرس / المحتويات" },
+        { id: "abstract", label: "📄 المستخلص" }, { id: "theoretical", label: "📚 الإطار النظري" },
+        { id: "methodology", label: "🔬 المنهجية" }, { id: "analysis", label: "📊 تحليل البيانات" },
+        { id: "results", label: "📈 النتائج" }, { id: "recommendations", label: "💡 التوصيات" },
+        { id: "hypotheses", label: "❓ الفرضيات" }, { id: "objectives", label: "🎯 الأهداف" }
+    ];
+    function buildForm() {
+        const container = document.getElementById('sectionsContainer');
+        container.innerHTML = '';
+        sections.forEach(section => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `<div class="card-header">${section.label}</div><div class="card-body"><textarea id="txt_${section.id}" placeholder="أدخل نص ${section.label} هنا..."></textarea><button class="review-btn" data-section="${section.id}">📌 مراجعة هذا القسم فقط</button><div id="result_${section.id}" class="review-result">بانتظار المراجعة...</div></div>`;
+            container.appendChild(card);
+        });
+        document.querySelectorAll('.review-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                reviewSingleSection(btn.getAttribute('data-section'));
+            });
+        });
+    }
+    async function reviewSingleSection(sectionId) {
+        const text = document.getElementById(`txt_${sectionId}`).value;
+        const resultDiv = document.getElementById(`result_${sectionId}`);
+        resultDiv.innerHTML = "⏳ جاري المراجعة...";
+        const payload = {};
+        sections.forEach(sec => { payload[sec.id] = (sec.id === sectionId) ? text : ""; });
+        try {
+            const response = await fetch('/review', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: payload.title, index: payload.index, abstract: payload.abstract, theoretical: payload.theoretical, methodology: payload.methodology, analysis: payload.analysis, results: payload.results, recommendations: payload.recommendations, hypotheses: payload.hypotheses, objectives: payload.objectives })
+            });
+            const data = await response.json();
+            const map = { title:"العنوان", index:"الفهرس", abstract:"المستخلص", theoretical:"الإطار النظري", methodology:"المنهجية", analysis:"تحليل البيانات", results:"النتائج", recommendations:"التوصيات", hypotheses:"الفرضيات", objectives:"الأهداف" };
+            if(data[map[sectionId]]) resultDiv.innerHTML = data[map[sectionId]].replace(/\n/g, '<br>');
+            else resultDiv.innerHTML = "لا توجد ملاحظات.";
+        } catch(err) { resultDiv.innerHTML = "خطأ: "+err.message; }
+    }
+    async function reviewAllSections() {
+        document.getElementById('statusMsg').innerHTML = "🔄 جاري مراجعة جميع الأقسام...";
+        const payload = {};
+        for(const sec of sections) payload[sec.id] = document.getElementById(`txt_${sec.id}`).value;
+        try {
+            const response = await fetch('/review', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ title:payload.title, index:payload.index, abstract:payload.abstract, theoretical:payload.theoretical, methodology:payload.methodology, analysis:payload.analysis, results:payload.results, recommendations:payload.recommendations, hypotheses:payload.hypotheses, objectives:payload.objectives }) });
+            const data = await response.json();
+            const map = { title:"العنوان", index:"الفهرس", abstract:"المستخلص", theoretical:"الإطار النظري", methodology:"المنهجية", analysis:"تحليل البيانات", results:"النتائج", recommendations:"التوصيات", hypotheses:"الفرضيات", objectives:"الأهداف" };
+            for(const sec of sections) {
+                const div = document.getElementById(`result_${sec.id}`);
+                if(data[map[sec.id]]) div.innerHTML = data[map[sec.id]].replace(/\n/g, '<br>');
+                else div.innerHTML = "لا توجد ملاحظات.";
+            }
+            document.getElementById('statusMsg').innerHTML = "✅ اكتملت المراجعة.";
+        } catch(err) { document.getElementById('statusMsg').innerHTML = "❌ فشل: "+err.message; }
+    }
+    function resetAllFields() {
+        for(const sec of sections) { document.getElementById(`txt_${sec.id}`).value = ''; document.getElementById(`result_${sec.id}`).innerHTML = 'بانتظار المراجعة...'; }
+        document.getElementById('statusMsg').innerHTML = '';
+    }
+    window.onload = () => { buildForm(); document.getElementById('reviewAllBtn').addEventListener('click', reviewAllSections); document.getElementById('resetBtn').addEventListener('click', resetAllFields); };
+</script>
+</body>
+</html>
+
+===========================================================
+# تعليمات التشغيل:
+# 1. أنشئ مجلداً فارغاً (مثلاً thesis_reviewer).
+# 2. داخل المجلد، ضع الملفات الثلاثة كما هو موضح أعلاه.
+# 3. (اختياري) أضف ملف .env يحتوي على السطر: OPENAI_API_KEY=sk-...
+# 4. افتح الطرفية (Terminal) في نفس المجلد، ونفذ:
+#    pip install -r requirements.txt
+#    python app.py
+# 5. افتح المتصفح على الرابط: http://127.0.0.1:5000
+===========================================================
+```
+
+انسخ النص أعلاه بالكامل، ثم اتبع التعليمات الموجودة في الأسفل لإنشاء الملفات وتشغيل المشروع.

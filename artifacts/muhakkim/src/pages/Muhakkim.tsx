@@ -14,6 +14,7 @@ import ServicesPortal    from "../components/muhakkim/ServicesPortal";
 import ResearchSearch    from "../components/muhakkim/ResearchSearch";
 import ThesisRoles       from "../components/muhakkim/ThesisRoles";
 import SmartReview       from "../components/muhakkim/SmartReview";
+import SectionReview     from "../components/muhakkim/SectionReview";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface SubTool { key: string; icon: string; ar: string; en: string; descAr: string; descEn: string; }
@@ -30,7 +31,8 @@ const GROUPS: ToolGroup[] = [
     descEn: "Upload papers, review reports & discussion",
     color: "#b45309", bg: "#fffbeb", border: "#fde68a",
     tools: [
-      { key: "smartreview", icon: "🚀", ar: "المراجعة الذكية الشاملة", en: "Smart Full Review",    descAr: "ارفع PDF واحصل على تقرير تحكيم أكاديمي متكامل",         descEn: "Upload PDF & get a full AI academic review report" },
+      { key: "smartreview",    icon: "🚀", ar: "المراجعة الذكية الشاملة",    en: "Smart Full Review",     descAr: "ارفع PDF واحصل على تقرير تحكيم أكاديمي متكامل",          descEn: "Upload PDF & get a full AI academic review report" },
+      { key: "sectionreview", icon: "📘", ar: "مراجعة أقسام الرسالة",       en: "Section-by-Section Review", descAr: "راجع كل قسم على حدة: المستخلص، المنهجية، النتائج…", descEn: "Review each section: abstract, methodology, results…" },
       { key: "upload",     icon: "📂", ar: "رفع الملف",              en: "Upload File",          descAr: "رفع PDF أو Word لاستخراج النص",                         descEn: "Upload PDF or Word to extract text" },
       { key: "thesis",     icon: "🎓", ar: "تحليل حسب الدور",       en: "Role-Based Analysis",  descAr: "مشرف · مناقش داخلي · خارجي · باحث",                    descEn: "Supervisor · Internal · External · Researcher" },
       { key: "report",     icon: "📋", ar: "تقرير التحكيم",          en: "Review Report",        descAr: "إنشاء تقرير تحكيم منظّم ومفصّل",                        descEn: "Generate a structured review report" },
@@ -383,7 +385,8 @@ export default function Muhakkim() {
       {/* ══ TOOL VIEW ═══════════════════════════════════════════════════════ */}
       {activeTab && (
         <div key={activeTab} className="mhk-fade" style={{ maxWidth: 960, margin: "0 auto" }}>
-          {activeTab === "smartreview" && <SmartReview />}
+          {activeTab === "smartreview"    && <SmartReview />}
+          {activeTab === "sectionreview"  && <SectionReview />}
           {activeTab === "upload"     && <FileUpload onExtracted={setExtractedText} onFileInfo={setFileInfo} extractedText={extractedText} />}
           {activeTab === "thesis"     && <ThesisRoles text={extractedText} />}
           {activeTab === "proofread"  && <Proofreader text={extractedText} />}
