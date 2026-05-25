@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useLanguage } from "../../lib/i18n";
 
-interface Result { content: string; wordCount: number; }
+interface Reference { title: string; url: string; snippet?: string; verified: boolean }
+interface Result { content: string; wordCount: number; references?: Reference[] }
 
 const TYPES: { key: string; ar: string; en: string; icon: string }[] = [
   { key: "intro",       ar: "مقدمة بحثية",        en: "Introduction",       icon: "📖" },
@@ -24,6 +25,7 @@ export default function AIWriter() {
   const [type, setType] = useState("intro");
   const [tone, setTone] = useState("academic");
   const [words, setWords] = useState(250);
+  const [withReferences, setWithReferences] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
@@ -36,7 +38,7 @@ export default function AIWriter() {
     try {
       const r = await fetch("/api/ai/writer", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, type, tone, words, lang }),
+        body: JSON.stringify({ topic, type, tone, words, lang, withReferences }),
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "Failed");
@@ -100,6 +102,20 @@ export default function AIWriter() {
           </div>
         </div>
 
+        <label style={{ display:"flex", alignItems:"center", gap:10, marginTop:16, padding:"12px 14px", background: withReferences?"#fffbeb":"#f8faff", border:`1.5px solid ${withReferences?"#fde68a":"#e8ecf4"}`, borderRadius:10, cursor:"pointer", transition:"all .12s" }}>
+          <input type="checkbox" checked={withReferences} onChange={e=>setWithReferences(e.target.checked)} style={{ accentColor: GOLD, width:16, height:16, flexShrink:0 }} />
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:13, fontWeight:800, color: withReferences?GOLD:NAVY, marginBottom:2 }}>
+              🔗 {isAr ? "تضمين مراجع حقيقية موثّقة" : "Include real verified references"}
+            </div>
+            <div style={{ fontSize:11, color:"#64748b", lineHeight:1.5 }}>
+              {isAr
+                ? "يستخدم بحث الويب لاسترجاع مصادر حقيقية، ويتحقّق من صحة كل رابط (يستغرق وقتاً أطول قليلاً)."
+                : "Uses web search to retrieve real sources and verifies each URL (takes a bit longer)."}
+            </div>
+          </div>
+        </label>
+
         <button onClick={handleGenerate} disabled={loading}
           style={{ width:"100%", marginTop:16, background:"linear-gradient(135deg,#C9A84C,#b45309)", border:"none", borderRadius:10, color:"#fff", padding:"12px", fontWeight:800, fontSize:14, cursor: loading?"wait":"pointer", fontFamily:"inherit", boxShadow:"0 4px 12px #C9A84C33", opacity: loading?0.7:1 }}>
           {loading ? (isAr?"⏳ جارٍ الكتابة...":"⏳ Writing...") : (isAr?"✨ ولّد النص":"✨ Generate")}
@@ -123,6 +139,44 @@ export default function AIWriter() {
           <div style={{ background:"#fafbff", border:"1px solid #eef1f8", borderRadius:10, padding:"14px 16px", fontSize:14, lineHeight:1.9, color:NAVY, whiteSpace:"pre-wrap" }}>
             {result.content}
           </div>
+
+          {result.references && result.references.length > 0 && (
+            <div style={{ marginTop:14, background:"#f8faff", border:"1.5px solid #e8ecf4", borderRadius:12, padding:"14px 16px" }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10, gap:8, flexWrap:"wrap" }}>
+                <div style={{ fontSize:13, fontWeight:800, color:NAVY }}>
+                  📚 {isAr ? "المراجع المُسترجَعة من الويب" : "Web-Retrieved References"}
+                </div>
+                <div style={{ display:"flex", gap:6 }}>
+                  <span style={{ background:"#dcfce7", color:"#15803d", fontSize:11, fontWeight:700, padding:"3px 9px", borderRadius:7 }}>
+                    ✓ {result.references.filter(r=>r.verified).length} {isAr?"مُتحقَّق":"verified"}
+                  </span>
+                  {result.references.some(r=>!r.verified) && (
+                    <span style={{ background:"#fef3c7", color:"#a16207", fontSize:11, fontWeight:700, padding:"3px 9px", borderRadius:7 }}>
+                      ⚠ {result.references.filter(r=>!r.verified).length} {isAr?"غير مُتحقَّق":"unverified"}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <ol style={{ margin:0, paddingInlineStart:22, display:"flex", flexDirection:"column", gap:8 }}>
+                {result.references.map((r, i) => (
+                  <li key={i} style={{ fontSize:12.5, lineHeight:1.7 }}>
+                    <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ color: r.verified?"#1d4ed8":"#92400e", fontWeight:700, textDecoration:"none", wordBreak:"break-word" }}>
+                      {r.title}
+                    </a>
+                    <span style={{ marginInlineStart:6, fontSize:10, fontWeight:800, padding:"1px 6px", borderRadius:5, background: r.verified?"#dcfce7":"#fef3c7", color: r.verified?"#15803d":"#a16207" }}>
+                      {r.verified ? (isAr?"✓ موجود":"✓ live") : (isAr?"⚠ تعذّر التحقق":"⚠ unverified")}
+                    </span>
+                    <div style={{ fontSize:10.5, color:"#94a3b8", marginTop:2, wordBreak:"break-all" }}>{r.url}</div>
+                  </li>
+                ))}
+              </ol>
+              <div style={{ marginTop:10, fontSize:10.5, color:"#94a3b8", lineHeight:1.6 }}>
+                {isAr
+                  ? "الروابط المُتحقَّق منها تعني أن الخادم استجاب فعلياً، وليس بالضرورة أن المحتوى يدعم الاقتباس — يُنصح بالمراجعة اليدوية."
+                  : "Verified links mean the server responded — manual review is still recommended to confirm the content supports the citation."}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
