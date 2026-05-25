@@ -29,16 +29,15 @@ const SECTIONS: Section[] = [
   { idAr: "التوصيات والمقترحات والتوثيق الأكاديمي للمراجع",             idEn: "Recommendations, Suggestions and Academic References",                   labelAr: "📝 التوصيات والمقترحات والمراجع",              labelEn: "📝 Recommendations & References" },
 ];
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function formatMd(md: string): string {
-  return md
-    .replace(/^## (.+)$/gm, '<h3 style="color:#1e293b;font-size:15px;font-weight:800;margin:18px 0 8px;border-bottom:2px solid #e8ecf4;padding-bottom:5px">$1</h3>')
-    .replace(/^### (.+)$/gm, '<h4 style="color:#374151;font-size:14px;font-weight:700;margin:14px 0 6px">$1</h4>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#1e293b">$1</strong>')
-    .replace(/^- (.+)$/gm, '<li style="margin:4px 0;line-height:1.7">$1</li>')
-    .replace(/\n{2,}/g, '</p><p style="margin:0 0 8px;line-height:1.8">')
-    .replace(/\n/g, '<br>');
-}
+type Severity = "high" | "medium" | "low";
+type Finding = { section: string; severity: Severity; page: number; quote: string; note: string; suggestion: string };
+type ReviewResult = {
+  overallAssessment: string;
+  score: number | null;
+  findings: Finding[];
+  recommendations: string[];
+};
+type PageChunk = { page: number; text: string };
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function SmartReview() {
@@ -47,50 +46,53 @@ export default function SmartReview() {
 
   const fileRef = useRef<HTMLInputElement>(null);
   const [fileName,   setFileName]   = useState("");
-  const [pdfText,    setPdfText]    = useState("");
+  const [pages,      setPages]      = useState<PageChunk[]>([]);
   const [pdfStatus,  setPdfStatus]  = useState<"idle"|"loading"|"ok"|"error">("idle");
-  const [pageCount,  setPageCount]  = useState(0);
 
   const [role,       setRole]       = useState(0);
   const [checked,    setChecked]    = useState<boolean[]>(SECTIONS.map(() => true));
 
   const [loading,    setLoading]    = useState(false);
-  const [report,     setReport]     = useState("");
+  const [result,     setResult]     = useState<ReviewResult | null>(null);
   const [error,      setError]      = useState("");
 
-  // ── PDF extraction ──
+  // ── PDF extraction (per-page) ──
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setFileName(file.name);
     setPdfStatus("loading");
-    setPdfText("");
-    setReport("");
+    setPages([]);
+    setResult(null);
 
     try {
       const ext = file.name.toLowerCase();
 
       if (ext.endsWith(".txt") || ext.endsWith(".md")) {
         const txt = await file.text();
-        setPdfText(txt);
-        setPageCount(0);
+        // Heuristic: treat ~3000 chars per "page"
+        const CHARS_PER_PAGE = 3000;
+        const chunks: PageChunk[] = [];
+        for (let i = 0; i < txt.length; i += CHARS_PER_PAGE) {
+          chunks.push({ page: chunks.length + 1, text: txt.slice(i, i + CHARS_PER_PAGE) });
+        }
+        setPages(chunks.length ? chunks : [{ page: 1, text: txt }]);
         setPdfStatus("ok");
         return;
       }
 
-      // PDF via pdfjs
       const buf = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-      const maxP = Math.min(pdf.numPages, 50);
-      let text = "";
+      const maxP = Math.min(pdf.numPages, 80);
+      const collected: PageChunk[] = [];
       for (let i = 1; i <= maxP; i++) {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
-        text += content.items.map((item) => ("str" in item ? item.str : "")).join(" ") + "\n";
+        const text = content.items.map((item) => ("str" in item ? item.str : "")).join(" ").trim();
+        if (text.length > 0) collected.push({ page: i, text });
       }
-      setPdfText(text);
-      setPageCount(maxP);
-      setPdfStatus("ok");
+      setPages(collected);
+      setPdfStatus(collected.length ? "ok" : "error");
     } catch {
       setPdfStatus("error");
     }
@@ -98,24 +100,29 @@ export default function SmartReview() {
 
   // ── Submit ──
   const submit = async () => {
-    if (!pdfText) return;
+    if (pages.length === 0) return;
     const selectedSections = SECTIONS.filter((_, i) => checked[i]).map(s => ar ? s.idAr : s.idEn);
     if (selectedSections.length === 0) return;
 
-    setLoading(true); setError(""); setReport("");
+    setLoading(true); setError(""); setResult(null);
 
     try {
       const res = await fetch("/api/ai/smart-review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: pdfText, role: ar ? ROLES_AR[role] : ROLES_EN[role], sections: selectedSections }),
+        body: JSON.stringify({
+          pages,
+          role: ar ? ROLES_AR[role] : ROLES_EN[role],
+          sections: selectedSections,
+          lang: ar ? "ar" : "en",
+        }),
       });
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
         throw new Error((e as { error?: string }).error ?? `HTTP ${res.status}`);
       }
-      const data = await res.json() as { report: string };
-      setReport(data.report);
+      const data = await res.json() as ReviewResult;
+      setResult(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -123,9 +130,32 @@ export default function SmartReview() {
     }
   };
 
-  // ── Download ──
+  // ── Download as text ──
   const download = () => {
-    const blob = new Blob([report], { type: "text/plain;charset=utf-8" });
+    if (!result) return;
+    const lines: string[] = [];
+    lines.push(ar ? "═══ تقرير المراجعة الذكية الشاملة ═══" : "═══ Smart Academic Review Report ═══");
+    lines.push("");
+    if (result.score != null) lines.push(`${ar ? "الدرجة الإجمالية" : "Overall Score"}: ${result.score} / 100`);
+    lines.push("");
+    lines.push(ar ? "── التقييم العام ──" : "── Overall Assessment ──");
+    lines.push(result.overallAssessment || "—");
+    lines.push("");
+    lines.push(ar ? `── الملاحظات (${result.findings.length}) ──` : `── Findings (${result.findings.length}) ──`);
+    result.findings.forEach((f, i) => {
+      lines.push("");
+      lines.push(`${i + 1}. [${f.severity.toUpperCase()}] ${f.section}`);
+      lines.push(`   ${ar ? "الصفحة" : "Page"}: ${f.page}`);
+      if (f.quote) lines.push(`   ${ar ? "الاقتباس" : "Quote"}: «${f.quote}»`);
+      lines.push(`   ${ar ? "الملاحظة" : "Note"}: ${f.note}`);
+      lines.push(`   ${ar ? "🤖 الحل المقترح" : "🤖 AI Suggestion"}: ${f.suggestion}`);
+    });
+    if (result.recommendations.length) {
+      lines.push("");
+      lines.push(ar ? "── التوصيات النهائية ──" : "── Final Recommendations ──");
+      result.recommendations.forEach((r, i) => lines.push(`${i + 1}. ${r}`));
+    }
+    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
     const url  = URL.createObjectURL(blob);
     const a    = Object.assign(document.createElement("a"), { href: url, download: ar ? "تقرير_مراجعة_أكاديمية.txt" : "academic_review_report.txt" });
     document.body.appendChild(a); a.click();
@@ -140,6 +170,12 @@ export default function SmartReview() {
   const card: React.CSSProperties = { background: "#ffffff", border: "1.5px solid #e8ecf4", borderRadius: 16, padding: "20px 18px" };
   const GOLD = "#b45309", NAVY = "#1e293b";
 
+  const sevMeta: Record<Severity, { color: string; bg: string; border: string; labelAr: string; labelEn: string; icon: string }> = {
+    high:   { color: "#991b1b", bg: "#fef2f2", border: "#fecaca", labelAr: "حرجة",   labelEn: "Critical", icon: "🔴" },
+    medium: { color: "#92400e", bg: "#fffbeb", border: "#fde68a", labelAr: "متوسطة", labelEn: "Medium",   icon: "🟡" },
+    low:    { color: "#065f46", bg: "#f0fdf4", border: "#bbf7d0", labelAr: "بسيطة",  labelEn: "Minor",    icon: "🟢" },
+  };
+
   return (
     <div dir={ar ? "rtl" : "ltr"} style={{ padding: "20px 16px 48px", maxWidth: 960, margin: "0 auto", fontFamily: ar ? "'Tajawal',sans-serif" : "'Inter',sans-serif" }}>
 
@@ -152,8 +188,8 @@ export default function SmartReview() {
               {ar ? "المنصة الذكية لمراجعة الرسائل العلمية" : "Smart Academic Thesis Review"}
             </h2>
             <p style={{ margin: 0, fontSize: 12.5, color: "#92400e" }}>
-              {ar ? "ارفع رسالتك · حدد المحاور · احصل على تقرير تحكيم أكاديمي شامل"
-                  : "Upload your thesis · Select sections · Get a comprehensive academic review report"}
+              {ar ? "ارفع رسالتك · حدد المحاور · احصل على ملاحظات محدّدة برقم الصفحة وحلٍّ مقترح بالذكاء الاصطناعي"
+                  : "Upload thesis · Pick sections · Get findings with page numbers and AI-suggested fixes"}
             </p>
           </div>
         </div>
@@ -194,7 +230,7 @@ export default function SmartReview() {
               {pdfStatus === "ok"      && <>
                 <div style={{ fontSize: 22, marginBottom: 4 }}>✅</div>
                 <div style={{ fontSize: 11.5, fontWeight: 700, color: "#065f46", marginBottom: 2 }}>{fileName}</div>
-                {pageCount > 0 && <div style={{ fontSize: 10.5, color: "#64748b" }}>{pageCount} {ar ? "صفحة مستخرجة" : "pages extracted"}</div>}
+                {pages.length > 0 && <div style={{ fontSize: 10.5, color: "#64748b" }}>{pages.length} {ar ? "صفحة مستخرجة" : "pages extracted"}</div>}
                 <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4 }}>{ar ? "اضغط لتغيير الملف" : "Click to change"}</div>
               </>}
               {pdfStatus === "error"   && <div style={{ color: "#dc2626", fontSize: 12 }}>❌ {ar ? "تعذّر قراءة الملف" : "Could not read file"}</div>}
@@ -262,7 +298,7 @@ export default function SmartReview() {
               <div style={{ fontWeight: 800, fontSize: 13, color: NAVY }}>
                 📊 {ar ? "التقرير الأكاديمي الشامل" : "Comprehensive Academic Report"}
               </div>
-              {report && (
+              {result && (
                 <button onClick={download} style={{ display: "flex", alignItems: "center", gap: 6, background: "#1e293b", border: "none", borderRadius: 9, color: "#fff", padding: "7px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                   💾 {ar ? "تحميل TXT" : "Download TXT"}
                 </button>
@@ -292,22 +328,133 @@ export default function SmartReview() {
               </div>
             )}
 
-            {/* Report output */}
-            {report && !loading && (
-              <div style={{ background: "#fafbff", border: "1px solid #e8ecf4", borderRadius: 12, padding: "20px 18px", lineHeight: 1.9, fontSize: 13.5, color: "#374151", direction: "rtl", textAlign: "right", minHeight: 200 }}>
-                <div dangerouslySetInnerHTML={{ __html: `<p style="margin:0 0 8px;line-height:1.8">${formatMd(report)}</p>` }} />
+            {/* Structured report output */}
+            {result && !loading && (
+              <div style={{ direction: ar ? "rtl" : "ltr", textAlign: ar ? "right" : "left" }}>
+
+                {/* Overall assessment */}
+                {result.overallAssessment && (
+                  <div style={{ background: "linear-gradient(135deg,#fffbeb,#fff7ed)", border: "1.5px solid #fde68a", borderRadius: 12, padding: "14px 16px", marginBottom: 14 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, gap: 12, flexWrap: "wrap" }}>
+                      <div style={{ fontWeight: 800, fontSize: 13, color: GOLD }}>
+                        🏛️ {ar ? "التقييم العام" : "Overall Assessment"}
+                      </div>
+                      {result.score != null && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 11, color: "#92400e", fontWeight: 700 }}>{ar ? "الدرجة" : "Score"}</span>
+                          <span style={{ background: "#fff", border: "1.5px solid #fde68a", borderRadius: 8, padding: "3px 10px", fontWeight: 900, fontSize: 14, color: GOLD }}>
+                            {result.score}<span style={{ fontSize: 10, color: "#92400e" }}>/100</span>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.85, color: "#374151" }}>{result.overallAssessment}</p>
+                  </div>
+                )}
+
+                {/* Findings stats bar */}
+                {result.findings.length > 0 && (
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+                    {(["high", "medium", "low"] as Severity[]).map(sv => {
+                      const count = result.findings.filter(f => f.severity === sv).length;
+                      const m = sevMeta[sv];
+                      return (
+                        <div key={sv} style={{ display: "flex", alignItems: "center", gap: 6, background: m.bg, border: `1.5px solid ${m.border}`, borderRadius: 10, padding: "6px 12px", fontSize: 12, color: m.color, fontWeight: 700 }}>
+                          <span>{m.icon}</span>
+                          <span>{ar ? m.labelAr : m.labelEn}</span>
+                          <span style={{ background: "#fff", borderRadius: 6, padding: "1px 7px", fontSize: 11, fontWeight: 900 }}>{count}</span>
+                        </div>
+                      );
+                    })}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#f1f5f9", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: "6px 12px", fontSize: 12, color: NAVY, fontWeight: 700 }}>
+                      📋 {ar ? "المجموع" : "Total"}
+                      <span style={{ background: "#fff", borderRadius: 6, padding: "1px 7px", fontSize: 11, fontWeight: 900 }}>{result.findings.length}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Findings list — note + page + AI suggestion */}
+                {result.findings.length > 0 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 14 }}>
+                    {result.findings.map((f, i) => {
+                      const m = sevMeta[f.severity];
+                      return (
+                        <div key={i} style={{ background: "#fff", border: `1.5px solid ${m.border}`, borderRadius: 12, overflow: "hidden" }}>
+                          {/* Header */}
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "10px 14px", background: m.bg, borderBottom: `1px solid ${m.border}`, flexWrap: "wrap" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                              <span style={{ background: "#fff", border: `1.5px solid ${m.border}`, color: m.color, fontWeight: 900, fontSize: 11, padding: "3px 9px", borderRadius: 7 }}>#{i + 1}</span>
+                              <span style={{ display: "flex", alignItems: "center", gap: 4, background: "#fff", border: `1.5px solid ${m.border}`, color: m.color, fontWeight: 700, fontSize: 11, padding: "3px 9px", borderRadius: 7 }}>
+                                {m.icon} {ar ? m.labelAr : m.labelEn}
+                              </span>
+                              {f.section && (
+                                <span style={{ background: "#fff", border: "1.5px solid #e8ecf4", color: NAVY, fontWeight: 700, fontSize: 11, padding: "3px 9px", borderRadius: 7 }}>
+                                  {f.section}
+                                </span>
+                              )}
+                            </div>
+                            <span style={{ display: "flex", alignItems: "center", gap: 4, background: "#1e293b", color: "#fff", fontWeight: 800, fontSize: 11, padding: "4px 10px", borderRadius: 7 }}>
+                              📄 {ar ? "صفحة" : "Page"} {f.page}
+                            </span>
+                          </div>
+
+                          {/* Body */}
+                          <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
+                            {f.quote && (
+                              <div style={{ background: "#f8faff", borderInlineStart: "3px solid #c7d4f0", padding: "8px 12px", borderRadius: 6, fontSize: 12, color: "#475569", fontStyle: "italic", lineHeight: 1.7 }}>
+                                «{f.quote}»
+                              </div>
+                            )}
+                            <div>
+                              <div style={{ fontSize: 11, fontWeight: 800, color: NAVY, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                                📝 {ar ? "الملاحظة" : "Note"}
+                              </div>
+                              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.85, color: "#1e293b" }}>{f.note}</p>
+                            </div>
+                            <div style={{ background: "linear-gradient(135deg,#f0f9ff,#ecfeff)", border: "1.5px solid #bae6fd", borderRadius: 10, padding: "10px 12px" }}>
+                              <div style={{ fontSize: 11, fontWeight: 800, color: "#0369a1", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: 6 }}>
+                                🤖 {ar ? "الحل المقترح بالذكاء الاصطناعي" : "AI-Suggested Fix"}
+                              </div>
+                              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.85, color: "#0c4a6e", whiteSpace: "pre-wrap" }}>{f.suggestion || (ar ? "—" : "—")}</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Final recommendations */}
+                {result.recommendations.length > 0 && (
+                  <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 12, padding: "14px 16px" }}>
+                    <div style={{ fontWeight: 800, fontSize: 13, color: "#065f46", marginBottom: 8 }}>
+                      ✨ {ar ? "التوصيات النهائية" : "Final Recommendations"}
+                    </div>
+                    <ol style={{ margin: 0, paddingInlineStart: 20, fontSize: 13, lineHeight: 1.9, color: "#064e3b" }}>
+                      {result.recommendations.map((r, i) => <li key={i} style={{ marginBottom: 3 }}>{r}</li>)}
+                    </ol>
+                  </div>
+                )}
+
+                {/* No findings */}
+                {result.findings.length === 0 && (
+                  <div style={{ background: "#f0fdf4", border: "1.5px dashed #bbf7d0", borderRadius: 12, padding: "20px", textAlign: "center", color: "#065f46", fontSize: 13 }}>
+                    ✅ {ar ? "لم يرصد المحكّم الذكي ملاحظات جوهرية في المحاور المختارة." : "No critical findings detected in the selected sections."}
+                  </div>
+                )}
               </div>
             )}
 
             {/* Empty state */}
-            {!report && !loading && (
+            {!result && !loading && (
               <div style={{ textAlign: "center", padding: "36px 20px", background: "#f8faff", borderRadius: 12, border: "1.5px dashed #c7d4f0", color: "#94a3b8" }}>
                 <div style={{ fontSize: 40, marginBottom: 10 }}>📋</div>
                 <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
                   {ar ? "التقرير سيظهر هنا بعد الضغط على زر المراجعة" : "The report will appear here after clicking Review"}
                 </div>
                 <div style={{ fontSize: 11.5 }}>
-                  {ar ? "ارفع ملف PDF ثم اضغط «بدء المراجعة الشاملة»" : "Upload a PDF then click «Start Full Review»"}
+                  {ar ? "كل ملاحظة ستحتوي على: النص، رقم الصفحة، والحل المقترح بالذكاء الاصطناعي"
+                      : "Each finding will include: note, page number, and AI-suggested fix"}
                 </div>
               </div>
             )}
