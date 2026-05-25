@@ -1,5 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLanguage } from "../../lib/i18n";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import mammoth from "mammoth";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 
 // ─── Section definitions ──────────────────────────────────────────────────────
 interface Sec { id: string; iconAr: string; labelAr: string; labelEn: string; phAr: string; phEn: string; color: string; bg: string; border: string; }
@@ -40,6 +45,95 @@ export default function SectionReview() {
   const [state, setState] = useState<Record<string, SectionState>>(initState);
   const [globalLoading, setGlobalLoading] = useState(false);
   const [globalDone, setGlobalDone] = useState(false);
+
+  // ── Full-file review state ──
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [fileName, setFileName] = useState("");
+  const [fullText, setFullText] = useState("");
+  const [fileStatus, setFileStatus] = useState<"idle"|"reading"|"ready"|"error">("idle");
+  const [fileError, setFileError] = useState("");
+  const [fullLoading, setFullLoading] = useState(false);
+  const [fullResult, setFullResult] = useState("");
+  const [fullMeta, setFullMeta] = useState<{ truncated: boolean; charsAnalyzed: number; charsTotal: number } | null>(null);
+  const [fullError, setFullError] = useState("");
+
+  const onPickFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setFileName(f.name); setFileStatus("reading"); setFileError(""); setFullText(""); setFullResult(""); setFullError("");
+    try {
+      const lower = f.name.toLowerCase();
+      let text = "";
+      if (lower.endsWith(".pdf")) {
+        const buf = await f.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+        const max = Math.min(pdf.numPages, 500);
+        const parts: string[] = [];
+        for (let i = 1; i <= max; i++) {
+          const page = await pdf.getPage(i);
+          const c = await page.getTextContent();
+          const t = c.items.map(it => ("str" in it ? it.str : "")).join(" ").trim();
+          if (t) parts.push(t);
+        }
+        text = parts.join("\n\n");
+      } else if (lower.endsWith(".docx")) {
+        const buf = await f.arrayBuffer();
+        const r = await mammoth.extractRawText({ arrayBuffer: buf });
+        text = r.value;
+      } else if (lower.endsWith(".txt") || lower.endsWith(".md") || lower.endsWith(".rtf")) {
+        text = await f.text();
+      } else {
+        setFileStatus("error");
+        setFileError(ar ? "صيغة غير مدعومة. المدعوم: PDF · DOCX · TXT · MD" : "Unsupported format. Supported: PDF · DOCX · TXT · MD");
+        return;
+      }
+      if (text.trim().length < 200) {
+        setFileStatus("error");
+        setFileError(ar ? "النص المستخرج قصير جداً (أقل من 200 حرف)." : "Extracted text is too short (<200 chars).");
+        return;
+      }
+      setFullText(text);
+      setFileStatus("ready");
+    } catch (err) {
+      setFileStatus("error");
+      setFileError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const reviewFull = async () => {
+    if (!fullText) return;
+    setFullLoading(true); setFullResult(""); setFullError(""); setFullMeta(null);
+    try {
+      const r = await fetch("/api/ai/full-review", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: fullText, title: fileName.replace(/\.[^.]+$/, ""), lang }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+      setFullResult(data.content || "");
+      setFullMeta({ truncated: !!data.truncated, charsAnalyzed: data.charsAnalyzed || 0, charsTotal: data.charsTotal || 0 });
+    } catch (e) {
+      setFullError(e instanceof Error ? e.message : String(e));
+    } finally { setFullLoading(false); }
+  };
+
+  const downloadFull = () => {
+    if (!fullResult) return;
+    const blob = new Blob([fullResult], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement("a"), {
+      href: url,
+      download: `${(fileName || "review").replace(/\.[^.]+$/, "")}_full_review.txt`,
+    });
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  };
+
+  const clearFull = () => {
+    setFileName(""); setFullText(""); setFileStatus("idle"); setFileError("");
+    setFullResult(""); setFullError(""); setFullMeta(null);
+    if (fileRef.current) fileRef.current.value = "";
+  };
 
   // ── helpers ──
   const set = (id: string, patch: Partial<SectionState>) =>
@@ -144,6 +238,91 @@ export default function SectionReview() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* ══ Full-file review (no chunking) ══ */}
+      <div style={{ background: "linear-gradient(135deg,#fffbeb,#fff7ed)", border: "1.5px solid #fde68a", borderRadius: 16, padding: 18, marginBottom: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
+          <div style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg,#C9A84C,#b45309)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>📂</div>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 900, color: NAVY }}>
+              {ar ? "مراجعة الملف كاملاً دفعة واحدة (بدون تجزئة)" : "Full-file review in one shot (no chunking)"}
+            </h3>
+            <p style={{ margin: "3px 0 0", fontSize: 11.5, color: "#92400e" }}>
+              {ar ? "ارفع الرسالة كاملة (PDF · DOCX · TXT) — يُرسل النص كله لمحرّك GPT-4.1 (نافذة مليون رمز) ويعود بتقرير تحكيم شامل."
+                  : "Upload the entire thesis (PDF · DOCX · TXT) — full text is sent to GPT-4.1 (1M token window) for a comprehensive review."}
+            </p>
+          </div>
+        </div>
+
+        <div onClick={() => fileRef.current?.click()}
+          style={{ border: "2px dashed #fde68a", borderRadius: 12, padding: "16px 12px", textAlign: "center", cursor: "pointer", background: fileStatus === "ready" ? "#f0fdf4" : "#fff", transition: "all .15s" }}>
+          {fileStatus === "reading" && <div style={{ color: GOLD, fontSize: 13 }}>⏳ {ar ? "جارٍ قراءة الملف…" : "Reading file…"}</div>}
+          {fileStatus === "ready" && (
+            <>
+              <div style={{ fontSize: 22 }}>✅</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#065f46", marginTop: 4 }}>{fileName}</div>
+              <div style={{ fontSize: 11, color: "#64748b", marginTop: 3 }}>
+                {fullText.length.toLocaleString()} {ar ? "حرف · جاهز للتحليل الكامل" : "characters · ready for full review"}
+              </div>
+              <div style={{ fontSize: 10.5, color: "#94a3b8", marginTop: 3 }}>{ar ? "اضغط لتغيير الملف" : "Click to change"}</div>
+            </>
+          )}
+          {fileStatus === "error" && <div style={{ color: "#dc2626", fontSize: 13 }}>❌ {fileError}</div>}
+          {fileStatus === "idle" && (
+            <>
+              <div style={{ fontSize: 26 }}>📄</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#374151", marginTop: 4 }}>{ar ? "اضغط لرفع الملف كاملاً" : "Click to upload the entire file"}</div>
+              <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 3 }}>PDF · DOCX · TXT · MD</div>
+            </>
+          )}
+        </div>
+        <input ref={fileRef} type="file" accept=".pdf,.docx,.txt,.md,.rtf" onChange={onPickFile} style={{ display: "none" }} />
+
+        {fileStatus === "ready" && (
+          <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+            <button onClick={reviewFull} disabled={fullLoading}
+              style={{ background: fullLoading ? "#e2e8f0" : "linear-gradient(135deg,#C9A84C,#b45309)", color: fullLoading ? "#94a3b8" : "#fff", border: "none", borderRadius: 10, padding: "10px 18px", fontWeight: 800, fontSize: 13, cursor: fullLoading ? "wait" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8, boxShadow: fullLoading ? "none" : "0 4px 12px #C9A84C44" }}>
+              {fullLoading
+                ? <><span style={{ width: 13, height: 13, border: "2.5px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "sr2-spin .7s linear infinite" }} />{ar ? "جارٍ المراجعة الكاملة…" : "Reviewing full file…"}</>
+                : <>🚀 {ar ? "راجع الملف كاملاً الآن" : "Review Full File Now"}</>}
+            </button>
+            <button onClick={clearFull} style={{ background: "#fff", border: "1.5px solid #fde68a", borderRadius: 10, color: GOLD, padding: "10px 14px", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
+              🗑️ {ar ? "إزالة الملف" : "Remove file"}
+            </button>
+          </div>
+        )}
+
+        {fullError && <div style={{ marginTop: 12, padding: "8px 12px", background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626", borderRadius: 8, fontSize: 13 }}>❌ {fullError}</div>}
+
+        {fullResult && (
+          <div style={{ marginTop: 14, background: "#fff", border: "1.5px solid #fde68a", borderRadius: 12, padding: "14px 16px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 8, flexWrap: "wrap" }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: GOLD }}>📋 {ar ? "تقرير المراجعة الكاملة" : "Full Review Report"}</div>
+              <button onClick={downloadFull}
+                style={{ background: "#1e293b", border: "none", color: "#fff", borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                💾 {ar ? "تحميل التقرير" : "Download report"}
+              </button>
+            </div>
+            {fullMeta?.truncated && (
+              <div style={{ marginBottom: 10, padding: "6px 10px", background: "#fffbeb", border: "1px solid #fde68a", color: "#92400e", borderRadius: 8, fontSize: 11.5 }}>
+                ⚠️ {ar ? `الملف طويل (${fullMeta.charsTotal.toLocaleString()} حرف)؛ اقتُصرت المراجعة على أول ${fullMeta.charsAnalyzed.toLocaleString()} حرف.`
+                       : `File is long (${fullMeta.charsTotal.toLocaleString()} chars); review based on first ${fullMeta.charsAnalyzed.toLocaleString()} chars.`}
+              </div>
+            )}
+            <div style={{ background: "#fafbff", border: "1px solid #eef1f8", borderRadius: 10, padding: "12px 14px", fontSize: 13, lineHeight: 1.9, color: NAVY, whiteSpace: "pre-wrap", direction: ar ? "rtl" : "ltr", textAlign: ar ? "right" : "left", maxHeight: 500, overflowY: "auto" }}
+              dangerouslySetInnerHTML={{ __html: formatResult(fullResult) }} />
+          </div>
+        )}
+      </div>
+
+      {/* ── Section divider ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "8px 0 14px" }}>
+        <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
+        <span style={{ fontSize: 11.5, fontWeight: 700, color: "#94a3b8" }}>
+          {ar ? "أو راجع كل قسم على حدة بإدخاله يدوياً" : "Or review each section manually"}
+        </span>
+        <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
       </div>
 
       {/* ── Global actions ── */}
