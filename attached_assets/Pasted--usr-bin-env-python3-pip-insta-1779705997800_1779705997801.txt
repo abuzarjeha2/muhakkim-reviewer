@@ -1,0 +1,182 @@
+#!/usr/bin/env python3
+"""
+🎓 مراجع الرسالة الأكاديمية الذكي - ملف واحد متكامل
+📦 التثبيت: pip install flask python-docx PyPDF2 openai weasyprint
+⚙️  التشغيل: python app.py
+🔑 ملاحظات:
+   - للسحابي: export OPENAI_API_KEY="sk-..."
+   - للمحلي (Ollama): export USE_LOCAL_MODEL=True ثم شغّل: ollama pull qwen2.5:14b
+"""
+import os, json, re, uuid, tempfile
+from flask import Flask, request, jsonify, send_file
+from weasyprint import HTML
+from openai import OpenAI
+import PyPDF2, docx
+from datetime import datetime
+
+app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB
+
+# ──────────────────────────────────────────────────────────────
+# إعداد النموذج (سحابي أو محلي)
+USE_LOCAL = os.getenv("USE_LOCAL_MODEL", "False").lower() == "true"
+api_key = "ollama" if USE_LOCAL else os.getenv("OPENAI_API_KEY", "")
+base_url = "http://localhost:11434/v1" if USE_LOCAL else None
+client = OpenAI(api_key=api_key, base_url=base_url)
+MODEL_NAME = "qwen2.5:14b" if USE_LOCAL else "gpt-4o"
+# ──────────────────────────────────────────────────────────────
+
+REPORTS_DIR = "reports"
+os.makedirs(REPORTS_DIR, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'pdf', 'docx'}
+
+def extract_text(file_path):
+    ext = file_path.rsplit('.', 1)[1].lower()
+    text = ""
+    if ext == 'pdf':
+        with open(file_path, 'rb') as f:
+            for page in PyPDF2.PdfReader(f).pages:
+                t = page.extract_text()
+                if t: text += t + "\n"
+    elif ext == 'docx':
+        for para in docx.Document(file_path).paragraphs:
+            text += para.text + "\n"
+    return text
+
+def chunk_text(text, chunk_size=6000, overlap=400):
+    chunks, start = [], 0
+    while start < len(text):
+        end = min(start + chunk_size, len(text))
+        chunk = text[start:end]
+        # قص ذكي عند نهاية جملة أو فقرة
+        cut = max(chunk.rfind('.'), chunk.rfind('\n'), chunk.rfind('؟'), chunk.rfind('!'))
+        if cut > chunk_size * 0.4:
+            chunk = chunk[:cut+1]
+            end = start + cut + 1
+        chunks.append(chunk)
+        start = end - overlap
+    return chunks or [text]
+
+def clean_json(text):
+    m = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', text)
+    raw = m.group(1).strip() if m else text.strip()
+    raw = raw.lstrip(',').rstrip(',')
+    try: return json.loads(raw)
+    except: return json.loads(raw.replace("'", '"'))
+
+def call_ai(prompt, tokens=4000):
+    resp = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[{"role": "system", "content": prompt}],
+        temperature=0.2, max_tokens=tokens
+    )
+    return clean_json(resp.choices[0].message.content)
+
+@app.route('/')
+def index():
+    return render_template_string(HTML_TEMPLATE)
+
+@app.route('/review', methods=['POST'])
+def review():
+    if 'file' not in request.files: return jsonify({"error": "لم يتم رفع ملف"}), 400
+    f = request.files['file']
+    if not allowed_file(f.filename): return jsonify({"error": "نوع غير مدعوم (PDF/DOCX)"}), 400
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=f".{f.filename.rsplit('.',1)[1]}") as tmp:
+        f.save(tmp.name)
+        text = extract_text(tmp.name)
+    os.unlink(tmp.name)
+    if len(text.strip()) < 200: return jsonify({"error": "نص غير كافٍ أو ملف فارغ"}), 400
+
+    chunks = chunk_text(text)
+    sys_prompt = """أنت خبير أكاديمي. راجع الجزء المرفق وأرجع JSON فقط بالعربية:
+    {"title_review":"","toc_review":"","abstract_review":"","theoretical_framework_review":"","methodology_review":"","data_analysis_review":"","results_review":"","recommendations_review":"","hypotheses_objectives_review":"","gaps":"","score":0}
+    إذا غاب قسم، اكتب 'غير موجود'."""
+
+    partials = []
+    for i, c in enumerate(chunks):
+        partials.append(call_ai(f"{sys_prompt}\n\nجزء {i+1}/{len(chunks)}:\n{c}"))
+
+    merge_prompt = f"""أنت منسق أكاديمي. لديك {len(partials)} مراجعات جزئية.
+    دمجهما في تقرير موحد، احذف التكرار، وحسّن الصياغة. أرجع JSON مطابق للهيكل الأصلي.
+    البيانات:\n{json.dumps(partials, ensure_ascii=False)}"""
+    
+    final = call_ai(merge_prompt, tokens=3000)
+
+    report_id = uuid.uuid4().hex[:8]
+    pdf_path = os.path.join(REPORTS_DIR, f"report_{report_id}.pdf")
+    gen_pdf(final, pdf_path)
+
+    return jsonify({"status": "success", "pdf_url": f"/download/{report_id}"})
+
+def gen_pdf(data, out_path):
+    fields = {"title_review":"العنوان","toc_review":"الفهرس","abstract_review":"المستخلص",
+              "theoretical_framework_review":"الإطار النظري","methodology_review":"المنهجية",
+              "data_analysis_review":"تحليل البيانات","results_review":"النتائج",
+              "recommendations_review":"التوصيات","hypotheses_objectives_review":"الأهداف والفرضيات","gaps":"الفجوات المكتشفة"}
+    body = "".join([f'<div class="sec"><h3>{v}</h3><p>{data.get(k,"")}</p></div>' 
+                    for k,v in fields.items() if data.get(k) and data.get(k)!="غير موجود"])
+    
+    html = f"""<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
+    <style>
+        @page {{ size: A4; margin: 2cm; }}
+        body {{ font-family: 'Segoe UI', 'Noto Sans Arabic', Arial, sans-serif; direction: rtl; line-height: 1.6; color: #1e293b; }}
+        h1 {{ text-align: center; color: #0f172a; border-bottom: 2px solid #2563eb; padding-bottom: 10px; }}
+        .sec {{ margin-bottom: 14px; padding: 10px; background: #f8fafc; border-right: 3px solid #2563eb; border-radius: 4px; }}
+        h3 {{ margin: 0 0 5px; color: #2563eb; font-size: 15px; }}
+        p {{ margin: 0; font-size: 13px; text-align: justify; }}
+        .ft {{ text-align: center; font-size: 10px; color: #64748b; margin-top: 30px; border-top: 1px solid #cbd5e1; padding-top: 10px; }}
+        .sc {{ text-align: center; font-size: 18px; font-weight: bold; color: #059669; margin: 20px 0; }}
+    </style></head><body>
+    <h1>📊 تقرير المراجعة الأكاديمية الذكي</h1>
+    <p style="text-align:center;color:#64748b">تاريخ: {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>
+    <div class="sc">التقييم العام: {data.get('score', 'N/A')}/10</div>
+    {body}
+    <div class="ft">تم الإنشاء تلقائياً | لا يغني عن المراجعة البشرية المتخصصة</div>
+    </body></html>"""
+    HTML(string=html).write_pdf(out_path)
+
+@app.route('/download/<rid>')
+def dl(rid):
+    p = os.path.join(REPORTS_DIR, f"report_{rid}.pdf")
+    return send_file(p, as_attachment=True, download_name=f"Thesis_Review_{rid}.pdf") if os.path.exists(p) else ("غير موجود", 404)
+
+# ──────────────────────────────────────────────────────────────
+# الواجهة الأمامية مدمجة
+# ──────────────────────────────────────────────────────────────
+HTML_TEMPLATE = """
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مراجع الرسالة الأكاديمية</title>
+<style>
+:root{--p:#2563eb;--bg:#f8fafc;--c:#fff;--t:#0f172a}
+body{font-family:system-ui,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--t);margin:0;padding:30px}
+.box{max-width:650px;margin:auto;background:var(--c);padding:25px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);text-align:center}
+h1{color:var(--p);margin:0 0 10px} input[type=file]{display:none}
+.btn{background:var(--p);color:#fff;padding:12px 24px;border:none;border-radius:8px;cursor:pointer;margin:10px 5px}
+.btn:hover{background:#1d4ed8} .log{background:#0f172a;color:#94a3b8;padding:15px;border-radius:8px;text-align:left;direction:ltr;white-space:pre-wrap;font-size:13px;margin-top:15px;display:none}
+</style></head><body>
+<div class="box"><h1>🎓 مراجع الرسالة الذكي</h1>
+<p>يدعم OpenAI & Ollama | تقسيم تلقائي | تصدير PDF عربي</p>
+<label class="btn">📁 اختر ملف<input type="file" id="f" accept=".pdf,.docx"></label>
+<button class="btn" onclick="go()">🚀 ابدأ المراجعة</button>
+<pre class="log" id="l"></pre></div>
+<script>
+async function go(){const f=document.getElementById('f').files[0];if(!f)return alert('اختر ملفاً');
+const l=document.getElementById('l');l.style.display='block';l.textContent='⏳ جاري التحليل... قد يستغرق دقيقة';
+const fd=new FormData();fd.append('file',f);
+try{const r=await fetch('/review',{method:'POST',body:fd});const d=await r.json();
+l.textContent=JSON.stringify(d,null,2);
+if(d.pdf_url) window.location.href=d.pdf_url;
+}catch(e){l.textContent='❌ خطأ: '+e.message}}
+</script></body></html>
+"""
+
+if __name__ == '__main__':
+    print(f"🌐 الخادم يعمل على: http://localhost:5000")
+    print(f"🤖 النموذج: {MODEL_NAME} {'(محلي)' if USE_LOCAL else '(سحابي)'}")
+    if not USE_LOCAL and not os.getenv("OPENAI_API_KEY"):
+        print("⚠️  تنبيه: لم يتم تعيين OPENAI_API_KEY. عيّن المفتاح أو فعّل USE_LOCAL_MODEL=True")
+    app.run(host='0.0.0.0', port=5000, debug=False)

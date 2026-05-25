@@ -1,0 +1,2491 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة مراجعة الرسائل الأكاديمية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@200;400;600;800;900&family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-deep: #0a0f0d;
+            --bg-card: #111a16;
+            --bg-card-hover: #162420;
+            --bg-input: #0d1512;
+            --accent: #c9a84c;
+            --accent-dim: rgba(201,168,76,0.15);
+            --accent-glow: rgba(201,168,76,0.3);
+            --green: #2ecc71;
+            --green-dim: rgba(46,204,113,0.12);
+            --red: #e74c3c;
+            --red-dim: rgba(231,76,60,0.12);
+            --orange: #f39c12;
+            --orange-dim: rgba(243,156,18,0.12);
+            --blue: #3498db;
+            --blue-dim: rgba(52,152,219,0.12);
+            --text: #e8e4dc;
+            --text-muted: #8a9490;
+            --text-dim: #5a6560;
+            --border: #1e2e28;
+            --border-light: #2a3e36;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --radius-lg: 20px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.4);
+            --shadow-lg: 0 8px 48px rgba(0,0,0,0.6);
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: var(--bg-deep);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* === خلفية متحركة === */
+        .bg-atmosphere {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .bg-atmosphere .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            animation: orbFloat 20s ease-in-out infinite;
+        }
+        .bg-atmosphere .orb:nth-child(1) {
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(201,168,76,0.07), transparent 70%);
+            top: -10%; right: -10%;
+            animation-delay: 0s;
+        }
+        .bg-atmosphere .orb:nth-child(2) {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(46,204,113,0.05), transparent 70%);
+            bottom: -10%; left: -10%;
+            animation-delay: -7s;
+        }
+        .bg-atmosphere .orb:nth-child(3) {
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(201,168,76,0.04), transparent 70%);
+            top: 40%; left: 40%;
+            animation-delay: -14s;
+        }
+        .bg-grid {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(201,168,76,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -40px) scale(1.05); }
+            50% { transform: translate(-20px, 20px) scale(0.95); }
+            75% { transform: translate(40px, 30px) scale(1.02); }
+        }
+
+        /* === الحاوية الرئيسية === */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* === الهيدر === */
+        .app-header {
+            text-align: center;
+            padding: 48px 20px 40px;
+            position: relative;
+        }
+        .app-header .logo-icon {
+            width: 72px; height: 72px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, var(--accent), #8b7332);
+            border-radius: 18px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px; color: var(--bg-deep);
+            box-shadow: 0 4px 30px var(--accent-glow);
+            animation: logoPulse 3s ease-in-out infinite;
+        }
+        @keyframes logoPulse {
+            0%, 100% { box-shadow: 0 4px 30px var(--accent-glow); }
+            50% { box-shadow: 0 4px 50px rgba(201,168,76,0.45); }
+        }
+        .app-header h1 {
+            font-family: 'Noto Kufi Arabic', sans-serif;
+            font-weight: 900;
+            font-size: clamp(28px, 5vw, 44px);
+            color: var(--text);
+            letter-spacing: -0.5px;
+            line-height: 1.3;
+        }
+        .app-header h1 span {
+            background: linear-gradient(135deg, var(--accent), #e8d48b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .app-header p {
+            color: var(--text-muted);
+            font-size: 17px;
+            margin-top: 12px;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.8;
+        }
+
+        /* === بطاقات الأدوار === */
+        .roles-bar {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 32px 0 40px;
+        }
+        .role-chip {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 1px solid var(--border-light);
+            background: var(--bg-card);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+        .role-chip:hover {
+            border-color: var(--accent);
+            color: var(--text);
+            background: var(--accent-dim);
+        }
+        .role-chip.active {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+            color: var(--accent);
+            box-shadow: 0 0 20px var(--accent-dim);
+        }
+        .role-chip i { font-size: 16px; }
+
+        /* === التخطيط الرئيسي === */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* === لوحة الإدخال === */
+        .input-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            position: sticky;
+            top: 20px;
+            box-shadow: var(--shadow);
+        }
+        .input-panel h2 {
+            font-family: 'Noto Kufi Arabic', sans-serif;
+            font-weight: 800;
+            font-size: 20px;
+            margin-bottom: 24px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .input-panel h2 i {
+            color: var(--accent);
+            font-size: 22px;
+        }
+
+        .section-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 20px;
+        }
+        .section-tab {
+            padding: 7px 14px;
+            border-radius: 50px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'Tajawal', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s;
+            white-space: nowrap;
+        }
+        .section-tab:hover {
+            border-color: var(--accent);
+            color: var(--text);
+        }
+        .section-tab.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--bg-deep);
+            font-weight: 700;
+        }
+
+        .field-group {
+            margin-bottom: 16px;
+        }
+        .field-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        .field-group label .req {
+            color: var(--red);
+            margin-right: 2px;
+        }
+        .field-input, .field-textarea, .field-select {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--bg-input);
+            color: var(--text);
+            font-family: 'Tajawal', sans-serif;
+            font-size: 15px;
+            transition: all 0.25s;
+            outline: none;
+        }
+        .field-input:focus, .field-textarea:focus, .field-select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+        .field-textarea {
+            min-height: 180px;
+            resize: vertical;
+            line-height: 1.9;
+        }
+        .field-select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a9490' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: left 14px center;
+        }
+        .field-select option {
+            background: var(--bg-card);
+            color: var(--text);
+        }
+        .char-count {
+            text-align: left;
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px;
+        }
+        .btn-primary {
+            flex: 1;
+            padding: 14px 24px;
+            border-radius: var(--radius-sm);
+            border: none;
+            background: linear-gradient(135deg, var(--accent), #a8882e);
+            color: var(--bg-deep);
+            font-family: 'Tajawal', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px var(--accent-glow);
+        }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .btn-secondary {
+            padding: 14px 20px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-light);
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'Tajawal', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .btn-secondary:hover {
+            border-color: var(--text-muted);
+            color: var(--text);
+        }
+
+        /* === لوحة النتائج === */
+        .results-panel {
+            min-height: 400px;
+        }
+
+        .results-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 500px;
+            text-align: center;
+            color: var(--text-dim);
+        }
+        .results-empty .empty-icon {
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 2px dashed var(--border-light);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 40px;
+            margin-bottom: 20px;
+            color: var(--text-dim);
+        }
+        .results-empty h3 {
+            font-size: 20px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .results-empty p {
+            font-size: 15px;
+            max-width: 400px;
+            line-height: 1.8;
+        }
+
+        /* === بطاقة ملخص التقييم === */
+        .score-overview {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            margin-bottom: 20px;
+            display: none;
+            animation: fadeUp 0.5s ease;
+        }
+        .score-overview.show { display: block; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .score-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .score-header h2 {
+            font-family: 'Noto Kufi Arabic', sans-serif;
+            font-weight: 800;
+            font-size: 22px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .score-header h2 i { color: var(--accent); }
+
+        .score-circle-wrap {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .score-circle {
+            width: 90px; height: 90px;
+            position: relative;
+        }
+        .score-circle svg {
+            transform: rotate(-90deg);
+            width: 90px; height: 90px;
+        }
+        .score-circle .bg-ring {
+            fill: none;
+            stroke: var(--border);
+            stroke-width: 6;
+        }
+        .score-circle .fg-ring {
+            fill: none;
+            stroke-width: 6;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1.5s ease, stroke 0.5s;
+        }
+        .score-circle .score-num {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Noto Kufi Arabic', sans-serif;
+            font-weight: 900;
+            font-size: 26px;
+        }
+        .score-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+        .score-label strong {
+            display: block;
+            font-size: 16px;
+            color: var(--text);
+        }
+
+        .score-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 24px;
+        }
+        .stat-card {
+            padding: 16px;
+            border-radius: var(--radius-sm);
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        .stat-card .stat-val {
+            font-family: 'Noto Kufi Arabic', sans-serif;
+            font-weight: 900;
+            font-size: 28px;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .stat-card .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .stat-card.green { background: var(--green-dim); }
+        .stat-card.green .stat-val { color: var(--green); }
+        .stat-card.red { background: var(--red-dim); }
+        .stat-card.red .stat-val { color: var(--red); }
+        .stat-card.orange { background: var(--orange-dim); }
+        .stat-card.orange .stat-val { color: var(--orange); }
+        .stat-card.blue { background: var(--blue-dim); }
+        .stat-card.blue .stat-val { color: var(--blue); }
+
+        /* === بطاقات الملاحظات === */
+        .notes-section {
+            margin-bottom: 20px;
+            display: none;
+            animation: fadeUp 0.5s ease;
+        }
+        .notes-section.show { display: block; }
+
+        .notes-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding: 0 4px;
+        }
+        .notes-section-header h3 {
+            font-family: 'Noto Kufi Arabic', sans-serif;
+            font-weight: 700;
+            font-size: 18px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .notes-section-header .badge {
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .note-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 12px;
+            transition: all 0.25s;
+            border-right: 4px solid transparent;
+        }
+        .note-card:hover {
+            border-color: var(--border-light);
+            background: var(--bg-card-hover);
+        }
+        .note-card.severity-high {
+            border-right-color: var(--red);
+        }
+        .note-card.severity-medium {
+            border-right-color: var(--orange);
+        }
+        .note-card.severity-low {
+            border-right-color: var(--blue);
+        }
+        .note-card.severity-info {
+            border-right-color: var(--green);
+        }
+
+        .note-card-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .note-card-head .severity-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .note-card-head .severity-dot.high { background: var(--red); }
+        .note-card-head .severity-dot.medium { background: var(--orange); }
+        .note-card-head .severity-dot.low { background: var(--blue); }
+        .note-card-head .severity-dot.info { background: var(--green); }
+
+        .note-card-head .note-title {
+            font-weight: 700;
+            font-size: 15px;
+            flex: 1;
+        }
+        .note-card-head .severity-badge {
+            padding: 3px 10px;
+            border-radius: 50px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .severity-badge.high { background: var(--red-dim); color: var(--red); }
+        .severity-badge.medium { background: var(--orange-dim); color: var(--orange); }
+        .severity-badge.low { background: var(--blue-dim); color: var(--blue); }
+        .severity-badge.info { background: var(--green-dim); color: var(--green); }
+
+        .note-card-body {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.9;
+            padding-right: 20px;
+        }
+        .note-card-body .highlight-text {
+            background: rgba(201,168,76,0.15);
+            color: var(--accent);
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .note-suggestion {
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: rgba(46,204,113,0.06);
+            border: 1px solid rgba(46,204,113,0.15);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            color: var(--green);
+            display: flex;
+            gap: 8px;
+            line-height: 1.8;
+        }
+        .note-suggestion i { flex-shrink: 0; margin-top: 5px; }
+
+        /* === تقرير القسم === */
+        .section-report {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            margin-bottom: 20px;
+            display: none;
+            animation: fadeUp 0.5s ease;
+        }
+        .section-report.show { display: block; }
+
+        .section-report-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .section-report-header .section-icon {
+            width: 44px; height: 44px;
+            border-radius: var(--radius-sm);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+        .section-report-header h3 {
+            font-family: 'Noto Kufi Arabic', sans-serif;
+            font-weight: 800;
+            font-size: 18px;
+            flex: 1;
+        }
+        .section-report-header .section-score {
+            font-family: 'Noto Kufi Arabic', sans-serif;
+            font-weight: 900;
+            font-size: 20px;
+        }
+
+        .criteria-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .criteria-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: var(--radius-sm);
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+        }
+        .criteria-item .crit-icon {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .criteria-item .crit-icon.pass {
+            background: var(--green-dim);
+            color: var(--green);
+        }
+        .criteria-item .crit-icon.fail {
+            background: var(--red-dim);
+            color: var(--red);
+        }
+        .criteria-item .crit-icon.warn {
+            background: var(--orange-dim);
+            color: var(--orange);
+        }
+        .criteria-item .crit-text {
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--text-muted);
+            flex: 1;
+        }
+        .criteria-item .crit-text strong {
+            color: var(--text);
+        }
+
+        /* === شريط التحميل === */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(10,15,13,0.85);
+            z-index: 1000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            backdrop-filter: blur(8px);
+        }
+        .loading-overlay.show { display: flex; }
+
+        .loader-ring {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            border: 4px solid var(--border);
+            border-top-color: var(--accent);
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text);
+            text-align: center;
+        }
+        .loading-sub {
+            font-size: 14px;
+            color: var(--text-muted);
+            text-align: center;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        /* === زر تصدير === */
+        .export-bar {
+            display: none;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 20px;
+            animation: fadeUp 0.5s ease;
+        }
+        .export-bar.show { display: flex; }
+
+        .btn-export {
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-light);
+            background: var(--bg-card);
+            color: var(--text-muted);
+            font-family: 'Tajawal', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .btn-export:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* === توست === */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toast {
+            padding: 14px 24px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            display: flex; align-items: center; gap: 10px;
+            animation: toastIn 0.4s ease, toastOut 0.4s ease 2.6s forwards;
+            box-shadow: var(--shadow-lg);
+        }
+        .toast.success {
+            background: #0d2818;
+            border: 1px solid rgba(46,204,113,0.3);
+            color: var(--green);
+        }
+        .toast.error {
+            background: #2a0d0d;
+            border: 1px solid rgba(231,76,60,0.3);
+            color: var(--red);
+        }
+        .toast.warning {
+            background: #2a1f0d;
+            border: 1px solid rgba(243,156,18,0.3);
+            color: var(--orange);
+        }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes toastOut {
+            from { opacity: 1; }
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+
+        /* === سكرول بار === */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+        /* === الفوتر === */
+        .app-footer {
+            text-align: center;
+            padding: 40px 20px 30px;
+            color: var(--text-dim);
+            font-size: 13px;
+            border-top: 1px solid var(--border);
+            margin-top: 60px;
+        }
+
+        /* === ريسبونسف === */
+        @media (max-width: 768px) {
+            .app-container { padding: 12px; }
+            .input-panel { position: static; padding: 20px; }
+            .score-stats { grid-template-columns: repeat(2, 1fr); }
+            .roles-bar { gap: 8px; }
+            .role-chip { padding: 8px 14px; font-size: 13px; }
+            .section-tabs { gap: 4px; }
+            .section-tab { padding: 6px 10px; font-size: 12px; }
+        }
+
+        /* === تحليل التقدم === */
+        .progress-bar-container {
+            width: 100%;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin-top: 12px;
+            overflow: hidden;
+            display: none;
+        }
+        .progress-bar-container.show { display: block; }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--green));
+            border-radius: 2px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        /* === الكلمات المكررة === */
+        .words-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .word-tag {
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .word-tag.overused {
+            background: var(--red-dim);
+            color: var(--red);
+        }
+        .word-tag.frequent {
+            background: var(--orange-dim);
+            color: var(--orange);
+        }
+        .word-tag.normal {
+            background: var(--blue-dim);
+            color: var(--blue);
+        }
+    </style>
+</head>
+<body>
+
+<!-- خلفية متحركة -->
+<div class="bg-atmosphere">
+    <div class="orb"></div>
+    <div class="orb"></div>
+    <div class="orb"></div>
+</div>
+<div class="bg-grid"></div>
+
+<!-- توست -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- تحميل -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loader-ring"></div>
+    <div class="loading-text" id="loadingText">جاري التحليل الذكي للرسالة...</div>
+    <div class="loading-sub" id="loadingSub">فحص العنوان والفهرس</div>
+</div>
+
+<div class="app-container">
+    <!-- الهيدر -->
+    <header class="app-header">
+        <div class="logo-icon">
+            <i class="fas fa-graduation-cap"></i>
+        </div>
+        <h1>منصة مراجعة <span>الرسائل الأكاديمية</span></h1>
+        <p>نظام ذكي متقدم لتحليل ومراجعة رسائل الماجستير والدكتوراه، يكشف الفجوات والأخطاء ويقدم ملاحظات تفصيلية لكل قسم من أقسام الرسالة</p>
+    </header>
+
+    <!-- شريط الأدوار -->
+    <nav class="roles-bar" id="rolesBar">
+        <button class="role-chip active" data-role="supervisor" onclick="selectRole(this)">
+            <i class="fas fa-user-tie"></i> مشرف الرسالة
+        </button>
+        <button class="role-chip" data-role="internal" onclick="selectRole(this)">
+            <i class="fas fa-user-check"></i> مناقش داخلي
+        </button>
+        <button class="role-chip" data-role="external" onclick="selectRole(this)">
+            <i class="fas fa-user-shield"></i> مناقش خارجي
+        </button>
+        <button class="role-chip" data-role="researcher" onclick="selectRole(this)">
+            <i class="fas fa-flask"></i> باحث
+        </button>
+    </nav>
+
+    <!-- التخطيط الرئيسي -->
+    <div class="main-layout">
+        <!-- لوحة الإدخال -->
+        <aside class="input-panel">
+            <h2><i class="fas fa-pen-nib"></i> إدخال بيانات الرسالة</h2>
+
+            <!-- تبويبات الأقسام -->
+            <div class="section-tabs" id="sectionTabs">
+                <button class="section-tab active" data-section="title" onclick="switchSection(this)">العنوان</button>
+                <button class="section-tab" data-section="toc" onclick="switchSection(this)">الفهرس</button>
+                <button class="section-tab" data-section="abstract" onclick="switchSection(this)">المستخلص</button>
+                <button class="section-tab" data-section="objectives" onclick="switchSection(this)">الأهداف</button>
+                <button class="section-tab" data-section="hypotheses" onclick="switchSection(this)">الفرضيات</button>
+                <button class="section-tab" data-section="theory" onclick="switchSection(this)">الإطار النظري</button>
+                <button class="section-tab" data-section="methodology" onclick="switchSection(this)">المنهجية</button>
+                <button class="section-tab" data-section="analysis" onclick="switchSection(this)">تحليل البيانات</button>
+                <button class="section-tab" data-section="results" onclick="switchSection(this)">النتائج</button>
+                <button class="section-tab" data-section="recommendations" onclick="switchSection(this)">التوصيات</button>
+                <button class="section-tab" data-section="references" onclick="switchSection(this)">المراجع</button>
+            </div>
+
+            <!-- حقول الإدخال الديناميكية -->
+            <div id="sectionFields"></div>
+
+            <!-- حقول عامة -->
+            <div class="field-group" style="margin-top: 20px;">
+                <label>الدرجة العلمية</label>
+                <select class="field-select" id="degreeLevel">
+                    <option value="masters">ماجستير</option>
+                    <option value="phd">دكتوراه</option>
+                </select>
+            </div>
+            <div class="field-group">
+                <label>التخصص العام</label>
+                <input type="text" class="field-input" id="fieldOfStudy" placeholder="مثال: إدارة الأعمال، تربية، هندسة...">
+            </div>
+
+            <div class="progress-bar-container" id="progressBar">
+                <div class="progress-bar-fill" id="progressFill"></div>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn-primary" id="analyzeBtn" onclick="startAnalysis()">
+                    <i class="fas fa-brain"></i> تحليل ذكي شامل
+                </button>
+                <button class="btn-secondary" onclick="clearAll()">
+                    <i class="fas fa-eraser"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- لوحة النتائج -->
+        <main class="results-panel" id="resultsPanel">
+            <div class="results-empty" id="resultsEmpty">
+                <div class="empty-icon">
+                    <i class="fas fa-microscope"></i>
+                </div>
+                <h3>في انتظار بيانات الرسالة</h3>
+                <p>أدخل محتوى أقسام الرسالة في اللوحة اليمنى ثم اضغط "تحليل ذكي شامل" للحصول على تقرير مراجعة تفصيلي</p>
+            </div>
+
+            <!-- تصدير -->
+            <div class="export-bar" id="exportBar">
+                <button class="btn-export" onclick="exportReport('text')">
+                    <i class="fas fa-file-alt"></i> تصدير نصي
+                </button>
+                <button class="btn-export" onclick="printReport()">
+                    <i class="fas fa-print"></i> طباعة
+                </button>
+            </div>
+
+            <!-- ملخص التقييم -->
+            <div class="score-overview" id="scoreOverview"></div>
+
+            <!-- تقارير الأقسام -->
+            <div id="sectionReports"></div>
+
+            <!-- ملاحظات عامة -->
+            <div class="notes-section" id="generalNotes"></div>
+        </main>
+    </div>
+
+    <footer class="app-footer">
+        منصة مراجعة الرسائل الأكاديمية &mdash; نظام تحليل ذكي محلي &mdash; جميع العمليات تتم دون رفع البيانات للإنترنت
+    </footer>
+</div>
+
+<script>
+// ============================================
+// بيانات الأقسام وتعريفاتها
+// ============================================
+const SECTIONS = {
+    title: {
+        label: 'العنوان',
+        icon: 'fas fa-heading',
+        color: '#c9a84c',
+        type: 'input',
+        placeholder: 'أدخل عنوان الرسالة كاملاً...',
+        minLength: 15,
+        maxLength: 200,
+        help: 'العنوان يجب أن يكون دقيقاً ومحدداً ويعكس محتوى الرسالة بوضوح'
+    },
+    toc: {
+        label: 'الفهرس',
+        icon: 'fas fa-list-ol',
+        color: '#3498db',
+        type: 'textarea',
+        placeholder: 'أدخل محتويات الفهرس (أرقام الصفحات والعناوين الفرعية)...',
+        minLength: 50,
+        help: 'الفهرس يجب أن يغطي جميع أقسام الرسالة مع ترقيم الصفحات'
+    },
+    abstract: {
+        label: 'المستخلص',
+        icon: 'fas fa-file-lines',
+        color: '#2ecc71',
+        type: 'textarea',
+        placeholder: 'أدخل نص المستخلص كاملاً...',
+        minLength: 150,
+        maxLength: 1500,
+        help: 'المستخلص يجب أن يحتوي على: مشكلة البحث، الهدف، المنهج، العينة، النتائج الرئيسية'
+    },
+    objectives: {
+        label: 'الأهداف',
+        icon: 'fas fa-bullseye',
+        color: '#e67e22',
+        type: 'textarea',
+        placeholder: 'أدخل أهداف الدراسة (كل هدف في سطر)...',
+        minLength: 30,
+        help: 'الأهداف يجب أن تكون SMART: محددة، قابلة للقياس، قابلة للتحقيق، ذات صلة، محددة زمنياً'
+    },
+    hypotheses: {
+        label: 'الفرضيات',
+        icon: 'fas fa-flask-vial',
+        color: '#9b59b6',
+        type: 'textarea',
+        placeholder: 'أدخل فرضيات الدراسة (كل فرضية في سطر)...',
+        minLength: 30,
+        help: 'الفرضيات يجب أن تكون قابلة للاختبار ومتصلة بالأهداف ومبنية على الإطار النظري'
+    },
+    theory: {
+        label: 'الإطار النظري',
+        icon: 'fas fa-book-open',
+        color: '#1abc9c',
+        type: 'textarea',
+        placeholder: 'أدخل نص الإطار النظري (أو جزء منه للتحليل)...',
+        minLength: 200,
+        help: 'الإطار النظري يجب أن يغطي المتغيرات الرئيسية ويُبنى على دراسات سابقة'
+    },
+    methodology: {
+        label: 'المنهجية',
+        icon: 'fas fa-cogs',
+        color: '#e74c3c',
+        type: 'textarea',
+        placeholder: 'أدخل وصف المنهجية المستخدمة...',
+        minLength: 150,
+        help: 'المنهجية يجب أن تتضمن: نوع المنهج، المجتمع والعينة، أدوات البحث، الصدق والثبات'
+    },
+    analysis: {
+        label: 'تحليل البيانات',
+        icon: 'fas fa-chart-bar',
+        color: '#f39c12',
+        type: 'textarea',
+        placeholder: 'أدخل نص تحليل البيانات والجداول الإحصائية...',
+        minLength: 100,
+        help: 'التحليل يجب أن يربط بالفرضيات ويستخدم الاختبارات الإحصائية المناسبة'
+    },
+    results: {
+        label: 'النتائج',
+        icon: 'fas fa-trophy',
+        color: '#27ae60',
+        type: 'textarea',
+        placeholder: 'أدخل نتائج الدراسة...',
+        minLength: 100,
+        help: 'النتائج يجب أن تجيب على أسئلة البحث وتتحقق من الفرضيات'
+    },
+    recommendations: {
+        label: 'التوصيات',
+        icon: 'fas fa-lightbulb',
+        color: '#d4ac0d',
+        type: 'textarea',
+        placeholder: 'أدخل توصيات الدراسة...',
+        minLength: 50,
+        help: 'التوصيات يجب أن تنبثق من النتائج وتكون قابلة للتطبيق'
+    },
+    references: {
+        label: 'المراجع',
+        icon: 'fas fa-bookmark',
+        color: '#7f8c8d',
+        type: 'textarea',
+        placeholder: 'أدخل قائمة المراجع...',
+        minLength: 100,
+        help: 'المراجع يجب أن تتبع أسلوب توثيق موحد (APA وغيره) وتكون حديثة ومتنوعة'
+    }
+};
+
+// ============================================
+// حالة التطبيق
+// ============================================
+let currentSection = 'title';
+let currentRole = 'supervisor';
+let sectionData = {};
+let analysisResults = null;
+
+// ============================================
+// تهيئة
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+    // تحميل البيانات المحفوظة
+    const saved = localStorage.getItem('thesisData');
+    if (saved) {
+        try {
+            sectionData = JSON.parse(saved);
+            updateProgress();
+        } catch(e) {}
+    }
+    renderSectionFields();
+});
+
+// ============================================
+// اختيار الدور
+// ============================================
+function selectRole(el) {
+    document.querySelectorAll('.role-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    currentRole = el.dataset.role;
+
+    const roleNames = {
+        supervisor: 'مشرف الرسالة',
+        internal: 'مناقش داخلي',
+        external: 'مناقش خارجي',
+        researcher: 'باحث'
+    };
+    showToast(`تم تفعيل وضع: ${roleNames[currentRole]}`, 'success');
+}
+
+// ============================================
+// تبديل الأقسام
+// ============================================
+function switchSection(el) {
+    // حفظ البيانات الحالية أولاً
+    saveCurrentSection();
+
+    document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    currentSection = el.dataset.section;
+    renderSectionFields();
+}
+
+// ============================================
+// حفظ القسم الحالي
+// ============================================
+function saveCurrentSection() {
+    const textarea = document.getElementById('sectionTextarea');
+    const input = document.getElementById('sectionInput');
+    if (textarea) {
+        sectionData[currentSection] = textarea.value;
+    } else if (input) {
+        sectionData[currentSection] = input.value;
+    }
+    localStorage.setItem('thesisData', JSON.stringify(sectionData));
+    updateProgress();
+}
+
+// ============================================
+// عرض حقول القسم
+// ============================================
+function renderSectionFields() {
+    const container = document.getElementById('sectionFields');
+    const sec = SECTIONS[currentSection];
+    const savedVal = sectionData[currentSection] || '';
+
+    let html = `
+        <div class="field-group">
+            <label>
+                <i class="${sec.icon}" style="color:${sec.color}; margin-left:6px;"></i>
+                ${sec.label}
+                ${sec.minLength ? '<span class="req">*</span>' : ''}
+            </label>
+    `;
+
+    if (sec.type === 'textarea') {
+        html += `
+            <textarea class="field-textarea" id="sectionTextarea"
+                placeholder="${sec.placeholder}"
+                oninput="onSectionInput()"
+                onfocus="onSectionInput()"
+            >${savedVal}</textarea>
+            <div class="char-count" id="charCount">${savedVal.length} حرف${sec.maxLength ? ' / ' + sec.maxLength : ''}</div>
+        `;
+    } else {
+        html += `
+            <input type="text" class="field-input" id="sectionInput"
+                placeholder="${sec.placeholder}"
+                value="${savedVal}"
+                oninput="onSectionInput()"
+                onfocus="onSectionInput()"
+            >
+            <div class="char-count" id="charCount">${savedVal.length} حرف${sec.maxLength ? ' / ' + sec.maxLength : ''}</div>
+        `;
+    }
+
+    html += `</div>
+        <div style="padding:12px 14px; background:var(--accent-dim); border-radius:var(--radius-sm); border:1px solid rgba(201,168,76,0.15); font-size:12px; color:var(--text-muted); line-height:1.8;">
+            <i class="fas fa-info-circle" style="color:var(--accent); margin-left:4px;"></i>
+            ${sec.help}
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
+
+function onSectionInput() {
+    const el = document.getElementById('sectionTextarea') || document.getElementById('sectionInput');
+    const sec = SECTIONS[currentSection];
+    const count = el.value.length;
+    const countEl = document.getElementById('charCount');
+    countEl.textContent = `${count} حرف${sec.maxLength ? ' / ' + sec.maxLength : ''}`;
+    if (sec.maxLength && count > sec.maxLength) {
+        countEl.style.color = 'var(--red)';
+    } else if (sec.minLength && count < sec.minLength) {
+        countEl.style.color = 'var(--orange)';
+    } else {
+        countEl.style.color = 'var(--text-dim)';
+    }
+    // حفظ تلقائي
+    sectionData[currentSection] = el.value;
+    localStorage.setItem('thesisData', JSON.stringify(sectionData));
+    updateProgress();
+}
+
+function updateProgress() {
+    const total = Object.keys(SECTIONS).length;
+    let filled = 0;
+    for (let key in SECTIONS) {
+        if (sectionData[key] && sectionData[key].trim().length >= SECTIONS[key].minLength) {
+            filled++;
+        }
+    }
+    const bar = document.getElementById('progressBar');
+    const fill = document.getElementById('progressFill');
+    if (filled > 0) {
+        bar.classList.add('show');
+        fill.style.width = Math.round((filled / total) * 100) + '%';
+    } else {
+        bar.classList.remove('show');
+    }
+}
+
+// ============================================
+// مسح الكل
+// ============================================
+function clearAll() {
+    if (!confirm('هل تريد مسح جميع البيانات المدخلة؟')) return;
+    sectionData = {};
+    localStorage.removeItem('thesisData');
+    renderSectionFields();
+    document.getElementById('resultsEmpty').style.display = 'flex';
+    document.getElementById('scoreOverview').classList.remove('show');
+    document.getElementById('sectionReports').innerHTML = '';
+    document.getElementById('generalNotes').classList.remove('show');
+    document.getElementById('exportBar').classList.remove('show');
+    updateProgress();
+    showToast('تم مسح جميع البيانات', 'warning');
+}
+
+// ============================================
+// بدء التحليل
+// ============================================
+async function startAnalysis() {
+    // حفظ القسم الحالي
+    saveCurrentSection();
+
+    // التحقق من وجود بيانات كافية
+    let filledSections = [];
+    for (let key in SECTIONS) {
+        if (sectionData[key] && sectionData[key].trim().length >= 10) {
+            filledSections.push(key);
+        }
+    }
+
+    if (filledSections.length < 1) {
+        showToast('الرجاء إدخال بيانات قسم واحد على الأقل', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('analyzeBtn');
+    btn.disabled = true;
+
+    // إظهار شاشة التحميل
+    const overlay = document.getElementById('loadingOverlay');
+    const loadText = document.getElementById('loadingText');
+    const loadSub = document.getElementById('loadingSub');
+    overlay.classList.add('show');
+
+    const steps = [
+        'فحص العنوان ودقته',
+        'تحليل هيكل الفهرس',
+        'تقييم شمولية المستخلص',
+        'مراجعة صياغة الأهداف',
+        'فحص قابليية الفرضيات للاختبار',
+        'تحليل الإطار النظري والفجوات',
+        'تقييم التوازن المنهجي',
+        'فحص ملاءمة التحليل الإحصائي',
+        'مراجعة ارتباط النتائج بالفرضيات',
+        'تقييم قابلية التوصيات للتطبيق',
+        'فحص التوثيق والمراجع',
+        'إعداد التقرير النهائي'
+    ];
+
+    for (let i = 0; i < steps.length; i++) {
+        loadSub.textContent = steps[i];
+        await sleep(300 + Math.random() * 400);
+    }
+
+    // إجراء التحليل
+    analysisResults = performAnalysis(filledSections);
+
+    overlay.classList.remove('show');
+    btn.disabled = false;
+
+    // عرض النتائج
+    renderResults();
+    showToast('تم التحليل بنجاح', 'success');
+}
+
+function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+}
+
+// ============================================
+// محرك التحليل الذكي
+// ============================================
+function performAnalysis(filledSections) {
+    const results = {
+        totalScore: 0,
+        sectionScores: {},
+        sectionNotes: {},
+        generalNotes: [],
+        stats: {
+            totalWords: 0,
+            totalChars: 0,
+            sectionsAnalyzed: filledSections.length,
+            highIssues: 0,
+            mediumIssues: 0,
+            lowIssues: 0,
+            infoCount: 0
+        },
+        wordFrequency: {}
+    };
+
+    let totalWeighted = 0;
+    let totalWeight = 0;
+
+    // أوزان الأقسام حسب الدور
+    const weights = getRoleWeights();
+
+    filledSections.forEach(key => {
+        const text = sectionData[key].trim();
+        const secResult = analyzeSection(key, text);
+        results.sectionScores[key] = secResult.score;
+        results.sectionNotes[key] = secResult.notes;
+
+        const w = weights[key] || 1;
+        totalWeighted += secResult.score * w;
+        totalWeight += w;
+
+        // إحصائيات
+        results.stats.totalWords += countWords(text);
+        results.stats.totalChars += text.length;
+
+        secResult.notes.forEach(n => {
+            if (n.severity === 'high') results.stats.highIssues++;
+            else if (n.severity === 'medium') results.stats.mediumIssues++;
+            else if (n.severity === 'low') results.stats.lowIssues++;
+            else results.stats.infoCount++;
+        });
+
+        // تكرار الكلمات
+        extractWordFrequency(text, results.wordFrequency);
+    });
+
+    results.totalScore = totalWeight > 0 ? Math.round(totalWeighted / totalWeight) : 0;
+
+    // ملاحظات عامة
+    results.generalNotes = generateGeneralNotes(filledSections, results);
+
+    return results;
+}
+
+function getRoleWeights() {
+    const base = {
+        title: 1.2,
+        toc: 0.8,
+        abstract: 1.3,
+        objectives: 1.4,
+        hypotheses: 1.3,
+        theory: 1.5,
+        methodology: 1.6,
+        analysis: 1.5,
+        results: 1.4,
+        recommendations: 1.0,
+        references: 0.9
+    };
+    // تعديل الأوزان حسب الدور
+    if (currentRole === 'supervisor') {
+        base.theory = 1.8;
+        base.methodology = 1.8;
+        base.objectives = 1.6;
+    } else if (currentRole === 'internal') {
+        base.analysis = 1.8;
+        base.results = 1.7;
+        base.hypotheses = 1.6;
+    } else if (currentRole === 'external') {
+        base.title = 1.5;
+        base.abstract = 1.5;
+        base.theory = 1.7;
+        base.references = 1.4;
+    } else if (currentRole === 'researcher') {
+        base.methodology = 1.8;
+        base.analysis = 1.8;
+        base.references = 1.3;
+    }
+    return base;
+}
+
+// ============================================
+// تحليل كل قسم على حدة
+// ============================================
+function analyzeSection(key, text) {
+    const score = { value: 100, deductions: [] };
+    const notes = [];
+
+    switch(key) {
+        case 'title': analyzeTitle(text, score, notes); break;
+        case 'toc': analyzeTOC(text, score, notes); break;
+        case 'abstract': analyzeAbstract(text, score, notes); break;
+        case 'objectives': analyzeObjectives(text, score, notes); break;
+        case 'hypotheses': analyzeHypotheses(text, score, notes); break;
+        case 'theory': analyzeTheory(text, score, notes); break;
+        case 'methodology': analyzeMethodology(text, score, notes); break;
+        case 'analysis': analyzeAnalysis(text, score, notes); break;
+        case 'results': analyzeResults(text, score, notes); break;
+        case 'recommendations': analyzeRecommendations(text, score, notes); break;
+        case 'references': analyzeReferences(text, score, notes); break;
+    }
+
+    // خصومات عامة للنص
+    applyGeneralTextChecks(text, score, notes, key);
+
+    score.value = Math.max(0, Math.min(100, score.value));
+
+    return { score: score.value, notes };
+}
+
+// --- تحليل العنوان ---
+function analyzeTitle(text, score, notes) {
+    const words = text.split(/\s+/).filter(w => w.length > 0);
+    const cleanText = text.replace(/[^\u0600-\u06FFa-zA-Z0-9\s]/g, '');
+
+    // الطول
+    if (words.length < 5) {
+        score.deductions.push(20);
+        notes.push(makeNote('high', 'العنوان قصير جداً', `العنوان يحتوي على ${words.length} كلمات فقط، والحد الأدنى المناسب هو 8-15 كلمة لضمان الوضوح والشمولية.`, 'أعد صياغة العنوان ليكون أكثر شمولية مع الإبقاء على الدقة.'));
+    } else if (words.length > 25) {
+        score.deductions.push(10);
+        notes.push(makeNote('medium', 'العنوان طويل جداً', `العنوان يحتوي على ${words.length} كلمة، مما قد يضعف تركيز القارئ على الموضوع الرئيسي.`, 'اخصر العنوان مع الحفاظ على العناصر الأساسية: المتغيرات، المجال، والعينة إن وجدت.'));
+    }
+
+    // كلمات عامة
+    const vagueWords = ['دراسة', 'بحث', 'بحث في', 'دراسة حول', 'نحو', 'في ضوء'];
+    let vagueCount = 0;
+    vagueWords.forEach(w => {
+        if (text.includes(w)) vagueCount++;
+    });
+    if (vagueCount >= 2 && words.length < 10) {
+        score.deductions.push(10);
+        notes.push(makeNote('medium', 'العنوان يحتوي على صياغات عامة', 'وجود أكثر من صياغة عامة دون تحديد دقيق يجعل العنوان ضعيفاً.', 'استبدل الصياغات العامة بمصطلحات محددة تعبر عن محتوى الرسالة بدقة.'));
+    }
+
+    // فحص وجود متغيرات
+    const hasVariables = /علاقة|تأثير|أثر|دور|فاعلية|مدى|فاعلية|مستوى|واقع/.test(text);
+    if (!hasVariables && document.getElementById('degreeLevel').value === 'masters') {
+        score.deductions.push(8);
+        notes.push(makeNote('low', 'يفتقر العنوان لتحديد نوع العلاقة بين المتغيرات', 'العنوان لا يوضح بوضوح نوع العلاقة المبحوثة (تأثير، علاقة، دور، فاعلية...).', 'أضف صياغة توضح العلاقة مثل: "تأثير المتغير المستقل على المتغير التابع".'));
+    }
+
+    // فحص الحدود المكانية أو الزمنية
+    const hasScope = /في|على|بين|من|خلال|\d{4}/.test(text);
+    if (!hasScope) {
+        score.deductions.push(5);
+        notes.push(makeNote('low', 'العنوان لا يحدد نطاق البحث', 'يفضل أن يحدد العنوان المجال أو المكان أو الزمان لإطار البحث.', 'أضف تحديداً للمجال أو المكان مثل: "في جامعة..." أو "في قطاع..."'));
+    }
+
+    // علامات الترقيم
+    if (/[!?]/.test(text)) {
+        score.deductions.push(5);
+        notes.push(makeNote('medium', 'وجود علامات ترقيم غير مناسبة في العنوان', 'العنوان الأكاديمي لا يحتوي على علامات تعجب أو استفهام.', 'أزل علامات الترقيم非المناسبة واستخدم صياغة جملة اسمية.'));
+    }
+}
+
+// --- تحليل الفهرس ---
+function analyzeTOC(text, score, notes) {
+    const lines = text.split('\n').filter(l => l.trim().length > 0);
+
+    // عدد الأقسام
+    if (lines.length < 5) {
+        score.deductions.push(25);
+        notes.push(makeNote('high', 'الفهرس فقير جداً', `يحتوي على ${lines.length} عناصر فقط، مما يشير إلى هيكل غير مكتمل.`, 'تأكد من إدراج جميع فصول الرسالة وأبوابها الفرعية مع ترقيم الصفحات.'));
+    } else if (lines.length < 10) {
+        score.deductions.push(12);
+        notes.push(makeNote('medium', 'الفهرس قد يكون غير مكتمل', `عدد العناصر ${lines.length} وهو أقل من المتوقع لرسالة أكاديمية متكاملة.`, 'راجع الفهرس وتأكد من تغطية جميع الأقسام الفرعية.'));
+    }
+
+    // فحص الأقسام الأساسية
+    const requiredSections = ['مقدمة', 'الإطار النظري', 'المنهج', 'النتائج', 'التوصيات', 'المراجع', 'المستخلص'];
+    let missing = [];
+    requiredSections.forEach(sec => {
+        if (!text.includes(sec)) missing.push(sec);
+    });
+    if (missing.length > 0) {
+        score.deductions.push(missing.length * 5);
+        notes.push(makeNote('high', 'أقسام أساسية مفقودة من الفهرس', `الأقسام التالية غير موجودة: ${missing.join('، ')}`, 'أضف الأقسام المفقودة مع ترقيم الصفحات المناسبة.'));
+    }
+
+    // فحص ترقيم الصفحات
+    const hasPageNums = /\d{1,4}\s*$/.test(text) || /\d{1,4}\s*\./.test(text);
+    if (!hasPageNums && lines.length > 3) {
+        score.deductions.push(10);
+        notes.push(makeNote('medium', 'لا توجد أرقام صفحات في الفهرس', 'الفهرس بدون ترقيم صفحات يفقد وظيفته الأساسية.', 'أضف أرقام الصفحات مقابل كل عنوان فرعي.'));
+    }
+
+    // فحص التسلسل المنطقي
+    const logicalOrder = ['مستخلص', 'مقدمة', 'إطار', 'منهج', 'نتائج', 'توصيات', 'مراجع'];
+    let orderOk = true;
+    let lastIndex = -1;
+    logicalOrder.forEach((term, idx) => {
+        const pos = text.indexOf(term);
+        if (pos !== -1) {
+            if (pos < lastIndex) orderOk = false;
+            lastIndex = pos;
+        }
+    });
+    if (!orderOk) {
+        score.deductions.push(8);
+        notes.push(makeNote('low', 'ترتيب الأقسام قد لا يتبع التسلسل المنطقي المعتاد', 'التسلسل المعتاد: مستخلص، مقدمة، إطار نظري، منهجية، نتائج، توصيات، مراجع.', 'راجع ترتيب الفصول ليتوافق مع التسلسل الأكاديمي المعتمد.'));
+    }
+}
+
+// --- تحليل المستخلص ---
+function analyzeAbstract(text, score, notes) {
+    const words = countWords(text);
+
+    // الطول
+    if (words < 100) {
+        score.deductions.push(20);
+        notes.push(makeNote('high', 'المستخلص قصير جداً', `يحتوي على ${words} كلمة فقط، والحد الأدنى المقبول 200 كلمة تقريباً.`, 'وسّع المستخلص ليشمل: المشكلة، الهدف، المنهج، العينة، أهم النتائج.'));
+    } else if (words > 800) {
+        score.deductions.push(8);
+        notes.push(makeNote('low', 'المستخلص أطول من المعتاد', `يحتوي على ${words} كلمة، والمستخلص المثالي 200-500 كلمة.`, 'اختصر المستخلص مع الحفاظ على العناصر الأساسية.'));
+    }
+
+    // العناصر المطلوبة
+    const elements = [
+        { term: ['مشكلة', 'إشكالية', 'تحدّي'], name: 'المشكلة' },
+        { term: ['هدف', 'أهداف', 'يسعى', 'يهدف'], name: 'الهدف' },
+        { term: ['منهج', 'أسلوب', 'طريقة', 'منهجية', 'وصفي', 'تجريبي', 'تحليلي'], name: 'المنهج' },
+        { term: ['عينة', 'فرض', 'مجتمع', 'مبحوث', 'مستجيب', 'أفراد'], name: 'العينة' },
+        { term: ['نتائج', 'توصلت', 'أظهرت', 'تبين', 'أشارت'], name: 'النتائج' },
+        { term: ['توصية', 'يقترح', 'توصيات'], name: 'التوصيات' }
+    ];
+
+    let missingElements = [];
+    elements.forEach(el => {
+        const found = el.term.some(t => text.includes(t));
+        if (!found) missingElements.push(el.name);
+    });
+
+    if (missingElements.length >= 3) {
+        score.deductions.push(20);
+        notes.push(makeNote('high', 'المستخلص يفتقر لعناصر جوهرية', `العناصر المفقودة: ${missingElements.join('، ')}`, 'أعد كتابة المستخلص ليشمل جميع العناصر الأساسية بالتسلسل المنطقي.');
+    } else if (missingElements.length > 0) {
+        score.deductions.push(missingElements.length * 5);
+        notes.push(makeNote('medium', 'المستخلص يفتقر لبعض العناصر', `العناصر المفقودة: ${missingElements.join('، ')}`, 'أضف العناصر المفقودة لجعل المستخلص متكاملاً.'));
+    }
+
+    // فحص الأرقام والإحصائيات
+    if (!/\d/.test(text)) {
+        score.deductions.push(8);
+        notes.push(makeNote('low', 'المستخلص لا يحتوي على أية أرقام أو إحصائيات', 'وجود أرقام (حجم العينة، النسب المئوية) يعزز مصداقية المستخلص.', 'أضف بعض الأرقام الأساسية مثل حجم العينة وأهم النسب الإحصائية.'));
+    }
+
+    // فحص الكلمات العامية
+    checkColloquialWords(text, score, notes);
+}
+
+// --- تحليل الأهداف ---
+function analyzeObjectives(text, score, notes) {
+    const lines = text.split('\n').filter(l => l.trim().length > 5);
+
+    if (lines.length < 2) {
+        score.deductions.push(20);
+        notes.push(makeNote('high', 'عدد الأهداف غير كافٍ', 'رسالة الماجستير تحتاج 3-5 أهداف على الأقل، والدكتوراه 4-6 أهداف.', 'حدد أهدافاً إضافية تغطي جوانب البحث المختلفة.');
+    } else if (lines.length > 8) {
+        score.deductions.push(8);
+        notes.push(makeNote('medium', 'عدد الأهداف كبير جداً', `يوجد ${lines.length} هدف، مما قد يؤدي إلى تشتت البحث.`, 'دمج بعض الأهداف المتقاربة لتقليل عددها إلى 3-6 أهداف.');
+    }
+
+    // فحص صياغة الأهداف (يجب أن تبدأ بأفعال قابلة للقياس)
+    const goodStarters = ['تحديد', 'قياس', 'تقييم', 'معرفة', 'كشف', 'تحليل', 'استكشاف', 'دراسة', 'فحص', 'التحقق', ' تقديم', 'وصف', 'معرفة مدى'];
+    const badStarters = ['التعرف على', 'الوقوف على', 'إلقاء الضوء', 'التعرّف'];
+
+    let badFormulations = 0;
+    lines.forEach((line, i) => {
+        const startsGood = goodStarters.some(s => line.trim().startsWith(s));
+        const startsBad = badStarters.some(s => line.trim().startsWith(s));
+
+        if (startsBad) {
+            badFormulations++;
+        }
+        if (!startsGood && !startsBad && line.trim().length > 5) {
+            // قد يكون الهدف مسبوقاً برقم
+            const cleanLine = line.replace(/^[\d\.\-\)]+\s*/, '').trim();
+            const cleanStartsGood = goodStarters.some(s => cleanLine.startsWith(s));
+            if (!cleanStartsGood) badFormulations++;
+        }
+    });
+
+    if (badFormulations > 0) {
+        score.deductions.push(badFormulations * 5);
+        notes.push(makeNote('medium', 'صياغة بعض الأهداف غير قابلة للقياس', `${badFormulations} هدف(أهداف) تستخدم صياغات عامة غير قابلة للقياس المباشر.`, 'أعد صياغة الأهداف بأفعال قابلة للقياس مثل: تحديد، قياس، تقييم، تحليل، التحقق من...');
+    }
+
+    // فحص التكرار
+    const objectiveTexts = lines.map(l => l.replace(/^[\d\.\-\)]+\s*/, '').trim());
+    for (let i = 0; i < objectiveTexts.length; i++) {
+        for (let j = i + 1; j < objectiveTexts.length; j++) {
+            if (similarity(objectiveTexts[i], objectiveTexts[j]) > 0.7) {
+                score.deductions.push(8);
+                notes.push(makeNote('high', 'تكرار بين الأهداف', `الهدف "${objectiveTexts[i].substring(0, 40)}..." متكرر بشكل كبير مع هدف آخر.`, 'دمج الأهداف المتكررة أو تمييزها بوضوح.'));
+                break;
+            }
+        }
+    }
+}
+
+// --- تحليل الفرضيات ---
+function analyzeHypotheses(text, score, notes) {
+    const lines = text.split('\n').filter(l => l.trim().length > 5);
+
+    if (lines.length < 1) {
+        score.deductions.push(15);
+        notes.push(makeNote('medium', 'لا توجد فرضيات واضحة', 'معظم الرسائل الكمية تحتاج فرضيات لتوجيه التحليل.', 'صغ فرضيات تتعلق بالعلاقات بين متغيرات الدراسة.');
+    }
+
+    // فحص صياغة الفرضيات
+    const hypothesisPatterns = [
+        /توجد.*علاقة/,
+        /لا توجد.*علاقة/,
+        /يوجد.*تأثير/,
+        /لا يوجد.*تأثير/,
+        /يوجد.*فروق/,
+        /لا توجد.*فروق/,
+        /توجد.*دلالة/,
+        /لا توجد.*دلالة/
+    ];
+
+    let wellFormed = 0;
+    lines.forEach(line => {
+        const clean = line.replace(/^[\d\.\-\)]+\s*/, '').trim();
+        if (hypothesisPatterns.some(p => p.test(clean))) {
+            wellFormed++;
+        }
+    });
+
+    if (lines.length > 0 && wellFormed === 0) {
+        score.deductions.push(15);
+        notes.push(makeNote('high', 'الفرضيات غير مصاغة بالصيغة الإحصائية المطلوبة', 'الفرضيات يجب أن تصاغ بشكل يسمح باختبارها إحصائياً (مثلاً: توجد علاقة ذات دلالة إحصائية...).', 'أعد صياغة الفرضيات باستخدام الصيغة الإحصائية: "توجد/لا توجد علاقة دالة إحصائياً عند مستوى دلالة (0.05) بين..."'));
+    } else if (wellFormed < lines.length && lines.length > 0) {
+        score.deductions.push(8);
+        notes.push(makeNote('medium', 'بعض الفرضيات غير مصاغة بالشكل الإحصائي المناسب', `${lines.length - wellFormed} فرضية تحتاج إعادة صياغة.`, 'وحّد صياغة جميع الفرضيات وفق النمط الإحصائي المعتمد.'));
+    }
+
+    // فحص وجود فرضيات صفرية وبديلة
+    const hasNull = /لا توجد|لا يوجد|لا توجد.*فروق|لا توجد.*علاقة|لا يوجد.*تأثير/.test(text);
+    const hasAlternative = /توجد.*علاقة|يوجد.*تأثير|توجد.*فروق/.test(text) && !/لا توجد|لا يوجد/.test(text.match(/توجد.*علاقة|يوجد.*تأثير|توجد.*فروق/)?.[0] || '');
+
+    if (lines.length >= 2 && !hasNull) {
+        score.deductions.push(5);
+        notes.push(makeNote('low', 'لا توجد فرضيات صفرية واضحة', 'يفضل ذكر الفرضية الصفرية (لا توجد علاقة/فروق) جنباً إلى جنب مع الفرضية البديلة.', 'أضف الفرضيات الصفرية المقابلة لكل فرضية بديلة.'));
+    }
+}
+
+// --- تحليل الإطار النظري ---
+function analyzeTheory(text, score, notes) {
+    const words = countWords(text);
+    const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 20);
+
+    // الحجم
+    if (words < 300 && document.getElementById('degreeLevel').value === 'phd') {
+        score.deductions.push(20);
+        notes.push(makeNote('high', 'الإطار النظري قصير جداً لرسالة دكتوراه', `يحتوي على ${words} كلمة فقط. الإطار النظري للدكتوراه يحتاج عادةً 3000+ كلمة.`, 'وسّع الإطار النظري بتغطية النظريات والدراسات السابقة بشكل أعمق.');
+    } else if (words < 200) {
+        score.deductions.push(15);
+        notes.push(makeNote('medium', 'الإطار النظري قصير', `يحتوي على ${words} كلمة.`, 'وسّع الإطار النظري ليغطي المتغيرات الأساسية والدراسات السابقة.');
+    }
+
+    // فحص وجود مراجع/دراسات سابقة
+    const hasCitations = /\(\d{4}\)|\[\d+\]|\d{4}[مه]/.test(text) || /دراسة|باحث|أشار|أكد|توصل/.test(text);
+    if (!hasCitations) {
+        score.deductions.push(15);
+        notes.push(makeNote('high', 'الإطار النظري يفتقر للتوثيق والدراسات السابقة', 'الإطار النظري يجب أن يستند إلى دراسات سابقة ونظريات علمية موثقة.', 'أضف إشارات للدراسات السابقة والنظريات ذات الصلة مع التوثيق المناسب.');
+    }
+
+    // فحص وجود مصطلحات تعريفية
+    const hasDefinitions = /يُعرّف|تعريف|مفهوم|يُقصد|المقصود/.test(text);
+    if (!hasDefinitions) {
+        score.deductions.push(8);
+        notes.push(makeNote('medium', 'لا توجد تعريفات إجرائية للمتغيرات', 'الإطار النظري يجب أن يتضمن تعريفات إجرائية للمتغيرات الرئيسية.', 'أضف تعريفات إجرائية واضحة لكل متغير من متغيرات الدراسة.'));
+    }
+
+    // فحص الفقرات
+    if (paragraphs.length < 3 && words > 200) {
+        score.deductions.push(5);
+        notes.push(makeNote('low', 'الإطار النظري يحتاج تهيئة فقرات أفضل', `النص مقسم إلى ${paragraphs.length} فقرات فقط.`, 'قسّم الإطار النظري إلى فقرات مترابطة كل منها يغطي محوراً محدداً.');
+    }
+
+    // كثافة المصطلحات الأكاديمية
+    const academicTerms = ['متغير', 'مستقل', 'تابع', 'وسيط', 'ضابط', 'نظرية', 'منهج', 'عينة', 'صدق', 'ثبات', 'إحصاء', 'دلالة', 'معامل', 'ارتباط', 'انحدار'];
+    let academicCount = 0;
+    academicTerms.forEach(t => { if (text.includes(t)) academicCount++; });
+    if (academicCount < 2 && words > 200) {
+        score.deductions.push(5);
+        notes.push(makeNote('low', 'قلة المصطلحات الأكاديمية المتخصصة', 'الإطار النظري يجب أن يستخدم مصطلحات تخصصية دقيقة.', 'استخدم مصطلحات أكاديمية أكثر دقة وتخصصاً.');
+    }
+}
+
+// --- تحليل المنهجية ---
+function analyzeMethodology(text, score, notes) {
+    // عناصر المنهجية المطلوبة
+    const required = [
+        { terms: ['منهج', 'المنهج', 'المنهجية', 'أسلوب'], name: 'نوع المنهج' },
+        { terms: ['عينة', 'المجتمع', 'أفراد العينة', 'حجم العينة'], name: 'المجتمع والعينة' },
+        { terms: ['أداة', 'استبانة', 'اختبار', 'مقياس', 'استبيان', 'مقابلة', 'ملف', 'بطاقة'], name: 'أداة البحث' },
+        { terms: ['صدق', 'ثبات', 'معامل', 'كرونباخ', 'ألفا', 'Cronbach', 'صدق'], name: 'الصدق والثبات' },
+        { terms: ['إحصائي', 'اختبار', 'SPSS', 'تحليل', 'معامل ارتباط', 'انحدار', 'T-test', 'ANOVA', 'تحليل التباين'], name: 'المعالجة الإحصائية' }
+    ];
+
+    let missing = [];
+    required.forEach(r => {
+        if (!r.terms.some(t => text.includes(t))) missing.push(r.name);
+    });
+
+    if (missing.length >= 3) {
+        score.deductions.push(25);
+        notes.push(makeNote('high', 'المنهجية ناقصة بشكل جوهري', `العناصر المفقودة: ${missing.join('، ')}`, 'أعد كتابة المنهجية لتشمل جميع العناصر الأساسية بالتفصيل.');
+    } else if (missing.length > 0) {
+        score.deductions.push(missing.length * 7);
+        notes.push(makeNote('medium', 'المنهجية تفتقر لبعض العناصر الأساسية', `العناصر المفقودة: ${missing.join('، ')}`, 'أضف العناصر المفقودة مع التفصيل المناسب.');
+    }
+
+    // فحص ذكر حجم العينة بأرقام
+    if (!/\d+/.test(text)) {
+        score.deductions.push(10);
+        notes.push(makeNote('medium', 'لا توجد أرقام محددة في المنهجية', 'المنهجية يجب أن تحتوي على أرقام دقيقة: حجم العينة، عدد فقرات الأداة، معاملات الصدق والثبات.', 'أضف الأرقام والإحصائيات اللازمة.');
+    }
+
+    // فحص نوع المنهج المحدد
+    const methodTypes = ['وصفي', 'تجريبي', 'شبه تجريبي', 'تحليلي', 'تاريخي', 'ميداني', 'مسحي', 'تطبيقي', 'إرشادي', 'سلوكي'];
+    const hasMethodType = methodTypes.some(m => text.includes(m));
+    if (!hasMethodType) {
+        score.deductions.push(10);
+        notes.push(makeNote('high', 'لم يتم تحديد نوع المنهج بوضوح', 'يجب تحديد نوع المنهج المستخدم بشكل صريح (وصفي، تجريبي، تحليلي...).', 'حدد نوع المنهج المستخدم مع تبرير اختياره.');
+    }
+
+    // فحص معامل كرونباخ ألفا
+    if (text.includes('ألفا') || text.includes('كرونباخ') || text.toLowerCase().includes('cronbach')) {
+        const alphaMatch = text.match(/(?:ألفا|كرونباخ|Cronbach)[^\d]*(\d+\.?\d*)/);
+        if (alphaMatch) {
+            const alpha = parseFloat(alphaMatch[1]);
+            if (alpha < 0.6) {
+                score.deductions.push(12);
+                notes.push(makeNote('high', `معامل كرونباخ ألفا منخفض (${alpha})`, 'المعقبول عادةً هو 0.70 فأعلى. القيمة المنخفضة تشير إلى مشاكل في ثبات الأداة.', 'راجع فقرات الأداة واحذف الفقرات الضعيفة أو أعد صياغتها.');
+            } else if (alpha < 0.70) {
+                score.deductions.push(5);
+                notes.push(makeNote('low', `معامل كرونباخ ألفا مقبول بشكل محدود (${alpha})`, 'القيمة مقبولة لكنها قريبة من الحد الأدنى.', 'حاول تحسين الثبات بمراجعة الفقرات.'));
+            }
+        }
+    }
+}
+
+// --- تحليل تحليل البيانات ---
+function analyzeAnalysis(text, score, notes) {
+    // فحص وجود اختبارات إحصائية
+    const statTests = [
+        { pattern: /T.test|t-test|اختبار ت/, name: 'اختبار t' },
+        { pattern: /ANOVA|تحليل التباين|analysis of variance/i, name: 'تحليل التباين' },
+        { pattern: /ارتباط|correlation|بيرسون|Pearson/i, name: 'معامل الارتباط' },
+        { pattern: /انحدار|regression/i, name: 'الانحدار' },
+        { pattern: /كاي مربع|Chi.square|chi-square/i, name: 'كاي مربع' },
+        { pattern: /متوسط|وسط حسابي|mean/i, name: 'المتوسطات الحسابية' },
+        { pattern: /انحراف معياري|standard deviation/i, name: 'الانحراف المعياري' }
+    ];
+
+    let foundTests = [];
+    statTests.forEach(t => {
+        if (t.pattern.test(text)) foundTests.push(t.name);
+    });
+
+    if (foundTests.length === 0 && countWords(text) > 30) {
+        score.deductions.push(20);
+        notes.push(makeNote('high', 'لا توجد اختبارات إحصائية واضحة', 'قسم تحليل البيانات يجب أن يعرض نتائج الاختبارات الإحصائية المستخدمة.', 'أضف جداول النتائج الإحصائية مع تفسيرها.');
+    }
+
+    // فحص وجود جداول أو أرقام
+    const hasNumbers = (text.match(/\d+\.\d{2,}/g) || []).length;
+    if (hasNumbers < 3 && countWords(text) > 50) {
+        score.deductions.push(10);
+        notes.push(makeNote('medium', 'قلة الأرقام الإحصائية في التحليل', 'التحليل الإحصائي يجب أن يحتوي على قيم إحصائية دقيقة (معاملات، مستويات دلالة، درجات حرية).', 'أضف القيم الإحصائية الكاملة لكل اختبار.');
+    }
+
+    // فحص مستوى الدلالة
+    const hasSigLevel = /0\.05|0\.01|دلالة إحصائية|مستوى الدلالة|Sig/.test(text);
+    if (!hasSigLevel && countWords(text) > 50) {
+        score.deductions.push(8);
+        notes.push(makeNote('medium', 'لم يتم ذكر مستوى الدلالة الإحصائية', 'يجب تحديد مستوى الدلالة المستخدم (عادةً 0.05 أو 0.01).', 'أضف بيان مستوى الدلالة المعتمد في البحث.');
+    }
+
+    // فحص التفسير
+    const hasInterpretation = /أي أن|مما يعني|يشير هذا|يدل هذا|يعزى هذا|تفسر|بمعنى/.test(text);
+    if (!hasInterpretation && countWords(text) > 100) {
+        score.deductions.push(10);
+        notes.push(makeNote('medium', 'التحليل يفتقر لتفسير النتائج الإحصائية', 'لا يكفي عرض الأرقام، بل يجب تفسيرها بلغة واضحة.', 'أضف تفسيراً لكل نتيجة إحصائية بما يفهمه القارئ غير المتخصص.');
+    }
+}
+
+// --- تحليل النتائج ---
+function analyzeResults(text, score, notes) {
+    const words = countWords(text);
+
+    if (words < 50) {
+        score.deductions.push(20);
+        notes.push(makeNote('high', 'قسم النتائج قصير جداً', 'النتائج تحتاج إلى تفصيل أكثر وربط واضح بالفرضيات.', 'وسّع قسم النتائج مع عرض كل نتيجة مرتبطة بفرضية محددة.');
+    }
+
+    // فحص الربط بالفرضيات
+    const hasHypLink = /فرضية|الفرضية|الفرضية الأولى|الفرضية الثانية|الفرض/.test(text);
+    if (!hasHypLink && words > 50) {
+        score.deductions.push(12);
+        notes.push(makeNote('high', 'النتائج غير مرتبطة بالفرضيات بوضوح', 'كل نتيجة يجب أن تُربط بالفرضية التي تتحقق منها.', 'أعد تنظيم النتائج بحيث كل فرضية لها نتيجة مقابلة.');
+    }
+
+    // فحص وجود كلمات النتائج
+    const resultWords = /توصلت|أظهرت|أثبتت|تبين|أكدت|دلت|أسفرت|تبين أن|تشير النتائج/.test(text);
+    if (!resultWords && words > 30) {
+        score.deductions.push(8);
+        notes.push(makeNote('medium', 'صياغة النتائج ضعيفة', 'النتائج يجب أن تُصاغ بصيغة جازمة واضحة.', 'استخدم صياغات مثل: "توصلت الدراسة إلى..." أو "أظهرت النتائج أن..."'));
+    }
+
+    // فحص التدرج المنطقي
+    const hasTransition = /أما|كما|وبالتالي|إضافة إلى|فضلاً عن|علاوة على|فيما يتعلق/.test(text);
+    if (!hasTransition && words > 100) {
+        score.deductions.push(5);
+        notes.push(makeNote('low', 'ضعف في الترابط بين النتائج', 'استخدم أدوات الربط لتحقيق التسلسل المنطقي بين النتائج.', 'أضف أدوات ربط مناسبة بين النتائج المختلفة.'));
+    }
+}
+
+// --- تحليل التوصيات ---
+function analyzeRecommendations(text, score, notes) {
+    const lines = text.split('\n').filter(l => l.trim().length > 5);
+
+    if (lines.length < 2) {
+        score.deductions.push(15);
+        notes.push(makeNote('medium', 'عدد التوصيات قليل', 'يجب تقديم توصيات كافية تستند إلى النتائج (3-8 توصيات).', 'أضف توصيات إضافية تنبثق من نتائج الدراسة.');
+    }
+
+    // فحص صياغة التوصيات
+    const goodRecPatterns = [/يوصي/, /يُقترح/, /يجب/, /ينبغي/, /من الضروري/, /يفضل/];
+    let badRecs = 0;
+    lines.forEach(line => {
+        const clean = line.replace(/^[\d\.\-\)]+\s*/, '').trim();
+        if (!goodRecPatterns.some(p => p.test(clean)) && clean.length > 10) {
+            badRecs++;
+        }
+    });
+
+    if (badRecs > 0 && lines.length > 0) {
+        score.deductions.push(badRecs * 4);
+        notes.push(makeNote('medium', 'بعض التوصيات غير مصاغة بصيغة التوصية', `${badRecs} توصية لا تبدأ بصيغة توصية واضحة.`, 'ابدأ كل توصية بـ: "يوصي الباحث بـ..." أو "يُقترح..."'));
+    }
+
+    // فحص الارتباط بالنتائج
+    const hasResultLink = /بناءً على|استناداً إلى|وفقاً لنتائج|في ضوء نتائج|بناء على نتائج/.test(text);
+    if (!hasResultLink && lines.length >= 2) {
+        score.deductions.push(8);
+        notes.push(makeNote('medium', 'التوصيات غير مرتبطة بوضوح بنتائج الدراسة', 'كل توصية يجب أن تستند إلى نتيجة محددة من الدراسة.', 'اربط كل توصية بالنتيجة التي تستند إليها.');
+    }
+}
+
+// --- تحليل المراجع ---
+function analyzeReferences(text, score, notes) {
+    const lines = text.split('\n').filter(l => l.trim().length > 10);
+
+    if (lines.length < 5) {
+        score.deductions.push(20);
+        notes.push(makeNote('high', 'عدد المراجع قليل جداً', `يوجد ${lines.length} مرجع فقط. الحد الأدنى عادةً 20-30 مرجعاً للماجستير و40-60 للدكتوراه.`, 'أضف المزيد من المراجع الحديثة والمتنوعة.');
+    }
+
+    // فحص حداثة المراجع
+    let oldRefs = 0;
+    let recentRefs = 0;
+    let noYearRefs = 0;
+    lines.forEach(line => {
+        const years = line.match(/(?:19|20)\d{2}/g);
+        if (!years) { noYearRefs++; return; }
+        years.forEach(y => {
+            if (parseInt(y) < 2010) oldRefs++;
+            else recentRefs++;
+        });
+    });
+
+    if (oldRefs > recentRefs && lines.length > 5) {
+        score.deductions.push(12);
+        notes.push(makeNote('medium', 'معظم المراجع قديمة', `المراجع القديمة (قبل 2010) أكثر من الحديثة. يُفضل أن تكون غالبية المراجع خلال آخر 10 سنوات.`, 'حدّث قائمة المراجع بإضافة مصادر حديثة.');
+    }
+
+    if (noYearRefs > 0) {
+        score.deductions.push(noYearRefs * 3);
+        notes.push(makeNote('medium', `${noYearRefs} مرجع بدون سنة نشر`, 'كل مرجع يجب أن يتضمن سنة النشر.', 'أكمل بيانات المراجع الناقصة.');
+    }
+
+    // فحص تنوع المصادر
+    const hasArabic = lines.some(l => /[\u0600-\u06FF]/.test(l));
+    const hasEnglish = lines.some(l => /[a-zA-Z]{3,}/.test(l));
+    if (!hasEnglish && lines.length > 10) {
+        score.deductions.push(8);
+        notes.push(makeNote('low', 'لا توجد مراجع أجنبية', 'التنوع في المصادر (عربية وأجنبية) يعزز مصداقية البحث.', 'أضف مراجع أجنبية حديثة ذات صلة.');
+    }
+
+    // فحص التكرار
+    const refTexts = lines.map(l => l.replace(/\s+/g, ' ').trim());
+    for (let i = 0; i < refTexts.length; i++) {
+        for (let j = i + 1; j < refTexts.length; j++) {
+            if (similarity(refTexts[i], refTexts[j]) > 0.8) {
+                score.deductions.push(5);
+                notes.push(makeNote('medium', 'مرجع مكرر في قائمة المراجع', `المرجع: "${refTexts[i].substring(0, 50)}..." مكرر.`, 'احذف المراجع المكررة.');
+                break;
+            }
+        }
+    }
+
+    // فحص أسلوب التوثيق
+    const hasConsistentStyle = (text.match(/\(\d{4}\)/g) || []).length > 2 ||
+                                (text.match(/\[\d+\]/g) || []).length > 2;
+    if (!hasConsistentStyle && lines.length > 5) {
+        score.deductions.push(10);
+        notes.push(makeNote('medium', 'أسلوب التوثيق غير واضح أو غير موحد', 'يجب اتباع أسلوب توثيق موحد (APA، MLA، Chicago...).', 'وحّد أسلوب التوثيق في جميع المراجع وفق الدليل المعتمد.');
+    }
+}
+
+// ============================================
+// فحوصات نصية عامة
+// ============================================
+function applyGeneralTextChecks(text, score, notes, sectionKey) {
+    // كلمات عامية
+    checkColloquialWords(text, score, notes);
+
+    // جمل طويلة جداً
+    const sentences = text.split(/[.！؟\n]+/).filter(s => s.trim().length > 0);
+    let longSentences = 0;
+    sentences.forEach(s => {
+        const words = s.trim().split(/\s+/).length;
+        if (words > 40) longSentences++;
+    });
+    if (longSentences > 2) {
+        score.deductions.push(longSentences * 2);
+        notes.push(makeNote('low', `${longSentences} جملة طويلة جداً (أكثر من 40 كلمة)`, 'الجمل الطويلة جداً تصعب الفهم وتضعف وضوح النص.', 'قسّم الجمل الطويلة إلى جمل أقصر وأوضح.'));
+    }
+
+    // تكرار الكلمات المفرط
+    const wordFreq = {};
+    const cleanWords = text.replace(/[^\u0600-\u06FFa-zA-Z\s]/g, '').split(/\s+/).filter(w => w.length > 3);
+    cleanWords.forEach(w => {
+        w = w.trim();
+        if (w.length > 3) wordFreq[w] = (wordFreq[w] || 0) + 1;
+    });
+
+    const stopWords = new Set(['التي', 'الذي', 'عليه', 'فيها', 'منها', 'عنها', 'إليه', 'معها', 'بها', 'لها', 'ذلك', 'هذه', 'هذا', 'تلك', 'كانت', 'يكون', 'يمكن', 'كما', 'بشكل', 'وذلك', 'وقد', 'حيث', 'خلال']);
+    let overused = [];
+    for (let w in wordFreq) {
+        if (!stopWords.has(w) && wordFreq[w] > Math.max(5, cleanWords.length * 0.05)) {
+            overused.push({ word: w, count: wordFreq[w] });
+        }
+    }
+    if (overused.length > 0) {
+        const top3 = overused.sort((a,b) => b.count - a.count).slice(0, 3);
+        score.deductions.push(top3.length * 3);
+        notes.push(makeNote('low', 'تكرار مفرط لبعض الكلمات', `الكلمات الأكثر تكراراً: ${top3.map(t => `"${t.word}" (${t.count} مرة)`).join('، ')}`, 'استخدم مرادفات لتقليل التكرار وتحسين تنوع المفردات.'));
+    }
+}
+
+function checkColloquialWords(text, score, notes) {
+    const colloquial = [
+        'يعني', 'طيب', 'حلو', 'زين', 'كذا', 'عشان', 'ليش', 'شو', 'ايش', 'يقول',
+        'بس', 'هذي', 'هذا الكلام', 'بصراحة', 'بجد', 'تمام', 'طيب', 'اللي',
+        'عندي', 'الحين', 'يلا', 'خلّ', 'لازم', 'ممكن', 'أبغى', 'ابغى'
+    ];
+
+    let found = [];
+    colloquial.forEach(w => {
+        if (text.includes(w)) found.push(w);
+    });
+    if (found.length > 0) {
+        score.deductions.push(found.length * 3);
+        notes.push(makeNote('medium', 'وجود كلمات عامية في النص الأكاديمي', `الكلمات: ${found.map(w => `"${w}"`).join('، ')}`, 'استبدل الكلمات العامية بمصطلحات أكاديمية رصينة.'));
+    }
+}
+
+// ============================================
+// ملاحظات عامة
+// ============================================
+function generateGeneralNotes(filledSections, results) {
+    const notes = [];
+    const degree = document.getElementById('degreeLevel').value;
+    const roleLabels = {
+        supervisor: 'مشرف الرسالة',
+        internal: 'المناقش الداخلي',
+        external: 'المناقش الخارجي',
+        researcher: 'الباحث'
+    };
+
+    // فحص الترابط بين الأقسام
+    const hasObjectives = filledSections.includes('objectives');
+    const hasHypotheses = filledSections.includes('hypotheses');
+    const hasResults = filledSections.includes('results');
+
+    if (hasObjectives && hasResults) {
+        notes.push(makeNote('info', 'ملاحظة حول الترابط بين الأهداف والنتائج', 'تأكد من أن كل هدف في الرسالة له نتيجة مقابلة تؤكد تحقيقه أو عدم تحقيقه. هذا من أهم معايير جودة الرسالة.', 'راجع جدول المطابقة بين الأهداف والنتائج والتوصيات.'));
+    }
+
+    if (hasHypotheses && hasResults) {
+        notes.push(makeNote('info', 'ملاحظة حول الترابط بين الفرضيات والنتائج', 'تأكد من أن كل فرضية تم اختبارها وعرضت نتيجتها بشكل صريح (مقبولة/مرفوضة).', 'أنشئ جدولاً يلخص نتائج اختبار كل فرضية.'));
+    }
+
+    // فحص حسب الدرجة
+    if (degree === 'phd') {
+        const hasTheory = filledSections.includes('theory');
+        if (hasTheory && countWords(sectionData.theory || '') < 1000) {
+            notes.push(makeNote('medium', 'الإطار النظري لرسالة دكتوراه يحتاج توسيعاً كبيراً', 'رسالة الدكتوراه تتطلب إطاراً نظرياً عميقاً ومفصلاً يتضمن نقداً للدراسات السابقة ومساهمة نظرية واضحة.', 'وسّع الإطار النظري مع التركيز على المساهمة النظرية للدراسة.'));
+        }
+    }
+
+    // ملاحظة حسب الدور
+    if (currentRole === 'supervisor') {
+        notes.push(makeNote('info', 'توصية للمشرف', 'كمشرف، ركز على التوجيه نحو تصحيح الفجوات المنهجية والنظرية قبل تقديم الرسالة للمناقشة. تأكد من连贯ة السرد الأكاديمي بين جميع الأقسام.', 'اعقد اجتماعاً مع الباحث لمناقشة الملاحظات ذات الأولوية العالية أولاً.'));
+    } else if (currentRole === 'external') {
+        notes.push(makeNote('info', 'توصية للمناقش الخارجي', 'التركيز على: أصالة العنوان، عمق الإطار النظري، ومنهجية البحث. قيّم مدى إضافة الرسالة للمعرفة العلمية في التخصص.', 'جهّز أسئلة المناقشة بناءً على الفجوات المكتشفة.'));
+    }
+
+    // فحص الكلمات المكررة بشكل عام
+    if (results.stats.totalWords > 200) {
+        const sorted = Object.entries(results.wordFrequency)
+            .filter(([w]) => w.length > 3 && !new Set(['التي','الذي','عليه','فيها','منها','عنها','إليه','معها','بها','لها','ذلك','هذه','هذا','تلك','كانت','يكون','يمكن','كما','بشكل','وذلك','وقد','حيث','خلال','على','من','إلى','في','عن','مع','ذلك','هذا','بأن','التى']).has(w))
+            .sort((a,b) => b[1] - a[1])
+            .slice(0, 8);
+
+        if (sorted.length > 0) {
+            const cloud = sorted.map(([w, c]) => {
+                const ratio = c / (results.stats.totalWords * 0.01);
+                let cls = 'normal';
+                if (ratio > 3) cls = 'overused';
+                else if (ratio > 1.5) cls = 'frequent';
+                return `<span class="word-tag ${cls}">${w} (${c})</span>`;
+            }).join('');
+            notes.push({
+                severity: 'info',
+                title: 'تحليل تكرار الكلمات الأكثر شيوعاً',
+                body: `<div class="words-cloud">${cloud}</div>`,
+                suggestion: null
+            });
+        }
+    }
+
+    return notes;
+}
+
+// ============================================
+// أدوات مساعدة
+// ============================================
+function makeNote(severity, title, body, suggestion) {
+    return { severity, title, body, suggestion };
+}
+
+function countWords(text) {
+    return text.split(/\s+/).filter(w => w.length > 0).length;
+}
+
+function similarity(a, b) {
+    const wordsA = new Set(a.split(/\s+/));
+    const wordsB = new Set(b.split(/\s+/));
+    const intersection = [...wordsA].filter(w => wordsB.has(w)).length;
+    const union = new Set([...wordsA, ...wordsB]).size;
+    return union > 0 ? intersection / union : 0;
+}
+
+function extractWordFrequency(text, freqMap) {
+    const clean = text.replace(/[^\u0600-\u06FFa-zA-Z\s]/g, '');
+    clean.split(/\s+/).filter(w => w.length > 2).forEach(w => {
+        w = w.trim();
+        if (w.length > 2) freqMap[w] = (freqMap[w] || 0) + 1;
+    });
+}
+
+function getScoreColor(score) {
+    if (score >= 80) return 'var(--green)';
+    if (score >= 60) return 'var(--orange)';
+    return 'var(--red)';
+}
+
+function getScoreLabel(score) {
+    if (score >= 90) return 'ممتاز';
+    if (score >= 80) return 'جيد جداً';
+    if (score >= 70) return 'جيد';
+    if (score >= 60) return 'مقبول';
+    if (score >= 50) return 'ضعيف';
+    return 'ضعيف جداً';
+}
+
+function getSeverityLabel(s) {
+    const map = { high: 'حرج', medium: 'متوسط', low: 'ثانوي', info: 'معلوماتي' };
+    return map[s] || s;
+}
+
+// ============================================
+// عرض النتائج
+// ============================================
+function renderResults() {
+    const r = analysisResults;
+
+    // إخفاء الحالة الفارغة
+    document.getElementById('resultsEmpty').style.display = 'none';
+
+    // عرض شريط التصدير
+    document.getElementById('exportBar').classList.add('show');
+
+    // ملخص التقييم
+    renderScoreOverview(r);
+
+    // تقارير الأقسام
+    renderSectionReports(r);
+
+    // ملاحظات عامة
+    renderGeneralNotes(r);
+
+    // سكرول للنتائج
+    document.getElementById('scoreOverview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderScoreOverview(r) {
+    const el = document.getElementById('scoreOverview');
+    const color = getScoreColor(r.totalScore);
+    const circumference = 2 * Math.PI * 38;
+    const offset = circumference - (r.totalScore / 100) * circumference;
+
+    el.innerHTML = `
+        <div class="score-header">
+            <h2><i class="fas fa-chart-pie"></i> ملخص التقييم الشامل</h2>
+            <div class="score-circle-wrap">
+                <div class="score-circle">
+                    <svg viewBox="0 0 90 90">
+                        <circle class="bg-ring" cx="45" cy="45" r="38"/>
+                        <circle class="fg-ring" cx="45" cy="45" r="38"
+                            stroke="${color}"
+                            stroke-dasharray="${circumference}"
+                            stroke-dashoffset="${circumference}"
+                            id="scoreRing"/>
+                    </svg>
+                    <div class="score-num" style="color:${color}" id="scoreNum">0</div>
+                </div>
+                <div class="score-label">
+                    <strong id="scoreLabel">${getScoreLabel(r.totalScore)}</strong>
+                    من 100 نقطة
+                </div>
+            </div>
+        </div>
+        <div class="score-stats">
+            <div class="stat-card green">
+                <div class="stat-val">${r.stats.sectionsAnalyzed}</div>
+                <div class="stat-label">أقسام تم تحليلها</div>
+            </div>
+            <div class="stat-card red">
+                <div class="stat-val">${r.stats.highIssues}</div>
+                <div class="stat-label">ملاحظات حرجة</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-val">${r.stats.mediumIssues}</div>
+                <div class="stat-label">ملاحظات متوسطة</div>
+            </div>
+            <div class="stat-card blue">
+                <div class="stat-val">${r.stats.totalWords.toLocaleString()}</div>
+                <div class="stat-label">إجمالي الكلمات</div>
+            </div>
+        </div>
+    `;
+    el.classList.add('show');
+
+    // أنيميشن الدائرة والرقم
+    setTimeout(() => {
+        document.getElementById('scoreRing').style.strokeDashoffset = offset;
+        animateNumber('scoreNum', 0, r.totalScore, 1200);
+    }, 100);
+}
+
+function animateNumber(elId, from, to, duration) {
+    const el = document.getElementById(elId);
+    const start = performance.now();
+    function update(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.round(from + (to - from) * eased);
+        if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+}
+
+function renderSectionReports(r) {
+    const container = document.getElementById('sectionReports');
+    let html = '';
+
+    for (let key in r.sectionScores) {
+        const sec = SECTIONS[key];
+        const score = r.sectionScores[key];
+        const notes = r.sectionNotes[key];
+        const color = getScoreColor(score);
+
+        html += `
+            <div class="section-report show" style="animation-delay: ${Object.keys(r.sectionScores).indexOf(key) * 0.1}s">
+                <div class="section-report-header">
+                    <div class="section-icon" style="background:${sec.color}22; color:${sec.color}">
+                        <i class="${sec.icon}"></i>
+                    </div>
+                    <h3>${sec.label}</h3>
+                    <div class="section-score" style="color:${color}">${score}%</div>
+                </div>
+                <div class="criteria-list">
+        `;
+
+        // معايير النجاح/الفشل
+        const criteria = buildCriteria(key, score, notes);
+        criteria.forEach(c => {
+            html += `
+                <div class="criteria-item">
+                    <div class="crit-icon ${c.status}">
+                        <i class="fas ${c.status === 'pass' ? 'fa-check' : c.status === 'fail' ? 'fa-times' : 'fa-exclamation'}"></i>
+                    </div>
+                    <div class="crit-text">${c.text}</div>
+                </div>
+            `;
+        });
+
+        html += `</div></div>`;
+    }
+
+    container.innerHTML = html;
+}
+
+function buildCriteria(key, score, notes) {
+    const criteria = [];
+    const hasHigh = notes.some(n => n.severity === 'high');
+    const hasMedium = notes.some(n => n.severity === 'medium');
+
+    const criteriaMap = {
+        title: [
+            { check: score >= 70, passText: 'العنوان واضح ومحدد', failText: 'العنوان يحتاج إعادة صياغة' },
+            { check: !hasHigh, passText: 'لا توجد أخطاء جوهرية', failText: 'توجد أخطاء جوهرية تحتاج معالجة' },
+            { check: score >= 85, passText: 'العنوان يلتزم بالمعايير الأكاديمية', failText: 'العنوان لا يلتزم بالكامل بالمعايير الأكاديمية', warnIf: score >= 60 && score < 85 }
+        ],
+        toc: [
+            { check: !hasHigh, passText: 'الفهرس يحتوي على الأقسام الأساسية', failText: 'توجد أقسام أساسية مفقودة' },
+            { check: score >= 80, passText: 'الفهرس مكتمل ومترقم', failText: 'الفهرس يحتاج إكمال', warnIf: score >= 60 && score < 80 }
+        ],
+        abstract: [
+            { check: !hasHigh, passText: 'المستخلص يغطي العناصر الجوهرية', failText: 'المستخلص يفتقر لعناصر جوهرية' },
+            { check: score >= 75, passText: 'طول المستخلص مناسب', failText: 'طول المستخلص غير مناسب', warnIf: score >= 50 && score < 75 },
+            { check: !hasMedium, passText: 'المستخلص مصاغ بشكل أكاديمي', failText: 'المستخلص يحتاج تحسين الصياغة', warnIf: hasMedium && !hasHigh }
+        ],
+        objectives: [
+            { check: !hasHigh, passText: 'الأهداف محددة وقابلة للقياس', failText: 'توجد أهداف غير مصاغة بشكل سليم' },
+            { check: score >= 80, passText: 'عدد الأهداف مناسب', failText: 'عدد الأهداف غير مناسب', warnIf: score >= 60 && score < 80 }
+        ],
+        hypotheses: [
+            { check: !hasHigh, passText: 'الفرضيات مصاغة بالصيغة الإحصائية', failText: 'الفرضيات تحتاج إعادة صياغة' },
+            { check: score >= 80, passText: 'الفرضيات قابلة للاختبار', failText: 'بعض الفرضيات قد لا تكون قابلة للاختبار', warnIf: score >= 60 && score < 80 }
+        ],
+        theory: [
+            { check: !hasHigh, passText: 'الإطار النظري يتضمن توثيقاً ودراسات سابقة', failText: 'الإطار النظري يفتقر للتوثيق' },
+            { check: score >= 70, passText: 'الإطار النظري يشمل تعريفات إجرائية', failText: 'التعريفات الإجرائية غير مكتملة', warnIf: score >= 50 && score < 70 },
+            { check: score >= 85, passText: 'الإطار النظري شامل ومتوازن', failText: 'الإطار النظري يحتاج توسيعاً', warnIf: score >= 60 && score < 85 }
+        ],
+        methodology: [
+            { check: !hasHigh, passText: 'المنهجية تحتوي على العناصر الأساسية', failText: 'المنهجية ناقصة بشكل جوهري' },
+            { check: score >= 75, passText: 'المنهجية محددة ومفصلة', failText: 'المنهجية تحتاج مزيداً من التفصيل', warnIf: score >= 50 && score < 75 }
+        ],
+        analysis: [
+            { check: !hasHigh, passText: 'التحليل يحتوي على اختبارات إحصائية', failText: 'التحليل يفتقر للاختبارات الإحصائية' },
+            { check: score >= 75, passText: 'النتائج الإحصائية مفسرة', failText: 'التحليل يحتاج تفسيراً أوضح', warnIf: score >= 50 && score < 75 }
+        ],
+        results: [
+            { check: !hasHigh, passText: 'النتائج مرتبطة بالفرضيات', failText: 'النتائج غير مرتبطة بالفرضيات بوضوح' },
+            { check: score >= 80, passText: 'النتائج مصاغة بشكل واضح', failText: 'صياغة النتائج تحتاج تحسين', warnIf: score >= 60 && score < 80 }
+        ],
+        recommendations: [
+            { check: !hasHigh, passText: 'التوصيات مرتبطة بالنتائج', failText: 'التوصيات غير مستندة للنتائج' },
+            { check: score >= 80, passText: 'التوصيات مصاغة بشكل مناسب', failText: 'صياغة التوصيات تحتاج تحسين', warnIf: score >= 60 && score < 80 }
+        ],
+        references: [
+            { check: !hasHigh, passText: 'عدد المراجع مناسب', failText: 'عدد المراجع غير كافٍ' },
+            { check: score >= 75, passText: 'المراجع حديثة ومتنوعة', failText: 'المراجع تحتاج تحديثاً وتنويعاً', warnIf: score >= 50 && score < 75 },
+            { check: score >= 85, passText: 'أسلوب التوثيق موحد', failText: 'أسلوب التوثيق يحتاج توحيداً', warnIf: score >= 60 && score < 85 }
+        ]
+    };
+
+    (criteriaMap[key] || []).forEach(c => {
+        let status = c.check ? 'pass' : 'fail';
+        if (c.warnIf) status = 'warn';
+        criteria.push({
+            status,
+            text: c.check ? (c.passText || '') : (c.warnIf ? c.failText : c.failText || '')
+        });
+    });
+
+    return criteria;
+}
+
+function renderGeneralNotes(r) {
+    const container = document.getElementById('generalNotes');
+    if (!r.generalNotes || r.generalNotes.length === 0) {
+        container.classList.remove('show');
+        return;
+    }
+
+    // تجميع الملاحظات من جميع الأقسام أيضاً
+    let allNotes = [...r.generalNotes];
+    for (let key in r.sectionNotes) {
+        r.sectionNotes[key].forEach(n => {
+            allNotes.push({
+                ...n,
+                section: SECTIONS[key].label
+            });
+        });
+    }
+
+    // ترتيب حسب الأهمية
+    const order = { high: 0, medium: 1, low: 2, info: 3 };
+    allNotes.sort((a, b) => (order[a.severity] || 3) - (order[b.severity] || 3));
+
+    let html = `
+        <div class="notes-section-header">
+            <h3><i class="fas fa-clipboard-list" style="color:var(--accent)"></i> جميع الملاحظات التفصيلية</h3>
+            <span class="badge" style="background:var(--accent-dim); color:var(--accent)">${allNotes.length} ملاحظة</span>
+        </div>
+    `;
+
+    allNotes.forEach((n, i) => {
+        html += `
+            <div class="note-card severity-${n.severity}" style="animation: fadeUp 0.4s ease ${i * 0.05}s both">
+                <div class="note-card-head">
+                    <span class="severity-dot ${n.severity}"></span>
+                    <span class="note-title">${n.section ? `[${n.section}] ` : ''}${n.title}</span>
+                    <span class="severity-badge ${n.severity}">${getSeverityLabel(n.severity)}</span>
+                </div>
+                <div class="note-card-body">${n.body}</div>
+                ${n.suggestion ? `<div class="note-suggestion"><i class="fas fa-arrow-left"></i><span>${n.suggestion}</span></div>` : ''}
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+    container.classList.add('show');
+}
+
+// ============================================
+// التصدير
+// ============================================
+function exportReport(type) {
+    if (!analysisResults) return;
+    const r = analysisResults;
+    const degree = document.getElementById('degreeLevel').value === 'masters' ? 'ماجستير' : 'دكتوراه';
+    const field = document.getElementById('fieldOfStudy').value || 'غير محدد';
+
+    let text = `═══════════════════════════════════════\n`;
+    text += `   تقرير مراجعة الرسالة الأكاديمية\n`;
+    text += `═══════════════════════════════════════\n\n`;
+    text += `الدرجة العلمية: ${degree}\n`;
+    text += `التخصص: ${field}\n`;
+    text += `التقييم العام: ${r.totalScore}% - ${getScoreLabel(r.totalScore)}\n`;
+    text += `عدد الأقسام المحللة: ${r.stats.sectionsAnalyzed}\n`;
+    text += `إجمالي الكلمات: ${r.stats.totalWords}\n`;
+    text += `الملاحظات الحرجة: ${r.stats.highIssues}\n`;
+    text += `الملاحظات المتوسطة: ${r.stats.mediumIssues}\n`;
+    text += `الملاحظات الثانوية: ${r.stats.lowIssues}\n\n`;
+
+    text += `───────────────────────────────────────\n`;
+    text += `   درجات الأقسام\n`;
+    text += `───────────────────────────────────────\n\n`;
+
+    for (let key in r.sectionScores) {
+        const sec = SECTIONS[key];
+        text += `● ${sec.label}: ${r.sectionScores[key]}% (${getScoreLabel(r.sectionScores[key])})\n`;
+    }
+
+    text += `\n───────────────────────────────────────\n`;
+    text += `   الملاحظات التفصيلية\n`;
+    text += `───────────────────────────────────────\n\n`;
+
+    for (let key in r.sectionNotes) {
+        const sec = SECTIONS[key];
+        r.sectionNotes[key].forEach(n => {
+            text += `[${sec.label}] [${getSeverityLabel(n.severity)}] ${n.title}\n`;
+            text += `  ${n.body.replace(/<[^>]+>/g, '')}\n`;
+            if (n.suggestion) text += `  >> المقترح: ${n.suggestion}\n`;
+            text += `\n`;
+        });
+    }
+
+    if (r.generalNotes.length > 0) {
+        text += `───────────────────────────────────────\n`;
+        text += `   ملاحظات عامة\n`;
+        text += `───────────────────────────────────────\n\n`;
+        r.generalNotes.forEach(n => {
+            text += `[${getSeverityLabel(n.severity)}] ${n.title}\n`;
+            text += `  ${n.body.replace(/<[^>]+>/g, '')}\n\n`;
+        });
+    }
+
+    text += `\n═══════════════════════════════════════\n`;
+    text += `تم إنشاء هذا التقرير بواسطة منصة مراجعة الرسائل الأكاديمية\n`;
+    text += `التاريخ: ${new Date().toLocaleDateString('ar-EG')}\n`;
+    text += `═══════════════════════════════════════\n`;
+
+    // تحميل الملف
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `تقرير_مراجعة_الرسالة_${new Date().toISOString().split('T')[0]}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    showToast('تم تصدير التقرير بنجاح', 'success');
+}
+
+function printReport() {
+    window.print();
+}
+
+// ============================================
+// توست
+// ============================================
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle' };
+    toast.innerHTML = `<i class="fas ${icons[type] || icons.success}"></i> ${message}`;
+    container.appendChild(toast);
+    setTimeout(() => { toast.remove(); }, 3200);
+}
+</script>
+</body>
+</html>

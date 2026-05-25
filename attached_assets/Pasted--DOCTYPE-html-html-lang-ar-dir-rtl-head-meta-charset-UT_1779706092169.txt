@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎓 منصة مراجعة الرسائل الأكاديمية بالذكاء الاصطناعي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1a5f7a;
+            --secondary: #57c5b6;
+            --accent: #159895;
+            --dark: #002b5b;
+            --light: #e8f6f3;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --success: #27ae60;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: linear-gradient(135deg, var(--dark) 0%, var(--primary) 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 12px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1em;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        .nav-tab:hover, .nav-tab.active {
+            background: var(--secondary);
+            border-color: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        /* Main Content */
+        .main-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        /* Upload Section */
+        .upload-section {
+            text-align: center;
+            padding: 40px;
+            border: 3px dashed var(--secondary);
+            border-radius: 15px;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+        }
+
+        .upload-section:hover {
+            border-color: var(--primary);
+            background: var(--light);
+        }
+
+        .upload-section.dragover {
+            background: var(--light);
+            border-color: var(--accent);
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+        }
+
+        .upload-btn {
+            background: var(--primary);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Tajawal', sans-serif;
+            margin: 10px;
+        }
+
+        .upload-btn:hover {
+            background: var(--dark);
+            transform: scale(1.05);
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: var(--light);
+            border-radius: 10px;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        /* Thesis Info Form */
+        .thesis-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--dark);
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Review Sections */
+        .review-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .review-card {
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .review-card:hover {
+            border-color: var(--secondary);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .review-card.selected {
+            border-color: var(--accent);
+            background: var(--light);
+        }
+
+        .review-card .icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+
+        .review-card h3 {
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+
+        .review-card p {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .review-card .checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .review-card .checkbox input {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--accent);
+        }
+
+        /* AI Model Selection */
+        .ai-model-section {
+            background: var(--light);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .ai-model-section h3 {
+            color: var(--dark);
+            margin-bottom: 15px;
+        }
+
+        .model-options {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .model-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 20px;
+            background: white;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .model-option:hover, .model-option.selected {
+            border-color: var(--accent);
+            background: white;
+        }
+
+        .model-option input {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            padding: 18px 50px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 700;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(26, 95, 122, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--primary);
+            padding: 18px 50px;
+            border: 2px solid var(--primary);
+            border-radius: 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 700;
+        }
+
+        .btn-secondary:hover {
+            background: var(--light);
+        }
+
+        /* Results Section */
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-right: 5px solid var(--accent);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        .result-card h4 {
+            color: var(--dark);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-card .score {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 700;
+            margin-right: 10px;
+        }
+
+        .score.excellent { background: #d4edda; color: #155724; }
+        .score.good { background: #fff3cd; color: #856404; }
+        .score.needs-work { background: #f8d7da; color: #721c24; }
+
+        .result-card .content {
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .result-card .suggestions {
+            background: var(--light);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .result-card .suggestions h5 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .result-card .suggestions ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .result-card .suggestions li {
+            padding: 5px 0;
+            padding-right: 20px;
+            position: relative;
+        }
+
+        .result-card .suggestions li::before {
+            content: "💡";
+            position: absolute;
+            right: 0;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .progress-container.show {
+            display: block;
+        }
+
+        .progress-ring {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 20px;
+        }
+
+        .progress-ring circle {
+            fill: none;
+            stroke-width: 10;
+        }
+
+        .progress-ring .bg {
+            stroke: #eee;
+        }
+
+        .progress-ring .progress {
+            stroke: var(--secondary);
+            stroke-linecap: round;
+            stroke-dasharray: 440;
+            stroke-dashoffset: 440;
+            transition: stroke-dashoffset 0.5s;
+            transform: rotate(-90deg);
+            transform-origin: center;
+        }
+
+        .progress-text {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Loading Animation */
+        .loading-dots {
+            display: inline-block;
+        }
+
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        /* User Type Selection */
+        .user-type-section {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .user-type-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            width: 200px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .user-type-card:hover, .user-type-card.selected {
+            border-color: var(--accent);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .user-type-card .icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .user-type-card h3 {
+            color: var(--dark);
+            font-size: 1.1em;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .review-sections {
+                grid-template-columns: 1fr;
+            }
+            
+            .thesis-info {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            .nav-tabs, .action-buttons, .upload-section, .user-type-section {
+                display: none;
+            }
+            
+            .results-section {
+                display: block !important;
+            }
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: white;
+            opacity: 0.8;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--success);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 1000;
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .comparison-table th, .comparison-table td {
+            padding: 15px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .comparison-table th {
+            background: var(--light);
+            color: var(--dark);
+            font-weight: 700;
+        }
+
+        .comparison-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        /* Export Buttons */
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .export-btn {
+            padding: 10px 25px;
+            border-radius: 20px;
+            border: 2px solid var(--primary);
+            background: white;
+            color: var(--primary);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        .export-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Tabs Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Text Analysis Input */
+        .text-analysis {
+            margin-bottom: 30px;
+        }
+
+        .text-analysis textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 15px;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 1em;
+            resize: vertical;
+        }
+
+        .text-analysis textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Chapter Selector */
+        .chapter-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .chapter-tag {
+            padding: 8px 20px;
+            background: #eee;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .chapter-tag:hover, .chapter-tag.active {
+            background: var(--secondary);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* Criteria Progress Bar */
+        .criteria-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 5px 0;
+        }
+
+        .criteria-bar .bar-bg {
+            flex: 1;
+            height: 20px;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .criteria-bar .bar-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .criteria-bar .bar-label {
+            min-width: 120px;
+            font-size: 0.9em;
+        }
+
+        .criteria-bar .bar-value {
+            min-width: 40px;
+            font-weight: 700;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
+    <!-- Header -->
+    <div class="header">
+        <h1>🎓 منصة مراجعة الرسائل الأكاديمية بالذكاء الاصطناعي</h1>
+        <p>مساعد ذكي لمشرفي الماجستير والدكتوراه والمناقشين والباحثين</p>
+    </div>
+
+    <div class="container">
+        <!-- User Type Selection -->
+        <div class="user-type-section" id="userTypeSection">
+            <div class="user-type-card" data-type="supervisor" onclick="selectUserType(this)">
+                <div class="icon">👨‍🏫</div>
+                <h3>مشرف</h3>
+            </div>
+            <div class="user-type-card" data-type="discussant" onclick="selectUserType(this)">
+                <div class="icon">🎤</div>
+                <h3>مناقش</h3>
+            </div>
+            <div class="user-type-card" data-type="researcher" onclick="selectUserType(this)">
+                <div class="icon">🔬</div>
+                <h3>باحث</h3>
+            </div>
+            <div class="user-type-card" data-type="external" onclick="selectUserType(this)">
+                <div class="icon">🌍</div>
+                <h3>مناقش خارجي</h3>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs" id="navTabs" style="display:none;">
+            <button class="nav-tab active" onclick="switchTab('upload')">📤 رفع الرسالة</button>
+            <button class="nav-tab" onclick="switchTab('text')">✍️ تحليل نصي</button>
+            <button class="nav-tab" onclick="switchTab('chapters')">📑 فصول الرسالة</button>
+            <button class="nav-tab" onclick="switchTab('settings')">⚙️ الإعدادات</button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content" id="mainContent" style="display:none;">
+            
+            <!-- Tab: Upload -->
+            <div class="tab-content active" id="tab-upload">
+                <!-- Thesis Info -->
+                <div class="thesis-info">
+                    <div class="form-group">
+                        <label>📌 عنوان الرسالة</label>
+                        <input type="text" id="thesisTitle" placeholder="أدخل عنوان الرسالة">
+                    </div>
+                    <div class="form-group">
+                        <label>👤 اسم الباحث</label>
+                        <input type="text" id="researcherName" placeholder="اسم الباحث">
+                    </div>
+                    <div class="form-group">
+                        <label>🎓 الدرجة العلمية</label>
+                        <select id="degreeType">
+                            <option value="">اختر الدرجة</option>
+                            <option value="master">ماجستير</option>
+                            <option value="phd">دكتوراه</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>📚 التخصص</label>
+                        <input type="text" id="specialization" placeholder="مثال: علوم الحاسب">
+                    </div>
+                    <div class="form-group">
+                        <label>🏫 الجامعة</label>
+                        <input type="text" id="university" placeholder="اسم الجامعة">
+                    </div>
+                    <div class="form-group">
+                        <label>📅 سنة التسجيل</label>
+                        <input type="number" id="year" placeholder="2024" min="2000" max="2030">
+                    </div>
+                </div>
+
+                <!-- Upload Section -->
+                <div class="upload-section" id="uploadSection">
+                    <div class="upload-icon">📄</div>
+                    <h3>ارفع ملف الرسالة</h3>
+                    <p>PDF, DOCX, TXT (الحد الأقصى 50 ميجابايت)</p>
+                    <input type="file" id="file-input" accept=".pdf,.docx,.txt" onchange="handleFileSelect(event)">
+                    <button class="upload-btn" onclick="document.getElementById('file-input').click()">
+                        📁 اختيار الملف
+                    </button>
+                    <button class="upload-btn" onclick="loadSample()">📝 تحميل نموذج تجريبي</button>
+                    <div class="file-info" id="fileInfo">
+                        <strong>📎 الملف المختار:</strong> <span id="fileName"></span><br>
+                        <strong>📊 الحجم:</strong> <span id="fileSize"></span><br>
+                        <strong>📋 النوع:</strong> <span id="fileType"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Text Analysis -->
+            <div class="tab-content" id="tab-text">
+                <div class="text-analysis">
+                    <h3 style="margin-bottom:15px;">✍️ أدخل نص الرسالة للتحليل المباشر</h3>
+                    <textarea id="textInput" placeholder="يمكنك لصق نص أي فصل من الرسالة هنا للتحليل الفوري..."></textarea>
+                    <div class="chapter-selector" style="margin-top:15px;">
+                        <span class="chapter-tag active" onclick="selectChapter(this, 'title')">📌 العنوان</span>
+                        <span class="chapter-tag" onclick="selectChapter(this, 'abstract')">📝 المستخلص</span>
+                        <span class="chapter-tag" onclick="selectChapter(this, 'introduction')">📖 المقدمة</span>
+                        <span class="chapter-tag" onclick="selectChapter(this, 'theoretical')">📚 الإطار النظري</span>
+                        <span class="chapter-tag" onclick="selectChapter(this, 'methodology')">🔬 المنهجية</span>
+                        <span class="chapter-tag" onclick="selectChapter(this, 'analysis')">📊 التحليل</span>
+                        <span class="chapter-tag" onclick="selectChapter(this, 'results')">📈 النتائج</span>
+                        <span class="chapter-tag" onclick="selectChapter(this, 'conclusion')">🏁 الخاتمة</span>
+                    </div>
+                    <button class="btn-primary" onclick="analyzeText()" style="margin-top:15px;">
+                        🔍 تحليل النص
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab: Chapters -->
+            <div class="tab-content" id="tab-chapters">
+                <h3 style="margin-bottom:20px;">📑 اختر أقسام الرسالة للمراجعة</h3>
+                <div class="review-sections">
+                    <div class="review-card selected" data-section="title">
+                        <div class="icon">📌</div>
+                        <h3>العنوان</h3>
+                        <p>مراجعة دقة العنوان وملاءمته للمحتوى</p>
+                        <div class="checkbox">
+                            <input type="checkbox" checked onchange="toggleSection(this, 'title')">
+                            <label>تضمين في المراجعة</label>
+                        </div>
+                    </div>
+
+                    <div class="review-card selected" data-section="abstract">
+                        <div class="icon">📝</div>
+                        <h3>المستخلص</h3>
+                        <p>فحص المستخلص: الأهداف، المنهجية، النتائج، الكلمات المفتاحية</p>
+                        <div class="checkbox">
+                            <input type="checkbox" checked onchange="toggleSection(this, 'abstract')">
+                            <label>تضمين في المراجعة</label>
+                        </div>
+                    </div>
+
+                    <div class="review-card selected" data-section="introduction">
+                        <div class="icon">📖</div>
+                        <h3>المقدمة والإشكالية</h3>
+                        <p>تقييم خلفية البحث، المشكلة، الأسئلة، أهمية البحث</p>
+                        <div class="checkbox">
+                            <input type="checkbox" checked onchange="toggleSection(this, 'introduction')">
+                            <label>تضمين في المراجعة</label>
+                        </div>
+                    </div>
+
+                    <div class="review-card selected" data-section="objectives">
+                        <div class="icon">🎯</div>
+                        <h3>الأهداف والفرضيات</h3>
+                        <p>مراجعة وضوح الأهداف، قابلية القياس، ارتباط الفرضيات</p>
+                        <div class="checkbox">
+                            <input type="checkbox" checked onchange="toggleSection(this, 'objectives')">
+                            <label>تضمين في المراجعة</label>
+                        </div>
+                    </div>
+
+                    <div class="review-card selected" data-section="theoretical">
+                        <div class="icon">📚</div>
+                        <h3>الإطار النظري</h3>
+                        <p>تقييم المراجع، حديثة المصادر، تغطية الأدبيات، الفجوات</p>
+                        <div class="checkbox">
+                            <input type="checkbox" checked onchange="toggleSection(this, 'theoretical')">
+                            <label>تضمين في المراجعة</label>
+                        </div>
+                    </div>
+
+                    <div class="review-card selected" data-section="methodology">
+                        <div class="icon">🔬</div>
+                        <h3>المنهجية</h3>
+                        <p>فحص التصميم، العينة، الأدوات، الصدق والثبات، الأخلاقيات</p>
+                        <div class="checkbox">
+                            <input type="checkbox" checked onchange="toggleSection(this, 'methodology')">
+                            <label>تضمين في المراجعة</label>
+                        </div>
+                    </div>
+
+                    <div class="review-card selected" data-section="analysis">
+                        <div class="icon">📊</div>
+                        <h3>تحليل البيانات</h3>
+                        <p>تقييم اختيار التحليل الإحصائي، تفسير النتائج، الجداول والرسوم</p>
+                        <div class="checkbox">
+                            <input type="checkbox" checked onchange="toggleSection(this, 'analysis')">
+                            <label>تضمين في المراجعة</label>
+                        </div>
+                    </div>
+
+                    <div class="review-card selected" data-section="results">
+                        <div class="icon">📈</div>
+                        <h3>النتائج والمناقشة</h3>
+                        <p>مراجعة تقديم النتائج، المناقشة، الربط بالدراسات السابقة</p>
+                        <div class="checkbox">
+                            <input type="checkbox" checked onchange="toggleSection(this, 'results')">
+                            <label>تضمين في المراجعة</label>
+                        </div>
+                    </div>
+
+                    <div class="review-card selected" data-section="conclusion">
+                        <div class="icon">🏁</div>
+                        <h3>الخاتمة والتوصيات</h3>
+                        <p>تقييم الاستنتاجات، التوصيات العملية، الدراسات المستقبلية</p>
+                        <div class="checkbox">
+                            <input type="checkbox" checked onchange="toggleSection(this, 'conclusion')">
+                            <label>تضمين في المراجعة</label>
+                        </div>
+                    </div>
+
+                    <div class="review-card selected" data-section="references">
+                        <div class="icon">📋</div>
+                        <h3>المراجع والمصادر</h3>
+                        <p>فحص أسلوب الاقتباس، اكتمال المراجع، حداثتها</p>
+                        <div class="checkbox">
+                            <input type="checkbox" checked onchange="toggleSection(this, 'references')">
+                            <label>تضمين في المراجعة</label>
+                        </div>
+                    </div>
+
+                    <div class="review-card selected" data-section="language">
+                        <div class="icon">✍️</div>
+                        <h3>اللغة والأسلوب</h3>
+                        <p>مراجعة النحو، الإملاء، الأسلوب العلمي، الاتساق</p>
+                        <div class="checkbox">
+                            <input type="checkbox" checked onchange="toggleSection(this, 'language')">
+                            <label>تضمين في المراجعة</label>
+                        </div>
+                    </div>
+
+                    <div class="review-card selected" data-section="formatting">
+                        <div class="icon">📄</div>
+                        <h3>التنسيق والهيكل</h3>
+                        <p>الفهرس، الترقيم، الهوامش، الخط، الجداول والأشكال</p>
+                        <div class="checkbox">
+                            <input type="checkbox" checked onchange="toggleSection(this, 'formatting')">
+                            <label>تضمين في المراجعة</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Settings -->
+            <div class="tab-content" id="tab-settings">
+                <div class="ai-model-section">
+                    <h3>🤖 اختر نموذج الذكاء الاصطناعي</h3>
+                    <div class="model-options">
+                        <div class="model-option selected" onclick="selectModel(this, 'gemini')">
+                            <input type="radio" name="aiModel" value="gemini" checked>
+                            <div>
+                                <strong>Gemini Pro</strong>
+                                <small style="display:block;color:#666;">Google - مجاني</small>
+                            </div>
+                        </div>
+                        <div class="model-option" onclick="selectModel(this, 'openai')">
+                            <input type="radio" name="aiModel" value="openai">
+                            <div>
+                                <strong>GPT-4</strong>
+                                <small style="display:block;color:#666;">OpenAI - يحتاج API Key</small>
+                            </div>
+                        </div>
+                        <div class="model-option" onclick="selectModel(this, 'claude')">
+                            <input type="radio" name="aiModel" value="claude">
+                            <div>
+                                <strong>Claude 3</strong>
+                                <small style="display:block;color:#666;">Anthropic - يحتاج API Key</small>
+                            </div>
+                        </div>
+                        <div class="model-option" onclick="selectModel(this, 'local')">
+                            <input type="radio" name="aiModel" value="local">
+                            <div>
+                                <strong>نموذج محلي</strong>
+                                <small style="display:block;color:#666;">Ollama/Llama - على جهازك</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ai-model-section">
+                    <h3>⚙️ خيارات المراجعة المتقدمة</h3>
+                    <div class="thesis-info">
+                        <div class="form-group">
+                            <label>مستوى الصرامة</label>
+                            <select id="strictness">
+                                <option value="low">🟢 متساهل - للمسودات الأولى</option>
+                                <option value="medium" selected>🟡 متوسط - للمراجعة العادية</option>
+                                <option value="high">🔴 صارم - للمراجعة النهائية</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>لغة التقرير</label>
+                            <select id="reportLang">
+                                <option value="ar" selected>العربية</option>
+                                <option value="en">English</option>
+                                <option value="both">العربية + English</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>تنسيق التقرير</label>
+                            <select id="reportFormat">
+                                <option value="detailed" selected>📋 مفصل مع اقتراحات</option>
+                                <option value="summary">📊 ملخص فقط</option>
+                                <option value="scores">🏆 درجات فقط</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>API Key (إذا لزم الأمر)</label>
+                            <input type="password" id="apiKey" placeholder="أدخل مفتاح API الخاص بك">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress -->
+            <div class="progress-container" id="progressContainer">
+                <svg class="progress-ring" viewBox="0 0 150 150">
+                    <circle class="bg" cx="75" cy="75" r="70"></circle>
+                    <circle class="progress" id="progressCircle" cx="75" cy="75" r="70"></circle>
+                </svg>
+                <div class="progress-text" id="progressText">0%</div>
+                <p>جاري تحليل الرسالة<span class="loading-dots"></span></p>
+                <p id="currentStep" style="color:#666;margin-top:10px;">جاري التحضير...</p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons" id="actionButtons">
+                <button class="btn-primary" onclick="startReview()">
+                    🚀 بدء المراجعة الذكية
+                </button>
+                <button class="btn-secondary" onclick="resetForm()">
+                    🔄 إعادة تعيين
+                </button>
+            </div>
+
+            <!-- Results -->
+            <div class="results-section" id="resultsSection">
+                <h2 style="text-align:center;color:var(--dark);margin-bottom:25px;">
+                    📋 تقرير المراجعة الشامل
+                </h2>
+                
+                <div id="resultsContainer"></div>
+
+                <div class="export-buttons">
+                    <button class="export-btn" onclick="exportPDF()">📄 تصدير PDF</button>
+                    <button class="export-btn" onclick="exportWord()">📝 تصدير Word</button>
+                    <button class="export-btn" onclick="printReport()">🖨️ طباعة</button>
+                    <button class="export-btn" onclick="shareReport()">🔗 مشاركة</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>🎓 منصة مراجعة الرسائل الأكاديمية بالذكاء الاصطناعي | 2025</p>
+        <p>مصممة لمساعدة المشرفين والمناقشين والباحثين في رحلتهم الأكاديمية</p>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // ============================================================
+        // منصة مراجعة الرسائل الأكاديمية بالذكاء الاصطناعي - JavaScript كامل
+        // ============================================================
+
+        // المتغيرات العامة
+        let selectedUserType = '';
+        let selectedSections = new Set([
+            'title', 'abstract', 'introduction', 'objectives', 
+            'theoretical', 'methodology', 'analysis', 'results', 
+            'conclusion', 'references', 'language', 'formatting'
+        ]);
+        let selectedModel = 'gemini';
+        let uploadedFile = null;
+        let thesisText = '';
+        let reviewResults = null;
+        let selectedChapter = 'title';
+
+        // ============================================================
+        // وظائف اختيار نوع المستخدم
+        // ============================================================
+
+        function selectUserType(element) {
+            document.querySelectorAll('.user-type-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            selectedUserType = element.dataset.type;
+            
+            document.getElementById('navTabs').style.display = 'flex';
+            document.getElementById('mainContent').style.display = 'block';
+            document.getElementById('userTypeSection').style.display = 'none';
+            
+            showNotification(`✅ تم اختيار الدور: ${getUserTypeLabel(selectedUserType)}`);
+        }
+
+        function getUserTypeLabel(type) {
+            const labels = {
+                'supervisor': 'مشرف',
+                'discussant': 'مناقش',
+                'researcher': 'باحث',
+                'external': 'مناقش خارجي'
+            };
+            return labels[type] || type;
+        }
+
+        // ============================================================
+        // وظائف التنقل بين التبويبات
+        // ============================================================
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        // ============================================================
+        // وظائف رفع الملفات
+        // ============================================================
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (file.size > 50 * 1024 * 1024) {
+                showNotification('❌ حجم الملف يتجاوز 50 ميجابايت', 'error');
+                return;
+            }
+            
+            uploadedFile = file;
+            
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            document.getElementById('fileType').textContent = file.type || 'غير معروف';
+            document.getElementById('fileInfo').classList.add('show');
+            
+            showNotification('✅ تم رفع الملف بنجاح');
+            readFile(file);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function readFile(file) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                if (file.type === 'text/plain') {
+                    thesisText = e.target.result;
+                } else {
+                    thesisText = e.target.result;
+                }
+                showNotification('📖 تم قراءة محتوى الملف');
+            };
+            
+            if (file.type === 'text/plain') {
+                reader.readAsText(file);
+            } else {
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Drag and Drop
+        const uploadSection = document.getElementById('uploadSection');
+
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type === 'application/pdf' || 
+                    file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+                    file.type === 'text/plain') {
+                    document.getElementById('file-input').files = files;
+                    handleFileSelect({ target: { files: files } });
+                } else {
+                    showNotification('❌ يرجى رفع ملف PDF أو DOCX أو TXT', 'error');
+                }
+            }
+        });
+
+        // ============================================================
+        // وظائف تحليل النص المباشر
+        // ============================================================
+
+        function selectChapter(element, chapter) {
+            document.querySelectorAll('.chapter-tag').forEach(tag => {
+                tag.classList.remove('active');
+            });
+            element.classList.add('active');
+            selectedChapter = chapter;
+        }
+
+        async function analyzeText() {
+            const text = document.getElementById('textInput').value.trim();
+            
+            if (!text || text.length < 50) {
+                showNotification('❌ يرجى إدخال نص كافي للتحليل ( ‌‍
