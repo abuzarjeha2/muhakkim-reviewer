@@ -1,0 +1,241 @@
+تفضل، هذا هو الكود البرمجي الكامل كنص خالص وجاهز للنسخ المباشر. يمكنك حفظه في ملف على جهازك باسم index.html وتشغيله مباشرة عبر أي متصفح:
+```html
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المنصة الذكية لمراجعة وتدقيق الرسائل العلمية</title>
+    <!-- استيراد خط القاهرة والمكتبات اللازمة لقراءة الـ PDF -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #27ae60;
+            --bg-color: #f8f9fa;
+            --text-color: #333;
+        }
+        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 3fr; gap: 20px; }
+        @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
+        
+        header { text-align: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h1 { color: var(--primary-color); margin: 0 0 10px 0; }
+        
+        .sidebar, .main-content { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: var(--primary-color); }
+        select, input[type="text"], input[type="password"], input[type="file"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+        
+        .checkbox-group { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .checkbox-item { display: flex; align-items: center; gap: 10px; }
+        
+        button { width: 100%; background-color: var(--secondary-color); color: white; border: none; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; transition: 0.3s; }
+        button:hover { background-color: #219653; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        
+        .status { padding: 15px; margin-top: 20px; border-radius: 5px; display: none; text-align: center; font-weight: bold; }
+        .status.loading { background-color: #e3f2fd; color: #0d47a1; display: block; }
+        .status.success { background-color: #e8f5e9; color: #1b5e20; display: block; }
+        .status.error { background-color: #ffebee; color: #b71c1c; display: block; }
+        
+        #report-output { white-space: pre-wrap; background: #fafafa; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px; margin-top: 20px; min-height: 200px; line-height: 1.8; }
+        .download-btn { background-color: var(--primary-color); margin-top: 15px; display: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🎓 المنصة الذكية لمراجعة وتدقيق الرسائل العلمية</h1>
+        <p>مساعد ذكي مدعوم بـ تقنيات الجيل القادم لتحليل وتدقيق الأطروحات الأكاديمية بنقرة واحدة</p>
+    </header>
+
+    <div class="container">
+        <!-- القائمة الجانبية للإعدادات -->
+        <div class="sidebar">
+            <div class="form-group">
+                <label for="api-key">مفتاح API الخاص بـ Gemini:</label>
+                <input type="password" id="api-key" placeholder="أدخل مفتاح GEMINI_API_KEY">
+                <small style="color: #666; display:block; margin-top:5px;">يمكنك الحصول عليه مجاناً من Google AI Studio.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="user-role">الدور الحالي المستهدف:</label>
+                <select id="user-role">
+                    <option value="مشرف الرسالة (Supervisor)">مشرف الرسالة</option>
+                    <option value="مناقش داخلي/خارجي (Examiner)">مناقش داخلي/خارجي</option>
+                    <option value="الباحث العلمي (Researcher)">الباحث العلمي</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="pdf-file">رفع ملف الرسالة (PDF):</label>
+                <input type="file" id="pdf-file" accept=".pdf">
+            </div>
+
+            <button id="process-btn">🚀 بدء المراجعة الشاملة</button>
+            <div id="status-box" class="status"></div>
+        </div>
+
+        <!-- المحتوى الرئيسي لعرض النتائج -->
+        <div class="main-content">
+            <h3>📋 حدد المحاور والمفاصل المطلوبة للتدقيق والتحليل العلمي:</h3>
+            <div class="checkbox-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+                <div class="checkbox-item"><input type="checkbox" id="check-title" checked> <label for="check-title">العنوان والمستخلص والمقدمة</label></div>
+                <div class="checkbox-item"><input type="checkbox" id="check-methodology" checked> <label for="check-methodology">منهجية البحث وأدوات الدراسة</label></div>
+                <div class="checkbox-item"><input type="checkbox" id="check-hypotheses" checked> <label for="check-hypotheses">الأهداف، الأهمية والفرضيات</label></div>
+                <div class="checkbox-item"><input type="checkbox" id="check-analysis" checked> <label for="check-analysis">التحليل الإحصائي والنتائج</label></div>
+                <div class="checkbox-item"><input type="checkbox" id="check-literature" checked> <label for="check-literature">الإطار النظري والدراسات السابقة</label></div>
+                <div class="checkbox-item"><input type="checkbox" id="check-recommendations" checked> <label for="check-recommendations">التوصيات، المقترحات والمراجع</label></div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee;">
+            
+            <h3>📊 التقرير الأكاديمي الشامل والملاحظات المرصودة:</h3>
+            <div id="report-output">التقرير سيظهر هنا بعد رفع الملف والضغط على زر المراجعة...</div>
+            <button id="download-btn" class="download-btn">💾 تحميل التقرير كملف نصي (TXT)</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // استدعاء حزمة الـ SDK الرسمية والحديثة من قوقل مباشرة للمتصفح
+        import { GoogleGenAI } from 'https://esm.run/@google/genai';
+
+        // إعداد مكتبة قراءة الـ PDF
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        const processBtn = document.getElementById('process-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const statusBox = document.getElementById('status-box');
+        const reportOutput = document.getElementById('report-output');
+        let extractedText = "";
+        let generatedReport = "";
+
+        // دالة استخراج النصوص من ملف الـ PDF
+        document.getElementById('pdf-file').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            showStatus('جاري استخراج وفهرسة نصوص الـ PDF...', 'loading');
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let text = "";
+                
+                // نقرأ أول 40 صفحة لضمان عدم تجاوز حدود المتصفح السريعة، يمكن زيادتها
+                const maxPages = Math.min(pdf.numPages, 40); 
+                for (let i = 1; i <= maxPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const content = await page.getTextContent();
+                    const pageText = content.items.map(item => item.str).join(' ');
+                    text += pageText + "\n";
+                }
+                extractedText = text;
+                showStatus('✅ تم تحميل النص وجاهز للتحليل الأكاديمي!', 'success');
+            } catch (error) {
+                showStatus('❌ فشل استخراج النصوص من ملف الـ PDF.', 'error');
+                console.error(error);
+            }
+        });
+
+        // حدث الضغط على زر بدء المعالجة
+        processBtn.addEventListener('click', async () => {
+            const apiKey = document.getElementById('api-key').value.trim();
+            const role = document.getElementById('user-role').value;
+            
+            if (!apiKey) {
+                alert('الرجاء إدخال مفتاح الـ API الخاص بك أولاً.');
+                return;
+            }
+            if (!extractedText) {
+                alert('الرجاء رفع ملف PDF يحتوي على نصوص أولاً.');
+                return;
+            }
+
+            // بناء قائمة الأجزاء المطلوبة للمراجعة بناءً على الشيك بوكس
+            let sections = [];
+            if(document.getElementById('check-title').checked) sections.push("- العنوان والمستخلص والمقدمة (الاتساق والوضوح)");
+            if(document.getElementById('check-hypotheses').checked) sections.push("- الأهداف والفرضيات (صياغتها وقابليتها للاختبار)");
+            if(document.getElementById('check-literature').checked) sections.push("- الإطار النظري والدراسات السابقة (الفجوة والربط)");
+            if(document.getElementById('check-methodology').checked) sections.push("- المنهجية (مجتمع وعينة الدراسة والأدوات والصدق)");
+            if(document.getElementById('check-analysis').checked) sections.push("- التحليل الإحصائي، الجداول وعرض النتائج وتفسيرها");
+            if(document.getElementById('check-recommendations').checked) sections.push("- التوصيات والمقترحات والتوثيق الأكاديمي للمراجع");
+
+            showStatus('يقوم بروفيسور الذكاء الاصطناعي بمراجعة الأطروحة الآن... قد يستغرق ذلك لحظات', 'loading');
+            processBtn.disabled = true;
+
+            try {
+                // تهيئة العميل باستخدام المكتبة الجديدة google-genai
+                const ai = new GoogleGenAI({ apiKey: apiKey });
+                
+                const systemInstruction = `أنت بروفيسور ومحكم أكاديمي خبير ومتمرس في نقد ومراجعة الرسائل العلمية (ماجستير ودكتوراه). مهمتك تقديم نقد أكاديمي صارم وبناء باللغة العربية ورصد الأخطاء والمنهجية والفجوات بدقة.`;
+
+                const prompt = `
+                بصفتك خبيراً أكاديمياً، قم بمراجعة وتدقيق النص المستخرج من الرسالة العلمية أدناه.
+                دور المستخدم الحالي الذي يطلب التقرير: ${role}
+                
+                المحاور المطلوب التركيز عليها ونقدها:
+                ${sections.join('\n')}
+                
+                يرجى صياغة التقرير بأسلوب أكاديمي مقسم كالتالي:
+                1. تقييم عام ورصين لجودة الرسالة واتساقها المنطقي.
+                2. ملاحظات تفصيلية تفكيكية بالأدلة (اذكر الفجوة أو الخطأ، مكانه، والحل الأكاديمي المقترح لتعديله).
+                3. مراجعة دقيقة للمنهجية والتحليل الإحصائي وعرض الجداول (إن وجدت).
+                4. توجيهات ختامية وتوصيات نهائية لرفع كفاءة البحث.
+
+                إليك نص الرسالة المراد تحليلها:
+                ---
+                ${extractedText.substring(0, 60000)}
+                ---
+                `;
+
+                // استدعاء الموديل المتطور والحديث لمهام النصوص الطويلة والأكاديمية
+                const response = await ai.models.generateContent({
+                    model: 'gemini-1.5-pro',
+                    contents: prompt,
+                    config: {
+                        systemInstruction: systemInstruction,
+                        temperature: 0.3
+                    }
+                });
+
+                generatedReport = response.text;
+                // استبدال كود الرموز الماركدوان لتبدو مقروءة بشكل منظم في الـ HTML
+                reportOutput.innerHTML = generatedReport.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                showStatus('✨ اكتمل التقرير الأكاديمي بنجاح!', 'success');
+                downloadBtn.style.display = 'block';
+
+            } catch (error) {
+                showStatus('❌ حدث خطأ أثناء الاتصال بنموذج الذكاء الاصطناعي.', 'error');
+                reportOutput.innerText = "تفاصيل الخطأ: " + error.message;
+                console.error(error);
+            } finally {
+                processBtn.disabled = false;
+            }
+        });
+
+        // دالة تتيح تحميل التقرير النهائي كملف نصي
+        downloadBtn.addEventListener('click', () => {
+            const blob = new Blob([generatedReport], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `تقرير_مراجعة_أكاديمية.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        function showStatus(message, type) {
+            statusBox.innerText = message;
+            statusBox.className = `status ${type}`;
+        }
+    </script>
+</body>
+</html>
+
+```
