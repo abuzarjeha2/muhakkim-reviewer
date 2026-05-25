@@ -22,6 +22,9 @@ import AIWriter          from "../components/muhakkim/AIWriter";
 import Paraphraser       from "../components/muhakkim/Paraphraser";
 import FindTopics        from "../components/muhakkim/FindTopics";
 import ChatPDF           from "../components/muhakkim/ChatPDF";
+import SlidesMaker       from "../components/muhakkim/SlidesMaker";
+import FileConverter     from "../components/muhakkim/FileConverter";
+import ImageReader       from "../components/muhakkim/ImageReader";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface SubTool { key: string; icon: string; ar: string; en: string; descAr: string; descEn: string; }
@@ -89,6 +92,17 @@ const GROUPS: ToolGroup[] = [
       { key: "research",   icon: "🔭", ar: "البحث والمكتبات",   en: "Research & Libraries", descAr: "Semantic Scholar · OpenAlex · CrossRef · ٢٦ مكتبة", descEn: "Semantic Scholar · OpenAlex · CrossRef · 26 libs" },
       { key: "findtopics", icon: "🎯", ar: "اكتشف موضوعات",    en: "Find Topics",          descAr: "اقتراح ١٠ موضوعات بحثية حسب التخصص والاهتمامات",   descEn: "Suggest 10 research topics by field & interests" },
       { key: "chatpdf",    icon: "💬", ar: "دردشة مع PDF",       en: "Chat with PDF",        descAr: "ارفع ورقة بحثية واسأل الذكاء الاصطناعي عنها",     descEn: "Upload a paper and chat with AI about it" },
+    ],
+  },
+  {
+    groupKey: "media", icon: "🎨", ar: "الملفات والوسائط", en: "Files & Media",
+    descAr: "بوربوينت ذكي · تحويل ملفات · قراءة صور",
+    descEn: "AI slides · file conversion · image understanding",
+    color: "#9d174d", bg: "#fdf2f8", border: "#fbcfe8",
+    tools: [
+      { key: "slides",      icon: "📊", ar: "مولّد عروض البوربوينت",  en: "AI Slides Generator", descAr: "أنشئ عرضاً تقديمياً احترافياً (.pptx) بالذكاء الاصطناعي", descEn: "Generate professional .pptx decks with AI" },
+      { key: "convert",     icon: "🔄", ar: "محوّل الملفات",            en: "File Converter",      descAr: "PDF · Word · TXT · MD ⇄ بعضها — محلياً وبدون رفع",         descEn: "PDF · Word · TXT · MD interconversion — local, no upload" },
+      { key: "imageread",   icon: "👁️", ar: "قارئ الصور الذكي",         en: "AI Image Reader",     descAr: "افهم الصور، استخرج النصوص (OCR)، حلّل، أو ترجم بـ GPT-4 Vision", descEn: "Understand images, OCR, analyze, translate with GPT-4 Vision" },
     ],
   },
   {
@@ -412,6 +426,9 @@ export default function Muhakkim() {
           {activeTab === "paraphraser"   && <Paraphraser />}
           {activeTab === "findtopics"    && <FindTopics />}
           {activeTab === "chatpdf"       && <ChatPDF />}
+          {activeTab === "slides"        && <SlidesMaker />}
+          {activeTab === "convert"       && <FileConverter />}
+          {activeTab === "imageread"     && <ImageReader />}
           {activeTab === "upload"     && <FileUpload onExtracted={setExtractedText} onFileInfo={setFileInfo} extractedText={extractedText} />}
           {activeTab === "thesis"     && <ThesisRoles text={extractedText} />}
           {activeTab === "proofread"  && <Proofreader text={extractedText} />}
