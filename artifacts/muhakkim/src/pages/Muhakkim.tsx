@@ -116,7 +116,9 @@ function NavDropdown({ grp, isAr, onSelect }: { grp: ToolGroup; isAr: boolean; o
       </div>
       {grp.tools.map(t => (
         <button key={t.key} className="mhk-drop-item" onClick={() => onSelect(t.key)}>
-          <span style={{ width: 30, height: 30, borderRadius: 8, background: grp.bg, border: `1px solid ${grp.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{t.icon}</span>
+          <span className="mhk-icon mhk-icon-solid" style={{ "--mhk-icon-a": grp.bg, "--mhk-icon-b": grp.border, width: 30, height: 30, borderRadius: 8, border: `1px solid ${grp.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 } as React.CSSProperties}>
+            <span className="mhk-icon-emoji">{t.icon}</span>
+          </span>
           <div style={{ textAlign: isAr ? "right" : "left" }}>
             <div style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>{isAr ? t.ar : t.en}</div>
             <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>{isAr ? t.descAr : t.descEn}</div>
@@ -137,8 +139,8 @@ function GroupCard({ grp, isAr, onClick }: { grp: ToolGroup; isAr: boolean; onCl
       style={{ padding: "14px 14px 12px", display: "flex", flexDirection: "column", gap: 8 } as React.CSSProperties}
     >
       {/* Icon */}
-      <div style={{ width: 44, height: 44, borderRadius: 12, background: grp.bg, border: `1.5px solid ${grp.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>
-        {grp.icon}
+      <div className="mhk-icon mhk-icon-solid" style={{ "--mhk-icon-a": grp.bg, "--mhk-icon-b": grp.border, width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${grp.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, color: grp.color } as React.CSSProperties}>
+        <span className="mhk-icon-emoji">{grp.icon}</span>
       </div>
       {/* Text */}
       <div>
@@ -168,8 +170,8 @@ function ToolCard({ tool, grp, isAr, onClick, idx }: { tool: SubTool; grp: ToolG
       onClick={onClick}
       style={{ padding: "16px 16px", display: "flex", alignItems: "center", gap: 14, animationDelay: `${idx * 0.05}s` } as React.CSSProperties}
     >
-      <div style={{ width: 48, height: 48, borderRadius: 13, background: grp.bg, border: `1.5px solid ${grp.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>
-        {tool.icon}
+      <div className="mhk-icon mhk-icon-solid" style={{ "--mhk-icon-a": grp.bg, "--mhk-icon-b": grp.border, width: 48, height: 48, borderRadius: 13, border: `1.5px solid ${grp.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0, color: grp.color } as React.CSSProperties}>
+        <span className="mhk-icon-emoji">{tool.icon}</span>
       </div>
       <div style={{ flex: 1, textAlign: isAr ? "right" : "left" }}>
         <div style={{ color: "#1e293b", fontWeight: 800, fontSize: 14, marginBottom: 3 }}>{isAr ? tool.ar : tool.en}</div>
@@ -256,7 +258,9 @@ export default function Muhakkim() {
 
           {/* Logo */}
           <button onClick={goHome} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", background: "none", border: "none", fontFamily: "inherit", flexShrink: 0, padding: "4px 0" }}>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#C9A84C,#b45309)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, boxShadow: "0 2px 8px #C9A84C44" }}>⚖️</div>
+            <div className="mhk-icon" style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#C9A84C,#b45309)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, boxShadow: "0 2px 8px #C9A84C44", color: "#fff" }}>
+              <span className="mhk-icon-emoji">⚖️</span>
+            </div>
             <span style={{ fontWeight: 900, fontSize: 17, color: GOLD, letterSpacing: "-0.01em" }}>{isAr ? "محكّم" : "Muhakkim"}</span>
           </button>
 
@@ -379,8 +383,8 @@ export default function Muhakkim() {
         <main className="mhk-scale" key={`grp-${activeGroup}`} style={{ maxWidth: 680, margin: "0 auto", padding: "16px 14px 40px" }}>
           {/* Group header */}
           <div style={{ background: currentGroup.bg, border: `1.5px solid ${currentGroup.border}`, borderRadius: 16, padding: "18px 18px", marginBottom: 14, display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{ width: 54, height: 54, borderRadius: 15, background: WHITE, border: `1.5px solid ${currentGroup.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-              {currentGroup.icon}
+            <div className="mhk-icon mhk-icon-solid" style={{ "--mhk-icon-a": WHITE, "--mhk-icon-b": currentGroup.bg, width: 54, height: 54, borderRadius: 15, border: `1.5px solid ${currentGroup.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", color: currentGroup.color } as React.CSSProperties}>
+              <span className="mhk-icon-emoji">{currentGroup.icon}</span>
             </div>
             <div>
               <h2 style={{ color: currentGroup.color, fontWeight: 900, fontSize: 18, margin: "0 0 4px" }}>{isAr ? currentGroup.ar : currentGroup.en}</h2>
