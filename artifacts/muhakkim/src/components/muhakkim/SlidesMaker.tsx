@@ -1,6 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLanguage } from "../../lib/i18n";
 import PptxGenJS from "pptxgenjs";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import mammoth from "mammoth";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 
 type Slide = { title: string; bullets: string[]; speakerNotes: string };
 type Outline = { title: string; subtitle: string; slides: Slide[] };
@@ -27,14 +32,84 @@ export default function SlidesMaker() {
   const [outline, setOutline] = useState<Outline | null>(null);
   const [error, setError] = useState("");
 
+  // Source file state
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [fileName, setFileName] = useState("");
+  const [sourceText, setSourceText] = useState("");
+  const [fileStatus, setFileStatus] = useState<"idle"|"reading"|"ready"|"error">("idle");
+  const [fileError, setFileError] = useState("");
+
+  const onPickFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setFileName(f.name); setFileStatus("reading"); setFileError(""); setSourceText("");
+    try {
+      const lower = f.name.toLowerCase();
+      let text = "";
+      const isImage = f.type.startsWith("image/") || /\.(png|jpe?g|webp|gif|bmp)$/i.test(lower);
+      if (isImage) {
+        if (f.size > 7 * 1024 * 1024) throw new Error(isAr ? "حجم الصورة كبير (الحد 7MB)." : "Image too large (max 7MB).");
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result || ""));
+          r.onerror = () => reject(new Error("read error"));
+          r.readAsDataURL(f);
+        });
+        const idx = dataUrl.indexOf(",");
+        const base64 = idx >= 0 ? dataUrl.slice(idx + 1) : dataUrl;
+        const resp = await fetch("/api/ai/vision", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageBase64: base64, mimeType: f.type, mode: "ocr", lang }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || "Vision failed");
+        text = data.content || "";
+      } else if (lower.endsWith(".pdf")) {
+        const buf = await f.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+        const max = Math.min(pdf.numPages, 300);
+        const parts: string[] = [];
+        for (let i = 1; i <= max; i++) {
+          const page = await pdf.getPage(i);
+          const c = await page.getTextContent();
+          const t = c.items.map(it => ("str" in it ? it.str : "")).join(" ").trim();
+          if (t) parts.push(t);
+        }
+        text = parts.join("\n\n");
+      } else if (lower.endsWith(".docx") || lower.endsWith(".odt")) {
+        const buf = await f.arrayBuffer();
+        const r = await mammoth.extractRawText({ arrayBuffer: buf });
+        text = r.value;
+      } else if (lower.endsWith(".txt") || lower.endsWith(".md") || lower.endsWith(".rtf") || lower.endsWith(".csv")) {
+        text = await f.text();
+      } else {
+        throw new Error(isAr ? "صيغة غير مدعومة. المدعوم: PDF · DOCX · ODT · TXT · MD · صور" : "Unsupported format. Supported: PDF · DOCX · ODT · TXT · MD · images");
+      }
+      if (text.trim().length < 100) throw new Error(isAr ? "المحتوى المستخرَج قصير جداً (أقل من 100 حرف)." : "Extracted content too short (<100 chars).");
+      setSourceText(text);
+      setFileStatus("ready");
+    } catch (err) {
+      setFileStatus("error");
+      setFileError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const clearFile = () => {
+    setFileName(""); setSourceText(""); setFileStatus("idle"); setFileError("");
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
   const generate = async () => {
     setError(""); setOutline(null);
-    if (topic.trim().length < 5) { setError(isAr ? "أدخل موضوعاً (5 أحرف على الأقل)" : "Enter a topic (5+ chars)"); return; }
+    if (topic.trim().length < 5 && sourceText.trim().length < 100) {
+      setError(isAr ? "أدخل موضوعاً (5 أحرف+) أو ارفع ملفاً مصدراً" : "Enter a topic (5+ chars) or upload a source file");
+      return;
+    }
     setLoading(true);
     try {
       const r = await fetch("/api/ai/slides-outline", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, audience, slidesCount, lang }),
+        body: JSON.stringify({ topic, audience, slidesCount, lang, sourceText, sourceName: fileName.replace(/\.[^.]+$/, "") }),
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "Failed");
@@ -140,9 +215,51 @@ export default function SlidesMaker() {
         </div>
       </div>
 
+      {/* Source file (optional) */}
+      <div style={{ background: "#fff", border: "1.5px solid #e8ecf4", borderRadius: 16, padding: 20, marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 8, flexWrap: "wrap" }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: NAVY }}>
+            📂 {isAr ? "ابنِ العرض من ملف (اختياري)" : "Build slides from a file (optional)"}
+          </div>
+          <div style={{ fontSize: 11, color: "#94a3b8" }}>
+            PDF · Word · ODT · TXT · MD · {isAr ? "صور (OCR)" : "Images (OCR)"}
+          </div>
+        </div>
+        <div onClick={() => fileRef.current?.click()}
+          style={{ border: "2px dashed #c7d4f0", borderRadius: 12, padding: "16px 12px", textAlign: "center", cursor: "pointer", background: fileStatus === "ready" ? "#f0fdf4" : "#f8faff", transition: "all .15s" }}>
+          {fileStatus === "reading" && <div style={{ color: "#1d4ed8", fontSize: 13 }}>⏳ {isAr ? "جارٍ قراءة الملف…" : "Reading file…"}</div>}
+          {fileStatus === "ready" && (
+            <>
+              <div style={{ fontSize: 22 }}>✅</div>
+              <div style={{ fontSize: 12.5, fontWeight: 800, color: "#065f46", marginTop: 4 }}>{fileName}</div>
+              <div style={{ fontSize: 11, color: "#64748b", marginTop: 3 }}>
+                {sourceText.length.toLocaleString()} {isAr ? "حرف · سيُبنى العرض من محتواه" : "characters · slides will be grounded in it"}
+              </div>
+            </>
+          )}
+          {fileStatus === "error" && <div style={{ color: "#dc2626", fontSize: 13 }}>❌ {fileError}</div>}
+          {fileStatus === "idle" && (
+            <>
+              <div style={{ fontSize: 26 }}>📄</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#374151", marginTop: 4 }}>{isAr ? "اضغط لرفع ملف يُبنى منه العرض" : "Click to upload a source file"}</div>
+              <div style={{ fontSize: 10.5, color: "#94a3b8", marginTop: 3 }}>{isAr ? "صور تُستخرج نصوصها تلقائياً عبر OCR" : "Images auto-OCRed to text"}</div>
+            </>
+          )}
+        </div>
+        <input ref={fileRef} type="file" accept=".pdf,.docx,.odt,.txt,.md,.rtf,.csv,image/*" onChange={onPickFile} style={{ display: "none" }} />
+        {fileStatus === "ready" && (
+          <button onClick={clearFile} style={{ marginTop: 10, background: "#fff", border: "1.5px solid #fecaca", borderRadius: 8, color: "#dc2626", padding: "6px 12px", fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+            🗑️ {isAr ? "إزالة الملف" : "Remove file"}
+          </button>
+        )}
+      </div>
+
       {/* Form */}
       <div style={{ background: "#fff", border: "1.5px solid #e8ecf4", borderRadius: 16, padding: 20, marginBottom: 16 }}>
-        <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 6 }}>{isAr ? "الموضوع" : "Topic"}</label>
+        <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 6 }}>
+          {isAr ? "الموضوع" : "Topic"}
+          {fileStatus === "ready" && <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 500, marginInlineStart: 6 }}>{isAr ? "(اختياري عند رفع ملف)" : "(optional when a file is uploaded)"}</span>}
+        </label>
         <textarea value={topic} onChange={e => setTopic(e.target.value)}
           placeholder={isAr ? "مثال: أساليب القياس النفسي في البحث التربوي" : "Example: Psychometric methods in educational research"}
           style={{ width: "100%", minHeight: 80, padding: "10px 12px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />

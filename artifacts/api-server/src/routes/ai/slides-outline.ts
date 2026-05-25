@@ -3,24 +3,40 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 
 const router = Router();
 
+// Cap the source-document body to keep slides generation fast and within budget.
+const MAX_SOURCE_CHARS = 120_000;
+
 router.post("/ai/slides-outline", async (req, res) => {
-  const { topic, audience, slidesCount, lang } = req.body as {
-    topic: string;
+  const { topic, audience, slidesCount, lang, sourceText, sourceName } = req.body as {
+    topic?: string;
     audience?: string;
     slidesCount?: number;
     lang?: "ar" | "en";
+    sourceText?: string;
+    sourceName?: string;
   };
   const isAr = lang !== "en";
+  const trimmedTopic = (topic || "").trim();
+  const trimmedSource = (sourceText || "").trim();
+  const hasTopic = trimmedTopic.length >= 5;
+  const hasSource = trimmedSource.length >= 100;
 
-  if (!topic || topic.trim().length < 5) {
+  if (!hasTopic && !hasSource) {
     res.status(400).json({
-      error: isAr ? "يرجى إدخال موضوع (5 أحرف على الأقل)." : "Please enter a topic (min 5 chars).",
+      error: isAr
+        ? "يرجى إدخال موضوع (5 أحرف على الأقل) أو رفع ملف مصدر (100 حرف على الأقل)."
+        : "Please enter a topic (min 5 chars) or upload a source file (min 100 chars).",
     });
     return;
   }
 
   const count = Math.max(5, Math.min(20, Number(slidesCount) || 10));
   const audienceText = (audience || "").trim() || (isAr ? "جمهور أكاديمي عام" : "general academic audience");
+  const sourceBody = hasSource ? trimmedSource.slice(0, MAX_SOURCE_CHARS) : "";
+  const sourceTruncated = hasSource && trimmedSource.length > MAX_SOURCE_CHARS;
+  const effectiveTopic = hasTopic
+    ? trimmedTopic
+    : (sourceName?.trim() || (isAr ? "ملخص الملف المرفوع" : "Uploaded document summary"));
 
   const system = isAr
     ? `أنت مصمم عروض تقديمية أكاديمي خبير. تُنتج هيكل عرض احترافي يجمع بين الإيجاز والعمق.
@@ -64,15 +80,28 @@ Rules:
 - Start with intro/objectives, end with conclusion/references.
 - speakerNotes expand on bullets for the presenter.`;
 
+  const sourceBlockAr = hasSource
+    ? `\n\nاعتمد بشكل رئيسي على محتوى المصدر التالي (لا تختلق ما ليس فيه، استخرج الأفكار والأمثلة والأرقام منه، وأعد صياغتها بإيجاز مناسب للعرض):
+<<<BEGIN_SOURCE>>>
+${sourceBody}
+<<<END_SOURCE>>>${sourceTruncated ? "\n\n[ملاحظة: الملف طويل واقتُصر على أول 120,000 حرف.]" : ""}`
+    : "";
+  const sourceBlockEn = hasSource
+    ? `\n\nBase the deck PRIMARILY on the following source content (do NOT fabricate beyond it; extract its ideas, examples, and numbers; rephrase concisely for slides):
+<<<BEGIN_SOURCE>>>
+${sourceBody}
+<<<END_SOURCE>>>${sourceTruncated ? "\n\n[Note: Source was long; truncated to first 120,000 chars.]" : ""}`
+    : "";
+
   const user = isAr
-    ? `أنشئ هيكل عرض تقديمي من ${count} شرائح حول:
+    ? `أنشئ هيكل عرض تقديمي من ${count} شرائح${hasSource ? " مبني على الملف المرفق أدناه" : ""}:
 
-الموضوع: ${topic}
-الجمهور: ${audienceText}`
-    : `Create a ${count}-slide deck outline on:
+الموضوع: ${effectiveTopic}
+الجمهور: ${audienceText}${sourceBlockAr}`
+    : `Create a ${count}-slide deck outline${hasSource ? " grounded in the source file below" : ""}:
 
-Topic: ${topic}
-Audience: ${audienceText}`;
+Topic: ${effectiveTopic}
+Audience: ${audienceText}${sourceBlockEn}`;
 
   try {
     const completion = await openai.chat.completions.create({
