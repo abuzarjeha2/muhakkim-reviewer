@@ -8855,34 +8855,385 @@ const SUBTABS_EN = [
   { key: 'equations',   icon: '🔢', label: 'Equations',           short: 'Eq' },
 ];
 
+// ── CATEGORIZED ANALYSIS NAVIGATION ──────────────────────────────────────
+type CatDef = { key: string; nameAr: string; nameEn: string; icon: string; tools: string[] };
+const CATEGORIES: CatDef[] = [
+  { key: 'descriptive', icon: '📋', nameAr: 'الإحصاء الوصفي', nameEn: 'Descriptive Statistics',
+    tools: ['desctable', 'freq', 'likert', 'timeseries', 'tsadvanced'] },
+  { key: 'parametric', icon: '📐', nameAr: 'اختبارات الفروض المعلمية', nameEn: 'Parametric Hypothesis Tests',
+    tools: ['ttests', 'groups', 'posthoc', 'ancova', 'twoway', 'rmmanova', 'anovasum'] },
+  { key: 'nonparam', icon: '🔬', nameAr: 'اختبارات الفروض اللامعلمية', nameEn: 'Non-Parametric Tests',
+    tools: ['nonparam', 'chigof', 'crosstab', 'fisher', 'binomtest', 'twoprop'] },
+  { key: 'corrreg', icon: '📉', nameAr: 'الارتباط والانحدار', nameEn: 'Correlation & Regression',
+    tools: ['corr', 'partialcorr', 'regression', 'regdiag', 'hierreg', 'polyreg', 'logreg', 'mediation', 'moderation'] },
+  { key: 'dimcluster', icon: '🔵', nameAr: 'تقليل الأبعاد والتجميع', nameEn: 'Dimension Reduction & Clustering',
+    tools: ['pca', 'efa', 'cluster'] },
+  { key: 'reliability', icon: '🤝', nameAr: 'الموثوقية والاتفاق', nameEn: 'Reliability & Agreement',
+    tools: ['cronbach', 'omega', 'itemanalysis', 'icc', 'kappa', 'blandaltman'] },
+  { key: 'diagnostics', icon: '🩺', nameAr: 'الكشف والتشخيص', nameEn: 'Detection & Diagnostics',
+    tools: ['normality', 'outlier', 'diagacc', 'roc'] },
+  { key: 'effects', icon: '🎯', nameAr: 'حجم الأثر والعيّنة', nameEn: 'Effect Size & Sample',
+    tools: ['effectsize', 'ci', 'samplesize'] },
+  { key: 'advanced', icon: '🌲', nameAr: 'تحليلات متقدمة', nameEn: 'Advanced Analyses',
+    tools: ['meta', 'survival'] },
+  { key: 'helpers', icon: '📝', nameAr: 'أدوات مساعدة', nameEn: 'Helper Tools',
+    tools: ['apa', 'stats', 'equations'] },
+];
+
+function CategorizedDropdown({ ar, active, onPick }: { ar: boolean; active: string; onPick: (k: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
+  const subtabsList = ar ? SUBTABS_AR : SUBTABS_EN;
+  const lookup = React.useMemo(() => Object.fromEntries(subtabsList.map(s => [s.key, s])), [subtabsList]);
+
+  React.useEffect(() => {
+    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, []);
+
+  const activeMeta = lookup[active];
+  const isInWizard = ['wizard', 'explorer', 'ai'].includes(active);
+
+  return (
+    <div ref={ref} style={{ position: 'relative', flex: 1, minWidth: 220 }}>
+      <button onClick={() => setOpen(o => !o)}
+        style={{ width: '100%', background: !isInWizard ? 'linear-gradient(135deg,rgba(201,168,76,0.18),rgba(245,215,142,0.07))' : 'rgba(255,255,255,0.04)',
+          border: `1px solid ${!isInWizard ? 'rgba(201,168,76,0.4)' : C.border}`,
+          color: !isInWizard ? '#f5d78e' : C.muted, borderRadius: 10, padding: '8px 14px', fontSize: 12.5, fontWeight: 700,
+          cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span>{activeMeta && !isInWizard ? activeMeta.icon : '📊'}</span>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {activeMeta && !isInWizard ? activeMeta.label : (ar ? 'اختر تحليلاً إحصائياً…' : 'Choose statistical analysis…')}
+          </span>
+        </span>
+        <span style={{ fontSize: 10, opacity: 0.7, transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform .2s' }}>▼</span>
+      </button>
+
+      {open && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', insetInlineStart: 0, insetInlineEnd: 0,
+          background: '#0b1226', border: `1px solid ${C.border}`, borderRadius: 12, padding: 8,
+          maxHeight: 460, overflowY: 'auto', zIndex: 50, boxShadow: '0 18px 40px rgba(0,0,0,0.45)' }}>
+          {CATEGORIES.map(cat => (
+            <div key={cat.key} style={{ marginBottom: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 10px', color: C.gold,
+                fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em',
+                borderBottom: '1px solid rgba(201,168,76,0.18)', marginBottom: 4 }}>
+                <span>{cat.icon}</span><span>{ar ? cat.nameAr : cat.nameEn}</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: 3 }}>
+                {cat.tools.map(tk => {
+                  const meta = lookup[tk];
+                  if (!meta) return null;
+                  const isActive = tk === active;
+                  return (
+                    <button key={tk} onClick={() => { onPick(tk); setOpen(false); }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 9px',
+                        background: isActive ? 'rgba(201,168,76,0.18)' : 'transparent',
+                        border: `1px solid ${isActive ? 'rgba(201,168,76,0.35)' : 'transparent'}`,
+                        color: isActive ? '#f5d78e' : C.muted, borderRadius: 8, fontSize: 12, fontWeight: 600,
+                        cursor: 'pointer', fontFamily: 'inherit', textAlign: ar ? 'right' : 'left' }}
+                      onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.04)'; }}
+                      onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
+                      <span style={{ flexShrink: 0 }}>{meta.icon}</span>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{meta.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── AI ANALYSIS RECOMMENDER ──────────────────────────────────────────────
+type ColInfoLite = { name: string; type: 'numeric' | 'categorical' | 'datetime' | 'binary' | 'text'; unique?: number; sample?: (string | number)[] };
+type Recommendation = { key: string; name: string; reason: string; confidence?: string };
+
+function detectColType(values: (string | number | null | undefined)[]): ColInfoLite['type'] {
+  const vals = values.filter(v => v !== null && v !== undefined && v !== '').map(v => String(v).trim());
+  if (vals.length === 0) return 'text';
+  const numericCount = vals.filter(v => !isNaN(Number(v)) && v !== '').length;
+  const isAllNumeric = numericCount / vals.length > 0.9;
+  const uniqueVals = new Set(vals);
+  if (uniqueVals.size === 2) return 'binary';
+  if (isAllNumeric) return 'numeric';
+  const datePattern = /^\d{4}[-/]\d{1,2}[-/]\d{1,2}|^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}/;
+  if (vals.filter(v => datePattern.test(v)).length / vals.length > 0.8) return 'datetime';
+  if (uniqueVals.size <= Math.max(20, vals.length * 0.3)) return 'categorical';
+  return 'text';
+}
+
+function parseCsvText(text: string): { columns: ColInfoLite[]; rowCount: number } {
+  const trimmed = text.replace(/^\uFEFF/, '');
+  if (!trimmed.trim()) return { columns: [], rowCount: 0 };
+  const delim = (() => {
+    const firstLine = trimmed.split(/\r?\n/, 1)[0] ?? '';
+    if (firstLine.includes('\t')) return '\t';
+    if (firstLine.includes(';') && !firstLine.includes(',')) return ';';
+    return ',';
+  })();
+  // RFC4180-ish state machine: handles quoted fields with embedded delimiters/newlines and escaped "" quotes.
+  const allRows: string[][] = [];
+  let row: string[] = [];
+  let field = '';
+  let inQuotes = false;
+  for (let i = 0; i < trimmed.length; i++) {
+    const ch = trimmed[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (trimmed[i + 1] === '"') { field += '"'; i++; }
+        else { inQuotes = false; }
+      } else { field += ch; }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === delim) { row.push(field); field = ''; }
+      else if (ch === '\r') { /* swallow */ }
+      else if (ch === '\n') {
+        row.push(field); field = '';
+        if (row.some(c => c.length > 0)) allRows.push(row);
+        row = [];
+      } else { field += ch; }
+    }
+  }
+  if (field.length > 0 || row.length > 0) {
+    row.push(field);
+    if (row.some(c => c.length > 0)) allRows.push(row);
+  }
+  if (allRows.length === 0) return { columns: [], rowCount: 0 };
+  const headers = allRows[0].map(h => h.trim());
+  const rows = allRows.slice(1);
+  const columns: ColInfoLite[] = headers.map((name, i) => {
+    const values = rows.map(r => (r[i] ?? '').trim());
+    const type = detectColType(values);
+    const unique = new Set(values.filter(v => v !== '')).size;
+    const sample = Array.from(new Set(values.filter(v => v !== ''))).slice(0, 5);
+    return { name: name || `col_${i + 1}`, type, unique, sample };
+  });
+  return { columns, rowCount: rows.length };
+}
+
+function AiRecommender({ ar, onPick }: { ar: boolean; onPick: (k: string) => void }) {
+  const [goal, setGoal] = useState('');
+  const [columns, setColumns] = useState<ColInfoLite[]>([]);
+  const [rowCount, setRowCount] = useState(0);
+  const [fileName, setFileName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [summary, setSummary] = useState('');
+  const [recs, setRecs] = useState<Recommendation[]>([]);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const subtabsList = ar ? SUBTABS_AR : SUBTABS_EN;
+  const lookup = React.useMemo(() => Object.fromEntries(subtabsList.map(s => [s.key, s])), [subtabsList]);
+
+  const handleFile = (file: File) => {
+    setFileName(file.name);
+    setError('');
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = String(e.target?.result ?? '');
+      const { columns: cols, rowCount: rc } = parseCsvText(text);
+      setColumns(cols);
+      setRowCount(rc);
+    };
+    reader.onerror = () => setError(ar ? 'تعذّر قراءة الملف' : 'Failed to read file');
+    reader.readAsText(file);
+  };
+
+  const recommend = async () => {
+    setLoading(true);
+    setError('');
+    setRecs([]);
+    setSummary('');
+    try {
+      const r = await fetch('/api/ai/recommend-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ columns, rowCount, goal: goal.trim(), lang: ar ? 'ar' : 'en' }),
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        setError(data.error || (ar ? 'فشل التحليل' : 'Request failed'));
+      } else {
+        setSummary(data.summary || '');
+        setRecs(data.recommendations || []);
+      }
+    } catch {
+      setError(ar ? 'تعذّر الاتصال بالخدمة' : 'Network error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const canSubmit = (columns.length > 0 || goal.trim().length >= 5) && !loading;
+  const confColor = (c?: string) => {
+    const v = (c || '').toLowerCase();
+    if (v.includes('high') || v.includes('عالية')) return '#10b981';
+    if (v.includes('low') || v.includes('منخفض')) return '#f59e0b';
+    return '#60a5fa';
+  };
+
+  return (
+    <div>
+      <h3 style={{ fontSize: 16, fontWeight: 800, color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+        🤖 {ar ? 'التوصية الذكية بنوع التحليل' : 'AI Analysis Recommender'}
+      </h3>
+      <p style={{ fontSize: 13, color: C.sub, margin: '0 0 18px' }}>
+        {ar
+          ? 'ارفع بياناتك (CSV/TSV) أو صِف هدف بحثك — يحلّل الذكاء الاصطناعي طبيعة الأعمدة ويقترح أنسب التحليلات الإحصائية.'
+          : 'Upload your data (CSV/TSV) or describe your research goal — AI will analyze column types and recommend the best statistical analyses.'}
+      </p>
+
+      <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
+        {/* File upload */}
+        <div style={{ background: C.card, border: `1px dashed ${C.border}`, borderRadius: 12, padding: 16, textAlign: 'center' }}>
+          <input ref={fileInputRef} type="file" accept=".csv,.tsv,.txt"
+            onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+            style={{ display: 'none' }} />
+          <button onClick={() => fileInputRef.current?.click()}
+            style={{ background: 'linear-gradient(135deg,#C9A84C,#b45309)', border: 'none', color: '#fff',
+              padding: '10px 22px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            📁 {ar ? 'رفع ملف بيانات (CSV/TSV)' : 'Upload Data File (CSV/TSV)'}
+          </button>
+          {fileName && (
+            <div style={{ marginTop: 10, fontSize: 12, color: C.sub }}>
+              ✓ {fileName} · {rowCount.toLocaleString()} {ar ? 'صف' : 'rows'} · {columns.length} {ar ? 'عمود' : 'cols'}
+            </div>
+          )}
+        </div>
+
+        {/* Detected columns preview */}
+        {columns.length > 0 && (
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: C.gold, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {ar ? 'الأعمدة المُكتشفة تلقائياً' : 'Auto-detected columns'}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {columns.slice(0, 30).map(c => {
+                const typeColors: Record<string, string> = { numeric: '#10b981', categorical: '#8b5cf6', binary: '#f59e0b', datetime: '#06b6d4', text: '#94a3b8' };
+                return (
+                  <span key={c.name} style={{ fontSize: 11, padding: '4px 9px', borderRadius: 6,
+                    background: 'rgba(255,255,255,0.04)', border: `1px solid ${typeColors[c.type]}55`, color: C.muted }}>
+                    <strong style={{ color: '#fff' }}>{c.name}</strong>
+                    <span style={{ color: typeColors[c.type], marginInlineStart: 6 }}>● {c.type}</span>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Goal text */}
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.gold, marginBottom: 6 }}>
+            {ar ? 'هدف التحليل (اختياري)' : 'Analysis goal (optional)'}
+          </label>
+          <textarea value={goal} onChange={e => setGoal(e.target.value)}
+            placeholder={ar
+              ? 'مثال: أريد مقارنة درجات الطلاب بين ثلاث مجموعات تدريسية…'
+              : 'Example: I want to compare student scores across three teaching groups…'}
+            rows={3}
+            style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`,
+              color: '#e2e8f0', borderRadius: 10, padding: '10px 12px', fontSize: 13, fontFamily: 'inherit',
+              resize: 'vertical', boxSizing: 'border-box' }} />
+        </div>
+
+        <button onClick={recommend} disabled={!canSubmit}
+          style={{ background: canSubmit ? 'linear-gradient(135deg,#C9A84C,#b45309)' : 'rgba(255,255,255,0.06)',
+            border: 'none', color: canSubmit ? '#fff' : C.muted, padding: '12px 22px', borderRadius: 10,
+            fontSize: 14, fontWeight: 800, cursor: canSubmit ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
+          {loading ? (ar ? '⏳ جارٍ التحليل…' : '⏳ Analyzing…') : (ar ? '✨ احصل على التوصيات' : '✨ Get Recommendations')}
+        </button>
+
+        {error && (
+          <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5',
+            padding: '10px 14px', borderRadius: 10, fontSize: 13 }}>{error}</div>
+        )}
+      </div>
+
+      {summary && (
+        <div style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: 12,
+          padding: '12px 16px', marginBottom: 14, fontSize: 13, color: '#fde68a', lineHeight: 1.7 }}>
+          <strong>{ar ? 'ملخّص:' : 'Summary:'}</strong> {summary}
+        </div>
+      )}
+
+      {recs.length > 0 && (
+        <div style={{ display: 'grid', gap: 10 }}>
+          {recs.map((rec, i) => {
+            const meta = lookup[rec.key];
+            return (
+              <div key={i} style={{ background: C.card, border: `1px solid ${i === 0 ? 'rgba(201,168,76,0.45)' : C.border}`,
+                borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                gap: 16, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 240 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                    <span style={{ fontSize: 20 }}>{meta?.icon ?? '📊'}</span>
+                    <strong style={{ fontSize: 14, color: '#fff' }}>{rec.name}</strong>
+                    {rec.confidence && (
+                      <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 6,
+                        background: `${confColor(rec.confidence)}22`, color: confColor(rec.confidence),
+                        border: `1px solid ${confColor(rec.confidence)}55`, fontWeight: 700 }}>
+                        {rec.confidence}
+                      </span>
+                    )}
+                    {i === 0 && (
+                      <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 6, background: 'rgba(201,168,76,0.2)',
+                        color: '#f5d78e', fontWeight: 700 }}>{ar ? '⭐ الأنسب' : '⭐ Top pick'}</span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: 12.5, color: C.sub, margin: 0, lineHeight: 1.6 }}>{rec.reason}</p>
+                </div>
+                <button onClick={() => onPick(rec.key)}
+                  style={{ background: 'linear-gradient(135deg,#C9A84C,#b45309)', border: 'none', color: '#fff',
+                    padding: '8px 18px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
+                    fontFamily: 'inherit', flexShrink: 0 }}>
+                  {ar ? '▶ افتح الأداة' : '▶ Open Tool'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DataHub() {
   const { lang } = useLanguage();
   const ar = lang === 'ar';
   const [sub, setSub] = useState('explorer');
-  const subtabs = ar ? SUBTABS_AR : SUBTABS_EN;
+
+  const primaryTabs = [
+    { key: 'wizard',   icon: '🧭', label: ar ? 'مرشد الاختيار' : 'Wizard' },
+    { key: 'explorer', icon: '📁', label: ar ? 'مستكشف البيانات' : 'Data Explorer' },
+    { key: 'ai',       icon: '🤖', label: ar ? 'توصية ذكية' : 'AI Recommend' },
+  ];
 
   return (
     <div>
       <style>{`@keyframes dh-spin{to{transform:rotate(360deg)}}`}</style>
 
-      {/* Sub-tab bar */}
-      <div style={{ display: 'flex', gap: 4, background: 'rgba(4,9,24,0.85)', padding: '5px 5px', borderBottom: `1px solid ${C.border}`, overflowX: 'auto', scrollbarWidth: 'none' }}>
-        {subtabs.map(t => (
+      {/* Sub-tab bar: 3 primary + categorized dropdown */}
+      <div style={{ display: 'flex', gap: 6, background: 'rgba(4,9,24,0.85)', padding: '8px 10px',
+        borderBottom: `1px solid ${C.border}`, flexWrap: 'wrap', alignItems: 'center' }}>
+        {primaryTabs.map(t => (
           <button key={t.key} onClick={() => setSub(t.key)}
-            style={{ flexShrink: 0, background: sub === t.key ? 'linear-gradient(135deg,rgba(201,168,76,0.18),rgba(245,215,142,0.07))' : 'transparent', border: `1px solid ${sub === t.key ? 'rgba(201,168,76,0.4)' : 'transparent'}`, color: sub === t.key ? '#f5d78e' : C.muted, borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .2s', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span>{t.icon}</span>
-            <span className="dh-label-full">{t.label}</span>
-            <span className="dh-label-short" style={{ display: 'none' }}>{t.short}</span>
+            style={{ flexShrink: 0, background: sub === t.key ? 'linear-gradient(135deg,rgba(201,168,76,0.18),rgba(245,215,142,0.07))' : 'transparent',
+              border: `1px solid ${sub === t.key ? 'rgba(201,168,76,0.4)' : 'transparent'}`,
+              color: sub === t.key ? '#f5d78e' : C.muted, borderRadius: 10, padding: '8px 14px', fontSize: 12.5,
+              fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .2s', whiteSpace: 'nowrap',
+              display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>{t.icon}</span><span>{t.label}</span>
           </button>
         ))}
+        <div style={{ width: 1, height: 24, background: C.border, margin: '0 4px' }} />
+        <CategorizedDropdown ar={ar} active={sub} onPick={setSub} />
       </div>
-
-      <style>{`
-        @media(max-width:780px){
-          .dh-label-full{display:none!important}
-          .dh-label-short{display:inline!important}
-        }
-      `}</style>
 
       {/* Content */}
       <div style={{ padding: '22px 24px' }}>
@@ -8899,6 +9250,7 @@ export default function DataHub() {
             <StatWizard ar={ar} onGo={setSub} />
           </>
         )}
+        {sub === 'ai' && <AiRecommender ar={ar} onPick={setSub} />}
         {sub === 'explorer'   && <DataAnalyzer />}
         {sub === 'desctable' && (
           <>
