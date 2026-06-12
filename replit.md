@@ -1,6 +1,6 @@
-# [Project name]
+# Muhakkim (محكّم)
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Bilingual (Arabic-first, RTL) academic peer-review and research platform. The live app is محكّم برو V4 — a single-page suite of 25+ AI-assisted tools for review, writing, analysis, and publishing.
 
 ## Run & Operate
 
@@ -22,23 +22,34 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/muhakkim/` — the live web app (React + Vite, served at `/`, i.e. muhakkim.com root).
+  - `src/MuhakkimProV4.jsx` — the entire محكّم برو V4 tool suite, vendored as one self-contained file. Rendered by `src/App.tsx`.
+  - `src/MuhakkimProV4.d.ts` — type shim for the `.jsx` (see Architecture decisions).
+- `artifacts/api-server/` — Express API (served at `/api`).
+  - `src/routes/ai/proxy.ts` — `POST /api/ai` Anthropic relay used by the frontend tools.
+- `lib/integrations-anthropic-ai/` — Replit-managed Anthropic client wrapper.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- AI never calls Anthropic from the browser. The frontend posts the raw Anthropic Messages body to `POST /api/ai`; the server forwards it via the SDK so the key stays server-side. Frontend endpoint: `AI_ENDPOINT = (import.meta.env.BASE_URL||"/")+"api/ai"`.
+- `/api/ai` is hardened with an Origin allowlist + per-IP rate limit (not auth — auth/quotas are a deferred phase). Requires `app.set("trust proxy", true)`.
+- محكّم برو V4 is kept verbatim as a single `.jsx`. `tsc` skips it (`allowJs` is false); a `.d.ts` shim types the import; Vite compiles it.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+محكّم برو V4: 25+ Arabic-first academic tools across review/refereeing, smart research lifecycle, writing, data analysis, journal management, and publishing — all powered by the server AI proxy.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Communicate in Arabic, concise.
+- Preserve محكّم برو V4 behavior literally; do NOT change its Arabic UI text.
+- Brand accents: gold `#b45309`, navy `#1e293b`.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- After backend edits, restart the `artifacts/api-server: API Server` workflow.
+- Anthropic models are allow-listed: `claude-opus-4-8`, `claude-sonnet-4-6` (default), `claude-haiku-4-5`.
+- `artifacts/stats-site` has a pre-existing, unrelated typecheck failure (missing `../lib/translations`); it is a separate app, not part of Muhakkim.
 
 ## Pointers
 

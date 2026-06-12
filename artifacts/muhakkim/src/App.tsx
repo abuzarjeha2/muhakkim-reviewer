@@ -1,17 +1,7 @@
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { LanguageProvider } from "./lib/i18n";
-import Muhakkim from "./pages/Muhakkim";
+import MuhakkimProV4 from "./MuhakkimProV4";
 
 function App() {
-  return (
-    <LanguageProvider>
-      <TooltipProvider>
-        <Muhakkim />
-        <Toaster />
-      </TooltipProvider>
-    </LanguageProvider>
-  );
+  return <MuhakkimProV4 />;
 }
 
 export default App;
