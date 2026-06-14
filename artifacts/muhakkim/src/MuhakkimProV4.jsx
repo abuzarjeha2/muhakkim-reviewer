@@ -804,7 +804,7 @@ const TH = {
 
 // ── ALL GROUPS ───────────────────────────────────────────────
 const GROUPS = [
-  { id:"deep_review", icon:"🤝", ar:"المراجعة والتحكيم", color:"#be123c", desc:"مراجعة بشرية بالأدوار، تقرير شامل، تحكيم ونزاهة — أدوات قليلة قوية", tools:[
+  { id:"deep_review", icon:"🤝", ar:"المراجعة والتحكيم", color:"#be123c", desc:"مراجعة وتحكيم بمعايير أكاديمية دقيقة: أدوار بشرية، تقارير موحّدة، لجان مناقشة، ونزاهة علمية.", tools:[
     {key:"rev_roles", icon:"🧑‍🏫", ar:"المراجعة بالأدوار البشرية", en:"Human Role Review", badge:"الأساسي"},
     {key:"review_center", icon:"⚖️", ar:"مركز المراجعة الموحّد", en:"Unified Review Center", badge:"موحّد"},
     {key:"lifecycle", icon:"🔄", ar:"دورة حياة البحث الذكية", en:"AI Research Lifecycle", badge:"المنظومة"},
@@ -815,20 +815,20 @@ const GROUPS = [
     {key:"assess_hub", icon:"⚖️", ar:"التقييم والنزاهة", en:"Assessment & Integrity"},
     {key:"verify_lab", icon:"🛡️", ar:"مختبر التحقق الشامل", en:"Verification Lab", badge:"عالمي"},
   ]},
-  { id:"writing", icon:"✍️", ar:"الكتابة والتحليل", color:"#1d4ed8", desc:"التدقيق والصياغة وكشف الانتحال والذكاء الاصطناعي", tools:[
+  { id:"writing", icon:"✍️", ar:"الكتابة والتحليل", color:"#1d4ed8", desc:"تحرير النصوص الأكاديمية وصياغتها وتدقيقها، مع كشف الانتحال وبصمة الذكاء الاصطناعي.", tools:[
     {key:"smart_writing", icon:"✒️", ar:"النظام الذكي للكتابة والتحليل", en:"Smart Writing System", badge:"الأحدث"},
     {key:"publishing_studio", icon:"🚀", ar:"منظومة النشر الذكية", en:"AI Publishing Studio", badge:"منظومة"},
     {key:"writing_suite", icon:"✨", ar:"جناح التميّز للكتابة", en:"Writing Pro Suite", badge:"حصري"},
     {key:"text_hub", icon:"✍️", ar:"استوديو النص والكاتب الذكي", en:"Writing Studio"},
     {key:"research_hub", icon:"🔭", ar:"مركز البحث والمصادر", en:"Research & Sources Hub"},
   ]},
-  { id:"arabic_research", icon:"🕌", ar:"البحوث والدراسات العربية", color:"#047857", desc:"عربي أولاً ثم عالمي + تخصصات العلوم الإسلامية والعربية والقانون والاقتصاد بتقاليدها", tools:[
+  { id:"arabic_research", icon:"🕌", ar:"البحوث والدراسات العربية", color:"#047857", desc:"بحوث عربية أصيلة في العلوم الإسلامية والعربية والقانون والاقتصاد، وفق منهجية كل تخصص.", tools:[
     {key:"arabic_finder", icon:"🔎", ar:"الباحث العربي الذكي", en:"Arabic Smart Finder", badge:"فريد"},
     {key:"islamic_center", icon:"🕌", ar:"مركز التخصصات العربية والإسلامية", en:"Islamic & Arabic Disciplines", badge:"حصري"},
     {key:"vision_align", icon:"🇸🇦", ar:"بوصلة الرؤية والتمويل", en:"Vision 2030 & Funding Compass", badge:"فريد"},
     {key:"arab_toolkit", icon:"🛠️", ar:"عُدّة الباحث العربي", en:"Arab Researcher Toolkit", badge:"حصري"},
   ]},
-  { id:"analysis", icon:"📊", ar:"تحليل البيانات والبحث", color:"#047857", desc:"التحليل الإحصائي والبحث العلمي", tools:[
+  { id:"analysis", icon:"📊", ar:"تحليل البيانات والبحث", color:"#047857", desc:"تحليل إحصائي متقدّم للبيانات وعرضها بمخرجات بحثية دقيقة.", tools:[
     {key:"analysis_suite", icon:"✨", ar:"جناح التميّز للتحليل", en:"Analysis Pro Suite", badge:"حصري"},
     {key:"research_brain", icon:"🔬", ar:"النظام البحثي الذكي المتكامل", en:"Integrated Research Intelligence", badge:"عالمي"},
     {key:"smart_center", icon:"📈", ar:"استوديو البيانات: الداشبورد والمصحح", en:"Data Studio: Dashboard & Fixer"},
@@ -836,13 +836,13 @@ const GROUPS = [
     {key:"data_quality_hub", icon:"📊", ar:"مركز البيانات وجودة البحث", en:"Data & Research Quality Hub", badge:"موحّد"},
     {key:"research_viz", icon:"🎨", ar:"تحويل البحث لمخرجات بصرية", en:"Research Visualizer"},
   ]},
-  { id:"journal", icon:"📖", ar:"المجلة العلمية المحكّمة", color:"#1d4ed8", desc:"مجلة إلكترونية محكّمة لنشر الأبحاث والرسائل", tools:[
+  { id:"journal", icon:"📖", ar:"المجلة العلمية المحكّمة", color:"#1d4ed8", desc:"مجلة علمية محكّمة تدير دورة النشر الأكاديمي من التحكيم إلى الإصدار.", tools:[
     {key:"ejournal_studio", icon:"📰", ar:"استوديو المجلة الإلكترونية الذكية", en:"Smart e-Journal Studio", badge:"الأحدث"},
     {key:"accredit_pipeline", icon:"🏅", ar:"مسار الاعتماد والنشر", en:"Accreditation Pipeline", badge:"مميز"},
     {key:"journal", icon:"📖", ar:"المجلات العلمية المحكّمة", en:"Peer-Reviewed Journals", badge:"مميز"},
     {key:"journal_designer", icon:"🎨", ar:"مصمّم المجلة الذكي", en:"AI Journal Designer", badge:"حصري"},
   ]},
-  { id:"tools", icon:"🛠️", ar:"أدوات وخدمات", color:"#be123c", desc:"أدوات مساندة", tools:[
+  { id:"tools", icon:"🛠️", ar:"أدوات وخدمات", color:"#be123c", desc:"أدوات وخدمات مساندة تيسّر عمل الباحث.", tools:[
     {key:"guide", icon:"📖", ar:"الدليل التفاعلي", en:"Interactive Guide", badge:"جديد"},
     {key:"prof_writer", icon:"💼", ar:"الكتابة المهنية", en:"Professional Writer", badge:"جديد"},
     {key:"qr", icon:"📷", ar:"مولّد QR", en:"QR Code"},
@@ -16515,11 +16515,11 @@ export default function MuhakkimV4() {
       {/* HOME */}
       {!activeGroup&&!activeTool&&<div>
         {/* Hero */}
-        <div style={{padding:"48px 16px 36px",textAlign:"center"}}>
+        <div style={{padding:"56px 16px 40px",textAlign:"center",position:"relative",background:`radial-gradient(62% 80% at 50% -8%, ${T.gold}16, transparent 62%)`}}>
           <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"6px 16px",background:T.gold+"18",border:`1px solid ${T.gold}44`,borderRadius:24,marginBottom:20}}>
             <span>🏆</span><span style={{fontSize:12,color:T.gold,fontWeight:700}}>{L("المنصة الأكاديمية الشاملة","The complete academic platform")} · {newCount}+ {L("أداة","tools")}</span>
           </div>
-          <h1 style={{margin:"0 0 12px",fontSize:40,fontWeight:900,color:T.text,letterSpacing:"-1px"}}>{L("منصة ","")}<span style={{color:T.gold}}>{L("محكّم","Muhakkim")}</span> Pro</h1>
+          <h1 style={{margin:"0 0 14px",fontSize:"clamp(30px,7vw,44px)",fontWeight:900,color:T.text,letterSpacing:"-1px",lineHeight:1.15}}>{L("منصة ","")}<span style={{color:T.gold}}>{L("محكّم","Muhakkim")}</span> Pro</h1>
           <p style={{margin:"0 auto 28px",fontSize:16,color:T.textSec,maxWidth:620,lineHeight:1.65}}>
             {L("النظام العربي الذكي لإدارة البحث والتحكيم والكتابة والتحليل والنشر","The smart platform for research, peer review, writing, analysis & publishing")}
           </p>
