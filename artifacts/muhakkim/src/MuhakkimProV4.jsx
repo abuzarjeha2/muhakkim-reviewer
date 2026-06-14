@@ -814,7 +814,6 @@ const GROUPS = [
     {key:"committee_hub", icon:"👥", ar:"اللجان والمناقشة", en:"Committees & Defense"},
     {key:"assess_hub", icon:"⚖️", ar:"التقييم والنزاهة", en:"Assessment & Integrity"},
     {key:"verify_lab", icon:"🛡️", ar:"مختبر التحقق الشامل", en:"Verification Lab", badge:"عالمي"},
-    {key:"report", icon:"📋", ar:"تقرير التحكيم الرسمي", en:"Review Report"},
   ]},
   { id:"writing", icon:"✍️", ar:"الكتابة والتحليل", color:"#1d4ed8", desc:"التدقيق والصياغة وكشف الانتحال والذكاء الاصطناعي", tools:[
     {key:"smart_writing", icon:"✒️", ar:"النظام الذكي للكتابة والتحليل", en:"Smart Writing System", badge:"الأحدث"},

@@ -1,3 +1,4 @@
 - [AI proxy hardening](ai-proxy-hardening.md) — /api/ai paid LLM relay is guarded by Origin allowlist + per-IP rate limit (needs trust proxy), NOT auth; auth/quota deferred.
 - [Vendored single-file JSX integration](vendored-jsx-integration.md) — big pre-built `.jsx` kept verbatim; `tsc` skips it (allowJs false), `.d.ts` shim types the import, Vite compiles it.
 - [Muhakkim icon system](icon-system.md) — emoji icons render via EmIcon+Lucide; never convert ${x.icon} template-literals (exports break).
+- [Tool catalog architecture](tool-catalog.md) — GROUPS + ToolHub/HUBS + StdTool fallback + TOOL_GUIDE; «أجنحة التميّز» are UNIQUE not duplicates; only `report` was redundant (→master_report). Rich guide shows only for top-level GROUPS tools.
