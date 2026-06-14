@@ -1,5 +1,32 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import * as Lucide from "lucide-react";
 const AI_ENDPOINT = (import.meta.env.BASE_URL || "/") + "api/ai";
+
+// ── نظام الأيقونات الاحترافية (Lucide) — يستبدل الإيموجي في واجهة الاستخدام ──
+const ICON_NAME = {
+ "🧑‍🏫":"GraduationCap","👨‍🏫":"GraduationCap","🎓":"GraduationCap","🧠":"Brain",
+ "•":"Dot","√":"Calculator","∫":"Sigma","⊞":"Table","⏳":"Hourglass",
+ "⚕":"Stethoscope","⚖":"Scale","⚙":"Settings","⚛":"Atom","⚠":"AlertTriangle","⚡":"Zap","⚽":"Trophy",
+ "✅":"CircleCheck","✉":"Mail","✍":"PenLine","✏":"Pencil","✒":"PenTool","✨":"Sparkles","❓":"CircleHelp",
+ "🇫🇷":"Flag","🇬🇧":"Flag","🇳🇱":"Flag","🇸🇦":"Flag","🇺🇸":"Flag",
+ "🌉":"Building2","🌍":"Globe","🌐":"Globe","🌙":"Moon","🌟":"Star","🌱":"Sprout","🌳":"TreePine","🌹":"Flower2","🌾":"Wheat","🌿":"Leaf","🍃":"Leaf",
+ "🎁":"Gift","🆓":"Gift","🎤":"Mic","🎨":"Palette","🎭":"Drama","🎯":"Target",
+ "🏃":"Footprints","🏅":"Medal","🏆":"Trophy","🏗":"Construction","🏛":"Landmark","🏢":"Building2","🏥":"Hospital","🏦":"Building","🏫":"School","🏷":"Tag",
+ "🐍":"Code","👁":"Eye","👥":"Users","👻":"Ghost",
+ "💊":"Pill","💎":"Gem","💡":"Lightbulb","💪":"Dumbbell","💬":"MessageCircle","💰":"Wallet","💻":"Laptop","💼":"Briefcase",
+ "📂":"FolderOpen","📄":"FileText","📅":"Calendar","📈":"TrendingUp","📉":"TrendingDown","📊":"BarChart3","📋":"ClipboardList","📏":"Ruler","📐":"PencilRuler","📑":"Files","📓":"Notebook",
+ "📕":"Book","📖":"BookOpen","📗":"Book","📘":"Book","📙":"Book","📚":"Library","📜":"ScrollText","📝":"NotebookPen","📥":"Inbox","📰":"Newspaper","📷":"Camera","📿":"Sparkles",
+ "🔀":"Shuffle","🔁":"Repeat","🔄":"RefreshCw","🔌":"Plug","🔍":"Search","🔎":"Search","🔓":"LockOpen","🔖":"Bookmark","🔗":"Link","🔢":"Hash","🔤":"Type","🔧":"Wrench","🔬":"Microscope","🔭":"Telescope","🔮":"Sparkles","🔷":"Diamond",
+ "🕋":"Landmark","🕌":"Landmark","🕵":"UserSearch","🕸":"Network","🖋":"PenLine","🖥":"Monitor","🖼":"Image","🗂":"FolderTree","🗃":"Archive","🗣":"Speech","🗺":"Map",
+ "🚀":"Rocket","🚨":"Siren","🛠":"Wrench","🛡":"Shield","🤖":"Bot","🤝":"Handshake","🤸":"Activity"
+};
+function EmIcon({ e, s, c }){
+  if(e==null || e==="") return null;
+  const k = (""+e).replace(/[\uFE0F\u20E3]/g,"");
+  const C = ICON_NAME[k] && Lucide[ICON_NAME[k]];
+  if(!C) return <>{e}</>;
+  return <C size={s||"1em"} color={c} strokeWidth={2} style={{verticalAlign:"-0.14em",flexShrink:0,display:"inline-block"}}/>;
+}
 
 
 
@@ -266,7 +293,7 @@ function IntegrityEngineSystem({ T }) {
           onMouseEnter={e=>{e.currentTarget.style.borderColor=m.color;e.currentTarget.style.transform="translateY(-3px)";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
           <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:8}}>
-            <div style={{width:46,height:46,borderRadius:12,background:m.color+"1a",border:`1px solid ${m.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{m.icon}</div>
+            <div style={{width:46,height:46,borderRadius:12,background:m.color+"1a",border:`1px solid ${m.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}><EmIcon e={m.icon}/></div>
             <div style={{fontSize:14,fontWeight:800,color:T.text}}>{m.ar}</div>
           </div>
           <p style={{margin:0,fontSize:11,color:T.textD}}>{m.desc}</p>
@@ -276,7 +303,7 @@ function IntegrityEngineSystem({ T }) {
       {mod && !result && !loading && <div>
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:16}}>
           <InBtn ch="← الوحدات" onClick={()=>setMod(null)} v="ghost" size="sm" T={T}/>
-          <div style={{width:44,height:44,borderRadius:12,background:mod.color+"1a",border:`1px solid ${mod.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{mod.icon}</div>
+          <div style={{width:44,height:44,borderRadius:12,background:mod.color+"1a",border:`1px solid ${mod.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}><EmIcon e={mod.icon}/></div>
           <div><h2 style={{margin:0,fontSize:18,fontWeight:900,color:T.text}}>{mod.ar}</h2><p style={{margin:0,fontSize:12,color:T.textD}}>{mod.desc}</p></div>
         </div>
         <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,padding:16,boxShadow:T.shadow}}>
@@ -288,7 +315,7 @@ function IntegrityEngineSystem({ T }) {
           </div>
           <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="أو الصق نص العمل كاملاً..." rows={6} style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",marginBottom:11}}/>
           {mod.id==="source_match" && <textarea value={source} onChange={e=>setSource(e.target.value)} placeholder="الصق المصدر الأصلي للمقارنة (اختياري)..." rows={4} style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",marginBottom:11}}/>}
-          <InBtn ch={`${mod.icon} ابدأ ${mod.ar}`} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
+          <InBtn ch={<><EmIcon e={mod.icon}/> ابدأ {mod.ar}</>} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
         </div>
       </div>}
 
@@ -471,7 +498,7 @@ function AssessmentCenterSystem({ T }) {
           onMouseEnter={e=>{e.currentTarget.style.borderColor=m.color;e.currentTarget.style.transform="translateY(-3px)";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
           <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:8}}>
-            <div style={{width:46,height:46,borderRadius:12,background:m.color+"1a",border:`1px solid ${m.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{m.icon}</div>
+            <div style={{width:46,height:46,borderRadius:12,background:m.color+"1a",border:`1px solid ${m.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}><EmIcon e={m.icon}/></div>
             <div style={{fontSize:14,fontWeight:800,color:T.text}}>{m.ar}</div>
           </div>
           <p style={{margin:0,fontSize:11,color:T.textD}}>{m.desc}</p>
@@ -481,7 +508,7 @@ function AssessmentCenterSystem({ T }) {
       {mod && !result && !loading && <div>
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:16}}>
           <AsBtn ch="← الوحدات" onClick={()=>setMod(null)} v="ghost" size="sm" T={T}/>
-          <div style={{width:44,height:44,borderRadius:12,background:mod.color+"1a",border:`1px solid ${mod.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{mod.icon}</div>
+          <div style={{width:44,height:44,borderRadius:12,background:mod.color+"1a",border:`1px solid ${mod.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}><EmIcon e={mod.icon}/></div>
           <div><h2 style={{margin:0,fontSize:18,fontWeight:900,color:T.text}}>{mod.ar}</h2><p style={{margin:0,fontSize:12,color:T.textD}}>{mod.desc}</p></div>
         </div>
         <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,padding:16,boxShadow:T.shadow}}>
@@ -495,7 +522,7 @@ function AssessmentCenterSystem({ T }) {
             {files.length?<p style={{margin:0,fontSize:12,color:T.emerald,fontWeight:700}}>✅ {files.map(f=>f.name).join("، ")}</p>:<p style={{margin:0,fontSize:12,color:T.textS}}>📎 ارفع المحتوى/المحاضرات/البيانات (Word · PDF · Excel · PPT) أو الصق النص</p>}
           </div>
           <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="أو الصق المحتوى/البيانات كاملاً..." rows={6} style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",marginBottom:12}}/>
-          <AsBtn ch={`${mod.icon} ابدأ ${mod.ar}`} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
+          <AsBtn ch={<><EmIcon e={mod.icon}/> ابدأ {mod.ar}</>} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
         </div>
       </div>}
 
@@ -1007,7 +1034,7 @@ function DataLabSystem({ T }) {
       <div style={{display:"flex",gap:0,borderBottom:`2px solid ${T.border}`,marginBottom:18,overflowX:"auto",scrollbarWidth:"none"}}>
         {TABS.map(tab=><button key={tab.id} onClick={()=>setActiveTab(tab.id)}
           style={{padding:"10px 14px",border:"none",background:"transparent",borderBottom:activeTab===tab.id?`3px solid ${T.gold}`:"3px solid transparent",color:activeTab===tab.id?T.gold:T.textS,fontWeight:activeTab===tab.id?700:500,fontSize:12,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:5,transition:"all .15s"}}>
-          {tab.icon} {tab.label}
+          <EmIcon e={tab.icon}/> {tab.label}
         </button>)}
       </div>
 
@@ -1581,7 +1608,7 @@ ${Object.entries(byPage).sort(([a],[b])=>+a-+b).map(([pg,os])=>`<h2>📄 صفح�
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))",gap:10}}>
             {DISCIPLINES.map(d=><button key={d.id} onClick={()=>{setDiscipline(d);setSubField("");}}
               style={{background:discipline?.id===d.id?d.color+"1a":T.bgS,border:`1.5px solid ${discipline?.id===d.id?d.color:T.border}`,borderRadius:12,padding:"13px 12px",cursor:"pointer",fontFamily:"inherit",textAlign:"center",transition:"all .15s"}}>
-              <div style={{fontSize:26,marginBottom:6}}>{d.icon}</div>
+              <div style={{fontSize:26,marginBottom:6}}><EmIcon e={d.icon}/></div>
               <div style={{fontSize:12,fontWeight:700,color:discipline?.id===d.id?d.color:T.text}}>{d.ar}</div>
               <div style={{fontSize:9,color:T.textD,marginTop:3}}>{d.sub.length} فرع</div>
             </button>)}
@@ -1617,7 +1644,7 @@ ${Object.entries(byPage).sort(([a],[b])=>+a-+b).map(([pg,os])=>`<h2>📄 صفح�
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:8}}>
             {TRACKS.map(tr=><label key={tr.id} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 11px",background:tracks.includes(tr.id)?tr.color+"12":T.bgS,border:`1px solid ${tracks.includes(tr.id)?tr.color+"44":T.border}`,borderRadius:9,cursor:"pointer"}}>
               <input type="checkbox" checked={tracks.includes(tr.id)} onChange={e=>setTracks(p=>e.target.checked?[...p,tr.id]:p.filter(x=>x!==tr.id))} style={{accentColor:tr.color,cursor:"pointer"}}/>
-              <span style={{fontSize:15}}>{tr.icon}</span>
+              <span style={{fontSize:15}}><EmIcon e={tr.icon}/></span>
               <span style={{fontSize:12,fontWeight:tracks.includes(tr.id)?700:500,color:tracks.includes(tr.id)?tr.color:T.textS}}>{tr.ar}</span>
             </label>)}
           </div>
@@ -2384,7 +2411,7 @@ function FormGeneratorSystem({ T }) {
         <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
           {CATEGORIES.map(c=><button key={c.id} onClick={()=>setCat(c.id)}
             style={{display:"flex",alignItems:"center",gap:7,padding:"9px 16px",borderRadius:11,border:`1.5px solid ${cat===c.id?c.color:T.border}`,background:cat===c.id?c.color+"15":T.card,color:cat===c.id?c.color:T.textS,fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>
-            <span style={{fontSize:17}}>{c.icon}</span>{c.ar}
+            <span style={{fontSize:17}}><EmIcon e={c.icon}/></span>{c.ar}
           </button>)}
         </div>
 
@@ -2394,7 +2421,7 @@ function FormGeneratorSystem({ T }) {
             style={{background:T.card,border:`1.5px solid ${T.border}`,borderRadius:14,padding:"16px",display:"flex",alignItems:"center",gap:13,cursor:"pointer",fontFamily:"inherit",textAlign:"right",transition:"all .18s"}}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=curCat.color;e.currentTarget.style.boxShadow=T.shadow;e.currentTarget.style.transform="translateY(-2px)";}}
             onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="none";}}>
-            <div style={{width:48,height:48,borderRadius:13,background:curCat.color+"18",border:`1px solid ${curCat.color}35`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:23,flexShrink:0}}>{f.icon}</div>
+            <div style={{width:48,height:48,borderRadius:13,background:curCat.color+"18",border:`1px solid ${curCat.color}35`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:23,flexShrink:0}}><EmIcon e={f.icon}/></div>
             <div style={{flex:1}}>
               <div style={{color:T.text,fontWeight:800,fontSize:13,marginBottom:4}}>{f.ar}</div>
               <div style={{color:T.textD,fontSize:10,lineHeight:1.5}}>{f.desc}</div>
@@ -2406,7 +2433,7 @@ function FormGeneratorSystem({ T }) {
         {/* Form fill view */}
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:18}}>
           <FBtn ch="← رجوع للنماذج" onClick={()=>setActiveForm(null)} v="ghost" size="sm" T={T}/>
-          <div style={{width:42,height:42,borderRadius:11,background:curCat.color+"18",border:`1px solid ${curCat.color}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:21}}>{activeForm.icon}</div>
+          <div style={{width:42,height:42,borderRadius:11,background:curCat.color+"18",border:`1px solid ${curCat.color}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:21}}><EmIcon e={activeForm.icon}/></div>
           <div>
             <h2 style={{margin:"0 0 2px",fontSize:18,fontWeight:900,color:T.text}}>{activeForm.ar}</h2>
             <p style={{margin:0,fontSize:11,color:T.textD}}>{activeForm.desc}</p>
@@ -2848,7 +2875,7 @@ function CommitteesSystem({ T }) {
         <div style={{display:"flex",gap:10,justifyContent:"center",marginBottom:18,flexWrap:"wrap"}}>
           {Object.entries(ENTITIES).map(([k,e])=><button key={k} onClick={()=>setEtype(k)}
             style={{display:"flex",alignItems:"center",gap:8,padding:"10px 20px",borderRadius:12,border:`1.5px solid ${etype===k?e.color:T.border}`,background:etype===k?e.color+"18":T.card,color:etype===k?e.color:T.text,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:14}}>
-            <span style={{fontSize:18}}>{e.icon}</span>{e.ar}<CmTag ch={e.items.length} color={etype===k?e.color:T.textD}/>
+            <span style={{fontSize:18}}><EmIcon e={e.icon}/></span>{e.ar}<CmTag ch={e.items.length} color={etype===k?e.color:T.textD}/>
           </button>)}
         </div>
 
@@ -2858,7 +2885,7 @@ function CommitteesSystem({ T }) {
             style={{background:T.card,border:`1.5px solid ${T.border}`,borderRadius:12,padding:"14px 15px",display:"flex",alignItems:"center",gap:11,cursor:"pointer",fontFamily:"inherit",textAlign:"right",transition:"all .18s"}}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=ent.color;e.currentTarget.style.transform="translateX(-3px)";}}
             onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
-            <div style={{width:40,height:40,borderRadius:10,background:ent.color+"1a",border:`1px solid ${ent.color}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{ent.icon}</div>
+            <div style={{width:40,height:40,borderRadius:10,background:ent.color+"1a",border:`1px solid ${ent.color}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}><EmIcon e={ent.icon}/></div>
             <span style={{flex:1,fontSize:13,fontWeight:700,color:T.text}}>{item}</span>
             <span style={{color:ent.color,fontSize:16,opacity:.5}}>←</span>
           </button>)}
@@ -2869,7 +2896,7 @@ function CommitteesSystem({ T }) {
       {selected && <div>
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:18,flexWrap:"wrap"}}>
           <CmBtn ch="← رجوع" onClick={()=>{setSelected(null);setTask(null);setResult("");}} v="ghost" size="sm" T={T}/>
-          <div style={{width:44,height:44,borderRadius:11,background:ent.color+"1a",border:`1px solid ${ent.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:21}}>{ent.icon}</div>
+          <div style={{width:44,height:44,borderRadius:11,background:ent.color+"1a",border:`1px solid ${ent.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:21}}><EmIcon e={ent.icon}/></div>
           <h2 style={{margin:0,fontSize:18,fontWeight:900,color:T.text}}>{selected}</h2>
         </div>
 
@@ -2877,13 +2904,13 @@ function CommitteesSystem({ T }) {
         <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
           {TASKS.map(t=><button key={t.id} onClick={()=>{setTask(t);setResult("");}}
             style={{display:"flex",alignItems:"center",gap:7,padding:"9px 15px",borderRadius:10,border:`1.5px solid ${task?.id===t.id?ent.color:T.border}`,background:task?.id===t.id?ent.color+"18":T.card,color:task?.id===t.id?ent.color:T.text,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:12}}>
-            <span>{t.icon}</span>{t.ar}
+            <span><EmIcon e={t.icon}/></span>{t.ar}
           </button>)}
         </div>
 
         {task && <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
           <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,padding:16,boxShadow:T.shadow}}>
-            <h3 style={{margin:"0 0 12px",fontSize:14,fontWeight:800,color:T.text}}>{task.icon} {task.ar}</h3>
+            <h3 style={{margin:"0 0 12px",fontSize:14,fontWeight:800,color:T.text}}><EmIcon e={task.icon}/> {task.ar}</h3>
             <label style={{display:"block",marginBottom:5,fontSize:12,fontWeight:700,color:T.textS}}>بيانات إضافية (الأعضاء، التاريخ، البنود، الأنشطة...)</label>
             <textarea value={extra} onChange={e=>setExtra(e.target.value)} rows={6} placeholder="أدخل التفاصيل الخاصة بهذه الجهة..."
               style={{width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",marginBottom:11}}/>
@@ -2902,7 +2929,7 @@ function CommitteesSystem({ T }) {
               </div>}
             </div>
             {result?<pre style={{margin:0,fontSize:12,color:T.text,lineHeight:1.85,whiteSpace:"pre-wrap",fontFamily:"inherit",maxHeight:"55vh",overflow:"auto"}}>{result}</pre>
-            :<div style={{textAlign:"center",padding:"50px 20px",color:T.textD}}><p style={{fontSize:34,margin:"0 0 10px"}}>{task.icon}</p><p style={{fontSize:13}}>أدخل البيانات واضغط توليد</p></div>}
+            :<div style={{textAlign:"center",padding:"50px 20px",color:T.textD}}><p style={{fontSize:34,margin:"0 0 10px"}}><EmIcon e={task.icon}/></p><p style={{fontSize:13}}>أدخل البيانات واضغط توليد</p></div>}
           </div>
         </div>}
       </div>}
@@ -3315,7 +3342,7 @@ function ThesisDefenseSystem({ T }) {
             {ROLES.map(r=><button key={r.id} onClick={()=>setRole(r)}
               style={{background:role.id===r.id?r.color+"14":T.bgS,border:`1.5px solid ${role.id===r.id?r.color:T.border}`,borderRadius:13,padding:"14px",cursor:"pointer",fontFamily:"inherit",textAlign:"right",transition:"all .15s"}}>
               <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:7}}>
-                <span style={{fontSize:22}}>{r.icon}</span>
+                <span style={{fontSize:22}}><EmIcon e={r.icon}/></span>
                 <span style={{fontSize:14,fontWeight:800,color:role.id===r.id?r.color:T.text}}>{r.ar}</span>
               </div>
               <p style={{margin:0,fontSize:11,color:T.textS,lineHeight:1.5}}>{r.focus}</p>
@@ -3338,14 +3365,14 @@ function ThesisDefenseSystem({ T }) {
             style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none"}}/>
         </div>
 
-        <ThBtn ch={`${role.icon} ابدأ المراجعة من منظور ${role.ar}`} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
+        <ThBtn ch={<><EmIcon e={role.icon}/> ابدأ المراجعة من منظور {role.ar}</>} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
       </div>}
 
       {/* RESULT */}
       {phase==="result" && <div>
         {loading && <div style={{background:T.card,border:`1px solid ${role.color}44`,borderRadius:14,padding:40,textAlign:"center",boxShadow:T.shadow}}>
           <div style={{display:"flex",justifyContent:"center",marginBottom:14}}><ThSp c={role.color}/></div>
-          <h3 style={{margin:"0 0 6px",fontSize:17,fontWeight:900,color:role.color}}>{role.icon} المراجعة من منظور {role.ar}</h3>
+          <h3 style={{margin:"0 0 6px",fontSize:17,fontWeight:900,color:role.color}}><EmIcon e={role.icon}/> المراجعة من منظور {role.ar}</h3>
           <p style={{margin:0,fontSize:12,color:T.textS}}>{prog}</p>
         </div>}
 
@@ -3353,7 +3380,7 @@ function ThesisDefenseSystem({ T }) {
           {/* Header bar */}
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16,flexWrap:"wrap"}}>
             <ThBtn ch="← مراجعة جديدة" onClick={()=>{setPhase("setup");setReview(null);}} v="ghost" size="sm" T={T}/>
-            <ThTag ch={`${role.icon} ${role.ar}`} color={role.color}/>
+            <ThTag ch={<><EmIcon e={role.icon}/> {role.ar}</>} color={role.color}/>
             <ThTag ch={degree} color={T.gold}/>
             <div style={{flex:1}}/>
             <ThBtn ch="🖨️ طباعة التقرير" onClick={printReport} v="ghost" size="sm" T={T}/>
@@ -3400,7 +3427,7 @@ function ThesisDefenseSystem({ T }) {
               <p style={{fontSize:34,margin:"0 0 10px"}}>🔬</p>
               <h3 style={{margin:"0 0 8px",color:T.text,fontSize:16}}>المراجعة الحقيقية فقرة بفقرة</h3>
               <p style={{margin:"0 0 16px",color:T.textS,fontSize:12,lineHeight:1.6}}>مراجعة دقيقة صفحة بصفحة بنص حرفي مقتبس من رسالتك — بلا هلوسة.<br/>كل ملاحظة مرتبطة باقتباس فعلي من النص.</p>
-              <ThBtn ch={`${role.icon} ابدأ المراجعة الصفحية من منظور ${role.ar}`} onClick={runPageReview} T={T}/>
+              <ThBtn ch={<><EmIcon e={role.icon}/> ابدأ المراجعة الصفحية من منظور {role.ar}</>} onClick={runPageReview} T={T}/>
             </div>}
             {pageLoading && <div style={{background:T.card,border:`1px solid ${role.color}44`,borderRadius:14,padding:32,textAlign:"center",boxShadow:T.shadow,marginBottom:14}}>
               <div style={{display:"flex",justifyContent:"center",marginBottom:12}}><ThSp c={role.color}/></div>
@@ -3662,7 +3689,7 @@ function UnifiedReviewCenter({ T }) {
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:9}}>
           {ENGINES.map(e=><label key={e.id} style={{display:"flex",alignItems:"center",gap:9,padding:"10px 12px",background:selected.includes(e.id)?e.color+"12":T.bgS,border:`1.5px solid ${selected.includes(e.id)?e.color+"55":T.border}`,borderRadius:10,cursor:"pointer",transition:"all .15s"}}>
             <input type="checkbox" checked={selected.includes(e.id)} onChange={()=>toggle(e.id)} style={{accentColor:e.color,cursor:"pointer",width:16,height:16}}/>
-            <span style={{fontSize:17}}>{e.icon}</span>
+            <span style={{fontSize:17}}><EmIcon e={e.icon}/></span>
             <span style={{fontSize:12,fontWeight:700,color:selected.includes(e.id)?e.color:T.text,flex:1}}>{e.ar}</span>
           </label>)}
           <label style={{display:"flex",alignItems:"center",gap:9,padding:"10px 12px",background:doPages?T.gold+"12":T.bgS,border:`1.5px solid ${doPages?T.gold+"55":T.border}`,borderRadius:10,cursor:"pointer"}}>
@@ -3687,7 +3714,7 @@ function UnifiedReviewCenter({ T }) {
         <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:14}}>
           {ENGINES.filter(e=>results[e.id]).map(e=><button key={e.id} onClick={()=>setActiveRes(e.id)}
             style={{display:"flex",alignItems:"center",gap:6,padding:"7px 13px",borderRadius:9,border:`1.5px solid ${activeRes===e.id?e.color:T.border}`,background:activeRes===e.id?e.color+"18":T.card,color:activeRes===e.id?e.color:T.text,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:12}}>
-            {e.icon} {e.ar}
+            <EmIcon e={e.icon}/> {e.ar}
           </button>)}
           {pageObs.length>0&&<button onClick={()=>setActiveRes("pages")}
             style={{display:"flex",alignItems:"center",gap:6,padding:"7px 13px",borderRadius:9,border:`1.5px solid ${activeRes==="pages"?T.gold:T.border}`,background:activeRes==="pages"?T.gold+"18":T.card,color:activeRes==="pages"?T.gold:T.text,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:12}}>
@@ -3838,7 +3865,7 @@ ${sections}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:8}}>
         {stdTools.map(t=><label key={t.key} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 11px",background:selected.includes(t.key)?(grp.color||T.gold)+"12":T.card,border:`1.5px solid ${selected.includes(t.key)?(grp.color||T.gold)+"55":T.border}`,borderRadius:9,cursor:"pointer"}}>
           <input type="checkbox" checked={selected.includes(t.key)} onChange={()=>toggle(t.key)} style={{accentColor:grp.color||T.gold,cursor:"pointer",width:15,height:15}}/>
-          <span style={{fontSize:15}}>{t.icon}</span>
+          <span style={{fontSize:15}}><EmIcon e={t.icon}/></span>
           <span style={{fontSize:12,fontWeight:700,color:selected.includes(t.key)?(grp.color||T.gold):T.text}}>{t.ar}</span>
         </label>)}
       </div>
@@ -3854,7 +3881,7 @@ ${sections}
       <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:14}}>
         {stdTools.filter(t=>results[t.key]).map(t=><button key={t.key} onClick={()=>setActive(t.key)}
           style={{display:"flex",alignItems:"center",gap:6,padding:"7px 13px",borderRadius:9,border:`1.5px solid ${active===t.key?(grp.color||T.gold):T.border}`,background:active===t.key?(grp.color||T.gold)+"18":T.card,color:active===t.key?(grp.color||T.gold):T.text,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:12}}>
-          {t.icon} {t.ar}
+          <EmIcon e={t.icon}/> {t.ar}
         </button>)}
       </div>
       {active && results[active] && <div style={{background:T.bgSec,border:`1px solid ${T.border}`,borderRadius:12,padding:16}}>
@@ -4517,7 +4544,7 @@ ${body}</body></html>`;
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:9}}>
         {groupsWithTools.map(g=>{const n=g.tools.filter(t=>TC[t.key]).length;return <label key={g.id} style={{display:"flex",alignItems:"center",gap:9,padding:"10px 12px",background:selGroups.includes(g.id)?(g.color||T.gold)+"12":T.bgSec,border:`1.5px solid ${selGroups.includes(g.id)?(g.color||T.gold)+"55":T.border}`,borderRadius:10,cursor:"pointer"}}>
           <input type="checkbox" checked={selGroups.includes(g.id)} onChange={()=>toggleGroup(g.id)} style={{accentColor:g.color||T.gold,cursor:"pointer",width:16,height:16}}/>
-          <span style={{fontSize:17}}>{g.icon}</span>
+          <span style={{fontSize:17}}><EmIcon e={g.icon}/></span>
           <span style={{fontSize:12,fontWeight:700,color:selGroups.includes(g.id)?(g.color||T.gold):T.text,flex:1}}>{g.ar}</span>
           <span style={{fontSize:10,color:T.textDim}}>{n}</span>
         </label>;})}
@@ -4542,7 +4569,7 @@ ${body}</body></html>`;
       <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
         {activeTools.filter(t=>results[t.key]).map(t=><button key={t.key} onClick={()=>setActive(t.key)}
           style={{display:"flex",alignItems:"center",gap:5,padding:"6px 11px",borderRadius:8,border:`1.5px solid ${active===t.key?(t.gcolor||T.gold):T.border}`,background:active===t.key?(t.gcolor||T.gold)+"18":T.card,color:active===t.key?(t.gcolor||T.gold):T.text,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:11}}>
-          {t.icon} {t.ar}
+          <EmIcon e={t.icon}/> {t.ar}
         </button>)}
       </div>
       {active && results[active] && <Card T={T}>
@@ -4813,7 +4840,7 @@ ol{padding-right:20px}
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:9}}>
             {Object.entries(CHECK_TYPES).map(([k,v])=><label key={k} style={{display:"flex",alignItems:"center",gap:9,padding:"9px 11px",background:activeChecks.includes(k)?v.c+"12":T.bgS,border:`1.5px solid ${activeChecks.includes(k)?v.c+"55":T.border}`,borderRadius:10,cursor:"pointer"}}>
               <input type="checkbox" checked={activeChecks.includes(k)} onChange={()=>toggleCheck(k)} style={{accentColor:v.c,cursor:"pointer",width:15,height:15}}/>
-              <span style={{fontSize:15}}>{v.icon}</span>
+              <span style={{fontSize:15}}><EmIcon e={v.icon}/></span>
               <div style={{flex:1}}>
                 <div style={{fontSize:12,fontWeight:700,color:activeChecks.includes(k)?v.c:T.text}}>{k.replace("_"," ")}</div>
                 <div style={{fontSize:9,color:T.textD}}>{v.d}</div>
@@ -4884,7 +4911,7 @@ ol{padding-right:20px}
               : p.observations.map((o,i)=>{const ct=CHECK_TYPES[o.type]||{c:T.textD,icon:"•"};const sv=DpgSEV[o.severity]||{c:T.textD};return <div key={i} style={{padding:"11px",marginTop:9,background:T.bgS,border:`1px solid ${T.border}`,borderRight:`4px solid ${sv.c}`,borderRadius:10}}>
                 <div style={{display:"flex",gap:6,marginBottom:7,flexWrap:"wrap",alignItems:"center"}}>
                   <span style={{fontSize:11,fontWeight:900,color:T.textD}}>{i+1}.</span>
-                  <DpgTag ch={`${ct.icon} ${o.type.replace("_"," ")}`} color={ct.c}/>
+                  <DpgTag ch={<><EmIcon e={ct.icon}/> {o.type.replace("_"," ")}</>} color={ct.c}/>
                   <DpgTag ch={o.severity} color={sv.c}/>
                   {o.paragraph&&<span style={{fontSize:10,color:T.textD}}>{o.paragraph}</span>}
                 </div>
@@ -5366,7 +5393,7 @@ function FourPerspectiveSystem({ T }) {
           {PERSPECTIVES.map(p=><div key={p.id} style={{marginBottom:10}}>
             <label style={{display:"flex",alignItems:"center",gap:9,padding:"10px 12px",background:selected.includes(p.id)?p.color+"12":T.bgS,border:`1.5px solid ${selected.includes(p.id)?p.color+"55":T.border}`,borderRadius:10,cursor:"pointer"}}>
               <input type="checkbox" checked={selected.includes(p.id)} onChange={()=>toggle(p.id)} style={{accentColor:p.color,cursor:"pointer",width:16,height:16}}/>
-              <span style={{fontSize:18}}>{p.icon}</span>
+              <span style={{fontSize:18}}><EmIcon e={p.icon}/></span>
               <span style={{fontSize:14,fontWeight:800,color:selected.includes(p.id)?p.color:T.text,flex:1}}>{p.ar}</span>
               <P4Tag ch={`${p.layers.length} طبقات`} color={p.color}/>
             </label>
@@ -5396,7 +5423,7 @@ function FourPerspectiveSystem({ T }) {
         <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:14}}>
           {PERSPECTIVES.filter(p=>results[p.id]).map(p=><button key={p.id} onClick={()=>setActive(p.id)}
             style={{display:"flex",alignItems:"center",gap:6,padding:"7px 13px",borderRadius:9,border:`1.5px solid ${active===p.id?p.color:T.border}`,background:active===p.id?p.color+"18":T.card,color:active===p.id?p.color:T.text,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:12}}>
-            {p.icon} {p.ar} {results[p.id]?.overallScore!=null&&<P4Tag ch={results[p.id].overallScore} color={p.color}/>}
+            <EmIcon e={p.icon}/> {p.ar} {results[p.id]?.overallScore!=null&&<P4Tag ch={results[p.id].overallScore} color={p.color}/>}
           </button>)}
         </div>
 
@@ -5563,7 +5590,7 @@ ${crit}
           onMouseEnter={e=>{e.currentTarget.style.borderColor=d.color;e.currentTarget.style.transform="translateY(-3px)";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
           <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:9}}>
-            <div style={{width:46,height:46,borderRadius:12,background:d.color+"1a",border:`1px solid ${d.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{d.icon}</div>
+            <div style={{width:46,height:46,borderRadius:12,background:d.color+"1a",border:`1px solid ${d.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}><EmIcon e={d.icon}/></div>
             <div><div style={{fontSize:15,fontWeight:800,color:T.text}}>{d.ar}</div><div style={{fontSize:11,color:T.textD}}>{d.desc}</div></div>
           </div>
           <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
@@ -5575,7 +5602,7 @@ ${crit}
       {docType && !result && !loading && <div>
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:16}}>
           <MdBtn ch="← الأنواع" onClick={()=>setDocType(null)} v="ghost" size="sm" T={T}/>
-          <div style={{width:42,height:42,borderRadius:11,background:docType.color+"1a",border:`1px solid ${docType.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>{docType.icon}</div>
+          <div style={{width:42,height:42,borderRadius:11,background:docType.color+"1a",border:`1px solid ${docType.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}><EmIcon e={docType.icon}/></div>
           <h2 style={{margin:0,fontSize:18,fontWeight:900,color:T.text}}>{docType.ar}</h2>
         </div>
         <div style={{background:docType.color+"0d",border:`1px solid ${docType.color}33`,borderRadius:12,padding:13,marginBottom:14}}>
@@ -5593,7 +5620,7 @@ ${crit}
             {files.length?<p style={{margin:0,fontSize:12,color:T.emerald,fontWeight:700}}>✅ {files.map(f=>f.name).join("، ")}</p>:<p style={{margin:0,fontSize:12,color:T.textS}}>📎 ارفع العمل (Word · PDF · TXT) أو الصق النص</p>}
           </div>
           <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="أو الصق نص العمل كاملاً..." rows={6} style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",marginBottom:12}}/>
-          <MdBtn ch={`${docType.icon} ابدأ مراجعة ${docType.ar}`} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
+          <MdBtn ch={<><EmIcon e={docType.icon}/> ابدأ مراجعة {docType.ar}</>} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
         </div>
       </div>}
 
@@ -5795,7 +5822,7 @@ ${idx?`<h2>المؤشرات</h2><div>${idx}</div>`:""}
               style={{background:T.card,border:`1.5px solid ${T.border}`,borderRadius:13,padding:14,cursor:"pointer",fontFamily:"inherit",textAlign:"right",display:"flex",alignItems:"center",gap:11,transition:"all .18s"}}
               onMouseEnter={e=>{e.currentTarget.style.borderColor=m.color;e.currentTarget.style.transform="translateY(-2px)";}}
               onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
-              <div style={{width:42,height:42,borderRadius:11,background:m.color+"1a",border:`1px solid ${m.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{m.icon}</div>
+              <div style={{width:42,height:42,borderRadius:11,background:m.color+"1a",border:`1px solid ${m.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}><EmIcon e={m.icon}/></div>
               <span style={{fontSize:13,fontWeight:700,color:T.text}}>{m.ar}</span>
             </button>)}
           </div>
@@ -5805,7 +5832,7 @@ ${idx?`<h2>المؤشرات</h2><div>${idx}</div>`:""}
       {mod && !result && !loading && <div>
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:16}}>
           <QaBtn ch="← الوحدات" onClick={()=>setMod(null)} v="ghost" size="sm" T={T}/>
-          <div style={{width:42,height:42,borderRadius:11,background:mod.color+"1a",border:`1px solid ${mod.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>{mod.icon}</div>
+          <div style={{width:42,height:42,borderRadius:11,background:mod.color+"1a",border:`1px solid ${mod.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}><EmIcon e={mod.icon}/></div>
           <h2 style={{margin:0,fontSize:18,fontWeight:900,color:T.text}}>{mod.ar}</h2>
         </div>
         <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,padding:16,boxShadow:T.shadow}}>
@@ -5819,7 +5846,7 @@ ${idx?`<h2>المؤشرات</h2><div>${idx}</div>`:""}
             {files.length?<p style={{margin:0,fontSize:12,color:T.emerald,fontWeight:700}}>✅ {files.map(f=>f.name).join("، ")}</p>:<p style={{margin:0,fontSize:12,color:T.textS}}>📎 ارفع العمل (Word · PDF · Excel · CSV) أو الصق النص/البيانات</p>}
           </div>
           <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="أو الصق المحتوى/البيانات كاملاً..." rows={6} style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",marginBottom:12}}/>
-          <QaBtn ch={`${mod.icon} ابدأ ${mod.ar}`} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
+          <QaBtn ch={<><EmIcon e={mod.icon}/> ابدأ {mod.ar}</>} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
         </div>
       </div>}
 
@@ -6042,7 +6069,7 @@ function DeepDisciplineSystem({ T }) {
           style={{background:T.card,border:`1.5px solid ${T.border}`,borderRadius:14,padding:16,cursor:"pointer",fontFamily:"inherit",textAlign:"center",transition:"all .18s"}}
           onMouseEnter={e=>{e.currentTarget.style.borderColor=d.color;e.currentTarget.style.transform="translateY(-3px)";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
-          <div style={{width:52,height:52,margin:"0 auto 10px",borderRadius:14,background:d.color+"1a",border:`1px solid ${d.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26}}>{d.icon}</div>
+          <div style={{width:52,height:52,margin:"0 auto 10px",borderRadius:14,background:d.color+"1a",border:`1px solid ${d.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26}}><EmIcon e={d.icon}/></div>
           <div style={{fontSize:13,fontWeight:800,color:T.text,marginBottom:4}}>{d.ar}</div>
           <DdTag ch={`${d.checks.length} معايير دقيقة`} color={d.color}/>
         </button>)}
@@ -6051,7 +6078,7 @@ function DeepDisciplineSystem({ T }) {
       {disc && pages.length===0 && !loading && <div>
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:14}}>
           <DdBtn ch="← التخصصات" onClick={()=>setDisc(null)} v="ghost" size="sm" T={T}/>
-          <div style={{width:44,height:44,borderRadius:12,background:disc.color+"1a",border:`1px solid ${disc.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{disc.icon}</div>
+          <div style={{width:44,height:44,borderRadius:12,background:disc.color+"1a",border:`1px solid ${disc.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}><EmIcon e={disc.icon}/></div>
           <h2 style={{margin:0,fontSize:18,fontWeight:900,color:T.text}}>{disc.ar}</h2>
         </div>
         <div style={{background:disc.color+"0d",border:`1px solid ${disc.color}33`,borderRadius:12,padding:13,marginBottom:14}}>
@@ -6070,7 +6097,7 @@ function DeepDisciplineSystem({ T }) {
             <span style={{fontSize:12,color:T.textS,fontWeight:700}}>كلمات/صفحة:</span>
             <input type="number" value={wpp} onChange={e=>setWpp(parseInt(e.target.value)||400)} step="50" style={{width:85,padding:"7px 10px",borderRadius:8,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:12,fontFamily:"inherit",outline:"none"}}/>
           </div>
-          <DdBtn ch={`${disc.icon} ابدأ المراجعة المتخصصة العميقة`} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
+          <DdBtn ch={<><EmIcon e={disc.icon}/> ابدأ المراجعة المتخصصة العميقة</>} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
         </div>
       </div>}
 
@@ -6081,7 +6108,7 @@ function DeepDisciplineSystem({ T }) {
       {pages.length>0 && <div>
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:14,flexWrap:"wrap"}}>
           <DdBtn ch="← جديد" onClick={()=>{setPages([]);setSummary(null);setDisc(null);}} v="ghost" size="sm" T={T}/>
-          <DdTag ch={`${disc.icon} ${disc.ar}`} color={disc.color}/>
+          <DdTag ch={<><EmIcon e={disc.icon}/> {disc.ar}</>} color={disc.color}/>
           {title&&<span style={{fontSize:13,fontWeight:700,color:T.text}}>{title}</span>}
           <div style={{flex:1}}/>
           {!loading && <><DdBtn ch="📄 Word" onClick={()=>dl(buildReport(),"application/msword","doc")} v="gold" size="sm" T={T}/>
@@ -6362,7 +6389,7 @@ function AutoReviewCenter({ T }) {
 
       {ENGINES.map(e=> results[e.key] && <Card key={e.key} T={T} style={{marginBottom:12}}>
         <h4 style={{margin:"0 0 8px",fontSize:14,fontWeight:800,color:T.text,display:"flex",alignItems:"center",gap:7}}>
-          <span style={{fontSize:18}}>{e.icon}</span> {e.ar}
+          <span style={{fontSize:18}}><EmIcon e={e.icon}/></span> {e.ar}
         </h4>
         <pre style={{margin:0,fontSize:12.5,color:T.text,lineHeight:1.85,whiteSpace:"pre-wrap",fontFamily:"inherit"}}>{results[e.key]}</pre>
       </Card>)}
@@ -6439,7 +6466,7 @@ function ResearchVizSystem({ T }) {
           style={{background:T.card,border:`1.5px solid ${T.border}`,borderRadius:14,padding:15,cursor:"pointer",fontFamily:"inherit",textAlign:"right",display:"flex",alignItems:"center",gap:11,transition:"all .18s"}}
           onMouseEnter={e=>{e.currentTarget.style.borderColor=v.color;e.currentTarget.style.transform="translateY(-2px)";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
-          <div style={{width:46,height:46,borderRadius:12,background:v.color+"1a",border:`1px solid ${v.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{v.icon}</div>
+          <div style={{width:46,height:46,borderRadius:12,background:v.color+"1a",border:`1px solid ${v.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}><EmIcon e={v.icon}/></div>
           <span style={{fontSize:13,fontWeight:700,color:T.text}}>{v.ar}</span>
         </button>)}
       </div>
@@ -6448,14 +6475,14 @@ function ResearchVizSystem({ T }) {
     {vizType && !output && !loading && <div>
       <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:16}}>
         <Btn ch="← الأنواع" onClick={()=>setVizType(null)} v="ghost" size="sm" T={T}/>
-        <div style={{width:44,height:44,borderRadius:12,background:vizType.color+"1a",border:`1px solid ${vizType.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{vizType.icon}</div>
+        <div style={{width:44,height:44,borderRadius:12,background:vizType.color+"1a",border:`1px solid ${vizType.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}><EmIcon e={vizType.icon}/></div>
         <h2 style={{margin:0,fontSize:18,fontWeight:900,color:T.text}}>{vizType.ar}</h2>
       </div>
       <Card T={T}>
         <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="عنوان البحث" style={{width:"100%",padding:"10px 13px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",outline:"none",marginBottom:12}}/>
         <FileZone files={files} setFiles={setFiles} T={T}/>
         <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="أو الصق نص البحث/الملخص هنا..." rows={6} style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",margin:"12px 0"}}/>
-        <Btn ch={`${vizType.icon} توليد ${vizType.ar}`} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
+        <Btn ch={<><EmIcon e={vizType.icon}/> توليد {vizType.ar}</>} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
       </Card>
     </div>}
 
@@ -6600,7 +6627,7 @@ function StatsInterpretSystem({ T }) {
           onMouseEnter={e=>{e.currentTarget.style.borderColor=m.color;e.currentTarget.style.transform="translateY(-3px)";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
           <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:8}}>
-            <div style={{width:46,height:46,borderRadius:12,background:m.color+"1a",border:`1px solid ${m.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{m.icon}</div>
+            <div style={{width:46,height:46,borderRadius:12,background:m.color+"1a",border:`1px solid ${m.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}><EmIcon e={m.icon}/></div>
             <div style={{fontSize:14,fontWeight:800,color:T.text}}>{m.ar}</div>
           </div>
           <p style={{margin:0,fontSize:11,color:T.textD}}>{m.desc}</p>
@@ -6611,7 +6638,7 @@ function StatsInterpretSystem({ T }) {
     {mode && !result && !loading && <div>
       <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:16}}>
         <Btn ch="← الأنواع" onClick={()=>setMode(null)} v="ghost" size="sm" T={T}/>
-        <div style={{width:44,height:44,borderRadius:12,background:mode.color+"1a",border:`1px solid ${mode.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{mode.icon}</div>
+        <div style={{width:44,height:44,borderRadius:12,background:mode.color+"1a",border:`1px solid ${mode.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}><EmIcon e={mode.icon}/></div>
         <h2 style={{margin:0,fontSize:17,fontWeight:900,color:T.text}}>{mode.ar}</h2>
       </div>
       <Card T={T}>
@@ -6623,7 +6650,7 @@ function StatsInterpretSystem({ T }) {
         <textarea value={hypotheses} onChange={e=>setHypotheses(e.target.value)} placeholder="فرضيات الدراسة (اختياري)" rows={2} style={{width:"100%",padding:"9px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:12,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",marginBottom:10}}/>
         <FileZone files={files} setFiles={setFiles} T={T}/>
         <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="الصق نتائج التحليل الإحصائي (الجداول، مخرجات SPSS/Excel، قيم الاختبارات...)" rows={6} style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",margin:"12px 0"}}/>
-        <Btn ch={`${mode.icon} ابدأ ${mode.ar}`} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
+        <Btn ch={<><EmIcon e={mode.icon}/> ابدأ {mode.ar}</>} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
       </Card>
     </div>}
 
@@ -6727,7 +6754,7 @@ function ResearchLabSystem({ T }) {
           style={{background:T.card,border:`1.5px solid ${T.border}`,borderRadius:14,padding:15,cursor:"pointer",fontFamily:"inherit",textAlign:"right",display:"flex",alignItems:"center",gap:11,transition:"all .18s"}}
           onMouseEnter={e=>{e.currentTarget.style.borderColor=s.color;e.currentTarget.style.transform="translateY(-2px)";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
-          <div style={{width:46,height:46,borderRadius:12,background:s.color+"1a",border:`1px solid ${s.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{s.icon}</div>
+          <div style={{width:46,height:46,borderRadius:12,background:s.color+"1a",border:`1px solid ${s.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}><EmIcon e={s.icon}/></div>
           <span style={{fontSize:13,fontWeight:700,color:T.text}}>{s.ar}</span>
         </button>)}
       </div>
@@ -6736,7 +6763,7 @@ function ResearchLabSystem({ T }) {
     {stage && !result && !loading && <div>
       <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:16}}>
         <Btn ch="← المراحل" onClick={()=>setStage(null)} v="ghost" size="sm" T={T}/>
-        <div style={{width:44,height:44,borderRadius:12,background:stage.color+"1a",border:`1px solid ${stage.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{stage.icon}</div>
+        <div style={{width:44,height:44,borderRadius:12,background:stage.color+"1a",border:`1px solid ${stage.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}><EmIcon e={stage.icon}/></div>
         <h2 style={{margin:0,fontSize:18,fontWeight:900,color:T.text}}>{stage.ar}</h2>
       </div>
       <Card T={T}>
@@ -6746,7 +6773,7 @@ function ResearchLabSystem({ T }) {
         </div>
         <FileZone files={files} setFiles={setFiles} T={T}/>
         <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="تفاصيل إضافية أو نص للاستناد إليه (اختياري)..." rows={4} style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",margin:"12px 0"}}/>
-        <Btn ch={`${stage.icon} ${stage.ar}`} onClick={run} disabled={!field.trim()&&!topic.trim()&&!text.trim()&&!files.length} full T={T} size="lg"/>
+        <Btn ch={<><EmIcon e={stage.icon}/> {stage.ar}</>} onClick={run} disabled={!field.trim()&&!topic.trim()&&!text.trim()&&!files.length} full T={T} size="lg"/>
       </Card>
     </div>}
 
@@ -7389,7 +7416,7 @@ function JournalSystem({ T }) {
         onMouseEnter={e=>{e.currentTarget.style.borderColor=j.color;e.currentTarget.style.transform="translateY(-3px)";}}
         onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
         <div style={{background:`linear-gradient(135deg,${j.color},${j.color}cc)`,padding:"18px 16px",color:"#fff"}}>
-          <div style={{fontSize:32,marginBottom:6}}>{j.icon}</div>
+          <div style={{fontSize:32,marginBottom:6}}><EmIcon e={j.icon}/></div>
           <h3 style={{margin:"0 0 3px",fontSize:16,fontWeight:900}}>{j.ar}</h3>
           <p style={{margin:0,fontSize:10.5,opacity:.9}}>{j.en}</p>
         </div>
@@ -7495,7 +7522,7 @@ ${d.citationApa?`<div class="cite-box"><b>للاقتباس من هذا البح�
     <div style={{background:`linear-gradient(135deg,${C},${C}bb)`,borderRadius:16,padding:"20px",marginBottom:14,color:"#fff",boxShadow:T.shadowH,position:"relative"}}>
       <button onClick={()=>setJournal(null)} style={{position:"absolute",top:14,left:14,background:"rgba(255,255,255,.2)",border:"none",borderRadius:8,padding:"5px 11px",color:"#fff",cursor:"pointer",fontFamily:"inherit",fontSize:11,fontWeight:700}}>← المجلات</button>
       <div style={{textAlign:"center"}}>
-        <div style={{fontSize:34,marginBottom:4}}>{J.icon}</div>
+        <div style={{fontSize:34,marginBottom:4}}><EmIcon e={J.icon}/></div>
         <div style={{fontSize:10,letterSpacing:1.5,opacity:.85,marginBottom:4}}>PEER-REVIEWED · OPEN ACCESS · ISSN {J.issn}</div>
         <h1 style={{margin:"0 0 3px",fontSize:21,fontWeight:900}}>{J.ar}</h1>
         <p style={{margin:0,fontSize:11,opacity:.9}}>{J.en}</p>
@@ -7843,7 +7870,7 @@ function AccreditationPipeline({ T }) {
           </div>
           <Card T={T} style={{flex:1,marginBottom:0,opacity:pending?0.5:1,borderRight:r?`4px solid ${r.passed?T.emerald:T.rose}`:`4px solid ${active?g.color:T.border}`}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:6}}>
-              <div style={{display:"flex",alignItems:"center",gap:7}}><span style={{fontSize:12,fontWeight:900,color:g.color}}>{i+1}</span><h4 style={{margin:0,fontSize:13.5,fontWeight:800,color:T.text}}>{g.icon} {g.ar}</h4></div>
+              <div style={{display:"flex",alignItems:"center",gap:7}}><span style={{fontSize:12,fontWeight:900,color:g.color}}>{i+1}</span><h4 style={{margin:0,fontSize:13.5,fontWeight:800,color:T.text}}><EmIcon e={g.icon}/> {g.ar}</h4></div>
               {r&&<div style={{display:"flex",gap:6,alignItems:"center"}}>
                 <span style={{fontSize:14,fontWeight:900,color:r.passed?T.emerald:T.rose}}>{r.score}</span>
                 <span style={{background:(r.passed?T.emerald:T.rose)+"22",color:r.passed?T.emerald:T.rose,borderRadius:20,padding:"2px 9px",fontSize:11,fontWeight:700}}>{r.passed?"اجتاز":"لم يجتز"}</span>
@@ -8200,7 +8227,7 @@ ${d.citationApa?`<div class="cite"><b>للاقتباس:</b> ${esc(d.citationApa)
       </Card>}
       <Card T={T} glow={bundle.color} style={{marginBottom:14}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-          <div style={{width:50,height:50,borderRadius:13,background:bundle.color+"1a",border:`1px solid ${bundle.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26}}>{bundle.icon}</div>
+          <div style={{width:50,height:50,borderRadius:13,background:bundle.color+"1a",border:`1px solid ${bundle.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26}}><EmIcon e={bundle.icon}/></div>
           <div><div style={{fontSize:11,color:T.textD}}>الإجراء المقترح</div><h3 style={{margin:0,fontSize:18,fontWeight:900,color:bundle.color}}>{bundle.ar}</h3></div>
         </div>
         <p style={{margin:"0 0 10px",fontSize:12.5,color:T.textS}}>سيشغّل {bundle.engines.length} أدوات تلقائياً:</p>
@@ -8277,7 +8304,7 @@ ${d.citationApa?`<div class="cite"><b>للاقتباس:</b> ${esc(d.citationApa)
     {(phase==="running"||phase==="done") && bundle && !batchMode && <div>
       <Card T={T} style={{marginBottom:14}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <h3 style={{margin:0,fontSize:15,fontWeight:800,color:bundle.color}}>{bundle.icon} {bundle.ar}</h3>
+          <h3 style={{margin:0,fontSize:15,fontWeight:800,color:bundle.color}}><EmIcon e={bundle.icon}/> {bundle.ar}</h3>
           <span style={{fontSize:12,color:T.textD}}>{Math.min(cur,(bundle.special==="publish"?4:bundle.engines.length))}/{bundle.special==="publish"?4:bundle.engines.length}</span>
         </div>
         <div style={{height:8,background:T.bgSec,borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",width:`${Math.min(cur,(bundle.special==="publish"?4:bundle.engines.length))/(bundle.special==="publish"?4:bundle.engines.length)*100}%`,background:bundle.color,borderRadius:4,transition:"width .4s"}}/></div>
@@ -8563,7 +8590,7 @@ function ThesisSourcesSystem({ T }) {
     <div style={{display:"flex",flexDirection:"column",gap:11,marginBottom:14}}>
       {items.map((s,i)=><Card key={i} T={T} style={{borderRight:`4px solid ${cur.color}`}}>
         <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
-          <div style={{width:46,height:46,borderRadius:12,background:cur.color+"15",border:`1px solid ${cur.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:23,flexShrink:0}}>{s.icon}</div>
+          <div style={{width:46,height:46,borderRadius:12,background:cur.color+"15",border:`1px solid ${cur.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:23,flexShrink:0}}><EmIcon e={s.icon}/></div>
           <div style={{flex:1,minWidth:0}}>
             <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:3}}>
               <h3 style={{margin:0,fontSize:14.5,fontWeight:800,color:T.text}}>{s.ar}</h3>
@@ -8775,7 +8802,7 @@ function AcademicJourneySystem({ T }) {
     {/* Journey path */}
     {STAGES.map((s,i)=><div key={s.id} style={{display:"flex",gap:12,marginBottom:10}}>
       <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
-        <div onClick={()=>setActive(active===s.id?null:s.id)} style={{width:48,height:48,borderRadius:"50%",background:active===s.id?s.color:s.color+"18",border:`2px solid ${s.color}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0,cursor:"pointer",transition:"all .2s"}}>{s.icon}</div>
+        <div onClick={()=>setActive(active===s.id?null:s.id)} style={{width:48,height:48,borderRadius:"50%",background:active===s.id?s.color:s.color+"18",border:`2px solid ${s.color}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0,cursor:"pointer",transition:"all .2s"}}><EmIcon e={s.icon}/></div>
         {i<STAGES.length-1&&<div style={{width:3,flex:1,minHeight:20,background:`linear-gradient(${s.color},${STAGES[i+1].color})`,opacity:.4}}/>}
       </div>
       <Card T={T} style={{flex:1,marginBottom:0,borderRight:`4px solid ${s.color}`,cursor:"pointer"}} >
@@ -10057,7 +10084,7 @@ function AIExpertTeamSystem({ T }) {
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))",gap:9}}>
           {EXPERTS.map(e=><div key={e.id} onClick={()=>setSelected({...selected,[e.id]:!selected[e.id]})} style={{cursor:"pointer",background:selected[e.id]?e.color+"15":T.card,border:`1.5px solid ${selected[e.id]?e.color:T.border}`,borderRadius:11,padding:"11px",display:"flex",alignItems:"center",gap:9}}>
-            <span style={{fontSize:22}}>{e.icon}</span>
+            <span style={{fontSize:22}}><EmIcon e={e.icon}/></span>
             <span style={{fontSize:12.5,fontWeight:700,color:selected[e.id]?e.color:T.text}}>{e.ar}</span>
           </div>)}
         </div>
@@ -10088,7 +10115,7 @@ function AIExpertTeamSystem({ T }) {
 
       {chosenList.map((e,i)=>{ const r=results[e.id]; const active=phase==="running"&&cur===i;
         return (r||active) && <Card key={e.id} T={T} style={{marginBottom:10,borderRight:`4px solid ${e.color}`}}>
-          <h4 style={{margin:"0 0 8px",fontSize:14,fontWeight:800,color:e.color,display:"flex",alignItems:"center",gap:8}}>{active?<Spin color={e.color}/>:<span style={{fontSize:18}}>{e.icon}</span>}{e.ar}</h4>
+          <h4 style={{margin:"0 0 8px",fontSize:14,fontWeight:800,color:e.color,display:"flex",alignItems:"center",gap:8}}>{active?<Spin color={e.color}/>:<span style={{fontSize:18}}><EmIcon e={e.icon}/></span>}{e.ar}</h4>
           {r&&<pre style={{margin:0,fontSize:12.5,color:T.text,lineHeight:1.85,whiteSpace:"pre-wrap",fontFamily:"inherit"}}>{r}</pre>}
           {active&&!r&&<p style={{margin:0,fontSize:12,color:e.color}}>يحلّل...</p>}
         </Card>;
@@ -10141,7 +10168,7 @@ function PricingSystem({ T }) {
         return <div key={p.id} style={{background:T.card,border:`2px solid ${p.popular?p.color:T.border}`,borderRadius:16,padding:0,overflow:"hidden",position:"relative",boxShadow:p.popular?T.shadowH:"none"}}>
           {p.popular&&<div style={{position:"absolute",top:12,left:0,background:p.color,color:"#fff",fontSize:10,fontWeight:800,padding:"3px 12px",borderRadius:"0 7px 7px 0"}}>الأكثر طلباً</div>}
           <div style={{background:`linear-gradient(135deg,${p.color},${p.color}cc)`,padding:"18px 16px",color:"#fff",textAlign:"center"}}>
-            <div style={{fontSize:30}}>{p.icon}</div>
+            <div style={{fontSize:30}}><EmIcon e={p.icon}/></div>
             <h3 style={{margin:"4px 0 2px",fontSize:17,fontWeight:900}}>{p.ar}</h3>
             <p style={{margin:0,fontSize:11,opacity:.9}}>{p.tagline}</p>
           </div>
@@ -10230,7 +10257,7 @@ function MathSolverSystem({ T }) {
                 border:`1.5px solid ${type===t.id?T.gold:T.border}`,
                 background:type===t.id?T.gold+"18":T.inputBg,color:type===t.id?T.gold:T.text,
                 fontWeight:type===t.id?700:500,fontSize:12,fontFamily:"inherit",cursor:"pointer"}}>
-              <span style={{fontSize:15}}>{t.icon}</span>{t.ar}
+              <span style={{fontSize:15}}><EmIcon e={t.icon}/></span>{t.ar}
             </button>
           ))}
         </div>
@@ -10332,13 +10359,13 @@ function StudentToolkitSystem({ T }) {
                 border:`1.5px solid ${tid===t.id?T.gold:T.border}`,
                 background:tid===t.id?T.gold+"18":T.inputBg,color:tid===t.id?T.gold:T.text,
                 fontWeight:tid===t.id?700:500,fontSize:12,fontFamily:"inherit",cursor:"pointer"}}>
-              <span style={{fontSize:15}}>{t.icon}</span>{t.ar}
+              <span style={{fontSize:15}}><EmIcon e={t.icon}/></span>{t.ar}
             </button>
           ))}
         </div>
 
         <div style={{padding:"9px 12px",borderRadius:9,background:T.bgS||T.inputBg,marginBottom:12,fontSize:12.5,color:T.textS}}>
-          <b style={{color:T.text}}>{cur.icon} {cur.ar}:</b> {cur.desc}
+          <b style={{color:T.text}}><EmIcon e={cur.icon}/> {cur.ar}:</b> {cur.desc}
         </div>
 
         <textarea value={input} onChange={e=>setInput(e.target.value)} rows={5}
@@ -10354,7 +10381,7 @@ function StudentToolkitSystem({ T }) {
       {out && (
         <Card T={T} style={{marginTop:12}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-            <div style={{fontWeight:800,fontSize:15,color:T.gold}}>{cur.icon} النتيجة</div>
+            <div style={{fontWeight:800,fontSize:15,color:T.gold}}><EmIcon e={cur.icon}/> النتيجة</div>
             <Btn ch="📋 نسخ" v="ghost" onClick={()=>navigator.clipboard?.writeText(out)} T={T}/>
           </div>
           <div style={{whiteSpace:"pre-wrap",lineHeight:2,fontSize:14,color:T.text}}>{out}</div>
@@ -10434,13 +10461,13 @@ function ProfessionalWriterSystem({ T }) {
                 border:`1.5px solid ${tid===t.id?T.gold:T.border}`,
                 background:tid===t.id?T.gold+"18":T.inputBg,color:tid===t.id?T.gold:T.text,
                 fontWeight:tid===t.id?700:500,fontSize:12,fontFamily:"inherit",cursor:"pointer"}}>
-              <span style={{fontSize:15}}>{t.icon}</span>{t.ar}
+              <span style={{fontSize:15}}><EmIcon e={t.icon}/></span>{t.ar}
             </button>
           ))}
         </div>
 
         <div style={{padding:"9px 12px",borderRadius:9,background:T.bgS||T.inputBg,marginBottom:12,fontSize:12.5,color:T.textS}}>
-          <b style={{color:T.text}}>{cur.icon} {cur.ar}:</b> {cur.desc}
+          <b style={{color:T.text}}><EmIcon e={cur.icon}/> {cur.ar}:</b> {cur.desc}
         </div>
 
         <textarea value={input} onChange={e=>setInput(e.target.value)} rows={5}
@@ -10456,7 +10483,7 @@ function ProfessionalWriterSystem({ T }) {
       {out && (
         <Card T={T} style={{marginTop:12}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-            <div style={{fontWeight:800,fontSize:15,color:T.gold}}>{cur.icon} النتيجة</div>
+            <div style={{fontWeight:800,fontSize:15,color:T.gold}}><EmIcon e={cur.icon}/> النتيجة</div>
             <Btn ch="📋 نسخ" v="ghost" onClick={()=>navigator.clipboard?.writeText(out)} T={T}/>
           </div>
           <div style={{whiteSpace:"pre-wrap",lineHeight:2,fontSize:14,color:T.text}}>{out}</div>
@@ -12643,7 +12670,7 @@ function HumanReviewSystem({ T, role }) {
     <div style={{maxWidth:800,margin:"0 auto"}}>
       <Card T={T}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:27}}>{R.icon}</span>
+          <span style={{fontSize:27}}><EmIcon e={R.icon}/></span>
           <div>
             <div style={{fontWeight:800,fontSize:17,color:T.text}}>{R.name}</div>
             <div style={{fontSize:12,color:T.textS}}>{R.tone} · مراجعة صفحة بصفحة وفقرة بفقرة</div>
@@ -12658,7 +12685,7 @@ function HumanReviewSystem({ T, role }) {
               style={{flex:"1 1 auto",padding:"10px 8px",borderRadius:10,border:`1.5px solid ${selRole===k?T.gold:T.border}`,
                 background:selRole===k?T.gold+"18":T.card,color:selRole===k?T.gold:T.text,
                 fontWeight:selRole===k?700:500,fontSize:12.5,fontFamily:"inherit",cursor:"pointer"}}>
-              {r.icon} {r.name.replace("مراجعة ","").replace(" للباحث","")}
+              <EmIcon e={r.icon}/> {r.name.replace("مراجعة ","").replace(" للباحث","")}
             </button>
           ))}
         </div>
@@ -12809,7 +12836,7 @@ function MasterReportSystem({ T }) {
           <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
             {LENSES.map(L=>(
               <span key={L.id} style={{fontSize:12,padding:"5px 12px",borderRadius:18,background:T.gold+"14",color:T.gold,border:`1px solid ${T.gold}30`,fontWeight:600}}>
-                {L.icon} {L.name}
+                <EmIcon e={L.icon}/> {L.name}
               </span>
             ))}
           </div>
@@ -13335,7 +13362,7 @@ function ToolHub({ T, hubKey }) {
     <div style={{maxWidth:880,margin:"0 auto"}}>
       <Card T={T}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
-          <span style={{fontSize:26}}>{hub.icon}</span>
+          <span style={{fontSize:26}}><EmIcon e={hub.icon}/></span>
           <div>
             <div style={{fontWeight:800,fontSize:17,color:T.text}}>{hub.title}</div>
             <div style={{fontSize:12,color:T.textS}}>{hub.desc}</div>
@@ -13349,7 +13376,7 @@ function ToolHub({ T, hubKey }) {
               style={{padding:"11px 8px",borderRadius:12,cursor:"pointer",fontFamily:"inherit",textAlign:"center",
                 border:`1.5px solid ${on?T.gold:T.border}`,background:on?T.gold+"15":T.card,
                 transition:"all .15s",boxShadow:on?(T.shadow||"none"):"none"}}>
-              <div style={{fontSize:21,marginBottom:4}}>{o.icon}</div>
+              <div style={{fontSize:21,marginBottom:4}}><EmIcon e={o.icon}/></div>
               <div style={{fontSize:12.5,fontWeight:on?800:600,color:on?T.gold:T.text}}>{o.label}</div>
               <div style={{fontSize:10,color:T.textDim,marginTop:2}}>{o.hint}</div>
             </button>
@@ -13475,7 +13502,7 @@ function VerificationLabSystem({ T }) {
                   style={{padding:"10px 12px",borderRadius:11,textAlign:"right",cursor:"pointer",fontFamily:"inherit",
                     border:`1.5px solid ${a?T.gold:T.border}`,background:a?T.gold+"12":T.card}}>
                   <div style={{display:"flex",alignItems:"center",gap:7}}>
-                    <span style={{fontSize:17}}>{c.icon}</span>
+                    <span style={{fontSize:17}}><EmIcon e={c.icon}/></span>
                     <span style={{fontSize:12.5,fontWeight:800,color:a?T.gold:T.text}}>{c.name}</span>
                     <span style={{marginRight:"auto",fontSize:13}}>{a?"✅":"⬜"}</span>
                   </div>
@@ -14513,7 +14540,7 @@ function IslamicArabicCenterSystem({ T }) {
               <button key={d.id} onClick={()=>{setDisc(d);setOut("");}}
                 style={{padding:"10px 8px",borderRadius:11,cursor:"pointer",fontFamily:"inherit",textAlign:"center",
                   border:`1.5px solid ${on?T.gold:T.border}`,background:on?T.gold+"15":T.card}}>
-                <div style={{fontSize:19}}>{d.icon}</div>
+                <div style={{fontSize:19}}><EmIcon e={d.icon}/></div>
                 <div style={{fontSize:11.5,fontWeight:on?800:600,color:on?T.gold:T.text,marginTop:3}}>{d.name}</div>
               </button>
             );
@@ -15247,7 +15274,7 @@ function ResearchLifecycleSystem({ T }) {
             <button onClick={()=>setOpenRole(openRole===i?-1:i)}
               style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"12px 14px",borderRadius:12,cursor:"pointer",fontFamily:"inherit",
                 border:`1.5px solid ${openRole===i?T.gold:T.border}`,background:openRole===i?T.gold+"0d":T.card}}>
-              <span style={{fontSize:21}}>{r.icon}</span>
+              <span style={{fontSize:21}}><EmIcon e={r.icon}/></span>
               <span style={{fontSize:14,fontWeight:800,color:T.text,flex:1,textAlign:"right"}}>{r.name}</span>
               <span style={{color:T.textS,fontSize:13}}>{openRole===i?"▲":"▼"}</span>
             </button>
@@ -15718,7 +15745,7 @@ h1{text-align:center;font-size:19px;color:#1F3864;margin:14px 0;text-decoration:
               <button key={f.key} onClick={()=>{setSel(f.key);setDoc("");}}
                 style={{padding:"12px 8px",borderRadius:12,cursor:"pointer",fontFamily:"inherit",textAlign:"center",
                   border:`1.5px solid ${on?T.gold:T.border}`,background:on?T.gold+"15":T.card}}>
-                <div style={{fontSize:22,marginBottom:5}}>{f.icon}</div>
+                <div style={{fontSize:22,marginBottom:5}}><EmIcon e={f.icon}/></div>
                 <div style={{fontSize:12,fontWeight:on?800:700,color:on?T.gold:T.text,lineHeight:1.6}}>{f.name}</div>
               </button>
             );
@@ -15728,7 +15755,7 @@ h1{text-align:center;font-size:19px;color:#1F3864;margin:14px 0;text-decoration:
 
       {cur && (
         <Card T={T} style={{marginTop:12}}>
-          <div style={{fontWeight:800,fontSize:14,color:T.gold,marginBottom:12}}>{cur.icon} {cur.name} — عبّئ الحقول الإلكترونية</div>
+          <div style={{fontWeight:800,fontSize:14,color:T.gold,marginBottom:12}}><EmIcon e={cur.icon}/> {cur.name} — عبّئ الحقول الإلكترونية</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(250px,1fr))",gap:10}}>
             {cur.fields.map(([id,label])=>{
               const [name, kind] = label.split(":");
@@ -15862,7 +15889,7 @@ function ToolCatalogCard({ T, t, gc, guide, onOpen, labels }) {
       onMouseEnter={e=>{e.currentTarget.style.borderColor=gc;e.currentTarget.style.boxShadow=T.shadowH;e.currentTarget.style.transform="translateY(-2px)";}}
       onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="none";}}>
       <div style={{padding:"14px 15px 10px",display:"flex",alignItems:"center",gap:11,width:"100%",boxSizing:"border-box"}}>
-        <div style={{width:42,height:42,borderRadius:11,background:gc+"1a",border:`1px solid ${gc}35`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{t.icon}</div>
+        <div style={{width:42,height:42,borderRadius:11,background:gc+"1a",border:`1px solid ${gc}35`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}><EmIcon e={t.icon}/></div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{color:T.text,fontWeight:800,fontSize:13.5,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
             {labels.name}
@@ -16405,7 +16432,7 @@ export default function MuhakkimV4() {
             <div key={g.id} style={{position:"relative",flexShrink:0}}>
               <button onClick={()=>setOpenDrop(openDrop===g.id?null:g.id)}
                 style={{display:"flex",alignItems:"center",gap:3,padding:"5px 7px",borderRadius:7,background:openDrop===g.id?(g.color||T.gold)+"18":"transparent",border:openDrop===g.id?`1px solid ${g.color||T.gold}44`:"1px solid transparent",color:openDrop===g.id?g.color||T.gold:T.textSec,fontWeight:600,fontSize:11,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",position:"relative",transition:"all .15s"}}>
-                <span style={{fontSize:14}}>{g.icon}</span>
+                <span style={{fontSize:14}}><EmIcon e={g.icon}/></span>
                 <span style={{maxWidth:62,overflow:"hidden",textOverflow:"ellipsis"}}>{LO(g)}</span>
                 {g.badge&&<span style={{background:T.emerald+"20",color:T.emerald,fontSize:8,padding:"1px 4px",borderRadius:4,fontWeight:700}}>●</span>}
                 <svg width="7" height="7" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 3l4 4 4-4"/></svg>
@@ -16413,7 +16440,7 @@ export default function MuhakkimV4() {
 
               {openDrop===g.id&&<div style={{position:"absolute",top:"calc(100% + 5px)",right:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:14,boxShadow:T.shadowH,minWidth:235,zIndex:300,padding:"5px"}}>
                 <div style={{padding:"5px 10px 7px",borderBottom:`1px solid ${T.border}`,marginBottom:3}}>
-                  <span style={{fontSize:11,fontWeight:700,color:g.color||T.gold}}>{g.icon} {LO(g)}</span>
+                  <span style={{fontSize:11,fontWeight:700,color:g.color||T.gold}}><EmIcon e={g.icon}/> {LO(g)}</span>
                   {g.badge&&<Tag ch={UI.newTag} color={T.emerald}/>}
                 </div>
                 {g.tools.map(t=>(
@@ -16421,7 +16448,7 @@ export default function MuhakkimV4() {
                     style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"7px 9px",border:"none",background:"transparent",borderRadius:9,cursor:"pointer",fontFamily:"inherit",textAlign:"right",transition:"background .1s"}}
                     onMouseEnter={e=>e.currentTarget.style.background=T.bgSec}
                     onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                    <span style={{fontSize:16,width:28,height:28,background:(g.color||T.gold)+"18",border:`1px solid ${g.color||T.gold}30`,borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{t.icon}</span>
+                    <span style={{fontSize:16,width:28,height:28,background:(g.color||T.gold)+"18",border:`1px solid ${g.color||T.gold}30`,borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><EmIcon e={t.icon}/></span>
                     <div style={{flex:1}}>
                       <div style={{fontSize:12,fontWeight:700,color:T.text,display:"flex",alignItems:"center",gap:5}}>
                         {LO(t)}
@@ -16444,7 +16471,7 @@ export default function MuhakkimV4() {
             {showSearch&&<div style={{position:"absolute",top:"calc(100%+5px)",left:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:12,boxShadow:T.shadowH,width:280,zIndex:300,padding:8}}>
               <input autoFocus value={search} onChange={e=>setSearch(e.target.value)} placeholder={UI.searchPh} style={{width:"100%",padding:"8px 11px",borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:12,fontFamily:"inherit",boxSizing:"border-box",outline:"none"}}/>
               {searchRes.map(({t,g},i)=><button key={i} onClick={()=>openTool(t.key)} style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"7px 8px",border:"none",background:"transparent",borderRadius:8,cursor:"pointer",fontFamily:"inherit",textAlign:"right",marginTop:3}} onMouseEnter={e=>e.currentTarget.style.background=T.bgSec} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                <span style={{fontSize:15}}>{t.icon}</span><div><div style={{fontSize:12,fontWeight:600,color:T.text}}>{LO(t)}</div><div style={{fontSize:10,color:T.textDim}}>{LO(g)}</div></div>
+                <span style={{fontSize:15}}><EmIcon e={t.icon}/></span><div><div style={{fontSize:12,fontWeight:600,color:T.text}}>{LO(t)}</div><div style={{fontSize:10,color:T.textDim}}>{LO(g)}</div></div>
               </button>)}
               {search&&searchRes.length===0&&<p style={{margin:"8px 4px",fontSize:12,color:T.textDim}}>{UI.noRes}</p>}
             </div>}
@@ -16459,7 +16486,7 @@ export default function MuhakkimV4() {
       {(curGroup||curTool)&&<div style={{borderTop:`1px solid ${T.border}`,padding:"5px 20px"}}>
         <div style={{maxWidth:1280,margin:"0 auto",display:"flex",alignItems:"center",gap:5,fontSize:11,color:T.textDim}}>
           <button onClick={goHome} style={{background:"none",border:"none",cursor:"pointer",color:T.gold,fontWeight:700,fontSize:11,fontFamily:"inherit"}}>{UI.home}</button>
-          {curGroup&&<><span>›</span><button onClick={()=>setActiveTool(null)} style={{background:"none",border:"none",cursor:"pointer",color:curGroup.color||T.gold,fontWeight:600,fontSize:11,fontFamily:"inherit"}}>{curGroup.icon} {LO(curGroup)}</button></>}
+          {curGroup&&<><span>›</span><button onClick={()=>setActiveTool(null)} style={{background:"none",border:"none",cursor:"pointer",color:curGroup.color||T.gold,fontWeight:600,fontSize:11,fontFamily:"inherit"}}><EmIcon e={curGroup.icon}/> {LO(curGroup)}</button></>}
           {curTool&&<><span>›</span><span style={{color:T.text,fontWeight:700}}>{LO(curTool)}</span></>}
         </div>
       </div>}
@@ -16484,7 +16511,7 @@ export default function MuhakkimV4() {
               style={{width:"100%",padding:"14px 18px",borderRadius:14,border:`2px solid ${search?T.gold:T.border}`,background:T.card,color:T.text,fontSize:14,fontFamily:"inherit",boxSizing:"border-box",outline:"none",boxShadow:T.shadow,textAlign:"center"}}/>
             {search&&searchRes.length>0&&<div style={{position:"absolute",top:"calc(100% + 6px)",left:0,right:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:14,boxShadow:T.shadowH,zIndex:300,padding:8,maxHeight:340,overflowY:"auto"}}>
               {searchRes.map(({t,g},i)=><button key={i} onClick={()=>openTool(t.key)} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"9px 11px",border:"none",background:"transparent",borderRadius:9,cursor:"pointer",fontFamily:"inherit",textAlign:"right",marginTop:2}} onMouseEnter={e=>e.currentTarget.style.background=T.bgSec} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                <span style={{fontSize:18}}>{t.icon}</span>
+                <span style={{fontSize:18}}><EmIcon e={t.icon}/></span>
                 <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:T.text}}>{LO(t)}</div><div style={{fontSize:10,color:T.textDim}}>{LO(g)}</div></div>
                 <span style={{fontSize:13,color:T.gold}}>←</span>
               </button>)}
@@ -16507,7 +16534,7 @@ export default function MuhakkimV4() {
               <div key={g.id} style={{background:T.card,border:`1.5px solid ${open?gc+"55":T.border}`,borderRadius:18,overflow:"hidden",transition:"border-color .2s",boxShadow:open?T.shadow:"none"}}>
                 <button onClick={()=>setHomeOpen(open?"__none__":g.id)}
                   style={{width:"100%",display:"flex",alignItems:"center",gap:14,padding:"16px 18px",cursor:"pointer",fontFamily:"inherit",background:open?gc+"0c":"transparent",border:"none",textAlign:"start",transition:"background .2s"}}>
-                  <div style={{width:48,height:48,borderRadius:14,flexShrink:0,background:`linear-gradient(135deg,${gc}28,${gc}10)`,border:`1.5px solid ${gc}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>{g.icon}</div>
+                  <div style={{width:48,height:48,borderRadius:14,flexShrink:0,background:`linear-gradient(135deg,${gc}28,${gc}10)`,border:`1.5px solid ${gc}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}><EmIcon e={g.icon}/></div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                       <span style={{color:T.text,fontWeight:800,fontSize:16}}>{LO(g)}</span>
@@ -16538,7 +16565,7 @@ export default function MuhakkimV4() {
       {/* GROUP VIEW */}
       {activeGroup&&!activeTool&&curGroup&&<div style={{padding:"22px 0 32px"}}>
         <div style={{display:"flex",alignItems:"center",gap:13,marginBottom:22}}>
-          <div style={{width:50,height:50,borderRadius:13,background:(curGroup.color||T.gold)+"1a",border:`1.5px solid ${curGroup.color||T.gold}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>{curGroup.icon}</div>
+          <div style={{width:50,height:50,borderRadius:13,background:(curGroup.color||T.gold)+"1a",border:`1.5px solid ${curGroup.color||T.gold}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}><EmIcon e={curGroup.icon}/></div>
           <div>
             <h2 style={{margin:"0 0 4px",fontSize:20,fontWeight:900,color:T.text}}>{LO(curGroup)}</h2>
             <p style={{margin:0,fontSize:11,color:T.textDim}}>{UI.toolsCount(curGroup.tools.length)}</p>
@@ -16571,7 +16598,7 @@ export default function MuhakkimV4() {
       {/* TOOL VIEW */}
       {activeTool&&curTool&&<div style={{padding:"20px 0 40px"}}>
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:20}}>
-          <div style={{width:42,height:42,borderRadius:11,background:(curGroup?.color||T.gold)+"1a",border:`1px solid ${curGroup?.color||T.gold}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>{curTool.icon}</div>
+          <div style={{width:42,height:42,borderRadius:11,background:(curGroup?.color||T.gold)+"1a",border:`1px solid ${curGroup?.color||T.gold}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}><EmIcon e={curTool.icon}/></div>
           <div>
             <h2 style={{margin:"0 0 3px",fontSize:19,fontWeight:900,color:T.text}}>{curTool.ar}</h2>
             <p style={{margin:0,fontSize:11,color:T.textDim}}>{curGroup?.ar} · {curTool.en}</p>
