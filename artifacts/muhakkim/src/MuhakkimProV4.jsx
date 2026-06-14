@@ -277,7 +277,7 @@ function IntegrityEngineSystem({ T }) {
   };
   const dl=(c,m,e)=>{const b=new Blob(["\uFEFF"+c],{type:m+";charset=utf-8"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=`${mod.ar}_${title||""}.${e}`;a.click();URL.revokeObjectURL(u);};
 
-  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:18}}>
         <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"6px 16px",background:T.rose+"15",border:`1px solid ${T.rose}44`,borderRadius:24,marginBottom:10}}>
@@ -482,7 +482,7 @@ function AssessmentCenterSystem({ T }) {
   const dl=(c,m,e)=>{const b=new Blob(["\uFEFF"+c],{type:m+";charset=utf-8"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=`${mod.ar}_${title||""}.${e}`;a.click();URL.revokeObjectURL(u);};
   const wordHTML=()=>`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>${mod.ar}</title><style>body{font-family:Arial;padding:40px;line-height:1.9;white-space:pre-wrap}h1{color:${mod.color}}</style></head><body><h1>${mod.icon} ${mod.ar} — ${title}</h1>${result.replace(/</g,"&lt;")}</body></html>`;
 
-  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:18}}>
         <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"6px 16px",background:T.blue+"15",border:`1px solid ${T.blue}44`,borderRadius:24,marginBottom:10}}>
@@ -964,7 +964,7 @@ function DataLabSystem({ T }) {
     finally { setLoading(false); setLoadMsg(""); }
   };
 
-  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
 
     <div style={{maxWidth:1100,margin:"0 auto"}}>
       {/* Header */}
@@ -1588,7 +1588,7 @@ ${Object.entries(byPage).sort(([a],[b])=>+a-+b).map(([pg,os])=>`<h2>📄 صفح�
   };
 
   // ════════════════════════════════════════════════════════
-  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
 
       {/* Header */}
@@ -1978,7 +1978,7 @@ function QualityTrackingSystem({ T }) {
   const STATUS_ICON = { done:"✅", na:"➖", none:"⬜" };
   const STATUS_COLOR = (s)=> s==="done"?T.emerald:s==="na"?T.textD:T.border;
 
-  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
 
       {/* Header */}
@@ -2383,7 +2383,7 @@ function FormGeneratorSystem({ T }) {
   const forms = FORMS.filter(f=>f.cat===cat);
   const curCat = CATEGORIES.find(c=>c.id===cat);
 
-  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
 
       {/* Header */}
@@ -2602,7 +2602,7 @@ function DeptFilesSystem({ T }) {
     a.href=url;a.download=`ملف_الجودة_${depts[activeDept].name}.csv`;a.click();URL.revokeObjectURL(url);
   };
 
-  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1120,margin:"0 auto"}}>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={e=>{if(uploadTarget&&e.target.files.length){addFiles(uploadTarget.di,uploadTarget.fid,e.target.files);setUploadTarget(null);}}}/>
 
@@ -2861,7 +2861,7 @@ function CommitteesSystem({ T }) {
     a.href=url;a.download=`${selected}_${task.ar}.txt`;a.click();URL.revokeObjectURL(url);
   };
 
-  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1120,margin:"0 auto"}}>
 
       {/* Header */}
@@ -3021,7 +3021,7 @@ function StudentAdvisingSystem({ T }) {
   };
   const risk = riskLevel();
 
-  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
 
       <div style={{textAlign:"center",marginBottom:20}}>
@@ -3318,7 +3318,7 @@ function ThesisDefenseSystem({ T }) {
   const pageCnt = { "حرجة":pageObs.filter(o=>o.severity==="حرجة").length, "مهمة":pageObs.filter(o=>o.severity==="مهمة").length, "طفيفة":pageObs.filter(o=>o.severity==="طفيفة").length };
   const byPg = {}; pageShown.forEach(o=>{ const p=o.page||1; (byPg[p]=byPg[p]||[]).push(o); });
 
-  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
 
       <div style={{textAlign:"center",marginBottom:20}}>
@@ -3650,7 +3650,7 @@ function UnifiedReviewCenter({ T }) {
   const byPg={}; pageObs.forEach(o=>{const p=o.page||1;(byPg[p]=byPg[p]||[]).push(o);});
   const doneCount = Object.keys(results).length + (pageObs.length>0?1:0);
 
-  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1100,margin:"0 auto"}}>
 
       <div style={{textAlign:"center",marginBottom:20}}>
@@ -4207,7 +4207,7 @@ ${cloAnalysis?`تحقق المخرجات: ${cloAnalysis.map(c=>`${c.clo}=${c.ach
 
   const TABS=[["setup","⚙️ الإعداد"],["scan","📷 التصحيح بالتصوير"],["results","📋 النتائج"],["analysis","📊 تحليل البنود"],["report","📄 التقارير"]];
 
-  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1120,margin:"0 auto"}}>
 
       <div style={{textAlign:"center",marginBottom:18}}>
@@ -4800,7 +4800,7 @@ ol{padding-right:20px}
   };
   const dl=(c,m,e)=>{const b=new Blob(["\uFEFF"+c],{type:m+";charset=utf-8"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=`تقرير_المراجعة_${title||docType}.${e}`;a.click();URL.revokeObjectURL(u);};
 
-  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
 
       <div style={{textAlign:"center",marginBottom:18}}>
@@ -5116,7 +5116,7 @@ ${finalReport?`<h2>تقرير المحكم التفصيلي</h2><div class="box"
 
   const TABS=[["data","📋 البيانات"],["input","📥 الرسالة"],["scoring","📊 التقييم بالدرجات"],["report","📄 التقرير النهائي"]];
 
-  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:18}}>
         <h1 style={{margin:"0 0 6px",fontSize:24,fontWeight:900,color:T.gold}}>⚖️ نظام التحكيم والمناقشة المتكامل</h1>
@@ -5361,7 +5361,7 @@ function FourPerspectiveSystem({ T }) {
   };
   const dl=(c,m,e)=>{const b=new Blob(["\uFEFF"+c],{type:m+";charset=utf-8"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=`المنظورات_الأربعة_${title||degree}.${e}`;a.click();URL.revokeObjectURL(u);};
 
-  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:18}}>
         <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"6px 16px",background:T.violet+"15",border:`1px solid ${T.violet}44`,borderRadius:24,marginBottom:10}}>
@@ -5577,7 +5577,7 @@ ${crit}
   };
   const dl=(c,m,e)=>{const b=new Blob(["\uFEFF"+c],{type:m+";charset=utf-8"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=`مراجعة_${docType.ar}_${title||""}.${e}`;a.click();URL.revokeObjectURL(u);};
 
-  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:18}}>
         <h1 style={{margin:"0 0 6px",fontSize:24,fontWeight:900,color:T.gold}}>📚 المراجعة الشاملة لأنواع الأعمال</h1>
@@ -5801,7 +5801,7 @@ ${idx?`<h2>المؤشرات</h2><div>${idx}</div>`:""}
   const grouped = {};
   QA_MODULES.forEach(m=>{ (grouped[m.grp]=grouped[m.grp]||[]).push(m); });
 
-  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:18}}>
         <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"6px 16px",background:T.gold+"15",border:`1px solid ${T.gold}44`,borderRadius:24,marginBottom:10}}>
@@ -6054,7 +6054,7 @@ function DeepDisciplineSystem({ T }) {
 
   const shown = filter==="all"?pages:pages.map(p=>({...p,observations:p.observations.filter(o=>o.severity===filter)}));
 
-  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:18}}>
         <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"6px 16px",background:T.violet+"15",border:`1px solid ${T.violet}44`,borderRadius:24,marginBottom:10}}>
@@ -16305,6 +16305,24 @@ export default function MuhakkimV4() {
     setActiveGroup(null);setActiveTool(null);window.scrollTo({top:0});
   };
 
+  // Device/browser back button → navigate within the app instead of leaving it
+  const navStateRef = useRef({});
+  navStateRef.current = { activeGroup, activeTool };
+  const skipPushRef = useRef(false);
+  useEffect(()=>{
+    const onPop = ()=>{
+      const { activeGroup:ag, activeTool:at } = navStateRef.current;
+      if(at){ const g=findGroup(at); if(g&&g.tools.length>1){ skipPushRef.current=true; setActiveTool(null); setOpenDrop(null); window.scrollTo({top:0}); return; } }
+      if(ag||at){ skipPushRef.current=true; setActiveGroup(null); setActiveTool(null); setOpenDrop(null); window.scrollTo({top:0}); return; }
+    };
+    window.addEventListener("popstate", onPop);
+    return ()=>window.removeEventListener("popstate", onPop);
+  }, []);
+  useEffect(()=>{
+    if(skipPushRef.current){ skipPushRef.current=false; return; }
+    if(activeGroup||activeTool){ window.history.pushState({muh:1}, ""); }
+  }, [activeGroup, activeTool]);
+
   const curGroup = activeGroup?GROUPS.find(g=>g.id===activeGroup):null;
   const curTool  = activeTool==="global_batch"?{key:"global_batch",icon:"🌐",ar:"التقرير الشامل لكل الأدوات",en:"Global Report",badge:"شامل"}:(activeTool?findGroup(activeTool)?.tools.find(t=>t.key===activeTool):null);
 
@@ -16414,7 +16432,7 @@ export default function MuhakkimV4() {
   // Badge color
   const badgeColor = b => b==="NCAAA"?T.orange:b==="Pro"?T.violet:b==="جديد"?T.emerald:T.gold;
 
-  return <div dir={en?"ltr":"rtl"} lang={lang} style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'Segoe UI','Tajawal',sans-serif",transition:"background .3s,color .3s"}}>
+  return <div dir={en?"ltr":"rtl"} lang={lang} style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",transition:"background .3s,color .3s"}}>
 
     {/* NAVBAR */}
     <header ref={navRef} style={{position:"sticky",top:0,zIndex:200,background:T.nav,backdropFilter:"blur(20px)",borderBottom:`1px solid ${T.border}`,boxShadow:T.shadow}}>
@@ -16433,7 +16451,7 @@ export default function MuhakkimV4() {
               <button onClick={()=>setOpenDrop(openDrop===g.id?null:g.id)}
                 style={{display:"flex",alignItems:"center",gap:3,padding:"5px 7px",borderRadius:7,background:openDrop===g.id?(g.color||T.gold)+"18":"transparent",border:openDrop===g.id?`1px solid ${g.color||T.gold}44`:"1px solid transparent",color:openDrop===g.id?g.color||T.gold:T.textSec,fontWeight:600,fontSize:11,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",position:"relative",transition:"all .15s"}}>
                 <span style={{fontSize:14}}><EmIcon e={g.icon}/></span>
-                <span style={{maxWidth:62,overflow:"hidden",textOverflow:"ellipsis"}}>{LO(g)}</span>
+                <span style={{maxWidth:140,overflow:"hidden",textOverflow:"ellipsis"}}>{LO(g)}</span>
                 {g.badge&&<span style={{background:T.emerald+"20",color:T.emerald,fontSize:8,padding:"1px 4px",borderRadius:4,fontWeight:700}}>●</span>}
                 <svg width="7" height="7" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 3l4 4 4-4"/></svg>
               </button>
