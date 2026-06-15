@@ -14015,7 +14015,7 @@ function SmartAnalysisCenterSystem({ T }) {
       const f = fFiles[0];
       if(/\.xlsx?$/i.test(f.name)){
         try {
-          const XLSX = await import("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.mjs");
+          const XLSX = await import("xlsx");
           const buf = await f.arrayBuffer();
           const wb = XLSX.read(buf); 
           t = XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]);
@@ -15617,7 +15617,7 @@ function PublishingStudioSystem({ T }) {
 async function extractTabularFile(f){
   const name = (f.name||"").toLowerCase();
   if(/\.xlsx?$/.test(name)){
-    const XLSX = await import("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.mjs");
+    const XLSX = await import("xlsx");
     const wb = XLSX.read(await f.arrayBuffer());
     return XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]);
   }
@@ -15822,8 +15822,8 @@ async function readPdfText(file, cap = 16000) {
     return "[الملف كبير جداً (" + Math.round(file.size/1048576) + "MB) — قصّ الصفحات المطلوبة أو صدّر CSV/Excel]";
   const buf = await file.arrayBuffer();
   try {
-    const pdfjs = await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs");
-    pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs";
+    const pdfjs = await import("pdfjs-dist/build/pdf.min.mjs");
+    pdfjs.GlobalWorkerOptions.workerSrc = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
     const doc = await pdfjs.getDocument({ data: buf }).promise;
     const maxPages = Math.min(doc.numPages, 80);
     let out = "";
