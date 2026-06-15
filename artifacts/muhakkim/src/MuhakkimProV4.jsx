@@ -814,6 +814,7 @@ const GROUPS = [
     {key:"committee_hub", icon:"👥", ar:"اللجان والمناقشة", en:"Committees & Defense"},
     {key:"assess_hub", icon:"⚖️", ar:"التقييم والنزاهة", en:"Assessment & Integrity"},
     {key:"verify_lab", icon:"🛡️", ar:"مختبر التحقق الشامل", en:"Verification Lab", badge:"عالمي"},
+    {key:"free_verify", icon:"🔖", ar:"التحقق المجاني والتكلفة", en:"Free Verify & Cost", badge:"مجاني"},
   ]},
   { id:"writing", icon:"✍️", ar:"الكتابة والتحليل", color:"#1d4ed8", desc:"تحرير النصوص الأكاديمية وصياغتها وتدقيقها، مع كشف الانتحال وبصمة الذكاء الاصطناعي.", tools:[
     {key:"research_os", icon:"🔬", ar:"نظام البحث العلمي المتكامل", en:"Research OS (Q1 Grade)", badge:"عالمي"},
@@ -10937,6 +10938,12 @@ const TOOL_GUIDE = {
     out:"ملاحظات لكل صفحة (الموضع بالاقتباس + المحور + الخطورة 🔴🟡🟢 + الإجراء) + تقرير موحّد بجدول الملاحظات وأخطر النتائج والتوصية.",
     diff:"الأشمل للتحقق قبل التسليم أو النشر. ملاحظة صدق: المطابقة مع قواعد ملايين المنشورات (Turnitin) تتطلب خادماً — هذه فحوص تحليلية استرشادية عميقة."
   },
+  free_verify: {
+    what:"فحوص مجانية حقيقية بلا ذكاء اصطناعي: (1) التحقق من المراجع عبر قاعدة Crossref العالمية — يستخرج معرّفات DOI ويتأكد من وجودها فعلياً ليكشف المراجع المختلقة؛ (2) مطابقة محلية لحساب نسبة التشابه بين بحثك ونص مصدر مشتبه؛ (3) تقدير تكلفة الفحص الذكي قبل تنفيذه.",
+    need:"ارفع الملف أو الصق نص البحث مع قائمة المراجع. للمطابقة المحلية الصق النص المصدر للمقارنة. لتقدير التكلفة اختر مستوى العمق وعدد الفحوص.",
+    out:"قائمة بكل مرجع (موثّق ✓ بعنوانه وسنته ومجلته، أو مشبوه ✗) مع عدّاد إجمالي/موثّق/مشبوه + نسبة التشابه المحلي ومقاطعه + تقدير التكلفة بالدولار والريال.",
+    diff:"الوحيد الذي يتحقق من وجود المراجع فعلياً في قاعدة بيانات عالمية (مجاناً وبلا تكلفة API)، بينما باقي أدوات التحقق تحليلية بالذكاء الاصطناعي. مثالي لكشف المراجع الوهمية وتقدير الكلفة قبل البدء."
+  },
   rev_roles: {
     what:"مركز موحّد للمراجعة البشرية بأربعة أدوار: المشرف (بنّاء)، المناقش الداخلي (منهجي)، الخارجي (صارم)، والذاتية (زميل صريح) — مراجعة صفحة بصفحة وفقرة بفقرة.",
     need:"اختر الدور من البطاقات ثم ارفع الملف أو الصق النص. للرسائل الطويلة الصق النص مباشرة.",
@@ -16481,6 +16488,138 @@ const RESEARCH_SERVICES = [
 
 function ResearchOSSystem({ T }){ return <ResearchRunner T={T} services={RESEARCH_SERVICES} sysIcon="🔬" sysTitle="نظام البحث العلمي المتكامل" sysSub="دورة البحث كاملة بمعايير الجامعات العالمية ومجلات Q1: الفكرة · الأدبيات · المنهجية · التحكيم · النشر · التحرير · الاستشارة · المنحة"/>; }
 
+// ═══ التحقق المجاني عبر Crossref · مطابقة محلية · تقدير التكلفة ═══
+async function crossrefVerifyDOI(doi){
+  try{
+    const res = await fetch("https://api.crossref.org/works/"+encodeURIComponent(doi));
+    if(!res.ok) return {doi, valid:false, reason:"غير موجود في Crossref ("+res.status+")"};
+    const w = (await res.json()).message || {};
+    const dp = (w.published&&w.published["date-parts"]&&w.published["date-parts"][0]) || (w["published-print"]&&w["published-print"]["date-parts"]&&w["published-print"]["date-parts"][0]) || (w.issued&&w.issued["date-parts"]&&w.issued["date-parts"][0]);
+    return {doi, valid:true, title:(w.title&&w.title[0])||"—", year:(dp&&dp[0])||null, authors:(w.author||[]).map(a=>a.family||"").filter(Boolean).slice(0,3).join("، "), journal:(w["container-title"]&&w["container-title"][0])||""};
+  }catch(e){ return {doi, valid:false, reason:"تعذّر الاتصال بـ Crossref"}; }
+}
+function extractDOIs(text){
+  const m = ((text||"").match(/10\.\d{4,9}\/[-._;()/:A-Za-z0-9]+/g)||[]).map(s=>s.replace(/[.,;)\]]+$/,""));
+  return [...new Set(m)];
+}
+function ngramSet(text,n=5){
+  const w=(text||"").toLowerCase().replace(/[^\u0600-\u06FF\w\s]/g," ").split(/\s+/).filter(Boolean);
+  const g=new Set(); for(let i=0;i<=w.length-n;i++) g.add(w.slice(i,i+n).join(" ")); return g;
+}
+function localSimilarity(a,b){
+  const A=ngramSet(a),B=ngramSet(b); if(!A.size||!B.size) return {score:0,shared:[]};
+  let inter=0; const shared=[]; for(const x of A){ if(B.has(x)){ inter++; if(shared.length<8) shared.push(x); } }
+  return {score:inter/Math.min(A.size,B.size), shared};
+}
+const FV_TIERS = {
+  fast: {label:"سريع (Haiku)",   inUSD:0.80, outUSD:4.00},
+  std:  {label:"قياسي (Sonnet)", inUSD:3.00, outUSD:15.00},
+  deep: {label:"متعمّق (Opus)",  inUSD:15.00, outUSD:75.00},
+};
+function FreeVerifyCostSystem({ T }){
+  const [text,setText]=useState(""); const [files,setFiles]=useState([]); const [fileText,setFileText]=useState("");
+  const [refRes,setRefRes]=useState(null); const [refBusy,setRefBusy]=useState(false);
+  const [src,setSrc]=useState(""); const [simRes,setSimRes]=useState(null);
+  const [tier,setTier]=useState("std"); const [nSvc,setNSvc]=useState(6);
+  const ts=T.textS||T.textSec||"#5b6b85"; const green=T.emerald||T.green||"#1f8a5b"; const amber=T.amber||T.orange||"#c47a0e";
+  const soft=T.bgSec||T.bgS||T.inputBg||"#f0f3fa";
+  const inp={padding:"12px 15px",borderRadius:11,border:`1.5px solid ${T.border}`,background:T.inputBg||soft,color:T.text,fontSize:13.5,fontFamily:"inherit",boxSizing:"border-box",width:"100%",outline:"none"};
+
+  useEffect(()=>{ let ok=true; (async()=>{
+    if(!files.length){ if(ok) setFileText(""); return; }
+    try{ const fc=await Promise.all(files.map(readFile)); if(ok) setFileText(fc.join("\n")); }
+    catch(e){ if(ok) setFileText(""); }
+  })(); return ()=>{ ok=false; }; },[files]);
+  const fullText=(text+"\n"+fileText).trim();
+
+  async function runRefs(){
+    setRefBusy(true); setRefRes(null);
+    const dois=extractDOIs(fullText);
+    if(!dois.length){ setRefRes({results:[],valid:0,invalid:0,capped:false,total:0}); setRefBusy(false); return; }
+    const results=[];
+    for(const d of dois.slice(0,40)){ results.push(await crossrefVerifyDOI(d)); await new Promise(r=>setTimeout(r,150)); }
+    const valid=results.filter(r=>r.valid).length;
+    setRefRes({results,valid,invalid:results.length-valid,capped:dois.length>40,total:dois.length}); setRefBusy(false);
+  }
+  function runSim(){ setSimRes(localSimilarity(fullText,src)); }
+
+  const chars=fullText.length; const inTok=Math.ceil(chars/3.3)||0; const outTok=1500;
+  const tr=FV_TIERS[tier];
+  const usd = nSvc*((inTok/1e6)*tr.inUSD + (outTok/1e6)*tr.outUSD);
+  const sar = usd*3.75;
+  const simColor = s => s>0.3?T.rose : s>0.12?amber : green;
+  const refReport = refRes && refRes.results.length ? "التحقق من المراجع عبر Crossref\nإجمالي DOI: "+refRes.results.length+" — موثّق: "+refRes.valid+" — مشبوه: "+refRes.invalid+"\n\n"+refRes.results.map(r=>r.valid?"✓ "+(r.title||r.doi)+" ("+(r.year||"?")+(r.journal?" — "+r.journal:"")+") ["+r.doi+"]":"✗ "+r.doi+" — "+r.reason).join("\n") : "";
+
+  return <div style={{maxWidth:900,margin:"0 auto"}}>
+    <Card T={T}>
+      <div style={{display:"flex",alignItems:"center",gap:10}}>
+        <span style={{fontSize:27}}>🔖</span>
+        <div><div style={{fontWeight:800,fontSize:17,color:T.text}}>التحقق المجاني والتكلفة</div>
+        <div style={{fontSize:12,color:ts}}>تحقق حقيقي من المراجع عبر Crossref · مطابقة محلية · تقدير تكلفة الفحص الذكي — بلا تكلفة API</div></div>
+      </div>
+    </Card>
+
+    <Card T={T} style={{marginTop:14}}>
+      <div style={{fontWeight:800,fontSize:14,color:T.text,marginBottom:10}}>① مصدر البحث</div>
+      <div style={{marginBottom:12}}><FileZone files={files} setFiles={setFiles} T={T}/></div>
+      <textarea value={text} onChange={e=>setText(e.target.value)} rows={6} placeholder="الصق نص البحث الكامل مع قائمة المراجع…" style={{...inp,resize:"vertical",lineHeight:1.8}}/>
+    </Card>
+
+    <Card T={T} style={{marginTop:14}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8,marginBottom:8}}>
+        <div style={{fontWeight:800,fontSize:14,color:T.text,display:"flex",alignItems:"center",gap:8}}>② التحقق من المراجع <Tag ch="Crossref · مجاني" color={green}/></div>
+        <Btn ch={refBusy?<><Spin/> جارٍ التحقق…</>:<>🔎 تحقّق من المراجع</>} onClick={runRefs} disabled={refBusy} v="gold" T={T}/>
+      </div>
+      <p style={{margin:"0 0 4px",fontSize:11.5,color:ts,lineHeight:1.7}}>يستخرج معرّفات DOI من النص ويتحقق من وجودها فعلياً في قاعدة Crossref — يكشف المراجع المختلقة أو الوهمية.</p>
+      {refRes && (refRes.results.length===0
+        ? <div style={{fontSize:12.5,color:amber,marginTop:8}}>لم يُعثر على معرّفات DOI في النص. أضف قائمة المراجع المتضمّنة لمعرّفات DOI.</div>
+        : <>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:10,margin:"12px 0"}}>
+            {[["الإجمالي",refRes.results.length,ts],["موثّق",refRes.valid,green],["مشبوه",refRes.invalid,T.rose]].map((m,i)=>
+              <div key={i} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:12,textAlign:"center",boxShadow:T.shadow}}><div style={{fontSize:20,fontWeight:900,color:m[2]}}>{m[1]}</div><div style={{fontSize:10,color:ts,marginTop:3}}>{m[0]}</div></div>)}
+          </div>
+          {refRes.capped && <div style={{fontSize:11,color:amber,margin:"0 0 8px"}}>تم التحقق من أول 40 معرّفاً من أصل {refRes.total} لتفادي الضغط على الخدمة المجانية.</div>}
+          {refRes.results.map((r,i)=><div key={i} style={{padding:"9px 12px",background:soft,borderRadius:9,marginBottom:6,fontSize:12.5}}>
+            {r.valid
+              ? <div><span style={{color:green,fontWeight:800}}>✓ </span><span style={{color:T.text,fontWeight:700}}>{r.title}</span><div style={{fontSize:11,color:ts,marginTop:2}}>{r.authors}{r.authors?" · ":""}{r.year||""}{r.journal?" · "+r.journal:""} · {r.doi}</div></div>
+              : <div><span style={{color:T.rose,fontWeight:800}}>✗ </span><span style={{color:T.text}}>{r.doi}</span><span style={{fontSize:11,color:ts}}> — {r.reason}</span></div>}
+          </div>)}
+          <div style={{marginTop:10,display:"flex",gap:8,flexWrap:"wrap"}}><ReportBtn T={T} title="التحقق من المراجع (Crossref)" body={refReport} opts={{icon:"🔖",subtitle:"التحقق المجاني والتكلفة",color:green}}/><Btn ch="📋 نسخ" v="ghost" T={T} onClick={()=>navigator.clipboard&&navigator.clipboard.writeText(refReport)}/></div>
+        </>)}
+    </Card>
+
+    <Card T={T} style={{marginTop:14}}>
+      <div style={{fontWeight:800,fontSize:14,color:T.text,marginBottom:8,display:"flex",alignItems:"center",gap:8}}>③ المطابقة المحلية <Tag ch="مجاني" color={green}/></div>
+      <p style={{margin:"0 0 8px",fontSize:11.5,color:ts,lineHeight:1.7}}>قارن نص البحث أعلاه بنص مصدر مشتبه (الصقه هنا) لحساب نسبة التشابه محلياً دون أي تكلفة.</p>
+      <textarea value={src} onChange={e=>setSrc(e.target.value)} rows={4} placeholder="الصق النص المصدر المشتبه للمقارنة…" style={{...inp,resize:"vertical",lineHeight:1.8,marginBottom:10}}/>
+      <Btn ch={<>🧮 احسب التشابه</>} onClick={runSim} disabled={!fullText.trim()||!src.trim()} v="gold" T={T}/>
+      {simRes && <div style={{marginTop:12}}>
+        <div style={{textAlign:"center",padding:16,borderRadius:14,border:`2px solid ${simColor(simRes.score)}`,background:soft}}>
+          <div style={{fontSize:32,fontWeight:900,color:simColor(simRes.score)}}>{(simRes.score*100).toFixed(1)}%</div>
+          <div style={{fontSize:11,color:ts}}>أعلى تشابه محلي (مقاطع متطابقة من 5 كلمات)</div>
+        </div>
+        {simRes.shared.length>0 && <div style={{marginTop:10}}>{simRes.shared.map((s,i)=><div key={i} style={{padding:"6px 10px",background:T.card,border:`1px solid ${T.border}`,borderRadius:8,marginBottom:5,fontSize:12,color:T.text}}>… {s} …</div>)}</div>}
+      </div>}
+    </Card>
+
+    <Card T={T} style={{marginTop:14}}>
+      <div style={{fontWeight:800,fontSize:14,color:T.text,marginBottom:8}}>④ تقدير تكلفة الفحص الذكي</div>
+      <p style={{margin:"0 0 10px",fontSize:11.5,color:ts,lineHeight:1.7}}>تقدير تقريبي لتكلفة تشغيل الفحوص الذكية على هذا البحث قبل تنفيذها، حسب حجم النص ومستوى العمق وعدد الفحوص.</p>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+        <div><label style={{fontSize:11,color:ts,display:"block",marginBottom:5}}>مستوى العمق</label>
+          <select value={tier} onChange={e=>setTier(e.target.value)} style={inp}>{Object.entries(FV_TIERS).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}</select></div>
+        <div><label style={{fontSize:11,color:ts,display:"block",marginBottom:5}}>عدد الفحوص</label>
+          <input type="number" min={1} max={20} value={nSvc} onChange={e=>setNSvc(Math.max(1,Math.min(20,+e.target.value||1)))} style={inp}/></div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10}}>
+        {[["حجم النص",chars.toLocaleString("en")+" حرف",ts],["الرموز التقديرية","~"+inTok.toLocaleString("en"),T.blue||"#2563eb"],["التكلفة (دولار)","$"+usd.toFixed(4),green],["التكلفة (ريال)","~"+sar.toFixed(2)+" ﷼",amber]].map((m,i)=>
+          <div key={i} style={{background:soft,borderRadius:12,padding:13,textAlign:"center"}}><div style={{fontSize:16,fontWeight:900,color:m[2]}}>{m[1]}</div><div style={{fontSize:10,color:ts,marginTop:3}}>{m[0]}</div></div>)}
+      </div>
+      <p style={{margin:"10px 0 0",fontSize:10.5,color:ts}}>* تقدير استرشادي بأسعار تقريبية؛ قد تختلف التكلفة الفعلية حسب طول المخرجات والنموذج المستخدم.</p>
+    </Card>
+  </div>;
+}
+
 // ── MAIN APP ──────────────────────────────────────────────────
 export default function MuhakkimV4() {
   const [T, dark, toggleTheme] = useTheme();
@@ -16612,6 +16751,7 @@ export default function MuhakkimV4() {
     if(key==="smart_center") return <SmartAnalysisCenterSystem T={T}/>;
     if(key==="ejournal_studio") return <EJournalStudioSystem T={T}/>;
     if(key==="verify_lab") return <VerificationLabSystem T={T}/>;
+    if(key==="free_verify") return <FreeVerifyCostSystem T={T}/>;
     if(key==="rev_roles") return <ToolHub T={T} hubKey="rev_roles"/>;
     if(key==="review_center") return <ToolHub T={T} hubKey="review_center"/>;
     if(key==="committee_hub") return <ToolHub T={T} hubKey="committee_hub"/>;
