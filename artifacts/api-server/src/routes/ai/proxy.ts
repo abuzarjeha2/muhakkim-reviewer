@@ -41,6 +41,15 @@ function originGuard(req: Request, res: Response, next: NextFunction): void {
     res.status(403).json({ error: "Forbidden origin" });
     return;
   }
+  // Same-origin requests are always legitimate: the call comes from our own
+  // served frontend. This covers custom/production domains automatically even
+  // when they are not present in REPLIT_DOMAINS, while still blocking other
+  // websites from abusing the paid AI proxy. req.hostname honors the
+  // X-Forwarded-Host set by the Replit proxy (trust proxy is enabled).
+  if (host === req.hostname) {
+    next();
+    return;
+  }
   if (ORIGIN_HOSTS.has(host)) {
     next();
     return;

@@ -16,10 +16,18 @@ defenses.
 
 **How to apply:**
 - Allowed origins are built at module load from `REPLIT_DOMAINS` (comma-separated) +
-  `REPLIT_DEV_DOMAIN` + `localhost`. In production Replit injects the deployment's
-  domains (including custom domains like muhakkim.com) into `REPLIT_DOMAINS`, so the
-  allowlist is correct there automatically. Requests with no Origin header are allowed
+  `REPLIT_DEV_DOMAIN` + `localhost`. Requests with no Origin header are allowed
   (same-origin / non-browser); requests with a foreign Origin get 403.
+- CRITICAL: do NOT rely on `REPLIT_DOMAINS` containing the custom production domain.
+  In practice the env baked into the deployment can omit a custom domain (e.g.
+  muhakkim.com), so EVERY browser call from the live site sends `Origin: https://muhakkim.com`,
+  fails the allowlist, returns 403, and ALL AI tools silently fail in production while
+  dev works fine. This is the classic "all tools broken in production only" symptom.
+- FIX (in place): the guard also accepts **same-origin** requests — `new URL(origin).hostname === req.hostname`.
+  Since the call comes from our own served frontend, same-origin is always legitimate and
+  covers any custom/production domain automatically, while foreign Origins still get 403.
+  Relies on `app.set("trust proxy", true)` so `req.hostname` reflects the public host via
+  X-Forwarded-Host. Verified: dev origin=200, custom same-origin=200, foreign origin=403, no-origin=200.
 - Per-IP rate limit requires `app.set("trust proxy", true)` in `app.ts` — without it,
   all traffic behind Replit's reverse proxy shares one IP bucket and throttles everyone
   together.
