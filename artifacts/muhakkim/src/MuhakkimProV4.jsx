@@ -576,24 +576,31 @@ function FileZone({ files, setFiles, T }) {
   const TT = T || {};
   const em = TT.emerald||"#047857", bd = TT.border||"#dde4f0", bs = TT.bgSec||TT.bgS||"#eef2fb", ts = TT.textS||TT.textSec||"#4a5568", td = TT.textDim||"#94a3b8";
   const [drag, setDrag] = useState(false);
-  // نمط label الأصلي (input شفاف يغطي المساحة) — الأعلى توافقاً على الجوال وWebView أندرويد
+  const inpRef = useRef(null);
+  // النمط المُعتمد في بقية التطبيق: div قابل للنقر يستدعي input مخفي (display:none) عبر ref.click().
+  // أكثر موثوقية على Chrome/أندرويد من الإدخال الشفّاف المتراكب. تصفير القيمة عند الضغط (لا داخل
+  // onChange) حتى لا يُسقط الملف المختار، ويسمح بإعادة اختيار الملف نفسه.
   const take = list => { const arr = Array.from(list||[]).slice(0,3); if(arr.length) setFiles(arr); };
   const fmt = f => { const kb=f.size/1024; return kb>1024?(kb/1024).toFixed(1)+"MB":Math.round(kb)+"KB"; };
+  const openPicker = () => { const el = inpRef.current; if(el){ try{el.value="";}catch(x){} el.click(); } };
   return (
     <div>
-      <label
+      <div
+        onClick={openPicker}
+        onKeyDown={e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openPicker(); } }}
+        role="button" tabIndex={0}
         onDragOver={e=>{e.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)}
         onDrop={e=>{e.preventDefault();setDrag(false);take(e.dataTransfer.files);}}
         style={{position:"relative",display:"block",width:"100%",boxSizing:"border-box",
           border:`2px dashed ${files.length?em:(drag?(TT.gold||"#B45309"):bd)}`,borderRadius:12,padding:"16px 14px",
           textAlign:"center",cursor:"pointer",background:files.length?em+"0c":(drag?(TT.gold||"#B45309")+"0c":bs),transition:"all .15s"}}>
-        <input type="file" multiple
-          onChange={e=>{ take(e.target.files); try{e.target.value="";}catch(x){} }}
-          style={{position:"absolute",inset:0,opacity:0,width:"100%",height:"100%",cursor:"pointer"}}/>
+        <input ref={inpRef} type="file" multiple
+          onChange={e=>{ take(e.target.files); }}
+          style={{display:"none"}}/>
         {files.length
           ? <div style={{fontSize:12.5,color:em,fontWeight:700,lineHeight:1.7}}>✅ {files.map(f=>f.name+" ("+fmt(f)+")").join("، ")}<div style={{fontSize:10.5,color:ts,fontWeight:500,marginTop:3}}>اضغط للتغيير أو أضف المزيد</div></div>
           : <div style={{fontSize:12.5,color:ts,lineHeight:1.7}}>📎 اضغط لرفع ملف <span style={{fontSize:11,color:td}}>(Word · PDF · Excel · صورة)</span> أو اسحبه هنا — أو الصق النص أدناه</div>}
-      </label>
+      </div>
       <div style={{fontSize:9.5,color:td,marginTop:4,lineHeight:1.6}}>إن لم تُفتح نافذة الاختيار داخل معاينة Claude (قيد أمني) فجرّبها على الموقع المنشور، أو الصق النص مباشرة.</div>
     </div>
   );
