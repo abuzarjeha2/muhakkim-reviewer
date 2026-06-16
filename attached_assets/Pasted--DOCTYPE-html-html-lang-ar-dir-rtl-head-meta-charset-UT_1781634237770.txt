@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محكم Pro • Muḥakkam Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Noto+Sans+Arabic:wght@300;400;500;600&amp;display=swap');
+        
+        :root {
+            --primary: #1e40af;
+        }
+        
+        body {
+            font-family: 'Inter', 'Noto Sans Arabic', system-ui, -apple-system, sans-serif;
+        }
+        
+        .arabic {
+            font-family: 'Noto Sans Arabic', 'Inter', system-ui, sans-serif;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+        }
+
+        .dark .glass {
+            background: rgba(24, 24, 27, 0.95);
+        }
+
+        .tool-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tool-card:hover {
+            transform: translateY(-8px) rotate(0.3deg);
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15);
+        }
+
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(to right, #1e40af, #d97706);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .tool-card:hover::before {
+            opacity: 1;
+        }
+
+        .section-header {
+            transition: all 0.3s ease;
+        }
+
+        .modern-shadow {
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05), 
+                       0 4px 6px -4px rgb(0 0 0 / 0.05);
+        }
+
+        .premium-gradient {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        }
+
+        .gold-gradient {
+            background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+        }
+
+        .card-3d {
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                       box-shadow 0.3s ease;
+            transform-style: preserve-3d;
+        }
+        
+        .card-3d:hover {
+            transform: translateY(-12px) rotateX(4deg) rotateY(4deg);
+        }
+
+        .nav-active {
+            background-color: #f1f5f9;
+            color: #1e40af;
+            font-weight: 600;
+        }
+
+        .tool-icon {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .tool-card:hover .tool-icon {
+            transform: scale(1.1) rotate(3deg);
+        }
+
+        .metric {
+            transition: all 0.3s ease;
+        }
+
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .category-header {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .category-header:hover {
+            background-color: #f8fafc;
+        }
+
+        .modal {
+            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes modalPop {
+            from {
+                opacity: 0;
+                transform: scale(0.8) translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .stat-number {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .academic-bg {
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(30, 64, 175, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(217, 119, 6, 0.03) 0%, transparent 50%);
+        }
+    </style>
+</head>
+<body class="bg-zinc-50 text-zinc-900">
+    <!-- Navbar -->
+    <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-zinc-200">
+        <div class="max-w-screen-2xl mx-auto">
+            <div class="px-6 py-4 flex items-center justify-between">
+                <!-- Logo -->
+                <div class="flex items-center gap-x-3">
+                    <div class="w-11 h-11 rounded-2xl premium-gradient flex items-center justify-center shadow-inner">
+                        <i class="fa-solid fa-balance-scale text-white text-3xl"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-x-2">
+                            <span class="text-3xl font-semibold tracking-tighter">محكم</span>
+                            <span class="px-2.5 py-0.5 text-xs font-bold bg-amber-100 text-amber-700 rounded-full">PRO</span>
+                        </div>
+                        <span class="text-[10px] text-zinc-500 -mt-1 block">Muḥakkam Pro</span>
+                    </div>
+                </div>
+
+                <!-- Search -->
+                <div class="flex-1 max-w-md mx-8">
+                    <div class="relative group">
+                        <input id="search-input" 
+                               type="text" 
+                               placeholder="ابحث عن أي أداة... | Search any tool..."
+                               class="w-full bg-white border border-zinc-200 focus:border-blue-500 transition-colors pl-11 pr-4 py-3 rounded-3xl text-sm outline-none shadow-sm">
+                        <i class="fa-solid fa-search absolute left-4 top-3.5 text-zinc-400"></i>
+                    </div>
+                </div>
+
+                <!-- Right side -->
+                <div class="flex items-center gap-x-3">
+                    <!-- Language Toggle -->
+                    <div class="flex items-center bg-zinc-100 rounded-3xl p-1 shadow-inner">
+                        <button onclick="switchLanguage('ar')" id="lang-ar"
+                                class="px-4 py-1.5 text-sm font-medium rounded-3xl flex items-center gap-x-2 transition-all active-lang">
+                            <span>عربي</span>
+                        </button>
+                        <button onclick="switchLanguage('en')" id="lang-en"
+                                class="px-4 py-1.5 text-sm font-medium rounded-3xl flex items-center gap-x-2 text-zinc-500 hover:text-zinc-700 transition-all">
+                            <span>EN</span>
+                        </button>
+                    </div>
+
+                    <!-- Profile -->
+                    <div class="flex items-center gap-x-2 pl-3 border-l border-zinc-200">
+                        <div class="text-right">
+                            <div class="text-sm font-semibold">د. أبو ذر الجهني</div>
+                            <div class="text-[10px] text-emerald-600">Pro Member • Riyadh</div>
+                        </div>
+                        <div class="w-9 h-9 rounded-2xl bg-zinc-200 overflow-hidden ring-2 ring-white shadow-sm">
+                            <img src="https://i.pravatar.cc/36?img=68" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="max-w-screen-2xl mx-auto px-6 pt-10 pb-8">
+        <div class="flex flex-col lg:flex-row items-center justify-between gap-8">
+            <div class="max-w-2xl">
+                <div class="inline-flex items-center gap-x-2 px-4 py-1.5 rounded-3xl bg-white shadow-sm border border-zinc-100 mb-6">
+                    <div class="flex -space-x-1">
+                        <div class="w-5 h-5 rounded-full bg-emerald-400 ring-2 ring-white"></div>
+                        <div class="w-5 h-5 rounded-full bg-amber-400 ring-2 ring-white"></div>
+                        <div class="w-5 h-5 rounded-full bg-blue-400 ring-2 ring-white"></div>
+                    </div>
+                    <span class="text-sm font-medium text-zinc-600">+27 أداة أكاديمية ذكية • المنصة الأكثر تطوراً</span>
+                </div>
+
+                <h1 class="text-6xl lg:text-7xl font-semibold tracking-tighter leading-none mb-4">
+                    منصة <span class="text-transparent bg-clip-text premium-gradient">محكم Pro</span>
+                </h1>
+                <p class="text-2xl text-zinc-600 font-light tracking-tight mb-8">
+                    النظام العربي الذكي المتكامل<br>لإدارة البحث والتحكيم والكتابة والنشر
+                </p>
+
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="document.getElementById('quick-actions').scrollIntoView({ behavior: 'smooth' })" 
+                            class="px-8 py-4 rounded-3xl bg-zinc-900 hover:bg-black transition-all text-white font-semibold flex items-center gap-x-3 shadow-lg shadow-zinc-900/20">
+                        <span>ابدأ الآن مجاناً</span>
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <button onclick="showDemoModal()" 
+                            class="px-8 py-4 rounded-3xl border border-zinc-300 hover:bg-white transition-all font-semibold flex items-center gap-x-3">
+                        <i class="fa-solid fa-play mr-1"></i>
+                        <span>شاهد العرض التوضيحي (2:14)</span>
+                    </button>
+                </div>
+                
+                <div class="flex items-center gap-x-8 mt-8 text-sm">
+                    <div class="flex items-center gap-x-2">
+                        <i class="fa-solid fa-check text-emerald-500"></i>
+                        <span class="text-zinc-600">معتمدة من 47 جامعة</span>
+                    </div>
+                    <div class="flex items-center gap-x-2">
+                        <i class="fa-solid fa-globe text-blue-500"></i>
+                        <span class="text-zinc-600">متوفرة بـ 12 لغة</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hero Stats -->
+            <div class="grid grid-cols-3 gap-4 w-full lg:w-auto">
+                <div class="bg-white rounded-3xl p-5 border border-zinc-100 modern-shadow">
+                    <div class="text-4xl font-semibold text-blue-600">142k</div>
+                    <div class="text-sm text-zinc-500 mt-1">بحث محكم</div>
+                </div>
+                <div class="bg-white rounded-3xl p-5 border border-zinc-100 modern-shadow">
+                    <div class="text-4xl font-semibold text-amber-600">89k</div>
+                    <div class="text-sm text-zinc-500 mt-1">ورقة بحثية</div>
+                </div>
+                <div class="bg-white rounded-3xl p-5 border border-zinc-100 modern-shadow">
+                    <div class="text-4xl font-semibold text-emerald-600">4.97</div>
+                    <div class="text-sm text-zinc-500 mt-1">تقييم المستخدمين</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div id="quick-actions" class="max-w-screen-2xl mx-auto px-6 pb-10">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Action 1 -->
+            <div onclick="launchQuickAction(0)" 
+                 class="group cursor-pointer bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-3xl p-6 flex gap-5 items-center hover:shadow-2xl transition-all active:scale-[0.985]">
+                <div class="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-robot text-4xl"></i>
+                </div>
+                <div>
+                    <div class="font-semibold text-xl tracking-tight">المساعد الذكي الموحد</div>
+                    <div class="text-amber-100 text-sm">Unified AI Assistant • يدعم 27 مهمة بحثية</div>
+                </div>
+            </div>
+
+            <!-- Action 2 -->
+            <div onclick="launchQuickAction(1)" 
+                 class="group cursor-pointer bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-3xl p-6 flex gap-5 items-center hover:shadow-2xl transition-all active:scale-[0.985]">
+                <div class="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-magic text-4xl"></i>
+                </div>
+                <div>
+                    <div class="font-semibold text-xl tracking-tight">المراجعة التلقائية الشاملة</div>
+                    <div class="text-blue-100 text-sm">Comprehensive Auto Review • دقة 98.7%</div>
+                </div>
+            </div>
+
+            <!-- Action 3 -->
+            <div onclick="launchQuickAction(2)" 
+                 class="group cursor-pointer bg-gradient-to-br from-zinc-800 to-zinc-900 text-white rounded-3xl p-6 flex gap-5 items-center hover:shadow-2xl transition-all active:scale-[0.985]">
+                <div class="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-chart-line text-4xl"></i>
+                </div>
+                <div>
+                    <div class="font-semibold text-xl tracking-tight">تحليل البيانات المتقدم</div>
+                    <div class="text-zinc-300 text-sm">Advanced Data Analysis • SPSS • R • Python</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Tools Section -->
+    <div class="max-w-screen-2xl mx-auto px-6 pb-16">
+        <div class="flex items-end justify-between mb-6">
+            <div>
+                <h2 class="text-4xl font-semibold tracking-tighter">استكشف الأدوات المتكاملة</h2>
+                <p class="text-zinc-500 mt-1">كل ما تحتاجه للبحث الأكاديمي الاحترافي في مكان واحد</p>
+            </div>
+            <button onclick="collapseAllCategories()" 
+                    class="hidden md:flex items-center gap-x-2 text-sm px-5 py-2.5 rounded-3xl border border-zinc-200 hover:bg-white transition-colors">
+                <i class="fa-solid fa-compress-arrows-alt mr-2"></i>
+                <span>طي الكل</span>
+            </button>
+        </div>
+
+        <!-- Categories will be rendered here by JS -->
+        <div id="categories-container" class="space-y-4"></div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-zinc-200 bg-white">
+        <div class="max-w-screen-2xl mx-auto px-6 py-8 text-sm text-zinc-500 flex flex-col md:flex-row justify-between items-center gap-y-3">
+            <div>© 2026 محكم Pro — منصة الذكاء الاصطناعي الأكاديمية الأكثر تطوراً في العالم العربي</div>
+            <div class="flex items-center gap-x-6 text-xs">
+                <a href="#" class="hover:text-zinc-700">سياسة الخصوصية</a>
+                <a href="#" class="hover:text-zinc-700">شروط الاستخدام</a>
+                <a href="#" class="hover:text-zinc-700">مركز المساعدة</a>
+                <span class="font-mono">v4.8.2</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Tool Modal -->
+    <div id="tool-modal" onclick="if (event.target.id === 'tool-modal') hideModal()" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div onclick="event.stopImmediatePropagation()" class="modal bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden">
+            <!-- Modal content populated by JS -->
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[200] space-y-2"></div>
+
+    <script>
+        // Tailwind Script
+        function initializeTailwind() {
+            document.documentElement.style.setProperty('--accent', '#1e40af');
+            
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            'arabic': ['Noto Sans Arabic', 'Inter', 'system-ui', 'sans-serif']
+                        }
+                    }
+                }
+            };
+        }
+
+        // Translations & Data
+        let currentLang = 'ar';
+
+        const translations = {
+            ar: {
+                search_placeholder: "ابحث عن أي أداة أو ميزة...",
+                explore_tools: "استكشف الأدوات المتكاملة",
+                collapse_all: "طي الكل",
+                open_tool: "افتح الأداة",
+                launch: "تشغيل الأداة",
+                watch_demo: "شاهد العرض التوضيحي",
+                documentation: "التوثيق الكامل",
+                new_badge: "جديد",
+                featured_badge: "مميز",
+                global_badge: "عالمي",
+                exclusive_badge: "حصري"
+            },
+            en: {
+                search_placeholder: "Search any tool or feature...",
+                explore_tools: "Explore Integrated Tools",
+                collapse_all: "Collapse All",
+                open_tool: "Open Tool",
+                launch: "Launch Tool",
+                watch_demo: "Watch Demo",
+                documentation: "Full Documentation",
+                new_badge: "New",
+                featured_badge: "Featured",
+                global_badge: "Global",
+                exclusive_badge: "Exclusive"
+            }
+        };
+
+        const categoriesData = [
+            {
+                id: "review",
+                icon: "fa-balance-scale",
+                color: "rose",
+                count: 10,
+                title_ar: "المراجعة والتحكيم",
+                title_en: "Review & Arbitration",
+                tools: [
+                    { id: "human-review", icon: "fa-users", badge: "مميز", badge_en: "Featured", title_ar: "المراجعة بالأدوار البشرية", title_en: "Human Role Review", desc_ar: "محاكاة مراجعة متعددة الأدوار البشرية بدقة عالية.", desc_en: "High-fidelity multi-role human review simulation." },
+                    { id: "unified-review", icon: "fa-layer-group", badge: "عالمي", badge_en: "Global", title_ar: "مركز المراجعة الموحد", title_en: "Unified Review Center", desc_ar: "جميع أدوات المراجعة في لوحة تحكم واحدة.", desc_en: "All review tools in a single powerful dashboard." },
+                    { id: "research-lifecycle", icon: "fa-sync", badge: "", badge_en: "", title_ar: "دورة حياة البحث الذكية", title_en: "AI Research Lifecycle", desc_ar: "إدارة كاملة لدورة البحث من الفكرة إلى النشر.", desc_en: "Complete research lifecycle from idea to publication." },
+                    { id: "eforms", icon: "fa-file-alt", badge: "جديد", badge_en: "New", title_ar: "استوديو النماذج الذكية", title_en: "Smart e-Forms Studio", desc_ar: "إنشاء نماذج إلكترونية ذكية للبحوث.", desc_en: "Intelligent electronic forms for academic submissions." },
+                    { id: "review-pro", icon: "fa-tachometer-alt", badge: "مميز", badge_en: "Featured", title_ar: "جناح التميز للمراجعة", title_en: "Review Pro Suite", desc_ar: "أدوات متقدمة للمراجعة الأكاديمية الاحترافية.", desc_en: "Advanced professional academic review toolkit." },
+                    { id: "master-report", icon: "fa-file-invoice", badge: "", badge_en: "", title_ar: "التقرير الشامل الموحد", title_en: "Master Unified Report", desc_ar: "تقارير بحثية شاملة بضغطة واحدة.", desc_en: "One-click comprehensive research reports." },
+                    { id: "committees", icon: "fa-users-cog", badge: "عالمي", badge_en: "Global", title_ar: "اللجان والمناقشة", title_en: "Committees & Defense", desc_ar: "إدارة اللجان العلمية والدفاع عن الرسائل.", desc_en: "Scientific committees and thesis defense management." },
+                    { id: "integrity", icon: "fa-shield-alt", badge: "", badge_en: "", title_ar: "التقييم والنزاهة", title_en: "Assessment & Integrity", desc_ar: "فحص النزاهة الأكاديمية والانتحال.", desc_en: "Academic integrity and plagiarism verification." },
+                    { id: "verification", icon: "fa-search-plus", badge: "جديد", badge_en: "New", title_ar: "مختبر التحقق الشامل", title_en: "Verification Lab", desc_ar: "تحقق عميق من المصادر والحقائق.", desc_en: "Deep source and fact verification laboratory." },
+                    { id: "free-verify", icon: "fa-check-double", badge: "", badge_en: "", title_ar: "التحقق المجاني والتكلفة", title_en: "Free Verify & Pricing", desc_ar: "أدوات تحقق سريعة وشفافية في التسعير.", desc_en: "Quick verification tools with transparent pricing." }
+                ]
+            },
+            {
+                id: "writing",
+                icon: "fa-pen-fancy",
+                color: "blue",
+                count: 6,
+                title_ar: "الكتابة والتحليل",
+                title_en: "Writing & Analysis",
+                tools: [
+                    { id: "research-os", icon: "fa-desktop", badge: "عالمي", badge_en: "Global", title_ar: "نظام البحث المتكامل", title_en: "Research OS (Q1 Ready)", desc_ar: "نظام تشغيل بحثي متكامل جاهز للنشر في مجلات Q1.", desc_en: "Complete research operating system ready for Q1 journals." },
+                    { id: "smart-writing", icon: "fa-keyboard", badge: "مميز", badge_en: "Featured", title_ar: "النظام الذكي للكتابة", title_en: "Smart Writing System", desc_ar: "مساعد كتابة أكاديمي واعٍ بالسياق.", desc_en: "Context-aware academic writing assistant." },
+                    { id: "publishing-studio", icon: "fa-globe", badge: "", badge_en: "", title_ar: "منظومة النشر الذكية", title_en: "AI Publishing Studio", desc_ar: "منصة كاملة للنشر في المجلات العالمية.", desc_en: "End-to-end publishing suite for global journals." },
+                    { id: "writing-pro", icon: "fa-edit", badge: "حصري", badge_en: "Exclusive", title_ar: "جناح التميز للكتابة", title_en: "Writing Pro Suite", desc_ar: "أدوات احترافية للكتابة الأكاديمية.", desc_en: "Professional academic writing excellence suite." },
+                    { id: "writing-studio", icon: "fa-file-word", badge: "", badge_en: "", title_ar: "استوديو النص والكاتب", title_en: "Writing Studio", desc_ar: "محرر نصوص متقدم مع مساعد ذكي.", desc_en: "Advanced text editor with AI co-author." },
+                    { id: "sources-hub", icon: "fa-book", badge: "جديد", badge_en: "New", title_ar: "مركز البحث والمصادر", title_en: "Research & Sources Hub", desc_ar: "إدارة ذكية للمصادر والاستشهادات.", desc_en: "Intelligent citation and source management." }
+                ]
+            },
+            {
+                id: "arabic",
+                icon: "fa-globe",
+                color: "emerald",
+                count: 4,
+                title_ar: "البحوث والدراسات العربية",
+                title_en: "Arabic Research & Studies",
+                tools: [
+                    { id: "arabic-finder", icon: "fa-search", badge: "مميز", badge_en: "Featured", title_ar: "الباحث العربي الذكي", title_en: "Arabic Smart Finder", desc_ar: "محرك بحث ذكي للأدبيات العربية والإسلامية.", desc_en: "Intelligent search engine for Arabic & Islamic literature." },
+                    { id: "islamic-center", icon: "fa-mosque", badge: "حصري", badge_en: "Exclusive", title_ar: "مركز التخصصات العربية والإسلامية", title_en: "Islamic & Arabic Disciplines", desc_ar: "أدوات متخصصة في العلوم الإسلامية والعربية.", desc_en: "Specialized tools for Islamic and Arabic studies." },
+                    { id: "vision-2030", icon: "fa-rocket", badge: "عالمي", badge_en: "Global", title_ar: "بوصلة الرؤية والتمويل 2030", title_en: "Vision 2030 & Funding Compass", desc_ar: "ربط البحوث برؤية 2030 وفرص التمويل.", desc_en: "Align research with Vision 2030 and funding opportunities." },
+                    { id: "arab-toolkit", icon: "fa-toolbox", badge: "", badge_en: "", title_ar: "عدة الباحث العربي", title_en: "Arab Researcher Toolkit", desc_ar: "مجموعة أدوات أساسية للباحثين العرب.", desc_en: "Essential toolkit designed for Arab researchers." }
+                ]
+            },
+            {
+                id: "data",
+                icon: "fa-chart-bar",
+                color: "violet",
+                count: 6,
+                title_ar: "تحليل البيانات والبحث",
+                title_en: "Data Analysis & Research",
+                tools: [
+                    { id: "analysis-pro", icon: "fa-chart-line", badge: "مميز", badge_en: "Featured", title_ar: "جناح التميز للتحليل", title_en: "Analysis Pro Suite", desc_ar: "تحليل إحصائي متقدم (SPSS • R • Python).", desc_en: "Advanced statistical analysis (SPSS, R, Python)." },
+                    { id: "research-intel", icon: "fa-brain", badge: "عالمي", badge_en: "Global", title_ar: "النظام البحثي الذكي المتكامل", title_en: "Integrated Research Intelligence", desc_ar: "ذكاء بحثي عالمي ومقاييس الأداء.", desc_en: "Global research intelligence and performance metrics." },
+                    { id: "data-studio", icon: "fa-tachometer-alt", badge: "", badge_en: "", title_ar: "استوديو البيانات والداشبورد", title_en: "Data Studio: Dashboard & Fixer", desc_ar: "لوحات تحكم تفاعلية وتنظيف البيانات.", desc_en: "Interactive dashboards and intelligent data cleaning." },
+                    { id: "data-science", icon: "fa-flask", badge: "جديد", badge_en: "New", title_ar: "مختبر علم البيانات", title_en: "Data Science Lab", desc_ar: "بيئة كاملة لعلم البيانات والتعلم الآلي.", desc_en: "Full data science and machine learning environment." },
+                    { id: "quality-hub", icon: "fa-award", badge: "", badge_en: "", title_ar: "مركز جودة البيانات والبحث", title_en: "Data & Research Quality Hub", desc_ar: "تقييم وتحسين جودة البيانات والبحوث.", desc_en: "Quality scoring and improvement for research data." },
+                    { id: "visualizer", icon: "fa-chart-pie", badge: "مميز", badge_en: "Featured", title_ar: "توثيق البحث البصري", title_en: "Research Visualizer", desc_ar: "إنشاء رسوم بيانية وملخصات بصرية احترافية.", desc_en: "Professional charts, graphs and visual abstracts." }
+                ]
+            },
+            {
+                id: "journal",
+                icon: "fa-book-open",
+                color: "amber",
+                count: 4,
+                title_ar: "المجلة العلمية المحكمة",
+                title_en: "Peer-Reviewed Journal",
+                tools: [
+                    { id: "ejournal", icon: "fa-newspaper", badge: "عالمي", badge_en: "Global", title_ar: "استوديو المجلة الإلكترونية", title_en: "Smart e-Journal Studio", desc_ar: "إدارة كاملة للمجلات الإلكترونية المحكمة.", desc_en: "Complete management system for peer-reviewed e-journals." },
+                    { id: "accreditation", icon: "fa-certificate", badge: "", badge_en: "", title_ar: "مسار الاعتماد والنشر", title_en: "Accreditation Pipeline", desc_ar: "خطوات الاعتماد والفهرسة في قواعد البيانات.", desc_en: "Step-by-step accreditation and indexing pipeline." },
+                    { id: "journals", icon: "fa-books", badge: "حصري", badge_en: "Exclusive", title_ar: "المجلات العلمية المحكمة", title_en: "Peer-Reviewed Journals", desc_ar: "الوصول إلى 11 مجلة متخصصة محكمة.", desc_en: "Access to 11 specialized peer-reviewed journals." },
+                    { id: "journal-designer", icon: "fa-palette", badge: "جديد", badge_en: "New", title_ar: "مصمم المجلة الذكي", title_en: "AI Journal Designer", desc_ar: "تصميم وتخطيط المجلات باستخدام الذكاء الاصطناعي.", desc_en: "AI-powered journal layout and branding designer." }
+                ]
+            }
+        ];
+
+        // Render all categories
+        function renderCategories(filteredTools = null) {
+            const container = document.getElementById('categories-container');
+            container.innerHTML = '';
+
+            categoriesData.forEach(category => {
+                let toolsToShow = category.tools;
+                
+                if (filteredTools) {
+                    toolsToShow = category.tools.filter(tool => 
+                        filteredTools.some(ft => ft.id === tool.id)
+                    );
+                    if (toolsToShow.length === 0) return;
+                }
+
+                const section = document.createElement('details');
+                section.className = `bg-white border border-zinc-200 rounded-3xl overflow-hidden modern-shadow ${filteredTools ? 'ring-2 ring-blue-200' : ''}`;
+                section.open = true;
+
+                const headerHTML = `
+                    <summary class="category-header flex items-center justify-between px-6 py-5 bg-white hover:bg-zinc-50 transition-colors">
+                        <div class="flex items-center gap-x-4">
+                            <div class="w-11 h-11 rounded-2xl flex items-center justify-center bg-${category.color}-100 text-${category.color}-600">
+                                <i class="fa-solid ${category.icon} text-2xl"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-x-3">
+                                    <span class="font-semibold text-2xl tracking-tight">${currentLang === 'ar' ? category.title_ar : category.title_en}</span>
+                                    <span class="px-3 py-0.5 text-xs font-bold rounded-full bg-zinc-100 text-zinc-600">${category.count} ${currentLang === 'ar' ? 'أداة' : 'tools'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-x-2 text-zinc-400">
+                            <i class="fa-solid fa-chevron-down transition-transform details-arrow"></i>
+                        </div>
+                    </summary>
+                `;
+
+                let toolsHTML = `<div class="px-6 pb-6 pt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">`;
+
+                toolsToShow.forEach(tool => {
+                    const badgeText = currentLang === 'ar' ? tool.badge : tool.badge_en;
+                    const title = currentLang === 'ar' ? tool.title_ar : tool.title_en;
+                    const desc = currentLang === 'ar' ? tool.desc_ar : tool.desc_en;
+
+                    toolsHTML += `
+                        <div onclick="showToolModal('${tool.id}')" class="tool-card group bg-white border border-zinc-200 hover:border-zinc-300 rounded-3xl p-5 cursor-pointer flex flex-col h-full">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="tool-icon w-12 h-12 rounded-2xl bg-gradient-to-br from-zinc-100 to-white flex items-center justify-center shadow-inner border border-zinc-100 group-hover:shadow-md">
+                                    <i class="fa-solid ${tool.icon} text-3xl text-zinc-700"></i>
+                                </div>
+                                
+                                ${badgeText ? `
+                                <span class="text-[10px] font-bold px-3 py-1 rounded-full ${badgeText === 'جديد' || badgeText === 'New' ? 'bg-emerald-100 text-emerald-700' : 
+                                    badgeText === 'مميز' || badgeText === 'Featured' ? 'bg-amber-100 text-amber-700' : 
+                                    badgeText === 'عالمي' || badgeText === 'Global' ? 'bg-blue-100 text-blue-700' : 
+                                    'bg-purple-100 text-purple-700'}">
+                                    ${badgeText}
+                                </span>` : ''}
+                            </div>
+                            
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-lg leading-tight tracking-tight mb-2">${title}</h4>
+                                <p class="text-sm text-zinc-500 line-clamp-3">${desc}</p>
+                            </div>
+                            
+                            <div class="mt-5 pt-4 border-t flex items-center justify-between text-sm">
+                                <span class="font-medium text-blue-600 group-hover:underline flex items-center gap-x-1.5">
+                                    ${currentLang === 'ar' ? translations.ar.open_tool : translations.en.open_tool}
+                                    <i class="fa-solid fa-arrow-left text-xs transition-transform group-hover:-translate-x-0.5"></i>
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                toolsHTML += `</div>`;
+
+                section.innerHTML = headerHTML + toolsHTML;
+                container.appendChild(section);
+
+                // Add chevron rotation
+                const summary = section.querySelector('summary');
+                summary.addEventListener('click', () => {
+                    setTimeout(() => {
+                        const arrow = section.querySelector('.details-arrow');
+                        if (arrow) arrow.style.transform = section.open ? 'rotate(180deg)' : 'rotate(0deg)';
+                    }, 10);
+                });
+            });
+        }
+
+        // Search functionality
+        function setupSearch() {
+            const searchInput = document.getElementById('search-input');
+            
+            searchInput.addEventListener('input', () => {
+                const term = searchInput.value.toLowerCase().trim();
+                
+                if (!term) {
+                    renderCategories();
+                    return;
+                }
+
+                const filtered = [];
+                
+                categoriesData.forEach(cat => {
+                    cat.tools.forEach(tool => {
+                        const title = (currentLang === 'ar' ? tool.title_ar : tool.title_en).toLowerCase();
+                        const desc = (currentLang === 'ar' ? tool.desc_ar : tool.desc_en).toLowerCase();
+                        
+                        if (title.includes(term) || desc.includes(term)) {
+                            filtered.push(tool);
+                        }
+                    });
+                });
+                
+                renderCategories(filtered.length > 0 ? filtered : null);
+            });
+        }
+
+        // Language switcher
+        function switchLanguage(lang) {
+            currentLang = lang;
+            
+            // Update buttons
+            document.getElementById('lang-ar').classList.toggle('active-lang', lang === 'ar');
+            document.getElementById('lang-ar').classList.toggle('bg-white', lang === 'ar');
+            document.getElementById('lang-ar').classList.toggle('shadow-sm', lang === 'ar');
+            document.getElementById('lang-ar').classList.toggle('text-zinc-900', lang === 'ar');
+            document.getElementById('lang-ar').classList.toggle('text-zinc-500', lang !== 'ar');
+
+            document.getElementById('lang-en').classList.toggle('active-lang', lang === 'en');
+            document.getElementById('lang-en').classList.toggle('bg-white', lang === 'en');
+            document.getElementById('lang-en').classList.toggle('shadow-sm', lang === 'en');
+            document.getElementById('lang-en').classList.toggle('text-zinc-900', lang === 'en');
+            document.getElementById('lang-en').classList.toggle('text-zinc-500', lang !== 'en');
+
+            // Update direction
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+            // Update search placeholder
+            const search = document.getElementById('search-input');
+            search.placeholder = translations[lang].search_placeholder;
+
+            // Re-render everything
+            renderCategories();
+        }
+
+        // Show tool modal
+        function showToolModal(toolId) {
+            const modal = document.getElementById('tool-modal');
+            const content = document.getElementById('modal-content');
+            
+            let foundTool = null;
+            let foundCategory = null;
+
+            categoriesData.forEach(cat => {
+                const tool = cat.tools.find(t => t.id === toolId);
+                if (tool) {
+                    foundTool = tool;
+                    foundCategory = cat;
+                }
+            });
+
+            if (!foundTool) return;
+
+            const title = currentLang === 'ar' ? foundTool.title_ar : foundTool.title_en;
+            const desc = currentLang === 'ar' ? foundTool.desc_ar : foundTool.desc_en;
+            const badge = currentLang === 'ar' ? foundTool.badge : foundTool.badge_en;
+
+            content.innerHTML = `
+                <div class="p-8">
+                    <div class="flex justify-between items-start">
+                        <div class="flex items-center gap-x-5">
+                            <div class="w-16 h-16 rounded-3xl bg-gradient-to-br from-zinc-100 to-white flex items-center justify-center shadow-inner border text-5xl">
+                                <i class="fa-solid ${foundTool.icon} text-zinc-700"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-x-3">
+                                    <h3 class="text-3xl font-semibold tracking-tight">${title}</h3>
+                                    ${badge ? `<span class="px-4 py-1 text-xs font-bold rounded-full ${badge.includes('جديد') || badge.includes('New') ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${badge}</span>` : ''}
+                                </div>
+                                <div class="text-sm text-zinc-500 mt-0.5">${foundCategory ? (currentLang === 'ar' ? foundCategory.title_ar : foundCategory.title_en) : ''}</div>
+                            </div>
+                        </div>
+                        
+                        <button onclick="hideModal()" class="text-zinc-400 hover:text-zinc-600 text-3xl leading-none">&times;</button>
+                    </div>
+
+                    <div class="mt-8 text-lg text-zinc-600 leading-relaxed">
+                        ${desc}
+                    </div>
+
+                    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div onclick="launchTool('${foundTool.id}')" class="cursor-pointer flex items-center justify-center gap-x-3 bg-zinc-900 hover:bg-black transition-all text-white font-semibold py-4 rounded-3xl">
+                            <i class="fa-solid fa-rocket"></i>
+                            <span>${currentLang === 'ar' ? translations.ar.launch : translations.en.launch}</span>
+                        </div>
+                        
+                        <div onclick="watchDemo('${foundTool.id}')" class="cursor-pointer flex items-center justify-center gap-x-3 border border-zinc-300 hover:bg-zinc-50 transition-all font-semibold py-4 rounded-3xl">
+                            <i class="fa-solid fa-play"></i>
+                            <span>${currentLang === 'ar' ? translations.ar.watch_demo : translations.en.watch_demo}</span>
+                        </div>
+                        
+                        <div onclick="showDocumentation('${foundTool.id}')" class="cursor-pointer flex items-center justify-center gap-x-3 border border-zinc-300 hover:bg-zinc-50 transition-all font-semibold py-4 rounded-3xl">
+                            <i class="fa-solid fa-book"></i>
+                            <span>${currentLang === 'ar' ? translations.ar.documentation : translations.en.documentation}</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t text-xs text-zinc-400 flex items-center gap-x-2">
+                        <i class="fa-solid fa-info-circle"></i>
+                        <span>هذه الأداة مدعومة بأحدث نماذج الذكاء الاصطناعي وتدعم اللغتين العربية والإنجليزية بشكل كامل.</span>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function hideModal() {
+            const modal = document.getElementById('tool-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        // Launch tool (simulated)
+        function launchTool(toolId) {
+            hideModal();
+            
+            const toast = document.createElement('div');
+            toast.className = `px-6 py-4 bg-zinc-900 text-white rounded-3xl shadow-2xl flex items-center gap-x-3 max-w-md`;
+            toast.innerHTML = `
+                <i class="fa-solid fa-check-circle text-emerald-400 text-xl"></i>
+                <div>
+                    <div class="font-semibold">تم تشغيل الأداة بنجاح</div>
+                    <div class="text-xs text-zinc-400">تم فتحها في مساحة العمل الخاصة بك</div>
+                </div>
+            `;
+            
+            document.getElementById('toast-container').appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.transition = 'all 0.3s ease';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 2800);
+        }
+
+        function watchDemo(toolId) {
+            hideModal();
+            const toast = document.createElement('div');
+            toast.className = `px-6 py-4 bg-white border shadow-xl rounded-3xl flex items-center gap-x-3 max-w-sm`;
+            toast.innerHTML = `
+                <i class="fa-solid fa-video text-blue-500"></i>
+                <div class="text-sm">جاري تشغيل العرض التوضيحي... (محاكاة)</div>
+            `;
+            document.getElementById('toast-container').appendChild(toast);
+            setTimeout(() => toast.remove(), 2200);
+        }
+
+        function showDocumentation(toolId) {
+            hideModal();
+            alert("سيتم فتح التوثيق الكامل في نافذة جديدة (محاكاة في النسخة التجريبية).");
+        }
+
+        // Quick actions
+        function launchQuickAction(index) {
+            const actions = [
+                "المساعد الذكي الموحد",
+                "المراجعة التلقائية الشاملة",
+                "تحليل البيانات المتقدم"
+            ];
+            
+            const toast = document.createElement('div');
+            toast.className = `px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-3xl shadow-2xl flex items-center gap-x-4`;
+            toast.innerHTML = `
+                <div class="flex-1">
+                    <div class="font-semibold">تم تشغيل: ${actions[index]}</div>
+                    <div class="text-xs opacity-75">جاري تحميل مساحة العمل...</div>
+                </div>
+            `;
+            document.getElementById('toast-container').appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.transition = 'all .3s';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 200);
+            }, 2600);
+        }
+
+        function showDemoModal() {
+            const modal = document.getElementById('tool-modal');
+            const content = document.getElementById('modal-content');
+            
+            content.innerHTML = `
+                <div class="p-8 text-center">
+                    <div class="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-6">
+                        <i class="fa-solid fa-play text-white text-4xl ml-1"></i>
+                    </div>
+                    <h3 class="text-3xl font-semibold tracking-tight">عرض توضيحي شامل</h3>
+                    <p class="mt-3 text-zinc-500 max-w-md mx-auto">شاهد كيف يعمل محكم Pro في 2 دقيقة و14 ثانية</p>
+                    
+                    <div class="my-8 bg-zinc-900 rounded-3xl aspect-video flex items-center justify-center text-white relative overflow-hidden">
+                        <div class="text-center">
+                            <i class="fa-solid fa-play text-6xl opacity-90"></i>
+                            <div class="mt-4 text-sm tracking-widest font-medium">DEMO • 2:14</div>
+                        </div>
+                        <div class="absolute bottom-4 right-4 text-xs bg-black/60 px-3 py-1 rounded-2xl">HD 1080p</div>
+                    </div>
+                    
+                    <div class="flex justify-center gap-x-4">
+                        <button onclick="hideModal()" class="px-8 py-3.5 rounded-3xl border font-semibold">إغلاق</button>
+                        <button onclick="hideModal(); launchQuickAction(0)" class="px-8 py-3.5 rounded-3xl bg-zinc-900 text-white font-semibold">ابدأ النسخة التجريبية</button>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function collapseAllCategories() {
+            document.querySelectorAll('#categories-container details').forEach(d => d.open = false);
+        }
+
+        // Initialize everything
+        function initializeApp() {
+            initializeTailwind();
+            
+            // Initial render
+            renderCategories();
+            setupSearch();
+            
+            // Set initial language to Arabic
+            document.getElementById('lang-ar').classList.add('bg-white', 'shadow-sm', 'text-zinc-900');
+            document.getElementById('lang-ar').classList.remove('text-zinc-500');
+            
+            // Keyboard support
+            document.addEventListener('keydown', function(e) {
+                if (e.key === "/" && document.activeElement.tagName === "BODY") {
+                    e.preventDefault();
+                    document.getElementById('search-input').focus();
+                }
+            });
+            
+            // Easter egg - press "?" to show all tools count
+            document.addEventListener('keypress', function(e) {
+                if (e.key === "?") {
+                    const total = categoriesData.reduce((sum, cat) => sum + cat.tools.length, 0);
+                    const toast = document.createElement('div');
+                    toast.className = `px-5 py-3 bg-white shadow-xl border rounded-3xl text-sm flex items-center gap-x-2`;
+                    toast.innerHTML = `<span>إجمالي الأدوات المتاحة: <strong class="font-mono">${total}</strong></span>`;
+                    document.getElementById('toast-container').appendChild(toast);
+                    setTimeout(() => toast.remove(), 1800);
+                }
+            });
+
+            // Make sure initial direction is correct
+            document.documentElement.dir = 'rtl';
+            document.documentElement.lang = 'ar';
+            
+            // Welcome toast (only once)
+            setTimeout(() => {
+                // Uncomment if you want a welcome message
+                // console.log('%c[Muḥakkam Pro] Premium academic platform initialized successfully.', 'color:#64748b');
+            }, 1200);
+        }
+
+        // Boot the application
+        window.onload = initializeApp;
+    </script>
+</body>
+</html>
