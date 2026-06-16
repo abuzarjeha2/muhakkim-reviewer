@@ -133,6 +133,7 @@ function useTheme() {
     card:"#0d1a30", border:"#1a3050", text:"#dde6f5", textS:"#8896ab", textSec:"#8896ab",
     textD:"#3d5070", textDim:"#3d5070",
     gold:"#f5b942", goldG:"linear-gradient(135deg,#f5b942,#d4850a)", accent:"#f5b942",
+    blueG:"linear-gradient(135deg,#3b82f6,#1e40af)",
     emerald:"#34d399", green:"#34d399", rose:"#fb7185", blue:"#60a5fa", violet:"#a78bfa",
     amber:"#fbbf24", cyan:"#22d3ee", teal:"#2dd4bf", orange:"#fb923c",
     shadow:"0 2px 16px #00000050", shadowH:"0 8px 30px #00000070"
@@ -141,6 +142,7 @@ function useTheme() {
     card:"#ffffff", border:"#dde4f0", text:"#1a2540", textS:"#4a5568", textSec:"#4a5568",
     textD:"#8896ab", textDim:"#8896ab",
     gold:"#b45309", goldG:"linear-gradient(135deg,#d4a017,#b45309)", accent:"#b45309",
+    blueG:"linear-gradient(135deg,#1e40af,#3b82f6)",
     emerald:"#047857", green:"#047857", rose:"#be123c", blue:"#1d4ed8", violet:"#6d28d9",
     amber:"#92400e", cyan:"#0e7490", teal:"#0f766e", orange:"#c2410c",
     shadow:"0 2px 16px #1a254014", shadowH:"0 8px 30px #1a254022"
@@ -16826,8 +16828,8 @@ export default function MuhakkimV4() {
 
         {/* Logo */}
         <button onClick={goHome} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",background:"none",border:"none",fontFamily:"inherit",padding:"3px 0",flexShrink:0,marginLeft:8}}>
-          <div style={{width:32,height:32,borderRadius:9,background:T.goldG,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,boxShadow:`0 2px 10px ${T.gold}44`}}>⚖️</div>
-          <span style={{fontWeight:900,fontSize:15,color:T.gold}}>{UI.pro}<span style={{fontSize:10,background:T.gold+"22",color:T.gold,border:`1px solid ${T.gold}44`,borderRadius:5,padding:"1px 5px",fontWeight:700,marginRight:4}}>Pro</span></span>
+          <div style={{width:34,height:34,borderRadius:10,background:T.blueG,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,boxShadow:`0 3px 12px ${T.blue}55`}}>⚖️</div>
+          <span style={{fontWeight:900,fontSize:15,color:T.text}}>{UI.pro}<span style={{fontSize:10,background:T.gold+"22",color:T.gold,border:`1px solid ${T.gold}44`,borderRadius:5,padding:"1px 5px",fontWeight:700,marginRight:4}}>Pro</span></span>
         </button>
 
         {/* Groups nav — scrollable */}
@@ -16902,31 +16904,71 @@ export default function MuhakkimV4() {
       {/* HOME */}
       {!activeGroup&&!activeTool&&<div>
         {/* Hero */}
-        <div style={{padding:"56px 16px 40px",textAlign:"center",position:"relative",background:`radial-gradient(62% 80% at 50% -8%, ${T.gold}16, transparent 62%)`}}>
-          <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"6px 16px",background:T.gold+"18",border:`1px solid ${T.gold}44`,borderRadius:24,marginBottom:20}}>
-            <span>🏆</span><span style={{fontSize:12,color:T.gold,fontWeight:700}}>{L("المنصة الأكاديمية الشاملة","The complete academic platform")} · {newCount}+ {L("أداة","tools")}</span>
+        <div style={{padding:"56px 16px 36px",textAlign:"center",position:"relative",background:`radial-gradient(60% 70% at 28% -6%, ${T.blue}14, transparent 60%), radial-gradient(50% 60% at 82% 0%, ${T.gold}12, transparent 60%)`}}>
+          <div style={{display:"inline-flex",alignItems:"center",gap:10,padding:"6px 16px 6px 14px",background:T.card,border:`1px solid ${T.border}`,borderRadius:24,marginBottom:20,boxShadow:T.shadow}}>
+            <span style={{display:"inline-flex",alignItems:"center"}}>
+              <span style={{width:15,height:15,borderRadius:"50%",background:"#34d399",border:`2px solid ${T.card}`}}/>
+              <span style={{width:15,height:15,borderRadius:"50%",background:"#fbbf24",border:`2px solid ${T.card}`,marginInlineStart:-5}}/>
+              <span style={{width:15,height:15,borderRadius:"50%",background:"#60a5fa",border:`2px solid ${T.card}`,marginInlineStart:-5}}/>
+            </span>
+            <span style={{fontSize:12,color:T.textSec,fontWeight:700}}>{GROUPS.reduce((a,g)=>a+g.tools.length,0)}+ {L("أداة أكاديمية ذكية","smart academic tools")}</span>
           </div>
-          <h1 style={{margin:"0 0 14px",fontSize:"clamp(30px,7vw,44px)",fontWeight:900,color:T.text,letterSpacing:"-1px",lineHeight:1.15}}>{L("منصة ","")}<span style={{color:T.gold}}>{L("محكّم","Muhakkim")}</span> Pro</h1>
-          <p style={{margin:"0 auto 28px",fontSize:16,color:T.textSec,maxWidth:620,lineHeight:1.65}}>
+          <h1 style={{margin:"0 0 14px",fontSize:"clamp(30px,7vw,46px)",fontWeight:900,color:T.text,letterSpacing:"-1px",lineHeight:1.15}}>{L("منصة ","")}<span style={{backgroundImage:T.blueG,WebkitBackgroundClip:"text",backgroundClip:"text",color:"transparent",WebkitTextFillColor:"transparent"}}>{L("محكّم","Muhakkim")} Pro</span></h1>
+          <p style={{margin:"0 auto 26px",fontSize:16,color:T.textSec,maxWidth:620,lineHeight:1.65}}>
             {L("النظام العربي الذكي لإدارة البحث والتحكيم والكتابة والتحليل والنشر","The smart platform for research, peer review, writing, analysis & publishing")}
           </p>
-          <div style={{maxWidth:560,margin:"0 auto 22px",position:"relative"}}>
+          <div style={{maxWidth:560,margin:"0 auto 24px",position:"relative"}}>
             <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={L("🔍 ابحث عن أي أداة في المنصة...","🔍 Search any tool...")}
-              style={{width:"100%",padding:"14px 18px",borderRadius:14,border:`2px solid ${search?T.gold:T.border}`,background:T.card,color:T.text,fontSize:14,fontFamily:"inherit",boxSizing:"border-box",outline:"none",boxShadow:T.shadow,textAlign:"center"}}/>
+              style={{width:"100%",padding:"14px 18px",borderRadius:14,border:`2px solid ${search?T.blue:T.border}`,background:T.card,color:T.text,fontSize:14,fontFamily:"inherit",boxSizing:"border-box",outline:"none",boxShadow:T.shadow,textAlign:"center"}}/>
             {search&&searchRes.length>0&&<div style={{position:"absolute",top:"calc(100% + 6px)",left:0,right:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:14,boxShadow:T.shadowH,zIndex:300,padding:8,maxHeight:340,overflowY:"auto"}}>
               {searchRes.map(({t,g},i)=><button key={i} onClick={()=>openTool(t.key)} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"9px 11px",border:"none",background:"transparent",borderRadius:9,cursor:"pointer",fontFamily:"inherit",textAlign:"right",marginTop:2}} onMouseEnter={e=>e.currentTarget.style.background=T.bgSec} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                 <span style={{fontSize:18}}><EmIcon e={t.icon}/></span>
                 <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:T.text}}>{LO(t)}</div><div style={{fontSize:10,color:T.textDim}}>{LO(g)}</div></div>
-                <span style={{fontSize:13,color:T.gold}}>←</span>
+                <span style={{fontSize:13,color:T.blue}}>←</span>
               </button>)}
             </div>}
             {search&&searchRes.length===0&&<div style={{position:"absolute",top:"calc(100% + 6px)",left:0,right:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:14,boxShadow:T.shadowH,zIndex:300,padding:16,textAlign:"center"}}><span style={{fontSize:12,color:T.textDim}}>{L("لا نتائج — جرّب كلمة أخرى","No results — try another term")}</span></div>}
           </div>
-          <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-            <Btn ch={L("🤖 المساعد الذكي الموحّد","🤖 Unified AI Assistant")} onClick={()=>setActiveTool("smart_orch")} size="lg" T={T}/>
-            <Btn ch={L("⚡ المراجعة التلقائية الشاملة","⚡ Full Auto Review")} onClick={()=>setActiveTool("auto_review")} v="blue" size="lg" T={T}/>
-            <Btn ch={L("📊 تحليل البيانات","📊 Data Analysis")} onClick={()=>openGroup("analysis")} v="ghost" size="lg" T={T}/>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,maxWidth:520,margin:"0 auto 20px"}}>
+            {[{n:GROUPS.reduce((a,g)=>a+g.tools.length,0)+"+",l:L("أداة متكاملة","Tools"),c:T.blue},{n:GROUPS.length+"",l:L("أقسام متخصصة","Categories"),c:T.gold},{n:"Claude",l:L("ذكاء اصطناعي","AI engine"),c:T.emerald}].map((s,i)=>(
+              <div key={i} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:16,padding:"14px 8px",boxShadow:T.shadow}}>
+                <div style={{fontSize:26,fontWeight:900,color:s.c,fontVariantNumeric:"tabular-nums"}}>{s.n}</div>
+                <div style={{fontSize:11,color:T.textSec,marginTop:2}}>{s.l}</div>
+              </div>
+            ))}
           </div>
+          <div style={{display:"flex",gap:22,justifyContent:"center",flexWrap:"wrap",fontSize:12,color:T.textSec,fontWeight:600}}>
+            <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span style={{color:T.emerald}}>✓</span>{L("واجهة عربية أصيلة (RTL)","Native Arabic interface (RTL)")}</span>
+            <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span>🤖</span>{L("مدعوم بـ Claude AI","Powered by Claude AI")}</span>
+          </div>
+        </div>
+
+        {/* Quick actions */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:12,marginBottom:8}}>
+          {[
+            {g:"linear-gradient(135deg,#f59e0b,#ea580c)",ic:"🤖",t:L("المساعد الذكي الموحّد","Unified AI Assistant"),s:L("يدعم 27 مهمة بحثية في مكان واحد","27 research tasks in one place"),on:()=>setActiveTool("smart_orch")},
+            {g:"linear-gradient(135deg,#2563eb,#4338ca)",ic:"⚡",t:L("المراجعة التلقائية الشاملة","Full Auto Review"),s:L("مراجعة علمية متكاملة بضغطة واحدة","Comprehensive review in one click"),on:()=>setActiveTool("auto_review")},
+            {g:"linear-gradient(135deg,#1e293b,#0f172a)",ic:"📊",t:L("تحليل البيانات","Data Analysis"),s:"SPSS · R · Python · Auto-EDA",on:()=>openGroup("analysis")},
+          ].map((a,i)=>(
+            <button key={i} onClick={a.on} style={{background:a.g,color:"#fff",border:"none",borderRadius:20,padding:"18px",display:"flex",alignItems:"center",gap:14,cursor:"pointer",fontFamily:"inherit",textAlign:"start",transition:"transform .15s, box-shadow .2s"}}
+              onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.boxShadow="0 18px 40px #00000033";}}
+              onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
+              <div style={{width:52,height:52,borderRadius:15,background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}}>{a.ic}</div>
+              <div style={{minWidth:0}}>
+                <div style={{fontWeight:800,fontSize:16,lineHeight:1.3}}>{a.t}</div>
+                <div style={{fontSize:12,opacity:.88,marginTop:3}}>{a.s}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Section header */}
+        <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:12,margin:"30px 0 14px",flexWrap:"wrap"}}>
+          <div>
+            <h2 style={{margin:0,fontSize:"clamp(22px,4vw,30px)",fontWeight:900,color:T.text,letterSpacing:"-.5px"}}>{L("استكشف الأدوات المتكاملة","Explore the integrated tools")}</h2>
+            <p style={{margin:"4px 0 0",fontSize:13,color:T.textSec}}>{L("كل ما تحتاجه للبحث الأكاديمي الاحترافي في مكان واحد","Everything you need for professional academic research in one place")}</p>
+          </div>
+          <button onClick={()=>setHomeOpen("__none__")} style={{display:"inline-flex",alignItems:"center",gap:7,fontSize:12.5,padding:"9px 16px",borderRadius:24,border:`1px solid ${T.border}`,background:T.card,color:T.textSec,cursor:"pointer",fontFamily:"inherit",fontWeight:700}}>⊟ {L("طي الكل","Collapse all")}</button>
         </div>
 
         {/* Groups — accordion احترافي قابل للطي */}
