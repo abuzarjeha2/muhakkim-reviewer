@@ -1,4 +1,5 @@
 - [AI proxy hardening](ai-proxy-hardening.md) — /api/ai paid LLM relay is guarded by Origin allowlist + per-IP rate limit (needs trust proxy), NOT auth; auth/quota deferred.
+- [Deploy API routing](deploy-api-routing.md) — runnable must return 200 at service ROOT (GET /api), not just /api/healthz, or autoscale marks it unhealthy & /api/* 404s in prod only.
 - [Vendored single-file JSX integration](vendored-jsx-integration.md) — big pre-built `.jsx` kept verbatim; `tsc` skips it (allowJs false), `.d.ts` shim types the import, Vite compiles it.
 - [Muhakkim icon system](icon-system.md) — emoji icons render via EmIcon+Lucide; never convert ${x.icon} template-literals (exports break).
 - [File extraction libs](file-extraction-libs.md) — PDF/Excel parsing must use bundled npm (xlsx, pdfjs-dist), never runtime cdnjs imports; CDN silently fails on mobile/custom domain.
