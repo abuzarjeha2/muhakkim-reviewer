@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<!-- نظام إدارة وتحليل جودة المقررات الجامعية — منصة محكّم
+     ملف واحد موحّد قابل للنسخ واللصق في Replit (index.html)
+     مدمج داخل منصة محكّم؛ أزرار الـ AI تعمل حصراً عبر وسيط الخادم الآمن /api/ai -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام جودة المقرر — محكّم</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0e1a2b; --navy2:#16263d; --navy3:#1e3350;
+    --gold:#d4af37; --gold2:#f0d27a; --gold-soft:rgba(212,175,55,.12);
+    --txt:#eaf0f7; --muted:#9fb0c4; --line:rgba(212,175,55,.22);
+    --ok:#3ecf8e; --warn:#f0b429; --bad:#e5484d; --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Tajawal',sans-serif;background:radial-gradient(1200px 600px at 80% -10%,#1b2d47 0,var(--navy) 55%);color:var(--txt);direction:rtl;min-height:100vh;padding:22px}
+  .wrap{max-width:1180px;margin:0 auto}
+  header.app{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+  .logo{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:grid;place-items:center;color:var(--navy);font-weight:900;font-size:22px;box-shadow:0 6px 20px rgba(212,175,55,.3)}
+  header.app h1{font-size:22px;font-weight:900;letter-spacing:.3px}
+  header.app p{color:var(--muted);font-size:13px;margin-top:2px}
+  .save-pill{margin-inline-start:auto;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  .tab{padding:10px 16px;border-radius:10px;background:var(--navy2);border:1px solid var(--line);color:var(--muted);cursor:pointer;font-family:inherit;font-size:14px;font-weight:700;transition:.2s}
+  .tab:hover{color:var(--txt)}
+  .tab.active{background:var(--gold-soft);color:var(--gold2);border-color:var(--gold)}
+  .card{background:linear-gradient(180deg,var(--navy2),var(--navy));border:1px solid var(--line);border-radius:var(--radius);padding:22px;margin-bottom:18px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+  .card h2{font-size:17px;color:var(--gold2);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+  .grid{display:grid;gap:12px}
+  .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:760px){.g2,.g3,.g4{grid-template-columns:1fr}.tabs{overflow-x:auto}}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:500}
+  input,select,textarea{width:100%;padding:9px 11px;background:var(--navy);border:1px solid var(--line);border-radius:9px;color:var(--txt);font-family:inherit;font-size:14px}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
+  textarea{resize:vertical;min-height:70px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:8px 10px;border:1px solid var(--line);text-align:center}
+  th{background:var(--navy3);color:var(--gold2);font-weight:700;font-size:12px}
+  td input,td select{padding:6px;font-size:13px;text-align:center}
+  .btn{padding:10px 18px;border-radius:10px;border:1px solid var(--gold);background:var(--gold-soft);color:var(--gold2);cursor:pointer;font-family:inherit;font-weight:700;font-size:14px;transition:.2s}
+  .btn:hover{background:var(--gold);color:var(--navy)}
+  .btn.solid{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);border:none}
+  .btn.ghost{background:transparent;border-color:var(--line);color:var(--muted)}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .add-row{margin-top:10px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+  .b-ok{background:rgba(62,207,142,.15);color:var(--ok)}
+  .b-warn{background:rgba(240,180,41,.15);color:var(--warn)}
+  .b-bad{background:rgba(229,72,77,.15);color:var(--bad)}
+  .stat{background:var(--navy3);border:1px solid var(--line);border-radius:12px;padding:16px;text-align:center}
+  .stat .num{font-size:28px;font-weight:900;color:var(--gold2)}
+  .stat .lbl{font-size:12px;color:var(--muted);margin-top:4px}
+  .hidden{display:none}
+  .ai-box{background:var(--navy);border:1px dashed var(--gold);border-radius:12px;padding:16px;margin-top:12px;white-space:pre-wrap;line-height:1.9;font-size:14px;min-height:60px}
+  .bar-wrap{background:var(--navy3);border-radius:8px;height:22px;overflow:hidden;position:relative}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));display:flex;align-items:center;padding-inline-start:8px;font-size:11px;color:var(--navy);font-weight:700;transition:width .4s}
+  .del{color:var(--bad);cursor:pointer;font-weight:900;background:none;border:none;font-size:16px}
+  .mini{font-size:11px;color:var(--muted);margin-top:4px}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--gold);border-top-color:transparent;border-radius:50%;animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  ::-webkit-scrollbar{height:8px;width:8px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="app">
+    <div class="logo">م</div>
+    <div>
+      <h1>نظام جودة المقرر الأكاديمي</h1>
+      <p>منصة محكّم — إدارة وتحليل جودة المقررات الجامعية</p>
+    </div>
+    <div class="save-pill"><span class="dot"></span><span id="saveStatus">محفوظ تلقائياً</span></div>
+  </header>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-tab="info">معلومات المقرر</button>
+    <button class="tab" data-tab="outline">توصيف المقرر</button>
+    <button class="tab" data-tab="clo">مخرجات التعلم</button>
+    <button class="tab" data-tab="blueprint">مصفوفة Blueprint</button>
+    <button class="tab" data-tab="grades">الدرجات والتصحيح</button>
+    <button class="tab" data-tab="sheets">أوراق التقييم</button>
+    <button class="tab" data-tab="tia">تحليل الفقرات وCLO</button>
+    <button class="tab" data-tab="files">رفع وتحليل الملفات</button>
+    <button class="tab" data-tab="report">التقرير والتحليل</button>
+  </div>
+
+  <!-- ===== معلومات المقرر ===== -->
+  <section id="tab-info" class="card">
+    <h2>◆ معلومات المقرر</h2>
+    <div class="grid g3">
+      <div><label>اسم المقرر</label><input id="cName" placeholder="مثال: مبادئ الإحصاء"></div>
+      <div><label>رمز المقرر</label><input id="cCode" placeholder="STA222"></div>
+      <div><label>المستوى</label><input id="cLevel" placeholder="7"></div>
+      <div><label>القسم</label><input id="cDept" placeholder="العلوم الطبية التطبيقية"></div>
+      <div><label>البرنامج</label><input id="cProg" placeholder="التقنية الإشعاعية"></div>
+      <div><label>الكلية</label><input id="cCollege" placeholder="كلية العلوم الطبية"></div>
+      <div><label>المؤسسة</label><input id="cInst" placeholder="الجامعة"></div>
+      <div><label>أستاذ المقرر</label><input id="cInstr" placeholder="د. ..."></div>
+      <div><label>العام الدراسي / الفصل</label><input id="cYear" placeholder="1447 / الأول"></div>
+      <div><label>الساعات المعتمدة</label><input id="cCredit" type="number" placeholder="3"></div>
+      <div><label>عدد الطلاب (بداية)</label><input id="cStart" type="number" placeholder="40"></div>
+      <div><label>عدد الطلاب (نهاية)</label><input id="cEnd" type="number" placeholder="38"></div>
+    </div>
+  </section>
+
+  <!-- ===== توصيف المقرر (Course Information + Course Outlines1) ===== -->
+  <section id="tab-outline" class="card hidden">
+    <h2>◆ أ. تعريف المقرر</h2>
+    <div class="grid g3">
+      <div><label>الساعات المعتمدة</label><input id="oCredit" placeholder="3" onchange="saveOutline()"></div>
+      <div><label>نوع المقرر</label>
+        <select id="oType" onchange="saveOutline()">
+          <option>جامعة</option><option>كلية</option><option>قسم</option><option>مسار</option><option>أخرى</option>
+        </select></div>
+      <div><label>المتطلب</label>
+        <select id="oReq" onchange="saveOutline()"><option>إجباري</option><option>اختياري</option></select></div>
+      <div style="grid-column:1/-1"><label>المستوى/السنة التي يُقدّم فيها المقرر</label><input id="oLevelYear" placeholder="المستوى السابع" onchange="saveOutline()"></div>
+      <div style="grid-column:1/-1"><label>الوصف العام للمقرر</label><textarea id="oDesc" placeholder="الغرض من هذا المقرر..." onchange="saveOutline()"></textarea></div>
+    </div>
+
+    <h2 style="margin-top:24px">◆ ب. بطاقة معلومات المقرر</h2>
+    <p class="mini">تُسحب تلقائياً من تبويب «معلومات المقرر»، ويمكنك إضافة الحقول الخاصة بالمجموعة والمنسّق.</p>
+    <div class="grid g3">
+      <div><label>المجموعة (Group No.)</label><input id="oGroup" placeholder="10" onchange="saveOutline()"></div>
+      <div><label>الجنس</label><select id="oGender" onchange="saveOutline()"><option>طلاب</option><option>طالبات</option><option>مشترك</option></select></div>
+      <div><label>منسّق المقرر</label><input id="oCoord" placeholder="د. ..." onchange="saveOutline()"></div>
+      <div><label>البريد الجامعي للأستاذ</label><input id="oEmail" placeholder="xxx@univ.edu.sa" onchange="saveOutline()"></div>
+      <div><label>تاريخ آخر مراجعة</label><input id="oRev" type="date" onchange="saveOutline()"></div>
+      <div><label>رقم النسخة</label><input id="oVer" placeholder="1447-1" onchange="saveOutline()"></div>
+    </div>
+
+    <h2 style="margin-top:24px">◆ ج. محتوى المقرر</h2>
+    <p class="mini">أدرج كل موضوع وساعات تواصله واربطه بمخرج تعلم. تُجمّع الساعات تلقائياً لكل CLO وتُحدّث نسب المخرجات.</p>
+    <div style="overflow-x:auto"><table id="topicTable"><thead><tr>
+      <th>#</th><th>الموضوع</th><th>ساعات التواصل</th><th>CLO</th><th>محاضرات</th><th>عملي/معمل</th><th>ميداني</th><th></th>
+    </tr></thead><tbody></tbody><tfoot></tfoot></table></div>
+    <div class="add-row"><button class="btn ghost" onclick="addTopic()">+ إضافة موضوع</button>
+      <button class="btn" onclick="syncTopicsToCLO()">⟳ تحديث ساعات المخرجات</button></div>
+
+    <h2 style="margin-top:24px">◆ د. أنشطة تقييم الطلاب</h2>
+    <p class="mini">تتزامن مع أدوات التقييم في مصفوفة Blueprint. أي تعديل هنا ينعكس هناك.</p>
+    <div style="overflow-x:auto"><table id="actTable"><thead><tr>
+      <th>#</th><th>نشاط التقييم</th><th>التوقيت (أسبوع)</th><th>النسبة من الدرجة %</th><th></th>
+    </tr></thead><tbody></tbody><tfoot></tfoot></table></div>
+    <div class="add-row"><button class="btn ghost" onclick="addAssessment();renderActs()">+ إضافة نشاط</button></div>
+  </section>
+
+  <!-- ===== مخرجات التعلم ===== -->
+  <section id="tab-clo" class="card hidden">
+    <h2>◆ مخرجات التعلم (CLOs)</h2>
+    <p class="mini">أضف مخرجات التعلم وحدد ساعات التواصل لكل مخرج. تُستخدم النسب لاحقاً في مصفوفة Blueprint.</p>
+    <table id="cloTable">
+      <thead><tr><th>#</th><th>وصف المخرج</th><th>المجال</th><th>PLO المرتبط</th><th>ساعات التواصل</th><th>%</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="add-row"><button class="btn ghost" onclick="addCLO()">+ إضافة مخرج</button></div>
+  </section>
+
+  <!-- ===== مصفوفة Blueprint ===== -->
+  <section id="tab-blueprint" class="card hidden">
+    <h2>◆ مصفوفة التقييم التفاعلية (Blueprint)</h2>
+    <p class="mini">وزّع درجات كل أداة تقييم على مخرجات التعلم. النظام يتحقق تلقائياً من توافق التوزيع مع نسب ساعات التواصل.</p>
+    <div style="overflow-x:auto"><table id="bpTable"><thead></thead><tbody></tbody><tfoot></tfoot></table></div>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="addAssessment()">+ إضافة أداة تقييم</button>
+      <button class="btn" onclick="checkBlueprint()">⟳ فحص التوافق</button>
+    </div>
+    <div id="bpCheck" class="ai-box hidden"></div>
+  </section>
+
+  <!-- ===== الدرجات والتصحيح ===== -->
+  <section id="tab-grades" class="card hidden">
+    <h2>◆ التصحيح الإلكتروني ورصد الدرجات</h2>
+    <p class="mini">أدخل درجات الطلاب لكل أداة. يُحتسب المجموع والتقدير تلقائياً، مع توزيع التقديرات.</p>
+    <div style="overflow-x:auto"><table id="grTable"><thead></thead><tbody></tbody></table></div>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="addStudent()">+ إضافة طالب</button>
+      <button class="btn" onclick="computeGrades()">⟳ حساب التقديرات</button>
+    </div>
+    <div class="grid g4" id="gradeStats" style="margin-top:16px"></div>
+  </section>
+
+  <!-- ===== أوراق التقييم التفصيلية ===== -->
+  <section id="tab-sheets" class="card hidden">
+    <h2>◆ أوراق التقييم التفصيلية</h2>
+    <p class="mini">لكل أداة تقييم: عرّف أسئلتها واربط كل سؤال بمخرج تعلم ودرجته، ثم أدخل إجابات الطلاب. يُحسب مجموع كل طالب (T-Marks) تلقائياً ويُنقل لشاشة الدرجات، ويغذّي تحليل الفقرات.</p>
+    <div class="grid g2" style="margin-bottom:14px">
+      <div><label>اختر أداة التقييم</label><select id="sheetSel" onchange="renderSheet()"></select></div>
+      <div><label>عدد الأسئلة</label><input id="sheetNQ" type="number" min="1" max="60" onchange="setSheetNQ()"></div>
+    </div>
+    <div id="sheetBody"></div>
+  </section>
+
+  <!-- ===== تحليل الفقرات وCLO (DIF & DIS) ===== -->
+  <section id="tab-tia" class="card hidden">
+    <h2>◆ تقرير تحليل الفقرات (DIF & DIS) وتحقق مخرجات التعلم</h2>
+    <p class="mini">اختر أداة تقييم — تُقرأ أسئلتها وإجابات الطلاب مباشرة من تبويب «أوراق التقييم». يحسب النظام معامل الصعوبة والتمييز لكل فقرة، موثوقية الاختبار (KR-20)، وتحقق كل CLO، مع تقرير تحسين بنك الأسئلة.</p>
+    <div class="grid g3" style="margin-bottom:14px">
+      <div><label>أداة التقييم</label><select id="tiaSel"></select></div>
+      <div><label>المستوى المستهدف لتحقق CLO %</label><input id="tiaTarget" type="number" value="60"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn solid" style="width:100%" onclick="computeTIA()">⟳ تشغيل التحليل</button></div>
+    </div>
+
+    <div id="tiaResults" class="hidden">
+      <div class="grid g4" id="tiaSummary"></div>
+
+      <h2 style="margin-top:22px">معاملات الفقرات</h2>
+      <div style="overflow-x:auto"><table id="tiaItemTable"><thead><tr>
+        <th>السؤال</th><th>CLO</th><th>معامل الصعوبة</th><th>تصنيف الصعوبة</th><th>معامل التمييز</th><th>تصنيف التمييز</th><th>التوصية</th>
+      </tr></thead><tbody></tbody></table></div>
+
+      <h2 style="margin-top:22px">تقرير تحسين بنك الأسئلة</h2>
+      <div class="grid g2">
+        <div class="stat" style="text-align:right;background:rgba(240,180,41,.08);border-color:var(--warn)">
+          <div style="color:var(--warn);font-weight:700;margin-bottom:6px">أسئلة تحتاج تعديل (للمراجعة)</div>
+          <div id="tiaModify" class="mini"></div></div>
+        <div class="stat" style="text-align:right;background:rgba(229,72,77,.08);border-color:var(--bad)">
+          <div style="color:var(--bad);font-weight:700;margin-bottom:6px">أسئلة تحتاج حذف/إعادة صياغة</div>
+          <div id="tiaRemove" class="mini"></div></div>
+      </div>
+
+      <h2 style="margin-top:22px">تحقق مخرجات التعلم (CLO)</h2>
+      <div style="overflow-x:auto"><table id="tiaCloTable"><thead><tr>
+        <th>CLO</th><th>الوصف</th><th>عدد الأسئلة</th><th>المستهدف %</th><th>المحقق %</th><th>الحالة</th>
+      </tr></thead><tbody></tbody></table></div>
+      <div id="tiaCloBars" style="margin-top:14px"></div>
+
+      <div class="btn-row" style="margin-top:16px">
+        <button class="btn" onclick="exportTIA()">⬇ تصدير التقرير (CSV)</button>
+        <button class="btn solid" onclick="analyzeTIA()">✦ تفسير ذكي بالـ AI</button>
+      </div>
+      <div id="tiaAI" class="ai-box hidden"></div>
+    </div>
+  </section>
+
+  <!-- ===== رفع وتحليل الملفات ===== -->
+  <section id="tab-files" class="card hidden">
+    <h2>◆ رفع وتحليل الملفات</h2>
+    <p class="mini">ارفع ملف Excel أو Word أو PDF أو نص. يستخرج النظام المحتوى ويحلله ذكياً وفق سياق جودة المقرر.</p>
+    <div id="dropZone" style="border:2px dashed var(--gold);border-radius:14px;padding:32px;text-align:center;cursor:pointer;background:var(--gold-soft);transition:.2s">
+      <div style="font-size:32px;color:var(--gold2)">⬆</div>
+      <div style="margin-top:8px;font-weight:700">اسحب الملف هنا أو انقر للاختيار</div>
+      <div class="mini">الصيغ المدعومة: .xlsx .xls .csv .docx .pdf .txt</div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.docx,.pdf,.txt" style="display:none">
+    </div>
+    <div id="fileMeta" class="hidden" style="margin-top:14px"></div>
+    <div id="filePreview" style="margin-top:14px;overflow-x:auto"></div>
+    <div class="btn-row" id="fileActions" style="display:none">
+      <button class="btn" onclick="tryFillGrades()">↳ تعبئة الدرجات من الجدول</button>
+      <button class="btn solid" onclick="analyzeFile()">✦ تحليل الملف بالـ AI</button>
+    </div>
+    <div id="fileAI" class="ai-box hidden"></div>
+  </section>
+
+  <!-- ===== التقرير والتحليل ===== -->
+  <section id="tab-report" class="card hidden">
+    <h2>◆ تقرير المقرر والتحليل الذكي</h2>
+    <div class="grid g4" id="reportStats"></div>
+    <div style="margin-top:16px"><label>توزيع التقديرات</label><div id="distBars"></div></div>
+    <div class="btn-row" style="margin-top:18px">
+      <button class="btn solid" onclick="runAI()">✦ تحليل ذكي بالـ AI</button>
+      <button class="btn" onclick="exportExcel()">⬇ تصدير Excel (CSV)</button>
+      <button class="btn" onclick="exportPDF()">⬇ تصدير PDF</button>
+    </div>
+    <div id="aiOut" class="ai-box hidden"></div>
+  </section>
+</div>
+
+<script>
+/* ============ الحالة + الحفظ التلقائي ============ */
+const KEY='muhakkim_quality_v1';
+let S={info:{},outline:{},topics:[],clos:[],assessments:[],students:[],tia:{name:'الاختبار النصفي الأول',nQ:10,target:60,questions:[],matrix:[]}};
+const DOMAINS=['المعرفة والفهم','المهارات','القيم والاستقلالية'];
+let uploadedFile={name:'',type:'',text:'',rows:[],b64:''};
+
+function load(){try{const r=localStorage.getItem(KEY);if(r)S=JSON.parse(r);}catch(e){}}
+
+/* ============ استدعاء AI موحّد (عبر وسيط الخادم الآمن /api/ai) ============ */
+// يمرّ كل طلب ذكاء اصطناعي عبر وسيط الخادم /api/ai حصراً؛ المفتاح يبقى في الخادم
+async function callAI(payload){
+  payload.model = payload.model || "claude-sonnet-4-6";
+  payload.max_tokens = payload.max_tokens || 1200;
+  // يمرّ الذكاء الاصطناعي حصراً عبر وسيط الخادم الآمن /api/ai (المفتاح يبقى في الخادم)
+  const r = await fetch("/api/ai",{
+    method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)
+  });
+  if(!r.ok) throw new Error("AI "+r.status);
+  return await r.json();
+}
+function aiText(d){return (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');}
+function save(){
+  try{
+    document.querySelectorAll('#tab-info input').forEach(i=>S.info[i.id]=i.value);
+    localStorage.setItem(KEY,JSON.stringify(S));
+    const st=document.getElementById('saveStatus');
+    if(st){st.textContent='حُفظ ✓';setTimeout(()=>st.textContent='محفوظ تلقائياً',1200);}
+  }catch(e){console.warn('save',e);}
+}
+
+/* ============ توصيف المقرر (Course Information + Outlines1) ============ */
+const OUTLINE_FIELDS=['oCredit','oType','oReq','oLevelYear','oDesc','oGroup','oGender','oCoord','oEmail','oRev','oVer'];
+function saveOutline(){
+  OUTLINE_FIELDS.forEach(f=>{const el=document.getElementById(f);if(el)S.outline[f]=el.value;});
+  save();
+}
+function renderOutline(){
+  OUTLINE_FIELDS.forEach(f=>{const el=document.getElementById(f);if(el&&S.outline[f]!=null)el.value=S.outline[f];});
+  // سحب القيم المشتركة من بطاقة المعلومات إن كانت فارغة
+  if(!S.outline.oCoord&&S.info.cInstr){const e=document.getElementById('oCoord');}
+  renderTopics();renderActs();
+}
+function addTopic(){S.topics.push({name:'',hrs:2,clo:0,lec:2,lab:0,field:0});renderTopics();save();}
+function renderTopics(){
+  const tb=document.querySelector('#topicTable tbody'),tf=document.querySelector('#topicTable tfoot');
+  tb.innerHTML='';
+  const cloOpts=ci=>S.clos.map((c,i)=>`<option value="${i}" ${ci===i?'selected':''}>CLO ${i+1}</option>`).join('');
+  let th=0,tl=0,tp=0,tfd=0;
+  S.topics.forEach((t,i)=>{
+    th+=+t.hrs||0;tl+=+t.lec||0;tp+=+t.lab||0;tfd+=+t.field||0;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${i+1}</td>
+      <td><input value="${t.name||''}" onchange="S.topics[${i}].name=this.value;save()" style="min-width:160px"></td>
+      <td><input type="number" value="${t.hrs}" style="width:60px" onchange="S.topics[${i}].hrs=+this.value;renderTopics();save()"></td>
+      <td><select style="width:80px" onchange="S.topics[${i}].clo=+this.value;save()">${cloOpts(t.clo)}</select></td>
+      <td><input type="number" value="${t.lec}" style="width:55px" onchange="S.topics[${i}].lec=+this.value;renderTopics();save()"></td>
+      <td><input type="number" value="${t.lab}" style="width:55px" onchange="S.topics[${i}].lab=+this.value;renderTopics();save()"></td>
+      <td><input type="number" value="${t.field}" style="width:55px" onchange="S.topics[${i}].field=+this.value;renderTopics();save()"></td>
+      <td><button class="del" onclick="S.topics.splice(${i},1);renderTopics();save()">×</button></td>`;
+    tb.appendChild(tr);
+  });
+  tf.innerHTML=`<tr><th colspan="2">الإجمالي</th><th>${th}</th><th>-</th><th>${tl}</th><th>${tp}</th><th>${tfd}</th><th></th></tr>`;
+}
+// تجميع ساعات الموضوعات على مستوى كل CLO وتحديث المخرجات
+function syncTopicsToCLO(){
+  if(!S.clos.length){alert('أضف مخرجات التعلم أولاً');return;}
+  S.clos.forEach((c,ci)=>{
+    const sum=S.topics.filter(t=>+t.clo===ci).reduce((a,t)=>a+(+t.hrs||0),0);
+    if(sum>0)c.hrs=sum;
+  });
+  save();renderCLO();
+  alert('تم تحديث ساعات التواصل لكل مخرج بناءً على محتوى المقرر.');
+}
+function renderActs(){
+  const tb=document.querySelector('#actTable tbody'),tf=document.querySelector('#actTable tfoot');
+  tb.innerHTML='';let tot=0;
+  S.assessments.forEach((a,i)=>{
+    tot+=+a.weight||0;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${i+1}</td>
+      <td><input value="${a.name}" onchange="S.assessments[${i}].name=this.value;save()" style="min-width:160px"></td>
+      <td><input type="number" value="${a.week}" style="width:70px" onchange="S.assessments[${i}].week=+this.value;save()"></td>
+      <td><input type="number" value="${a.weight}" style="width:70px" onchange="S.assessments[${i}].weight=+this.value;renderActs();save()"></td>
+      <td><button class="del" onclick="S.assessments.splice(${i},1);renderActs();save()">×</button></td>`;
+    tb.appendChild(tr);
+  });
+  const cls=tot===100?'b-ok':'b-warn';
+  tf.innerHTML=`<tr><th colspan="3">إجمالي النسب</th><th><span class="badge ${cls}">${tot}%</span></th><th></th></tr>`;
+}
+
+/* ============ مخرجات التعلم ============ */
+function addCLO(desc='',dom=DOMAINS[0],plo='',hrs=2){
+  S.clos.push({desc,dom,plo,hrs:+hrs});renderCLO();save();
+}
+function renderCLO(){
+  const tb=document.querySelector('#cloTable tbody');tb.innerHTML='';
+  const total=S.clos.reduce((a,c)=>a+(+c.hrs||0),0)||1;
+  S.clos.forEach((c,i)=>{
+    const pct=((c.hrs/total)*100).toFixed(1);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${i+1}</td>
+      <td><input value="${c.desc}" onchange="upClo(${i},'desc',this.value)"></td>
+      <td><select onchange="upClo(${i},'dom',this.value)">${DOMAINS.map(d=>`<option ${d===c.dom?'selected':''}>${d}</option>`).join('')}</select></td>
+      <td><input value="${c.plo}" onchange="upClo(${i},'plo',this.value)" style="width:70px"></td>
+      <td><input type="number" value="${c.hrs}" onchange="upClo(${i},'hrs',+this.value)" style="width:70px"></td>
+      <td><span class="badge b-ok">${pct}%</span></td>
+      <td><button class="del" onclick="S.clos.splice(${i},1);renderCLO();save()">×</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+function upClo(i,k,v){S.clos[i][k]=v;renderCLO();save();}
+
+/* ============ مصفوفة Blueprint ============ */
+function addAssessment(name='تقييم جديد',week=1,weight=10){
+  S.assessments.push({name,week:+week,weight:+weight,marks:{}});renderBP();save();
+}
+function renderBP(){
+  const th=document.querySelector('#bpTable thead');
+  const tb=document.querySelector('#bpTable tbody');
+  const tf=document.querySelector('#bpTable tfoot');
+  if(!S.clos.length){tb.innerHTML='<tr><td>أضف مخرجات التعلم أولاً</td></tr>';th.innerHTML='';tf.innerHTML='';return;}
+  th.innerHTML=`<tr><th>أداة التقييم</th><th>الأسبوع</th><th>الوزن %</th>${S.clos.map((c,i)=>`<th>CLO ${i+1}</th>`).join('')}<th>المجموع</th></tr>`;
+  tb.innerHTML='';
+  S.assessments.forEach((a,ai)=>{
+    let rowSum=0;
+    const cells=S.clos.map((c,ci)=>{
+      const v=a.marks['c'+ci]||0;rowSum+=+v;
+      return `<td><input type="number" value="${v}" style="width:60px" onchange="S.assessments[${ai}].marks['c${ci}']=+this.value;renderBP();save()"></td>`;
+    }).join('');
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input value="${a.name}" onchange="S.assessments[${ai}].name=this.value;save()"></td>
+      <td><input type="number" value="${a.week}" style="width:55px" onchange="S.assessments[${ai}].week=+this.value;save()"></td>
+      <td><input type="number" value="${a.weight}" style="width:55px" onchange="S.assessments[${ai}].weight=+this.value;renderBP();save()"></td>
+      ${cells}<td><b>${rowSum}</b> <button class="del" onclick="S.assessments.splice(${ai},1);renderBP();save()">×</button></td>`;
+    tb.appendChild(tr);
+  });
+  const totW=S.assessments.reduce((a,x)=>a+(+x.weight||0),0);
+  const colSums=S.clos.map((c,ci)=>S.assessments.reduce((a,x)=>a+(+x.marks['c'+ci]||0),0));
+  tf.innerHTML=`<tr><th colspan="2">إجمالي الأوزان</th><th>${totW}%</th>${colSums.map(s=>`<th>${s}</th>`).join('')}<th>${colSums.reduce((a,b)=>a+b,0)}</th></tr>`;
+}
+function checkBlueprint(){
+  const box=document.getElementById('bpCheck');box.classList.remove('hidden');
+  const totW=S.assessments.reduce((a,x)=>a+(+x.weight||0),0);
+  const totHrs=S.clos.reduce((a,c)=>a+(+c.hrs||0),0)||1;
+  const grand=S.clos.reduce((a,c,ci)=>a+S.assessments.reduce((b,x)=>b+(+x.marks['c'+ci]||0),0),0)||1;
+  let msg=`فحص التوافق:\n`;
+  msg+=totW===100?`✓ مجموع الأوزان = 100%\n`:`⚠ مجموع الأوزان = ${totW}% (يُفضّل 100%)\n\n`;
+  msg+=`مقارنة توزيع الدرجات على المخرجات مقابل نسب ساعات التواصل:\n`;
+  S.clos.forEach((c,ci)=>{
+    const mPct=(S.assessments.reduce((b,x)=>b+(+x.marks['c'+ci]||0),0)/grand*100);
+    const hPct=(c.hrs/totHrs*100);
+    const diff=Math.abs(mPct-hPct);
+    const flag=diff<=5?'✓':diff<=10?'~':'⚠';
+    msg+=`${flag} CLO ${ci+1}: درجات ${mPct.toFixed(1)}% مقابل ساعات ${hPct.toFixed(1)}% (فرق ${diff.toFixed(1)}%)\n`;
+  });
+  box.textContent=msg;
+}
+
+/* ============ الدرجات والتصحيح ============ */
+function addStudent(name='',id=''){
+  S.students.push({name,id,scores:{}});renderGrades();save();
+}
+function gradeLetter(p){
+  if(p>=95)return['A+',4];if(p>=90)return['A',4];if(p>=85)return['B+',3.5];if(p>=80)return['B',3];
+  if(p>=75)return['C+',2.5];if(p>=70)return['C',2];if(p>=65)return['D+',1.5];if(p>=60)return['D',1];return['F',0];
+}
+function renderGrades(){
+  const th=document.querySelector('#grTable thead');
+  const tb=document.querySelector('#grTable tbody');
+  if(!S.assessments.length){tb.innerHTML='<tr><td>أضف أدوات تقييم من مصفوفة Blueprint أولاً</td></tr>';th.innerHTML='';return;}
+  th.innerHTML=`<tr><th>#</th><th>الاسم</th><th>الرقم الجامعي</th>${S.assessments.map(a=>`<th>${a.name}<br><span class="mini">/${a.weight}</span></th>`).join('')}<th>المجموع</th><th>التقدير</th><th></th></tr>`;
+  tb.innerHTML='';
+  S.students.forEach((st,si)=>{
+    let tot=0;
+    const cells=S.assessments.map((a,ai)=>{
+      const v=st.scores['a'+ai]||0;tot+=+v;
+      return `<td><input type="number" value="${v}" style="width:60px" max="${a.weight}" onchange="S.students[${si}].scores['a${ai}']=+this.value;renderGrades();save()"></td>`;
+    }).join('');
+    const [L]=gradeLetter(tot);
+    const cls=L==='F'?'b-bad':(['D','D+','C'].includes(L)?'b-warn':'b-ok');
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${si+1}</td>
+      <td><input value="${st.name}" onchange="S.students[${si}].name=this.value;save()"></td>
+      <td><input value="${st.id}" onchange="S.students[${si}].id=this.value;save()" style="width:100px"></td>
+      ${cells}<td><b>${tot.toFixed(1)}</b></td>
+      <td><span class="badge ${cls}">${L}</span></td>
+      <td><button class="del" onclick="S.students.splice(${si},1);renderGrades();save()">×</button></td>`;
+    tb.appendChild(tr);
+  });
+  renderGradeStats();
+}
+function computeGrades(){renderGrades();}
+function renderGradeStats(){
+  const box=document.getElementById('gradeStats');
+  const totals=S.students.map(st=>S.assessments.reduce((a,_,ai)=>a+(+st.scores['a'+ai]||0),0));
+  const n=totals.length||1;
+  const avg=totals.reduce((a,b)=>a+b,0)/n;
+  const pass=totals.filter(t=>t>=60).length;
+  const fail=n-pass;
+  box.innerHTML=`
+    <div class="stat"><div class="num">${S.students.length}</div><div class="lbl">عدد الطلاب</div></div>
+    <div class="stat"><div class="num">${avg.toFixed(1)}</div><div class="lbl">المتوسط</div></div>
+    <div class="stat"><div class="num">${(pass/n*100).toFixed(0)}%</div><div class="lbl">نسبة النجاح</div></div>
+    <div class="stat"><div class="num">${fail}</div><div class="lbl">عدد الراسبين</div></div>`;
+}
+
+/* ============ التقرير والتحليل ============ */
+function gradeTotals(){return S.students.map(st=>S.assessments.reduce((a,_,ai)=>a+(+st.scores['a'+ai]||0),0));}
+function renderReport(){
+  const totals=gradeTotals();const n=totals.length||1;
+  const avg=totals.reduce((a,b)=>a+b,0)/n;
+  const pass=totals.filter(t=>t>=60).length;
+  document.getElementById('reportStats').innerHTML=`
+    <div class="stat"><div class="num">${S.students.length}</div><div class="lbl">الطلاب</div></div>
+    <div class="stat"><div class="num">${avg.toFixed(1)}</div><div class="lbl">المتوسط</div></div>
+    <div class="stat"><div class="num">${(pass/n*100).toFixed(0)}%</div><div class="lbl">النجاح</div></div>
+    <div class="stat"><div class="num">${S.clos.length}</div><div class="lbl">مخرجات التعلم</div></div>`;
+  const order=['A+','A','B+','B','C+','C','D+','D','F'];
+  const counts={};order.forEach(g=>counts[g]=0);
+  totals.forEach(t=>{counts[gradeLetter(t)[0]]++;});
+  const max=Math.max(...Object.values(counts),1);
+  document.getElementById('distBars').innerHTML=order.map(g=>`
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0">
+      <span style="width:34px;font-size:12px;color:var(--muted)">${g}</span>
+      <div class="bar-wrap" style="flex:1"><div class="bar-fill" style="width:${counts[g]/max*100}%">${counts[g]||''}</div></div>
+    </div>`).join('');
+}
+
+/* ============ التحليل الذكي بالـ AI ============ */
+async function runAI(){
+  const out=document.getElementById('aiOut');out.classList.remove('hidden');
+  out.innerHTML='<span class="spin"></span> جارٍ التحليل...';
+  const totals=gradeTotals();const n=totals.length||1;
+  const avg=(totals.reduce((a,b)=>a+b,0)/n).toFixed(1);
+  const pass=(totals.filter(t=>t>=60).length/n*100).toFixed(0);
+  const counts={};['A+','A','B+','B','C+','C','D+','D','F'].forEach(g=>counts[g]=0);
+  totals.forEach(t=>counts[gradeLetter(t)[0]]++);
+  const prompt=`أنت خبير في جودة التعليم العالي والاعتماد الأكاديمي (NCAAA). حلّل نتائج هذا المقرر واكتب تقريراً موجزاً بالعربية يتضمن: (1) تعليق على توزيع الدرجات، (2) تقييم مدى تحقق مخرجات التعلم، (3) ثلاث توصيات عملية للتحسين، (4) أي مخاطر على الجودة.
+
+بيانات المقرر:
+الاسم: ${S.info.cName||'غير محدد'} (${S.info.cCode||''})
+عدد الطلاب: ${S.students.length}
+المتوسط: ${avg}/100
+نسبة النجاح: ${pass}%
+توزيع التقديرات: ${JSON.stringify(counts)}
+مخرجات التعلم: ${S.clos.map((c,i)=>`CLO${i+1}: ${c.desc} (${c.hrs}س)`).join(' | ')||'غير محددة'}
+أدوات التقييم: ${S.assessments.map(a=>`${a.name} (${a.weight}%)`).join(' | ')||'غير محددة'}
+
+اكتب بأسلوب مهني مختصر دون مقدمات.`;
+  try{
+    const d=await callAI({max_tokens:1000,messages:[{role:"user",content:prompt}]});
+    out.textContent=aiText(d)||'تعذّر الحصول على رد.';
+  }catch(e){out.textContent='خطأ في الاتصال بالـ AI: '+e.message;}
+}
+
+/* ============ التصدير ============ */
+function exportExcel(){
+  let csv='\uFEFF';
+  csv+='تقرير المقرر - '+(S.info.cName||'')+'\n\n';
+  csv+='الاسم,الرقم,'+S.assessments.map(a=>a.name).join(',')+',المجموع,التقدير\n';
+  S.students.forEach(st=>{
+    let tot=0;const row=S.assessments.map((a,ai)=>{const v=+st.scores['a'+ai]||0;tot+=v;return v;});
+    csv+=`${st.name},${st.id},${row.join(',')},${tot.toFixed(1)},${gradeLetter(tot)[0]}\n`;
+  });
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`تقرير_${S.info.cCode||'مقرر'}.csv`;a.click();
+}
+function exportPDF(){
+  const totals=gradeTotals();const n=totals.length||1;
+  const avg=(totals.reduce((a,b)=>a+b,0)/n).toFixed(1);
+  const w=window.open('','_blank');
+  w.document.write(`<html dir="rtl"><head><meta charset="utf-8"><title>تقرير المقرر</title>
+  <style>body{font-family:Arial;padding:30px;color:#222}h1{color:#0e1a2b;border-bottom:3px solid #d4af37;padding-bottom:8px}
+  table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border:1px solid #ccc;padding:6px;text-align:center;font-size:13px}
+  th{background:#0e1a2b;color:#d4af37}.box{background:#f7f3e8;padding:12px;border-radius:8px;margin:10px 0}</style></head><body>
+  <h1>تقرير جودة المقرر — محكّم</h1>
+  <div class="box"><b>${S.info.cName||''}</b> (${S.info.cCode||''}) — ${S.info.cDept||''}<br>
+  أستاذ المقرر: ${S.info.cInstr||''} | العام: ${S.info.cYear||''}</div>
+  <p>عدد الطلاب: ${S.students.length} | المتوسط: ${avg}/100</p>
+  <table><tr><th>#</th><th>الاسم</th><th>الرقم</th><th>المجموع</th><th>التقدير</th></tr>
+  ${S.students.map((st,i)=>{const t=S.assessments.reduce((a,_,ai)=>a+(+st.scores['a'+ai]||0),0);
+    return `<tr><td>${i+1}</td><td>${st.name}</td><td>${st.id}</td><td>${t.toFixed(1)}</td><td>${gradeLetter(t)[0]}</td></tr>`}).join('')}
+  </table></body></html>`);
+  w.document.close();setTimeout(()=>w.print(),300);
+}
+
+/* ============ رفع وتحليل الملفات ============ */
+
+/* ============ أوراق التقييم التفصيلية ============ */
+// كل أداة تقييم قد تحوي: questions[{clo,mark}] + matrix[{ans[]}] متزامنة مع الطلاب
+function ensureSheet(a){
+  if(!a.questions)a.questions=[];
+  if(!a.matrix)a.matrix=[];
+}
+function initSheets(){
+  const sel=document.getElementById('sheetSel');
+  if(!S.assessments.length){document.getElementById('sheetBody').innerHTML='<p class="mini">أضف أدوات تقييم من مصفوفة Blueprint أولاً.</p>';sel.innerHTML='';return;}
+  sel.innerHTML=S.assessments.map((a,i)=>`<option value="${i}">${a.name} (${a.weight} درجة)</option>`).join('');
+  renderSheet();
+}
+function setSheetNQ(){
+  const i=+document.getElementById('sheetSel').value;
+  const a=S.assessments[i];ensureSheet(a);
+  const nQ=+document.getElementById('sheetNQ').value||1;
+  while(a.questions.length<nQ)a.questions.push({clo:0,mark:1});
+  a.questions.length=nQ;
+  a.matrix.forEach(r=>{while(r.ans.length<nQ)r.ans.push(0);r.ans.length=nQ;});
+  save();renderSheet();
+}
+function syncSheetStudents(a){
+  ensureSheet(a);
+  // مزامنة صفوف المصفوفة مع قائمة الطلاب
+  if(S.students.length&&a.matrix.length!==S.students.length){
+    a.matrix=S.students.map((st,si)=>a.matrix[si]||{ans:Array(a.questions.length).fill(0)});
+  }
+  a.matrix.forEach(r=>{while(r.ans.length<a.questions.length)r.ans.push(0);r.ans.length=a.questions.length;});
+}
+function renderSheet(){
+  const i=+document.getElementById('sheetSel').value||0;
+  const a=S.assessments[i];if(!a)return;
+  ensureSheet(a);
+  if(!a.questions.length){a.questions=[{clo:0,mark:1}];}
+  document.getElementById('sheetNQ').value=a.questions.length;
+  syncSheetStudents(a);
+  const cloOpts=ci=>S.clos.map((c,k)=>`<option value="${k}" ${ci===k?'selected':''}>CLO ${k+1}</option>`).join('');
+
+  // جدول إعداد الأسئلة
+  let html=`<div class="mini" style="margin-bottom:6px">إعداد الأسئلة — اربط كل سؤال بمخرج ودرجته (مجموع الدرجات يُفضّل أن يساوي ${a.weight})</div>`;
+  html+='<div style="overflow-x:auto"><table><thead><tr><th>البند</th>'+a.questions.map((q,qi)=>`<th>Q${qi+1}</th>`).join('')+'<th>المجموع</th></tr></thead><tbody>';
+  const sumMarks=a.questions.reduce((s,q)=>s+(+q.mark||0),0);
+  html+='<tr><td>CLO</td>'+a.questions.map((q,qi)=>`<td><select style="width:74px" onchange="S.assessments[${i}].questions[${qi}].clo=+this.value;save()">${cloOpts(q.clo)}</select></td>`).join('')+'<td>-</td></tr>';
+  html+='<tr><td>الدرجة</td>'+a.questions.map((q,qi)=>`<td><input type="number" value="${q.mark}" style="width:52px" onchange="S.assessments[${i}].questions[${qi}].mark=+this.value;renderSheet();save()"></td>`).join('')+`<td><b>${sumMarks}</b></td></tr>`;
+  html+='</tbody></table></div>';
+
+  // مصفوفة إجابات الطلاب
+  html+=`<div class="btn-row"><button class="btn ghost" onclick="addSheetStudent(${i})">+ طالب</button>`+
+        `<button class="btn ghost" onclick="pullStudents(${i})">↳ جلب الطلاب من شاشة الدرجات</button>`+
+        `<button class="btn" onclick="pushTMarks(${i})">⟳ احتساب T-Marks ونقلها للدرجات</button></div>`;
+  html+=`<div class="mini" style="margin:10px 0 6px">إجابات الطلاب (أدخل الدرجة المكتسبة لكل سؤال، أو 1/0 للأسئلة ذات الدرجة 1)</div>`;
+  html+='<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>الطالب</th>'+a.questions.map((q,qi)=>`<th>Q${qi+1}<br><span class="mini">/${q.mark}</span></th>`).join('')+'<th>T-Marks</th></tr></thead><tbody>';
+  a.matrix.forEach((row,ri)=>{
+    let tot=0;
+    const cells=row.ans.map((v,qi)=>{tot+=+v||0;return `<td><input type="number" value="${v}" style="width:48px" max="${a.questions[qi].mark}" onchange="S.assessments[${i}].matrix[${ri}].ans[${qi}]=+this.value;renderSheet();save()"></td>`;}).join('');
+    const nm=(S.students[ri]&&(S.students[ri].name||S.students[ri].id))||row.name||`طالب ${ri+1}`;
+    html+=`<tr><td>${ri+1}</td><td style="min-width:110px">${nm}</td>${cells}<td><b>${tot.toFixed(1)}</b></td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  document.getElementById('sheetBody').innerHTML=html;
+}
+function addSheetStudent(i){const a=S.assessments[i];ensureSheet(a);a.matrix.push({name:'',ans:Array(a.questions.length).fill(0)});save();renderSheet();}
+function pullStudents(i){
+  const a=S.assessments[i];ensureSheet(a);
+  if(!S.students.length){alert('لا يوجد طلاب في شاشة الدرجات');return;}
+  a.matrix=S.students.map(()=>({ans:Array(a.questions.length).fill(0)}));
+  save();renderSheet();
+}
+function pushTMarks(i){
+  const a=S.assessments[i];ensureSheet(a);
+  // إنشاء الطلاب في شاشة الدرجات إن لم يوجدوا
+  if(!S.students.length&&a.matrix.length){
+    S.students=a.matrix.map((r,ri)=>({name:r.name||`طالب ${ri+1}`,id:'',scores:{}}));
+  }
+  a.matrix.forEach((row,ri)=>{
+    const tot=row.ans.reduce((s,v)=>s+(+v||0),0);
+    if(S.students[ri]){S.students[ri].scores['a'+i]=+tot.toFixed(2);}
+  });
+  save();renderGrades();
+  alert(`تم احتساب T-Marks لـ ${a.matrix.length} طالباً ونقلها إلى عمود "${a.name}" في شاشة الدرجات.`);
+}
+
+/* ============ تحليل الفقرات (TIA) وتحقق CLO ============ */
+function saveTIA(){
+  const nm=document.getElementById('tiaName'),tg=document.getElementById('tiaTarget');
+  if(nm)S.tia.name=nm.value;if(tg)S.tia.target=+tg.value;save();
+}
+function buildTIA(){
+  const nQ=+document.getElementById('tiaQ').value||10;
+  S.tia.nQ=nQ;
+  // مزامنة إعداد الأسئلة
+  while(S.tia.questions.length<nQ)S.tia.questions.push({clo:0,mark:1});
+  S.tia.questions.length=nQ;
+  // مزامنة عرض كل صف في المصفوفة
+  S.tia.matrix.forEach(row=>{while(row.ans.length<nQ)row.ans.push(0);row.ans.length=nQ;});
+  renderTIAConfig();renderTIAMatrix();save();
+}
+function renderTIAConfig(){
+  const th=document.querySelector('#tiaConfig thead'),tb=document.querySelector('#tiaConfig tbody');
+  th.innerHTML='<tr><th>البند</th>'+S.tia.questions.map((q,i)=>`<th>س${i+1}</th>`).join('')+'</tr>';
+  const cloOpts=i=>S.clos.map((c,ci)=>`<option value="${ci}" ${S.tia.questions[i].clo===ci?'selected':''}>CLO ${ci+1}</option>`).join('');
+  tb.innerHTML=
+    '<tr><td>المخرج</td>'+S.tia.questions.map((q,i)=>`<td><select style="width:78px" onchange="S.tia.questions[${i}].clo=+this.value;save()">${cloOpts(i)}</select></td>`).join('')+'</tr>'+
+    '<tr><td>الدرجة</td>'+S.tia.questions.map((q,i)=>`<td><input type="number" value="${q.mark}" style="width:55px" onchange="S.tia.questions[${i}].mark=+this.value;save()"></td>`).join('')+'</tr>';
+}
+function renderTIAMatrix(){
+  const th=document.querySelector('#tiaMatrix thead'),tb=document.querySelector('#tiaMatrix tbody');
+  th.innerHTML='<tr><th>#</th><th>الطالب</th>'+S.tia.questions.map((q,i)=>`<th>س${i+1}</th>`).join('')+'<th>الدرجة</th><th></th></tr>';
+  tb.innerHTML='';
+  S.tia.matrix.forEach((row,ri)=>{
+    let sc=0;row.ans.forEach((a,qi)=>{if(+a===1)sc+=+S.tia.questions[qi].mark;});
+    const cells=row.ans.map((a,qi)=>`<td><input type="number" min="0" max="1" value="${a}" style="width:42px" onchange="S.tia.matrix[${ri}].ans[${qi}]=(+this.value?1:0);renderTIAMatrix();save()"></td>`).join('');
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${ri+1}</td><td><input value="${row.name||''}" style="width:120px" onchange="S.tia.matrix[${ri}].name=this.value;save()"></td>${cells}<td><b>${sc}</b></td><td><button class="del" onclick="S.tia.matrix.splice(${ri},1);renderTIAMatrix();save()">×</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+function addTIAStudent(){S.tia.matrix.push({name:'',ans:Array(S.tia.nQ).fill(0)});renderTIAMatrix();save();}
+function importTIAStudents(){
+  if(!S.students.length){alert('لا يوجد طلاب في شاشة الدرجات');return;}
+  S.tia.matrix=S.students.map(st=>({name:st.name||st.id||'',ans:Array(S.tia.nQ).fill(0)}));
+  renderTIAMatrix();save();
+  alert(`تم جلب ${S.students.length} طالباً. أدخل إجاباتهم (1/0).`);
+}
+
+function computeTIA(){
+  const n=S.tia.matrix.length;
+  if(n<2){alert('أضف طالبين على الأقل لإجراء التحليل');return;}
+  // الدرجة الكلية لكل طالب لترتيبهم
+  const scored=S.tia.matrix.map(row=>{
+    let sc=0;row.ans.forEach((a,qi)=>{if(+a===1)sc+=+S.tia.questions[qi].mark;});
+    return {row,sc};
+  }).sort((a,b)=>b.sc-a.sc);
+  // الفئة العليا والدنيا 27%
+  const g=Math.max(1,Math.round(n*0.27));
+  const upper=scored.slice(0,g),lower=scored.slice(-g);
+
+  // تحليل كل فقرة
+  const items=S.tia.questions.map((q,qi)=>{
+    const correct=S.tia.matrix.filter(r=>+r.ans[qi]===1).length;
+    const p=correct/n; // معامل الصعوبة
+    const cu=upper.filter(x=>+x.row.ans[qi]===1).length;
+    const cl=lower.filter(x=>+x.row.ans[qi]===1).length;
+    const d=(cu-cl)/g; // معامل التمييز
+    const diffCls=p>=0.85?['سهل جداً','b-warn']:p>=0.7?['سهل','b-ok']:p>=0.3?['متوسط','b-ok']:p>=0.15?['صعب','b-warn']:['صعب جداً','b-bad'];
+    const disCls=d>=0.4?['ممتاز','b-ok']:d>=0.3?['جيد','b-ok']:d>=0.2?['مقبول','b-warn']:['ضعيف','b-bad'];
+    let rec='إبقاء';
+    if(d<0.2||p<0.15||p>0.9)rec='مراجعة';
+    if(d<0)rec='حذف/إعادة صياغة';
+    return {qi,clo:q.clo,p,d,diffCls,disCls,rec};
+  });
+
+  // عرض جدول الفقرات
+  const itb=document.querySelector('#tiaItemTable tbody');itb.innerHTML='';
+  items.forEach(it=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>س${it.qi+1}</td><td>CLO ${it.clo+1}</td>
+      <td>${it.p.toFixed(2)}</td><td><span class="badge ${it.diffCls[1]}">${it.diffCls[0]}</span></td>
+      <td>${it.d.toFixed(2)}</td><td><span class="badge ${it.disCls[1]}">${it.disCls[0]}</span></td>
+      <td>${it.rec}</td>`;
+    itb.appendChild(tr);
+  });
+
+  // تحليل تحقق CLO
+  const target=+S.tia.target||60;
+  const cloRows=S.clos.map((c,ci)=>{
+    const qs=S.tia.questions.map((q,qi)=>({q,qi})).filter(x=>x.q.clo===ci);
+    if(!qs.length)return null;
+    let earned=0,possible=0;
+    qs.forEach(({q,qi})=>{
+      possible+=(+q.mark)*n;
+      S.tia.matrix.forEach(r=>{if(+r.ans[qi]===1)earned+=+q.mark;});
+    });
+    const pct=possible?earned/possible*100:0;
+    return {ci,desc:c.desc,count:qs.length,pct};
+  }).filter(Boolean);
+
+  const ctb=document.querySelector('#tiaCloTable tbody');ctb.innerHTML='';
+  cloRows.forEach(r=>{
+    const ok=r.pct>=target;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>CLO ${r.ci+1}</td><td style="text-align:right">${r.desc||'-'}</td><td>${r.count}</td>
+      <td>${target}%</td><td>${r.pct.toFixed(1)}%</td>
+      <td><span class="badge ${ok?'b-ok':'b-bad'}">${ok?'محقق ✓':'غير محقق'}</span></td>`;
+    ctb.appendChild(tr);
+  });
+
+  // أشرطة
+  const max=100;
+  document.getElementById('tiaCloBars').innerHTML=cloRows.map(r=>`
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0">
+      <span style="width:60px;font-size:12px;color:var(--muted)">CLO ${r.ci+1}</span>
+      <div class="bar-wrap" style="flex:1;position:relative">
+        <div class="bar-fill" style="width:${r.pct/max*100}%;background:${r.pct>=target?'linear-gradient(90deg,var(--ok),#5fe3a8)':'linear-gradient(90deg,var(--bad),#f07478)'}">${r.pct.toFixed(0)}%</div>
+        <div style="position:absolute;top:0;bottom:0;right:${target}%;width:2px;background:var(--gold)"></div>
+      </div>
+    </div>`).join('')+`<p class="mini">الخط الذهبي = المستوى المستهدف (${target}%)</p>`;
+
+  document.getElementById('tiaResults').classList.remove('hidden');
+  S._tiaItems=items;S._tiaClo=cloRows; // للتصدير والـ AI
+}
+
+function exportTIA(){
+  if(!S._tiaItems){alert('شغّل التحليل أولاً');return;}
+  let csv='\uFEFF تحليل الفقرات - '+S.tia.name+'\n\n';
+  csv+='السؤال,CLO,معامل الصعوبة,معامل التمييز,التوصية\n';
+  S._tiaItems.forEach(it=>csv+=`س${it.qi+1},CLO ${it.clo+1},${it.p.toFixed(2)},${it.d.toFixed(2)},${it.rec}\n`);
+  csv+='\nتحقق المخرجات\nCLO,عدد الأسئلة,المستهدف,المحقق,الحالة\n';
+  S._tiaClo.forEach(r=>csv+=`CLO ${r.ci+1},${r.count},${S.tia.target}%,${r.pct.toFixed(1)}%,${r.pct>=S.tia.target?'محقق':'غير محقق'}\n`);
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`TIA_${S.info.cCode||'مقرر'}.csv`;a.click();
+}
+
+async function analyzeTIA(){
+  if(!S._tiaItems){alert('شغّل التحليل أولاً');return;}
+  const out=document.getElementById('tiaAI');out.classList.remove('hidden');
+  out.innerHTML='<span class="spin"></span> جارٍ التفسير...';
+  const items=S._tiaItems.map(it=>`س${it.qi+1}(CLO${it.clo+1}): صعوبة ${it.p.toFixed(2)}, تمييز ${it.d.toFixed(2)}, ${it.rec}`).join('\n');
+  const clo=S._tiaClo.map(r=>`CLO${r.ci+1}: ${r.pct.toFixed(1)}% (مستهدف ${S.tia.target}%)`).join('\n');
+  const prompt=`أنت خبير قياس وتقويم تربوي واعتماد أكاديمي (NCAAA). فسّر نتائج تحليل فقرات "${S.tia.name}" لمقرر "${S.info.cName||''}" واكتب تقريراً عربياً مهنياً موجزاً يشمل: (1) جودة فقرات الاختبار إجمالاً (صعوبة وتمييز)، (2) الفقرات التي تحتاج مراجعة أو حذف ولماذا، (3) تقييم تحقق مخرجات التعلم وأيها لم يتحقق وأسباب محتملة، (4) توصيات لتحسين الاختبار والتدريس. دون مقدمات.
+
+تحليل الفقرات:
+${items}
+
+تحقق المخرجات:
+${clo}`;
+  try{
+    const r=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1200,messages:[{role:"user",content:prompt}]})});
+    if(!r.ok) throw new Error("AI "+r.status);
+    const d=await r.json();
+    out.textContent=(d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n')||'تعذّر التفسير.';
+  }catch(e){out.textContent='خطأ في الاتصال بالـ AI: '+e.message;}
+}
+
+// تحميل مكتبة من CDN عند الحاجة (لتعمل في Replit المستقل)
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    if([...document.scripts].some(s=>s.src===src))return res();
+    const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
+
+function fileToBase64(file){
+  return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
+}
+function fileToArrayBuffer(file){
+  return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsArrayBuffer(file);});
+}
+
+async function handleFile(file){
+  const ext=file.name.split('.').pop().toLowerCase();
+  uploadedFile={name:file.name,type:ext,text:'',rows:[],b64:''};
+  const meta=document.getElementById('fileMeta');meta.classList.remove('hidden');
+  meta.innerHTML=`<span class="badge b-ok">${file.name}</span> <span class="mini">${(file.size/1024).toFixed(1)} KB</span> <span class="spin"></span> جارٍ المعالجة...`;
+  const prev=document.getElementById('filePreview');prev.innerHTML='';
+  try{
+    if(['xlsx','xls','csv'].includes(ext)){
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+      const buf=await fileToArrayBuffer(file);
+      const wb=XLSX.read(buf,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      uploadedFile.rows=rows;
+      uploadedFile.text=rows.map(r=>r.join('\t')).join('\n');
+      renderTablePreview(rows);
+    } else if(ext==='docx'){
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
+      const buf=await fileToArrayBuffer(file);
+      const r=await mammoth.extractRawText({arrayBuffer:buf});
+      uploadedFile.text=r.value;
+      prev.innerHTML=`<div class="ai-box">${escapeHtml(r.value.slice(0,3000))}${r.value.length>3000?'\n…':''}</div>`;
+    } else if(ext==='pdf'){
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      uploadedFile.b64=await fileToBase64(file); // نرسله للـ AI كمستند أيضاً
+      const buf=await fileToArrayBuffer(file);
+      const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+      let txt='';
+      for(let p=1;p<=Math.min(pdf.numPages,20);p++){
+        const page=await pdf.getPage(p);const c=await page.getTextContent();
+        txt+=c.items.map(i=>i.str).join(' ')+'\n';
+      }
+      uploadedFile.text=txt;
+      prev.innerHTML=`<div class="ai-box">${escapeHtml(txt.slice(0,3000))}${txt.length>3000?'\n…':''}</div>`;
+    } else if(ext==='txt'){
+      uploadedFile.text=await file.text();
+      prev.innerHTML=`<div class="ai-box">${escapeHtml(uploadedFile.text.slice(0,3000))}</div>`;
+    } else {
+      meta.innerHTML=`<span class="badge b-bad">صيغة غير مدعومة: .${ext}</span>`;return;
+    }
+    meta.innerHTML=`<span class="badge b-ok">${file.name}</span> <span class="mini">تمت المعالجة ✓</span>`;
+    document.getElementById('fileActions').style.display='flex';
+  }catch(err){
+    meta.innerHTML=`<span class="badge b-bad">خطأ في المعالجة: ${err.message}</span>`;
+  }
+}
+
+function escapeHtml(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+function renderTablePreview(rows){
+  const prev=document.getElementById('filePreview');
+  if(!rows.length){prev.innerHTML='<p class="mini">الجدول فارغ</p>';return;}
+  const max=Math.min(rows.length,30);
+  let html='<table><tbody>';
+  for(let i=0;i<max;i++){
+    html+='<tr>'+rows[i].map(c=>`<td>${escapeHtml(String(c))}</td>`).join('')+'</tr>';
+  }
+  html+='</tbody></table>';
+  if(rows.length>max)html+=`<p class="mini">…وعدد ${rows.length-max} صف إضافي</p>`;
+  prev.innerHTML=html;
+}
+
+// محاولة تعبئة درجات الطلاب من جدول Excel/CSV
+function tryFillGrades(){
+  if(!uploadedFile.rows.length){alert('ارفع ملف Excel أو CSV أولاً');return;}
+  const rows=uploadedFile.rows;
+  // البحث عن صف رأس يحوي "اسم" أو "name" و"id" أو "رقم"
+  let hdr=-1;
+  for(let i=0;i<Math.min(rows.length,10);i++){
+    const j=rows[i].join(' ').toLowerCase();
+    if((j.includes('اسم')||j.includes('name'))&&(j.includes('رقم')||j.includes('id'))){hdr=i;break;}
+  }
+  if(hdr<0)hdr=0;
+  const head=rows[hdr].map(h=>String(h).toLowerCase());
+  const nameCol=head.findIndex(h=>h.includes('اسم')||h.includes('name'));
+  const idCol=head.findIndex(h=>h.includes('رقم')||h.includes('id'));
+  let added=0;
+  for(let i=hdr+1;i<rows.length;i++){
+    const name=nameCol>=0?rows[i][nameCol]:rows[i][0];
+    const id=idCol>=0?rows[i][idCol]:'';
+    if(name&&String(name).trim()){S.students.push({name:String(name).trim(),id:String(id).trim(),scores:{}});added++;}
+  }
+  save();renderGrades();
+  alert(`تمت إضافة ${added} طالباً. انتقل لتبويب "الدرجات والتصحيح".`);
+}
+
+// تحليل الملف بالـ AI
+async function analyzeFile(){
+  const out=document.getElementById('fileAI');out.classList.remove('hidden');
+  out.innerHTML='<span class="spin"></span> جارٍ تحليل الملف...';
+  const content=[];
+  const instruction=`أنت خبير جودة أكاديمية واعتماد (NCAAA). حلّل محتوى هذا الملف المرفوع في سياق جودة المقرر "${S.info.cName||'غير محدد'}". لخّص أهم البيانات، استخرج أي مخرجات تعلم أو درجات أو ملاحظات جودة، واقترح كيف يُستفاد منه في تقرير المقرر. اكتب بالعربية وبإيجاز مهني.`;
+  if(uploadedFile.type==='pdf'&&uploadedFile.b64){
+    content.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:uploadedFile.b64}});
+    content.push({type:'text',text:instruction});
+  } else {
+    content.push({type:'text',text:instruction+'\n\nمحتوى الملف:\n'+uploadedFile.text.slice(0,12000)});
+  }
+  try{
+    const d=await callAI({max_tokens:1000,messages:[{role:"user",content}]});
+    out.textContent=aiText(d)||'تعذّر التحليل.';
+  }catch(e){out.textContent='خطأ في الاتصال بالـ AI: '+e.message;}
+}
+
+/* ============ التهيئة بعد اكتمال DOM ============ */
+function init(){
+  load();
+  if(!S.tia)S.tia={name:'الاختبار النصفي الأول',nQ:10,target:60,questions:[],matrix:[]};
+  if(!S.outline)S.outline={};if(!S.topics)S.topics=[];
+  // التبويبات
+  const tabsEl=document.getElementById('tabs');
+  if(tabsEl)tabsEl.addEventListener('click',e=>{
+    if(!e.target.dataset.tab)return;
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    e.target.classList.add('active');
+    ['info','outline','clo','blueprint','grades','sheets','tia','files','report'].forEach(t=>{
+      const el=document.getElementById('tab-'+t);
+      if(el)el.classList.toggle('hidden',t!==e.target.dataset.tab);
+    });
+    if(e.target.dataset.tab==='outline')renderOutline();
+    if(e.target.dataset.tab==='sheets')initSheets();
+    if(e.target.dataset.tab==='tia')initTIA();
+    if(e.target.dataset.tab==='blueprint')renderBP();
+    if(e.target.dataset.tab==='grades')renderGrades();
+    if(e.target.dataset.tab==='tia')buildTIA();
+    if(e.target.dataset.tab==='report')renderReport();
+  });
+  // استرجاع معلومات المقرر
+  Object.keys(S.info||{}).forEach(k=>{const el=document.getElementById(k);if(el)el.value=S.info[k];});
+  document.querySelectorAll('#tab-info input').forEach(i=>i.addEventListener('input',save));
+  // رفع الملفات
+  const dz=document.getElementById('dropZone'),fi=document.getElementById('fileInput');
+  if(dz&&fi){
+    dz.addEventListener('click',()=>fi.click());
+    dz.addEventListener('dragover',e=>{e.preventDefault();dz.style.background='rgba(212,175,55,.25)';});
+    dz.addEventListener('dragleave',()=>dz.style.background='');
+    dz.addEventListener('drop',e=>{e.preventDefault();dz.style.background='';if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);});
+    fi.addEventListener('change',e=>{if(e.target.files[0])handleFile(e.target.files[0]);});
+  }
+  // تهيئة افتراضية لأول استخدام
+  if(!S.clos.length&&!S.assessments.length){
+    addCLO('التعرف على المفاهيم الأساسية',DOMAINS[0],'1.1',6);
+    addCLO('تطبيق الأساليب التحليلية',DOMAINS[1],'2.1',8);
+    addAssessment('اختبار قصير 1',2,10);
+    addAssessment('الاختبار النصفي',8,30);
+    addAssessment('الاختبار النهائي',16,40);
+  } else {
+    renderCLO();
+  }
+}
+
+// جعل كل دوال onclick متاحة عالمياً
+window.addCLO=addCLO;window.upClo=upClo;window.addAssessment=addAssessment;
+window.checkBlueprint=checkBlueprint;window.addStudent=addStudent;window.computeGrades=computeGrades;
+window.runAI=runAI;window.exportExcel=exportExcel;window.exportPDF=exportPDF;
+window.tryFillGrades=tryFillGrades;window.analyzeFile=analyzeFile;
+window.saveOutline=saveOutline;window.renderOutline=renderOutline;window.addTopic=addTopic;
+window.renderTopics=renderTopics;window.syncTopicsToCLO=syncTopicsToCLO;window.renderActs=renderActs;
+window.initSheets=initSheets;window.renderSheet=renderSheet;window.setSheetNQ=setSheetNQ;
+window.addSheetStudent=addSheetStudent;window.pullStudents=pullStudents;window.pushTMarks=pushTMarks;
+window.initTIA=initTIA;window.computeTIA=computeTIA;window.exportTIA=exportTIA;window.analyzeTIA=analyzeTIA;
+window.saveTIA=saveTIA;window.buildTIA=buildTIA;window.addTIAStudent=addTIAStudent;
+window.importTIAStudents=importTIAStudents;window.computeTIA=computeTIA;
+window.exportTIA=exportTIA;window.analyzeTIA=analyzeTIA;
+window.renderBP=renderBP;window.renderGrades=renderGrades;window.renderReport=renderReport;window.renderCLO=renderCLO;
+window.S=S;
+
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
+else init();
+</script>
+</body>
+</html>

@@ -824,6 +824,7 @@ const GROUPS = [
     {key:"assess_hub", icon:"⚖️", ar:"التقييم والنزاهة", en:"Assessment & Integrity"},
     {key:"verify_lab", icon:"🛡️", ar:"مختبر التحقق الشامل", en:"Verification Lab", badge:"عالمي"},
     {key:"free_verify", icon:"🔖", ar:"التحقق المجاني والتكلفة", en:"Free Verify & Cost", badge:"مجاني"},
+    {key:"course_quality", icon:"🏆", ar:"نظام جودة المقرر الأكاديمي", en:"Course Quality System", badge:"جديد"},
   ]},
   { id:"writing", icon:"✍️", ar:"الكتابة والتحليل", color:"#1d4ed8", desc:"تحرير النصوص الأكاديمية وصياغتها وتدقيقها، مع كشف الانتحال وبصمة الذكاء الاصطناعي.", tools:[
     {key:"research_os", icon:"🔬", ar:"نظام البحث العلمي المتكامل", en:"Research OS (Q1 Grade)", badge:"عالمي"},
@@ -861,6 +862,17 @@ const GROUPS = [
     {key:"pricing", icon:"💎", ar:"الباقات والأسعار", en:"Pricing", badge:"جديد"},
   ]},
 ];
+
+function CourseQualitySystem({ T }) {
+  const src = (import.meta.env.BASE_URL || "/") + "quality-system.html";
+  return (
+    <iframe
+      src={src}
+      title="نظام جودة المقرر الأكاديمي"
+      style={{ width: "100%", height: "calc(100vh - 200px)", minHeight: 680, border: "none", borderRadius: 12, background: T.bg, display: "block" }}
+    />
+  );
+}
 
 function DataLabSystem({ T }) {
   const [rawData, setRawData] = useState("");
@@ -10851,6 +10863,12 @@ body{font-family:${TH.font};color:${TH.head};background:#fff;line-height:1.8}
 
 // ── دليل الأدوات المدمج ──────────────────────────────────────
 const TOOL_GUIDE = {
+  course_quality: {
+    what:"نظام متكامل لإدارة وتحليل جودة المقررات الجامعية وفق معايير الاعتماد الأكاديمي (NCAAA): معلومات المقرر وتوصيفه، مخرجات التعلم CLO، مصفوفة التقييم Blueprint، الدرجات والتصحيح، أوراق التقييم، تحليل الفقرات وتحقق المخرجات، رفع وتحليل الملفات، والتقرير النهائي.",
+    need:"افتح الأداة وعبّئ تبويباتها بالترتيب: معلومات المقرر، التوصيف، مخرجات التعلم، ثم أدخل الدرجات وأوراق التقييم. تُحفظ بياناتك تلقائياً في متصفحك. أزرار التحليل الذكي تعمل عبر محرّك محكّم.",
+    out:"تقرير جودة مقرر شامل مع تحليل صعوبة وتمييز الفقرات، نِسب تحقق مخرجات التعلم، وتفسير ذكي للنتائج بمعايير الاعتماد الأكاديمي — جاهز للطباعة.",
+    diff:"نظام جودة مقرر متكامل مدمج داخل محكّم، يجمع التوصيف ومصفوفة Blueprint وتحليل الفقرات والتقرير في مكان واحد، مع حفظ تلقائي محلي وتفسير ذكي آمن عبر خادم محكّم.",
+  },
   research_os: {
     what:"نظام بحث علمي متكامل يغطي دورة البحث كاملة بمعايير الجامعات العالمية ومجلات Q1، بثماني خدمات: بلورة الفكرة والعنوان والمشكلة والفرضيات، مراجعة الأدبيات وبناء الإطار النظري، تصميم المنهجية والعينة والاختبار المناسب، مراجعة الورقة بمعايير محكّم Q1، موجّه النشر ومطابقة مجلات Q1، التحرير اللغوي الأكاديمي، المستشار البحثي الذكي، وبناء المقترح البحثي وخطة المنحة.",
     need:"اختر الخدمة من البطاقات، اكتب موضوعك/سؤالك، ثم ارفع الملف (PDF/Word) أو الصق النص. بعض الخدمات (الفكرة، المنهجية، المقترح، المستشار) تعمل حتى بلا ملف.",
@@ -16761,6 +16779,7 @@ export default function MuhakkimV4() {
     if(key==="ejournal_studio") return <EJournalStudioSystem T={T}/>;
     if(key==="verify_lab") return <VerificationLabSystem T={T}/>;
     if(key==="free_verify") return <FreeVerifyCostSystem T={T}/>;
+    if(key==="course_quality") return <CourseQualitySystem T={T}/>;
     if(key==="rev_roles") return <ToolHub T={T} hubKey="rev_roles"/>;
     if(key==="review_center") return <ToolHub T={T} hubKey="review_center"/>;
     if(key==="committee_hub") return <ToolHub T={T} hubKey="committee_hub"/>;
