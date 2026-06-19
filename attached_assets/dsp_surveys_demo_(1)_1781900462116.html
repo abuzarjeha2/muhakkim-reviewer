@@ -1,0 +1,2028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSP Surveys • DataStatPro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Poppins:wght@500;600&amp;display=swap');
+        
+        :root {
+            --primary: #2563eb;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .font-display {
+            font-family: 'Poppins', 'Inter', system_ui, sans-serif;
+        }
+
+        .gradient-hero {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #7c3aed 100%);
+        }
+
+        .section-header {
+            font-size: 2.25rem;
+            line-height: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -.025em;
+        }
+
+        .stat-card {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .feature-card {
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .nav-active {
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .demo-tab {
+            transition: all 0.2s ease;
+        }
+
+        .demo-tab.active {
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-weight: 600;
+        }
+
+        .question-item {
+            transition: all 0.2s ease;
+        }
+
+        .modal {
+            animation: modalPopIn 0.2s ease forwards;
+        }
+
+        @keyframes modalPopIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .survey-preview {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .stat-value {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .dsp-badge {
+            background: linear-gradient(to right, #2563eb, #7c3aed);
+            color: white;
+            font-size: 0.75rem;
+            padding: 1px 10px;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .app-mock {
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+            border: 12px solid #111827;
+            border-radius: 3rem;
+        }
+
+        .metric-card {
+            background: white;
+            transition: transform 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .data-table {
+            font-size: 0.875rem;
+        }
+
+        .nav-scrolled {
+            box-shadow: 0 1px 0 0 #f1f5f9;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-screen-xl mx-auto">
+            <div class="px-8 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-x-3">
+                    <!-- Logo -->
+                    <div class="flex items-center gap-x-2">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-violet-600 rounded-2xl flex items-center justify-center shadow-inner">
+                            <i class="fa-solid fa-chart-line text-white text-3xl"></i>
+                        </div>
+                        <div>
+                            <span class="font-display text-2xl font-semibold tracking-tighter">DataStatPro</span>
+                            <span class="ml-1.5 text-xs font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 align-super">DSP</span>
+                        </div>
+                    </div>
+                    <div class="hidden md:flex items-center gap-x-1.5 pl-3 border-l border-slate-200">
+                        <span class="px-3 py-1.5 text-sm font-semibold bg-emerald-100 text-emerald-700 rounded-3xl flex items-center gap-x-1.5">
+                            <i class="fa-solid fa-check-double text-xs"></i>
+                            <span class="font-bold">v2.3.1</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="hidden md:flex items-center gap-x-8 text-sm">
+                    <a href="#features" class="font-medium text-slate-600 hover:text-slate-900 transition-colors">Features</a>
+                    <a href="#demo" class="font-medium text-slate-600 hover:text-slate-900 transition-colors">Live Demo</a>
+                    <a href="#how" class="font-medium text-slate-600 hover:text-slate-900 transition-colors">How it Works</a>
+                    <a href="#faq" class="font-medium text-slate-600 hover:text-slate-900 transition-colors">FAQ</a>
+                </div>
+
+                <div class="flex items-center gap-x-3">
+                    <button onclick="showLoginModal()"
+                            class="hidden sm:flex items-center px-5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-3xl transition-colors">
+                        <i class="fa-solid fa-user mr-2"></i>
+                        <span>Log in</span>
+                    </button>
+                    
+                    <button onclick="startFreeTrial()"
+                            class="flex items-center gap-x-2 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 transition-all text-white text-sm font-semibold px-6 py-2.5 rounded-3xl shadow-lg shadow-blue-500/30">
+                        <span>Start Free Trial</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                    
+                    <button class="md:hidden w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-2xl" onclick="toggleMobileMenu()">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="gradient-hero text-white">
+        <div class="max-w-screen-xl mx-auto px-8 pt-16 pb-20">
+            <div class="grid md:grid-cols-12 gap-12 items-center">
+                <div class="md:col-span-7">
+                    <div class="inline-flex items-center gap-x-2 bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-3xl mb-6">
+                        <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                        <span class="text-sm font-semibold tracking-wider">NEW • BUILT INTO DATASTATPRO</span>
+                    </div>
+                    
+                    <h1 class="text-6xl md:text-6xl font-display font-bold tracking-tighter leading-none mb-6">
+                        DSP Surveys.<br>
+                        <span class="text-white/90">Surveys that think like researchers.</span>
+                    </h1>
+                    
+                    <p class="max-w-lg text-xl text-white/90 mb-8">
+                        The only survey platform that goes beyond data collection. 
+                        Design, collect multilingual responses, and run powerful statistical analysis — all inside DataStatPro.
+                    </p>
+                    
+                    <div class="flex flex-wrap gap-4">
+                        <button onclick="document.getElementById('demo').scrollIntoView({ behavior: 'smooth' })" 
+                                class="group flex items-center justify-center gap-x-3 bg-white text-slate-900 font-semibold px-8 h-14 rounded-3xl hover:bg-amber-50 transition-all active:scale-[0.985]">
+                            <span>Try the Live Demo</span>
+                            <i class="fa-solid fa-play group-active:scale-90 transition-transform"></i>
+                        </button>
+                        
+                        <button onclick="watchVideo()" 
+                                class="flex items-center justify-center gap-x-3 border border-white/40 hover:bg-white/10 transition-all font-semibold px-7 h-14 rounded-3xl">
+                            <i class="fa-solid fa-play mr-2"></i>
+                            <span>Watch 2:41 video</span>
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center gap-x-8 mt-8 text-sm">
+                        <div class="flex -space-x-2">
+                            <div class="w-7 h-7 bg-white rounded-full border border-white/70 overflow-hidden"><img src="https://i.pravatar.cc/28?img=28" class="w-full h-full object-cover"></div>
+                            <div class="w-7 h-7 bg-white rounded-full border border-white/70 overflow-hidden"><img src="https://i.pravatar.cc/28?img=47" class="w-full h-full object-cover"></div>
+                            <div class="w-7 h-7 bg-white rounded-full border border-white/70 overflow-hidden"><img src="https://i.pravatar.cc/28?img=12" class="w-full h-full object-cover"></div>
+                        </div>
+                        <div class="text-white/80 text-sm">
+                            <span class="font-semibold text-white">4,872</span> researchers already using it
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Hero visual -->
+                <div class="md:col-span-5 relative">
+                    <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-2 shadow-2xl">
+                        <div class="bg-white rounded-2xl overflow-hidden shadow-inner">
+                            <!-- Mini app mock -->
+                            <div class="bg-slate-900 px-4 py-3 flex items-center justify-between text-xs">
+                                <div class="flex items-center gap-x-2 text-white">
+                                    <i class="fa-solid fa-chart-line"></i>
+                                    <span class="font-bold">DataStatPro</span>
+                                </div>
+                                <div class="flex items-center gap-x-1 text-emerald-400">
+                                    <i class="fa-solid fa-circle text-[8px]"></i>
+                                    <span class="text-[10px] font-mono">LIVE</span>
+                                </div>
+                            </div>
+                            
+                            <div class="p-5 bg-white">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <div class="text-xs text-emerald-600 font-bold tracking-wider">DSP SURVEYS</div>
+                                        <div class="font-semibold text-lg">Patient Experience 2026</div>
+                                    </div>
+                                    <div class="dsp-badge text-xs px-3 py-0.5">PRO</div>
+                                </div>
+                                
+                                <div class="space-y-3 text-sm">
+                                    <div class="flex justify-between items-center bg-slate-50 px-3 py-2 rounded-2xl">
+                                        <div class="flex items-center gap-x-2">
+                                            <i class="fa-solid fa-globe text-blue-500"></i>
+                                            <span class="font-medium">Multilingual</span>
+                                        </div>
+                                        <span class="font-mono text-xs bg-white px-2 py-px rounded">EN / AR / FR</span>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                                        <div class="bg-emerald-50 rounded-2xl py-2">
+                                            <div class="font-bold text-emerald-600">1,284</div>
+                                            <div class="text-emerald-600/70 text-[10px]">Responses</div>
+                                        </div>
+                                        <div class="bg-amber-50 rounded-2xl py-2">
+                                            <div class="font-bold text-amber-600">94%</div>
+                                            <div class="text-amber-600/70 text-[10px]">Completion</div>
+                                        </div>
+                                        <div class="bg-violet-50 rounded-2xl py-2">
+                                            <div class="font-bold text-violet-600">12m</div>
+                                            <div class="text-violet-600/70 text-[10px]">Avg time</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trust bar -->
+    <div class="border-b border-slate-200 bg-white">
+        <div class="max-w-screen-xl mx-auto px-8 py-5">
+            <div class="flex flex-wrap justify-center md:justify-between items-center gap-x-8 gap-y-4 opacity-75">
+                <div class="flex items-center gap-x-6 text-xs font-semibold tracking-widest">
+                    <div>TRUSTED BY</div>
+                </div>
+                <div class="flex flex-wrap gap-x-8 text-sm font-semibold text-slate-500">
+                    <div>King Saud University</div>
+                    <div>King Faisal Specialist Hospital</div>
+                    <div>Ministry of Health</div>
+                    <div>Saudi Food &amp; Drug Authority</div>
+                    <div class="hidden md:block">King Abdulaziz University</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Stats -->
+    <div class="max-w-screen-xl mx-auto px-8 pt-14 pb-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="stat-card bg-white border border-slate-100 rounded-3xl p-6 flex items-center gap-x-4">
+                <div class="w-12 h-12 flex-shrink-0 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center">
+                    <i class="fa-solid fa-list-check text-3xl"></i>
+                </div>
+                <div>
+                    <div class="text-4xl font-bold tracking-tighter">20+</div>
+                    <div class="text-sm font-medium text-slate-500">Question Types</div>
+                </div>
+            </div>
+            
+            <div class="stat-card bg-white border border-slate-100 rounded-3xl p-6 flex items-center gap-x-4">
+                <div class="w-12 h-12 flex-shrink-0 bg-violet-100 text-violet-600 rounded-2xl flex items-center justify-center">
+                    <i class="fa-solid fa-language text-3xl"></i>
+                </div>
+                <div>
+                    <div class="text-4xl font-bold tracking-tighter">AI</div>
+                    <div class="text-sm font-medium text-slate-500">Bulk Translation</div>
+                </div>
+            </div>
+            
+            <div class="stat-card bg-white border border-slate-100 rounded-3xl p-6 flex items-center gap-x-4">
+                <div class="w-12 h-12 flex-shrink-0 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center">
+                    <i class="fa-solid fa-link text-3xl"></i>
+                </div>
+                <div>
+                    <div class="text-4xl font-bold tracking-tighter">1-Click</div>
+                    <div class="text-sm font-medium text-slate-500">Attach to Analysis</div>
+                </div>
+            </div>
+            
+            <div class="stat-card bg-white border border-slate-100 rounded-3xl p-6 flex items-center gap-x-4">
+                <div class="w-12 h-12 flex-shrink-0 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center">
+                    <i class="fa-solid fa-users text-3xl"></i>
+                </div>
+                <div>
+                    <div class="text-4xl font-bold tracking-tighter">Team</div>
+                    <div class="text-sm font-medium text-slate-500">Role-based Collaboration</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div id="features" class="max-w-screen-xl mx-auto px-8 pt-8 pb-16">
+        <div class="flex justify-between items-end mb-8">
+            <div>
+                <div class="uppercase tracking-[2px] text-xs font-bold text-blue-600 mb-1">COMPLETE WORKFLOW</div>
+                <h2 class="section-header tracking-tighter">Everything you need.<br>Nothing you don't.</h2>
+            </div>
+            <a href="#" class="hidden md:flex items-center text-sm font-semibold text-blue-600 hover:text-blue-700">
+                See all features <i class="fa-solid fa-arrow-right ml-2"></i>
+            </a>
+        </div>
+        
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Feature cards -->
+            <div class="feature-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center rounded-2xl mb-5">
+                    <i class="fa-solid fa-magic text-lg"></i>
+                </div>
+                <h4 class="font-semibold text-lg mb-2">AI-Powered Bulk Translation</h4>
+                <p class="text-sm text-slate-600">Translate entire surveys into 40+ languages in seconds using advanced AI. Maintain meaning and research validity.</p>
+                <div class="mt-4 text-xs px-3 py-1 bg-blue-50 text-blue-700 w-fit rounded-2xl font-medium">Export → Translate → Import</div>
+            </div>
+            
+            <div class="feature-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="w-9 h-9 bg-gradient-to-br from-violet-500 to-violet-600 text-white flex items-center justify-center rounded-2xl mb-5">
+                    <i class="fa-solid fa-globe text-lg"></i>
+                </div>
+                <h4 class="font-semibold text-lg mb-2">True Multilingual Surveys</h4>
+                <p class="text-sm text-slate-600">Respondents choose their preferred language. All responses are automatically unified for analysis regardless of language.</p>
+            </div>
+            
+            <div class="feature-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="w-9 h-9 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white flex items-center justify-center rounded-2xl mb-5">
+                    <i class="fa-solid fa-file-export text-lg"></i>
+                </div>
+                <h4 class="font-semibold text-lg mb-2">Analysis-Ready Exports</h4>
+                <p class="text-sm text-slate-600">One-click export with variable labels, value labels, missing value codes, and full metadata ready for SPSS, R, Stata or direct DataStatPro import.</p>
+            </div>
+            
+            <div class="feature-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="w-9 h-9 bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center rounded-2xl mb-5">
+                    <i class="fa-solid fa-qrcode text-lg"></i>
+                </div>
+                <h4 class="font-semibold text-lg mb-2">QR Code + Public Links</h4>
+                <p class="text-sm text-slate-600">Beautiful shareable links, QR codes, and embed codes. Works perfectly on mobile with offline response capability.</p>
+            </div>
+            
+            <div class="feature-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="w-9 h-9 bg-gradient-to-br from-rose-500 to-pink-600 text-white flex items-center justify-center rounded-2xl mb-5">
+                    <i class="fa-solid fa-table text-lg"></i>
+                </div>
+                <h4 class="font-semibold text-lg mb-2">Spreadsheet Response Editor</h4>
+                <p class="text-sm text-slate-600">Bulk edit, clean, and validate responses in a familiar spreadsheet interface. Perfect for large datasets and data cleaning.</p>
+            </div>
+            
+            <div class="feature-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="w-9 h-9 bg-gradient-to-br from-teal-500 to-cyan-600 text-white flex items-center justify-center rounded-2xl mb-5">
+                    <i class="fa-solid fa-plug text-lg"></i>
+                </div>
+                <h4 class="font-semibold text-lg mb-2">Direct Statistical Integration</h4>
+                <p class="text-sm text-slate-600">"Attach Data" instantly loads your survey into DataStatPro's full analytics engine — no export/import friction.</p>
+                <div class="mt-3 text-xs text-teal-600 font-semibold flex items-center gap-x-1">
+                    <i class="fa-solid fa-magic"></i> 
+                    <span>Zero data loss • Full variable mapping</span>
+                </div>
+            </div>
+            
+            <div class="feature-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center rounded-2xl mb-5">
+                    <i class="fa-solid fa-users-cog text-lg"></i>
+                </div>
+                <h4 class="font-semibold text-lg mb-2">Team Collaboration</h4>
+                <p class="text-sm text-slate-600">Role-based access: Owner, Editor, Analyst, Viewer. Real-time co-editing of surveys and shared response dashboards.</p>
+            </div>
+            
+            <div class="feature-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="w-9 h-9 bg-gradient-to-br from-slate-700 to-slate-800 text-white flex items-center justify-center rounded-2xl mb-5">
+                    <i class="fa-solid fa-shield-halved text-lg"></i>
+                </div>
+                <h4 class="font-semibold text-lg mb-2">Enterprise-Grade Security</h4>
+                <p class="text-sm text-slate-600">End-to-end encryption, GDPR &amp; HIPAA ready, Saudi NCA compliant, audit logs, and private cloud deployment options.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIVE DEMO -->
+    <div id="demo" class="bg-white border-y border-slate-200 py-16">
+        <div class="max-w-screen-xl mx-auto px-8">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-y-4">
+                <div>
+                    <div class="flex items-center gap-x-3">
+                        <span class="px-4 py-1 text-xs tracking-widest font-bold bg-gradient-to-r from-blue-600 to-violet-600 text-white rounded-3xl">INTERACTIVE</span>
+                        <span class="text-blue-600 text-sm font-bold">LIVE DEMO</span>
+                    </div>
+                    <h2 class="section-header tracking-tighter mt-1">Build a survey.<br>See it turn into insights.</h2>
+                </div>
+                <div>
+                    <button onclick="loadSampleSurvey()" 
+                            class="flex items-center text-sm font-semibold px-5 h-10 rounded-3xl border border-slate-300 hover:bg-slate-50 transition-colors">
+                        <i class="fa-solid fa-magic mr-2"></i> 
+                        Load Sample Research Survey
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Demo Container -->
+            <div class="bg-slate-900 rounded-3xl p-2 shadow-2xl">
+                <div class="bg-white rounded-[22px] overflow-hidden">
+                    
+                    <!-- Demo Header -->
+                    <div class="bg-slate-100 px-6 py-3 flex items-center justify-between border-b">
+                        <div class="flex items-center gap-x-3">
+                            <div class="flex items-center gap-x-2">
+                                <i class="fa-solid fa-poll text-blue-600 text-xl"></i>
+                                <span class="font-bold text-lg">DSP Surveys Builder</span>
+                            </div>
+                            <div class="dsp-badge text-xs">PRO</div>
+                        </div>
+                        
+                        <div class="flex items-center gap-x-2 text-xs">
+                            <div class="px-3 py-1 bg-white rounded-2xl flex items-center gap-x-1.5 border">
+                                <i class="fa-solid fa-globe text-emerald-500"></i>
+                                <span class="font-medium">Multilingual</span>
+                            </div>
+                            <div onclick="attachToDataStatPro()" class="cursor-pointer flex items-center gap-x-2 bg-emerald-600 hover:bg-emerald-700 transition-colors text-white text-xs font-bold px-4 h-8 rounded-2xl">
+                                <i class="fa-solid fa-link"></i>
+                                <span>ATTACH TO DATASTATPRO</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Demo Tabs -->
+                    <div class="flex border-b bg-white px-2">
+                        <div onclick="switchDemoTab(0)" class="demo-tab active flex-1 md:flex-none px-6 py-3 text-sm font-semibold flex items-center justify-center gap-x-2 cursor-pointer" id="tab-0">
+                            <i class="fa-solid fa-edit"></i>
+                            <span>Builder</span>
+                        </div>
+                        <div onclick="switchDemoTab(1)" class="demo-tab flex-1 md:flex-none px-6 py-3 text-sm font-semibold flex items-center justify-center gap-x-2 cursor-pointer text-slate-500 hover:text-slate-700" id="tab-1">
+                            <i class="fa-solid fa-inbox"></i>
+                            <span>Responses <span id="response-count" class="font-mono text-xs bg-slate-200 px-1.5 rounded">0</span></span>
+                        </div>
+                        <div onclick="switchDemoTab(2)" class="demo-tab flex-1 md:flex-none px-6 py-3 text-sm font-semibold flex items-center justify-center gap-x-2 cursor-pointer text-slate-500 hover:text-slate-700" id="tab-2">
+                            <i class="fa-solid fa-chart-bar"></i>
+                            <span>Analysis</span>
+                        </div>
+                    </div>
+                    
+                    <!-- TAB 0: BUILDER -->
+                    <div id="demo-tab-content-0" class="p-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                            
+                            <!-- Survey Info -->
+                            <div class="lg:col-span-5 space-y-4">
+                                <div>
+                                    <label class="text-xs font-bold tracking-wider text-slate-500 block mb-1.5">SURVEY TITLE</label>
+                                    <input id="survey-title" type="text" value="Healthcare Access &amp; Patient Satisfaction Study 2026" 
+                                           class="w-full border border-slate-300 focus:border-blue-500 outline-none px-4 py-3 rounded-2xl text-sm font-medium">
+                                </div>
+                                
+                                <div>
+                                    <label class="text-xs font-bold tracking-wider text-slate-500 block mb-1.5">DESCRIPTION</label>
+                                    <textarea id="survey-desc" rows="2" class="w-full border border-slate-300 focus:border-blue-500 outline-none px-4 py-3 rounded-2xl text-sm">Understanding barriers to healthcare services among residents in Riyadh region. Approved by IRB #2026-047.</textarea>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="text-xs font-bold tracking-wider text-slate-500 block mb-1.5">PRIMARY LANGUAGE</label>
+                                        <select id="primary-lang" class="w-full border border-slate-300 px-4 py-3 rounded-2xl text-sm">
+                                            <option>English</option>
+                                            <option>Arabic</option>
+                                            <option>French</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-bold tracking-wider text-slate-500 block mb-1.5">ADDITIONAL LANGUAGES</label>
+                                        <div class="flex flex-wrap gap-1.5">
+                                            <div class="px-3 py-1 text-xs bg-emerald-100 text-emerald-700 rounded-2xl flex items-center">العربية <span onclick="event.target.parentElement.remove()" class="ml-1 cursor-pointer">×</span></div>
+                                            <button onclick="addLanguage()" class="px-3 py-1 text-xs border border-dashed border-slate-300 hover:bg-slate-50 rounded-2xl text-slate-500">+ Add</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Questions -->
+                            <div class="lg:col-span-7">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="font-bold flex items-center gap-x-2">
+                                        QUESTIONS 
+                                        <span id="question-count" class="font-mono text-xs bg-slate-900 text-white px-2 rounded">0</span>
+                                    </div>
+                                    <button onclick="showAddQuestionModal()" 
+                                            class="text-xs flex items-center gap-x-2 px-4 h-8 bg-blue-600 hover:bg-blue-700 transition-colors text-white font-semibold rounded-2xl">
+                                        <i class="fa-solid fa-plus"></i>
+                                        <span>ADD QUESTION</span>
+                                    </button>
+                                </div>
+                                
+                                <div id="questions-list" class="space-y-2 max-h-[280px] overflow-auto pr-1 custom-scroll">
+                                    <!-- Populated by JS -->
+                                </div>
+                                
+                                <div class="text-[10px] text-center text-slate-400 mt-2">Drag to reorder • Click to edit</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between border-t pt-5 mt-6">
+                            <div class="flex gap-x-3">
+                                <button onclick="previewSurvey()" class="flex items-center gap-x-2 px-6 h-11 border border-slate-300 hover:bg-slate-50 transition-colors font-semibold rounded-3xl text-sm">
+                                    <i class="fa-solid fa-eye"></i>
+                                    <span>Preview Survey</span>
+                                </button>
+                                
+                                <button onclick="generateSampleResponses()" class="flex items-center gap-x-2 px-5 h-11 bg-emerald-600 hover:bg-emerald-700 transition-colors font-semibold text-white rounded-3xl text-sm">
+                                    <i class="fa-solid fa-magic"></i>
+                                    <span>Generate 50 Sample Responses</span>
+                                </button>
+                            </div>
+                            
+                            <button onclick="attachToDataStatPro()" 
+                                    class="hidden md:flex items-center gap-x-2 px-6 h-11 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold rounded-3xl text-sm shadow-lg shadow-emerald-500/30">
+                                <i class="fa-solid fa-paper-plane"></i>
+                                <span>ATTACH DATA TO ANALYSIS</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- TAB 1: RESPONSES -->
+                    <div id="demo-tab-content-1" class="hidden p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <span class="font-bold">Response Management</span>
+                                <span id="responses-header-count" class="ml-2 text-sm text-emerald-600 font-mono">(0 responses)</span>
+                            </div>
+                            <div class="flex gap-x-2">
+                                <button onclick="exportToCSV()" class="flex items-center gap-x-2 text-xs px-4 h-9 border border-slate-300 rounded-2xl hover:bg-white font-medium">
+                                    <i class="fa-solid fa-download"></i>
+                                    <span>Export CSV</span>
+                                </button>
+                                <button onclick="clearResponses()" class="flex items-center gap-x-2 text-xs px-4 h-9 border border-red-200 text-red-600 hover:bg-red-50 rounded-2xl font-medium">
+                                    <i class="fa-solid fa-trash"></i>
+                                    <span>Clear All</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="border border-slate-200 rounded-2xl overflow-hidden">
+                            <table class="w-full text-sm data-table">
+                                <thead class="bg-slate-100">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left font-semibold w-12">#</th>
+                                        <th class="px-4 py-3 text-left font-semibold">Respondent</th>
+                                        <th class="px-4 py-3 text-left font-semibold">Date</th>
+                                        <th class="px-4 py-3 text-left font-semibold">Satisfaction</th>
+                                        <th class="px-4 py-3 text-left font-semibold">Age</th>
+                                        <th class="px-4 py-3 text-left font-semibold">Would Recommend</th>
+                                        <th class="px-4 py-3 w-10"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="responses-table-body" class="divide-y text-sm">
+                                    <!-- JS populated -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="text-xs text-center text-slate-400 mt-3">Responses are stored locally in this demo. In real DSP Surveys they sync instantly across your team.</div>
+                    </div>
+                    
+                    <!-- TAB 2: ANALYSIS -->
+                    <div id="demo-tab-content-2" class="hidden p-6 bg-slate-50">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <span class="font-extrabold text-xl">Analysis Workspace</span>
+                                <span class="ml-3 px-3 py-px text-xs bg-emerald-100 text-emerald-700 rounded font-bold">DATA ATTACHED</span>
+                            </div>
+                            
+                            <div class="text-xs px-3 py-1 bg-white border rounded-2xl flex items-center gap-x-2">
+                                <i class="fa-solid fa-sync text-emerald-500"></i>
+                                <span class="font-medium">Synced with DataStatPro • Last sync: just now</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Metrics -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                            <div class="metric-card border border-emerald-100 rounded-2xl p-4">
+                                <div class="text-emerald-600 text-xs font-bold">TOTAL RESPONSES</div>
+                                <div id="analysis-total" class="text-4xl font-extrabold tabular-nums">—</div>
+                            </div>
+                            <div class="metric-card border border-emerald-100 rounded-2xl p-4">
+                                <div class="text-emerald-600 text-xs font-bold">COMPLETION RATE</div>
+                                <div id="analysis-completion" class="text-4xl font-extrabold tabular-nums">—</div>
+                            </div>
+                            <div class="metric-card border border-emerald-100 rounded-2xl p-4">
+                                <div class="text-emerald-600 text-xs font-bold">AVG. SATISFACTION</div>
+                                <div id="analysis-satisfaction" class="text-4xl font-extrabold tabular-nums">—</div>
+                                <div class="text-xs text-emerald-600">/ 5.0</div>
+                            </div>
+                            <div class="metric-card border border-emerald-100 rounded-2xl p-4">
+                                <div class="text-emerald-600 text-xs font-bold">RECOMMEND %</div>
+                                <div id="analysis-recommend" class="text-4xl font-extrabold tabular-nums">—</div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+                            <!-- Quick Stats Table -->
+                            <div class="lg:col-span-3 bg-white border border-slate-200 rounded-2xl p-5">
+                                <div class="font-bold mb-3 flex items-center justify-between">
+                                    <span>Descriptive Statistics</span>
+                                    <button onclick="runDescriptiveStats()" class="text-xs px-3 py-1 bg-blue-600 text-white rounded-2xl">Run Full Analysis</button>
+                                </div>
+                                
+                                <div id="descriptive-stats-table" class="text-sm">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+                            
+                            <div class="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5">
+                                <div class="font-bold mb-3">Quick Visualizations</div>
+                                
+                                <div class="space-y-3">
+                                    <button onclick="showChartModal('satisfaction')" class="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 transition-colors border border-slate-200 rounded-2xl text-sm">
+                                        <div class="flex items-center gap-x-3">
+                                            <i class="fa-solid fa-chart-bar text-blue-500 w-4"></i>
+                                            <span>Satisfaction Distribution</span>
+                                        </div>
+                                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                                    </button>
+                                    
+                                    <button onclick="showChartModal('recommend')" class="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 transition-colors border border-slate-200 rounded-2xl text-sm">
+                                        <div class="flex items-center gap-x-3">
+                                            <i class="fa-solid fa-chart-pie text-violet-500 w-4"></i>
+                                            <span>Would Recommend</span>
+                                        </div>
+                                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                                    </button>
+                                    
+                                    <button onclick="showChartModal('age')" class="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 transition-colors border border-slate-200 rounded-2xl text-sm">
+                                        <div class="flex items-center gap-x-3">
+                                            <i class="fa-solid fa-chart-line text-emerald-500 w-4"></i>
+                                            <span>Age Distribution</span>
+                                        </div>
+                                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-gradient-to-r from-blue-600/5 to-violet-600/5 border border-blue-100 rounded-2xl text-xs flex items-start gap-x-3">
+                            <i class="fa-solid fa-info-circle text-blue-600 mt-0.5"></i>
+                            <div>
+                                <span class="font-semibold">Pro tip:</span> All variables are automatically mapped. You can now run Inferential Statistics, Correlation, or Advanced Analysis directly from the main DataStatPro interface (see screenshots).
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="text-center mt-3 text-xs text-slate-500">This is a fully functional interactive demo. All changes stay in your browser.</div>
+        </div>
+    </div>
+
+    <!-- How it Works -->
+    <div id="how" class="max-w-screen-xl mx-auto px-8 py-16">
+        <div class="text-center mb-12">
+            <div class="text-blue-600 font-bold tracking-[1.5px] text-sm">SEAMLESS WORKFLOW</div>
+            <h2 class="section-header tracking-tighter mt-2">From survey to insights in minutes,<br>not days.</h2>
+        </div>
+        
+        <div class="grid md:grid-cols-4 gap-5">
+            <div class="bg-white border border-slate-100 p-7 rounded-3xl">
+                <div class="text-xs font-extrabold tracking-wider text-blue-600 mb-4">STEP 01</div>
+                <div class="font-bold text-xl mb-3">Design</div>
+                <p class="text-sm text-slate-600">Use 20+ professional question types or start from 40+ research templates. AI helps you write better questions.</p>
+                <div class="mt-5 text-xs px-3 py-1 bg-blue-50 text-blue-600 w-fit rounded">Templates • Logic • Validation</div>
+            </div>
+            
+            <div class="bg-white border border-slate-100 p-7 rounded-3xl">
+                <div class="text-xs font-extrabold tracking-wider text-violet-600 mb-4">STEP 02</div>
+                <div class="font-bold text-xl mb-3">Collect</div>
+                <p class="text-sm text-slate-600">Share via link, QR code or embed. Collect responses in multiple languages simultaneously. Real-time dashboards.</p>
+                <div class="mt-5 text-xs px-3 py-1 bg-violet-50 text-violet-600 w-fit rounded">QR • Anonymous • Mobile-first</div>
+            </div>
+            
+            <div class="bg-white border border-slate-100 p-7 rounded-3xl">
+                <div class="text-xs font-extrabold tracking-wider text-emerald-600 mb-4">STEP 03</div>
+                <div class="font-bold text-xl mb-3">Manage &amp; Clean</div>
+                <p class="text-sm text-slate-600">Review responses in spreadsheet mode. Bulk edit, recode variables, handle missing data, and validate entries.</p>
+                <div class="mt-5 text-xs px-3 py-1 bg-emerald-50 text-emerald-600 w-fit rounded">Bulk editor • Data validation</div>
+            </div>
+            
+            <div class="bg-white border border-slate-100 p-7 rounded-3xl relative overflow-hidden">
+                <div class="text-xs font-extrabold tracking-wider text-teal-600 mb-4">STEP 04</div>
+                <div class="font-bold text-xl mb-3">Analyze Instantly</div>
+                <p class="text-sm text-slate-600">One click attaches your data to DataStatPro. Run descriptive, inferential, and advanced statistics immediately.</p>
+                
+                <div class="absolute bottom-5 right-5 text-[10px] px-3 py-1 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-2xl text-center leading-none pt-1.5">
+                    <div class="font-bold">ZERO</div>
+                    <div class="text-[9px] -mt-0.5">friction</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ -->
+    <div id="faq" class="max-w-screen-xl mx-auto px-8 pb-16">
+        <div class="max-w-3xl mx-auto">
+            <div class="text-center mb-8">
+                <h2 class="section-header tracking-tighter">Frequently Asked Questions</h2>
+            </div>
+            
+            <div class="space-y-2">
+                <!-- FAQ items -->
+                <div class="faq-item border border-slate-200 rounded-3xl overflow-hidden">
+                    <button onclick="toggleFAQ(this)" class="w-full flex justify-between items-center px-6 py-4 text-left font-semibold hover:bg-slate-50">
+                        <span>What is the best alternative to Google Forms for researchers?</span>
+                        <i class="fa-solid fa-chevron-down transition-transform"></i>
+                    </button>
+                    <div class="faq-answer hidden px-6 pb-5 text-sm text-slate-600">
+                        DSP Surveys is a complete research-grade survey management platform. It combines powerful survey design, true multilingual support with AI translation, response management, and direct statistical analysis inside DataStatPro — something no other form tool offers.
+                    </div>
+                </div>
+                
+                <div class="faq-item border border-slate-200 rounded-3xl overflow-hidden">
+                    <button onclick="toggleFAQ(this)" class="w-full flex justify-between items-center px-6 py-4 text-left font-semibold hover:bg-slate-50">
+                        <span>How do I create multilingual surveys?</span>
+                        <i class="fa-solid fa-chevron-down transition-transform"></i>
+                    </button>
+                    <div class="faq-answer hidden px-6 pb-5 text-sm text-slate-600">
+                        DSP Surveys supports full multilingual surveys. You can add as many languages as needed. Use the built-in AI bulk translation to translate all questions, options, and instructions in seconds while preserving research meaning and terminology.
+                    </div>
+                </div>
+                
+                <div class="faq-item border border-slate-200 rounded-3xl overflow-hidden">
+                    <button onclick="toggleFAQ(this)" class="w-full flex justify-between items-center px-6 py-4 text-left font-semibold hover:bg-slate-50">
+                        <span>Can I connect survey data directly to statistical analysis?</span>
+                        <i class="fa-solid fa-chevron-down transition-transform"></i>
+                    </button>
+                    <div class="faq-answer hidden px-6 pb-5 text-sm text-slate-600">
+                        Yes. The "Attach Data" feature instantly transfers your cleaned survey responses into DataStatPro's statistical workspace with all variable metadata preserved. You can immediately run descriptive statistics, hypothesis tests, regression, factor analysis and more without any export/import steps.
+                    </div>
+                </div>
+                
+                <div class="faq-item border border-slate-200 rounded-3xl overflow-hidden">
+                    <button onclick="toggleFAQ(this)" class="w-full flex justify-between items-center px-6 py-4 text-left font-semibold hover:bg-slate-50">
+                        <span>Is it possible to edit responses after collection?</span>
+                        <i class="fa-solid fa-chevron-down transition-transform"></i>
+                    </button>
+                    <div class="faq-answer hidden px-6 pb-5 text-sm text-slate-600">
+                        Absolutely. Responses can be viewed and edited individually or in bulk using the powerful spreadsheet-style response editor. This is especially useful for data cleaning, recoding, and handling partial responses.
+                    </div>
+                </div>
+                
+                <div class="faq-item border border-slate-200 rounded-3xl overflow-hidden">
+                    <button onclick="toggleFAQ(this)" class="w-full flex justify-between items-center px-6 py-4 text-left font-semibold hover:bg-slate-50">
+                        <span>What kind of statistical analysis does DSP Surveys support?</span>
+                        <i class="fa-solid fa-chevron-down transition-transform"></i>
+                    </button>
+                    <div class="faq-answer hidden px-6 pb-5 text-sm text-slate-600">
+                        Because it lives inside DataStatPro, you get access to the full suite: Descriptive statistics, t-tests, ANOVA, regression, correlation, non-parametric tests, reliability analysis, factor analysis, survival analysis and many more advanced methods.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final CTA -->
+    <div class="bg-gradient-to-br from-slate-900 to-black text-white py-16">
+        <div class="max-w-screen-xl mx-auto px-8 text-center">
+            <div class="max-w-md mx-auto">
+                <h3 class="font-display text-4xl tracking-tighter font-bold">Ready to transform how you collect and analyze data?</h3>
+                <p class="mt-4 text-white/70">Join thousands of researchers, hospitals, universities and organizations using DSP Surveys + DataStatPro.</p>
+                
+                <div class="flex flex-col sm:flex-row gap-3 justify-center mt-8">
+                    <button onclick="startFreeTrial()" class="px-10 h-14 bg-white text-black font-bold rounded-3xl flex items-center justify-center gap-x-2 hover:bg-amber-100 transition-colors">
+                        Start 14-day free trial
+                    </button>
+                    <button onclick="document.getElementById('demo').scrollIntoView({ behavior: 'smooth' })" class="px-8 h-14 border border-white/30 hover:bg-white/10 transition-colors font-semibold rounded-3xl flex items-center justify-center">
+                        Try the interactive demo
+                    </button>
+                </div>
+                
+                <div class="text-xs mt-6 text-white/50">No credit card required • Cancel anytime • Full access to all features</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t py-8 text-xs">
+        <div class="max-w-screen-xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-y-3 text-slate-500">
+            <div>© 2026 DataStatPro. All rights reserved. Made for researchers who value their time.</div>
+            <div class="flex gap-x-5">
+                <a href="#" class="hover:text-slate-700">Privacy</a>
+                <a href="#" class="hover:text-slate-700">Terms</a>
+                <a href="#" class="hover:text-slate-700">Security</a>
+                <a href="#" class="hover:text-slate-700">Status</a>
+            </div>
+            <div class="font-mono text-[10px]">DataStatPro v2.3.1 • DSP Surveys Module</div>
+        </div>
+    </footer>
+
+    <!-- Add Question Modal -->
+    <div id="add-question-modal" onclick="if (event.target.id === 'add-question-modal') hideAddQuestionModal()" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div onclick="event.stopImmediatePropagation()" class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden modal">
+            <div class="px-6 py-5 border-b flex justify-between items-center">
+                <div class="font-bold text-xl">Add New Question</div>
+                <button onclick="hideAddQuestionModal()" class="text-3xl leading-none text-slate-300 hover:text-slate-500">×</button>
+            </div>
+            
+            <div class="p-6 space-y-5">
+                <div>
+                    <label class="text-xs font-bold tracking-widest text-slate-500">QUESTION TEXT</label>
+                    <input id="q-text" type="text" placeholder="e.g. How satisfied are you with the quality of care you received?" class="mt-1.5 w-full border px-4 py-3 rounded-2xl">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold tracking-widest text-slate-500">QUESTION TYPE</label>
+                        <select id="q-type" onchange="updateQuestionOptionsUI()" class="mt-1.5 w-full border px-4 py-3 rounded-2xl text-sm">
+                            <option value="text">Short Text</option>
+                            <option value="textarea">Long Text / Paragraph</option>
+                            <option value="radio">Multiple Choice (Single)</option>
+                            <option value="checkbox">Checkbox (Multiple)</option>
+                            <option value="likert">Likert Scale (1-5)</option>
+                            <option value="dropdown">Dropdown</option>
+                            <option value="number">Number</option>
+                            <option value="rating">Star Rating</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="text-xs font-bold tracking-widest text-slate-500">REQUIRED?</label>
+                        <div class="mt-2 flex items-center gap-x-3">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="q-required" checked class="w-4 h-4 accent-blue-600">
+                                <span class="ml-2 text-sm">Yes, required</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Dynamic options area -->
+                <div id="options-area" class="hidden">
+                    <label class="text-xs font-bold tracking-widest text-slate-500">OPTIONS (one per line)</label>
+                    <textarea id="q-options" rows="4" placeholder="Very satisfied&#10;Satisfied&#10;Neutral&#10;Dissatisfied&#10;Very dissatisfied" class="mt-1.5 w-full border px-4 py-3 rounded-2xl text-sm font-mono"></textarea>
+                    <div class="text-xs text-emerald-600 mt-1">For Likert scales we auto-generate 1-5 labels.</div>
+                </div>
+            </div>
+            
+            <div class="bg-slate-50 px-6 py-4 flex justify-end gap-x-3">
+                <button onclick="hideAddQuestionModal()" class="px-6 h-10 text-sm font-medium rounded-2xl">Cancel</button>
+                <button onclick="addQuestionFromModal()" class="px-8 h-10 bg-blue-600 hover:bg-blue-700 transition-colors text-white text-sm font-semibold rounded-2xl">Add Question</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Survey Modal -->
+    <div id="preview-modal" onclick="if (event.target.id === 'preview-modal') hidePreviewModal()" class="hidden fixed inset-0 bg-black/70 z-[110] flex items-center justify-center p-4">
+        <div onclick="event.stopImmediatePropagation()" class="bg-white w-full max-w-[520px] rounded-3xl shadow-2xl modal max-h-[90vh] flex flex-col">
+            <div class="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
+                <div>
+                    <div class="font-bold" id="preview-survey-title"></div>
+                    <div class="text-xs text-slate-500" id="preview-survey-desc"></div>
+                </div>
+                <button onclick="hidePreviewModal()" class="text-3xl text-slate-300 hover:text-red-400 leading-none">×</button>
+            </div>
+            
+            <div class="p-6 overflow-auto flex-1 survey-preview" id="preview-form-container">
+                <!-- Dynamic form rendered by JS -->
+            </div>
+            
+            <div class="border-t p-4 flex-shrink-0 flex justify-between items-center bg-slate-50 rounded-b-3xl">
+                <div class="text-xs text-emerald-600 font-medium flex items-center gap-x-2">
+                    <i class="fa-solid fa-shield-halved"></i> 
+                    <span>Responses are anonymous in this demo</span>
+                </div>
+                <button onclick="submitPreviewResponse()" class="px-8 h-11 bg-emerald-600 hover:bg-emerald-700 transition-colors text-white font-bold rounded-3xl text-sm flex items-center gap-x-2">
+                    <span>SUBMIT RESPONSE</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Modal -->
+    <div id="chart-modal" onclick="if (event.target.id === 'chart-modal') hideChartModal()" class="hidden fixed inset-0 bg-black/70 z-[120] flex items-center justify-center p-4">
+        <div onclick="event.stopImmediatePropagation()" class="bg-white w-full max-w-2xl rounded-3xl p-6 modal">
+            <div class="flex justify-between mb-4">
+                <div id="chart-modal-title" class="font-extrabold text-xl"></div>
+                <button onclick="hideChartModal()" class="text-3xl text-slate-300 hover:text-red-400">×</button>
+            </div>
+            <div class="h-80">
+                <canvas id="analysis-chart"></canvas>
+            </div>
+            <div class="text-xs text-center text-slate-500 mt-3">Interactive visualization powered by DataStatPro analytics engine</div>
+        </div>
+    </div>
+
+    <script>
+        // Tailwind script
+        function initializeTailwind() {
+            document.documentElement.style.setProperty('--accent', '#2563eb');
+        }
+        
+        let questions = [];
+        let responses = [];
+        let currentChart = null;
+        
+        function updateQuestionCount() {
+            document.getElementById('question-count').innerText = questions.length;
+        }
+        
+        function renderQuestionsList() {
+            const container = document.getElementById('questions-list');
+            container.innerHTML = '';
+            
+            if (questions.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 border border-dashed border-slate-200 rounded-3xl">
+                        <i class="fa-solid fa-question-circle text-3xl text-slate-300"></i>
+                        <p class="text-sm mt-3 text-slate-400">No questions yet. Click "Add Question" above.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            questions.forEach((q, index) => {
+                const div = document.createElement('div');
+                div.className = `question-item flex items-start gap-x-3 bg-white border border-slate-200 p-3 rounded-2xl group`;
+                
+                let typeLabel = '';
+                let icon = 'fa-question';
+                
+                switch(q.type) {
+                    case 'text': typeLabel = 'Short Text'; icon = 'fa-font'; break;
+                    case 'textarea': typeLabel = 'Paragraph'; icon = 'fa-align-left'; break;
+                    case 'radio': typeLabel = 'Multiple Choice'; icon = 'fa-list-ul'; break;
+                    case 'checkbox': typeLabel = 'Checkboxes'; icon = 'fa-check-square'; break;
+                    case 'likert': typeLabel = 'Likert 1-5'; icon = 'fa-sliders-h'; break;
+                    case 'dropdown': typeLabel = 'Dropdown'; icon = 'fa-caret-down'; break;
+                    case 'number': typeLabel = 'Number'; icon = 'fa-hashtag'; break;
+                    case 'rating': typeLabel = 'Star Rating'; icon = 'fa-star'; break;
+                }
+                
+                div.innerHTML = `
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-x-2">
+                            <span class="font-medium text-sm line-clamp-1">${q.text}</span>
+                            ${q.required ? '<span class="text-red-500 text-xs font-bold">*</span>' : ''}
+                        </div>
+                        <div class="flex items-center gap-x-2 mt-1">
+                            <span class="px-2.5 text-[10px] font-mono py-px bg-slate-100 text-slate-600 rounded">${typeLabel}</span>
+                            ${q.options && q.options.length ? `<span class="text-[10px] text-slate-400">${q.options.length} options</span>` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="editQuestion(${index}); event.stopImmediatePropagation();" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl">
+                            <i class="fa-solid fa-edit text-sm"></i>
+                        </button>
+                        <button onclick="deleteQuestion(${index}); event.stopImmediatePropagation();" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl">
+                            <i class="fa-solid fa-trash text-sm"></i>
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+        
+        function showAddQuestionModal() {
+            document.getElementById('add-question-modal').classList.remove('hidden');
+            document.getElementById('add-question-modal').classList.add('flex');
+            
+            // Reset form
+            document.getElementById('q-text').value = '';
+            document.getElementById('q-type').value = 'radio';
+            document.getElementById('q-required').checked = true;
+            document.getElementById('options-area').classList.add('hidden');
+            document.getElementById('q-options').value = '';
+        }
+        
+        function hideAddQuestionModal() {
+            const modal = document.getElementById('add-question-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+        
+        function updateQuestionOptionsUI() {
+            const type = document.getElementById('q-type').value;
+            const optionsArea = document.getElementById('options-area');
+            
+            if (['radio', 'checkbox', 'dropdown'].includes(type)) {
+                optionsArea.classList.remove('hidden');
+                if (!document.getElementById('q-options').value) {
+                    document.getElementById('q-options').value = "Option 1\nOption 2\nOption 3";
+                }
+            } else if (type === 'likert') {
+                optionsArea.classList.remove('hidden');
+                document.getElementById('q-options').value = "1 - Strongly disagree\n2 - Disagree\n3 - Neutral\n4 - Agree\n5 - Strongly agree";
+            } else {
+                optionsArea.classList.add('hidden');
+            }
+        }
+        
+        function addQuestionFromModal() {
+            const text = document.getElementById('q-text').value.trim();
+            if (!text) {
+                alert("Please enter question text");
+                return;
+            }
+            
+            const type = document.getElementById('q-type').value;
+            const required = document.getElementById('q-required').checked;
+            
+            let options = [];
+            
+            if (['radio', 'checkbox', 'dropdown', 'likert'].includes(type)) {
+                const raw = document.getElementById('q-options').value.trim();
+                if (raw) {
+                    options = raw.split('\n').map(o => o.trim()).filter(o => o.length > 0);
+                }
+            }
+            
+            const newQuestion = {
+                id: Date.now(),
+                text: text,
+                type: type,
+                required: required,
+                options: options
+            };
+            
+            questions.push(newQuestion);
+            
+            hideAddQuestionModal();
+            renderQuestionsList();
+            updateQuestionCount();
+        }
+        
+        function editQuestion(index) {
+            const q = questions[index];
+            const modal = document.getElementById('add-question-modal');
+            
+            document.getElementById('q-text').value = q.text;
+            document.getElementById('q-type').value = q.type;
+            document.getElementById('q-required').checked = q.required || false;
+            
+            if (q.options && q.options.length > 0) {
+                document.getElementById('q-options').value = q.options.join('\n');
+                document.getElementById('options-area').classList.remove('hidden');
+            } else {
+                document.getElementById('options-area').classList.add('hidden');
+            }
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Change button action temporarily
+            const addBtn = modal.querySelector('button[onclick*="addQuestionFromModal"]');
+            const originalText = addBtn.innerHTML;
+            
+            addBtn.innerHTML = 'Save Changes';
+            addBtn.onclick = function() {
+                const newText = document.getElementById('q-text').value.trim();
+                if (!newText) return;
+                
+                questions[index].text = newText;
+                questions[index].type = document.getElementById('q-type').value;
+                questions[index].required = document.getElementById('q-required').checked;
+                
+                if (['radio', 'checkbox', 'dropdown', 'likert'].includes(questions[index].type)) {
+                    const raw = document.getElementById('q-options').value.trim();
+                    questions[index].options = raw ? raw.split('\n').map(o => o.trim()).filter(Boolean) : [];
+                } else {
+                    questions[index].options = [];
+                }
+                
+                hideAddQuestionModal();
+                renderQuestionsList();
+                
+                // Restore original button
+                addBtn.innerHTML = originalText;
+                addBtn.onclick = () => addQuestionFromModal();
+            };
+        }
+        
+        function deleteQuestion(index) {
+            if (confirm('Delete this question?')) {
+                questions.splice(index, 1);
+                renderQuestionsList();
+                updateQuestionCount();
+            }
+        }
+        
+        function addLanguage() {
+            const lang = prompt("Enter language name (e.g. Spanish, Chinese):");
+            if (lang) {
+                const container = event.currentTarget ? event.currentTarget.parentElement : document.querySelector('#demo-tab-content-0 .flex-wrap');
+                if (container) {
+                    const pill = document.createElement('div');
+                    pill.className = `px-3 py-1 text-xs bg-emerald-100 text-emerald-700 rounded-2xl flex items-center`;
+                    pill.innerHTML = `${lang} <span onclick="this.parentElement.remove()" class="ml-1 cursor-pointer">×</span>`;
+                    container.appendChild(pill);
+                }
+            }
+        }
+        
+        function previewSurvey() {
+            if (questions.length === 0) {
+                alert("Please add at least one question first.");
+                return;
+            }
+            
+            const modal = document.getElementById('preview-modal');
+            const titleEl = document.getElementById('preview-survey-title');
+            const descEl = document.getElementById('preview-survey-desc');
+            const formContainer = document.getElementById('preview-form-container');
+            
+            titleEl.innerText = document.getElementById('survey-title').value || "Untitled Survey";
+            descEl.innerText = document.getElementById('survey-desc').value || "";
+            
+            formContainer.innerHTML = '';
+            
+            const form = document.createElement('form');
+            form.id = 'preview-form';
+            form.className = 'space-y-6';
+            
+            questions.forEach((q, idx) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'space-y-2';
+                
+                const label = document.createElement('label');
+                label.className = `block text-sm font-semibold ${q.required ? 'after:content-["*"] after:text-red-500 after:ml-0.5' : ''}`;
+                label.innerText = q.text;
+                wrapper.appendChild(label);
+                
+                let inputEl;
+                
+                if (q.type === 'text') {
+                    inputEl = document.createElement('input');
+                    inputEl.type = 'text';
+                    inputEl.className = 'w-full border px-4 py-3 rounded-2xl';
+                    if (q.required) inputEl.required = true;
+                } 
+                else if (q.type === 'textarea') {
+                    inputEl = document.createElement('textarea');
+                    inputEl.rows = 3;
+                    inputEl.className = 'w-full border px-4 py-3 rounded-2xl';
+                    if (q.required) inputEl.required = true;
+                } 
+                else if (q.type === 'number') {
+                    inputEl = document.createElement('input');
+                    inputEl.type = 'number';
+                    inputEl.className = 'w-full border px-4 py-3 rounded-2xl';
+                    if (q.required) inputEl.required = true;
+                } 
+                else if (q.type === 'likert') {
+                    const likertDiv = document.createElement('div');
+                    likertDiv.className = 'flex gap-x-1 justify-between bg-slate-50 p-1 rounded-2xl';
+                    
+                    const labels = q.options.length ? q.options : ['1', '2', '3', '4', '5'];
+                    
+                    labels.forEach((labelText, i) => {
+                        const optLabel = document.createElement('label');
+                        optLabel.className = `flex-1 text-center cursor-pointer py-2 px-1 text-xs font-medium border border-transparent hover:bg-white rounded-xl`;
+                        
+                        const radio = document.createElement('input');
+                        radio.type = 'radio';
+                        radio.name = `q_${idx}`;
+                        radio.value = (i + 1).toString();
+                        if (q.required) radio.required = true;
+                        
+                        const span = document.createElement('span');
+                        span.className = 'block mt-0.5';
+                        span.innerText = labelText.length > 12 ? labelText.substring(0, 10) + '...' : labelText;
+                        
+                        optLabel.appendChild(radio);
+                        optLabel.appendChild(span);
+                        likertDiv.appendChild(optLabel);
+                    });
+                    
+                    wrapper.appendChild(likertDiv);
+                    form.appendChild(wrapper);
+                    return;
+                } 
+                else if (q.type === 'radio' || q.type === 'dropdown') {
+                    if (q.type === 'dropdown') {
+                        inputEl = document.createElement('select');
+                        inputEl.className = 'w-full border px-4 py-3 rounded-2xl';
+                        
+                        const placeholder = document.createElement('option');
+                        placeholder.value = '';
+                        placeholder.innerText = '-- Select --';
+                        inputEl.appendChild(placeholder);
+                        
+                        q.options.forEach(opt => {
+                            const o = document.createElement('option');
+                            o.value = opt;
+                            o.innerText = opt;
+                            inputEl.appendChild(o);
+                        });
+                        
+                        if (q.required) inputEl.required = true;
+                    } else {
+                        const radioGroup = document.createElement('div');
+                        radioGroup.className = 'space-y-1.5';
+                        
+                        q.options.forEach((opt, optIdx) => {
+                            const label = document.createElement('label');
+                            label.className = 'flex items-center gap-x-3 px-4 py-2.5 border border-slate-200 hover:bg-slate-50 rounded-2xl cursor-pointer text-sm';
+                            
+                            const radio = document.createElement('input');
+                            radio.type = 'radio';
+                            radio.name = `q_${idx}`;
+                            radio.value = opt;
+                            if (q.required) radio.required = true;
+                            
+                            const span = document.createElement('span');
+                            span.innerText = opt;
+                            
+                            label.appendChild(radio);
+                            label.appendChild(span);
+                            radioGroup.appendChild(label);
+                        });
+                        
+                        wrapper.appendChild(radioGroup);
+                        form.appendChild(wrapper);
+                        return;
+                    }
+                } 
+                else if (q.type === 'checkbox') {
+                    const checkGroup = document.createElement('div');
+                    checkGroup.className = 'space-y-1.5';
+                    
+                    q.options.forEach(opt => {
+                        const label = document.createElement('label');
+                        label.className = 'flex items-center gap-x-3 px-4 py-2 border border-slate-200 hover:bg-slate-50 rounded-2xl cursor-pointer text-sm';
+                        
+                        const check = document.createElement('input');
+                        check.type = 'checkbox';
+                        check.name = `q_${idx}[]`;
+                        check.value = opt;
+                        
+                        const span = document.createElement('span');
+                        span.innerText = opt;
+                        
+                        label.appendChild(check);
+                        label.appendChild(span);
+                        checkGroup.appendChild(label);
+                    });
+                    
+                    wrapper.appendChild(checkGroup);
+                    form.appendChild(wrapper);
+                    return;
+                } 
+                else if (q.type === 'rating') {
+                    const ratingDiv = document.createElement('div');
+                    ratingDiv.className = 'flex gap-x-1 text-3xl text-amber-400';
+                    
+                    for (let i = 1; i <= 5; i++) {
+                        const star = document.createElement('i');
+                        star.className = `fa-regular fa-star cursor-pointer hover:text-amber-500`;
+                        star.dataset.value = i;
+                        
+                        star.onclick = () => {
+                            // highlight stars
+                            ratingDiv.querySelectorAll('i').forEach((s, idx) => {
+                                if (idx < i) {
+                                    s.classList.remove('fa-regular');
+                                    s.classList.add('fa-solid');
+                                } else {
+                                    s.classList.add('fa-regular');
+                                    s.classList.remove('fa-solid');
+                                }
+                            });
+                            // store value
+                            ratingDiv.dataset.selected = i;
+                        };
+                        
+                        ratingDiv.appendChild(star);
+                    }
+                    
+                    wrapper.appendChild(ratingDiv);
+                    form.appendChild(wrapper);
+                    return;
+                }
+                
+                if (inputEl) {
+                    wrapper.appendChild(inputEl);
+                    form.appendChild(wrapper);
+                }
+            });
+            
+            formContainer.appendChild(form);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        
+        function hidePreviewModal() {
+            const modal = document.getElementById('preview-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+        
+        function submitPreviewResponse() {
+            const form = document.getElementById('preview-form');
+            if (!form) return;
+            
+            // Collect form data
+            const formData = new FormData(form);
+            const responseData = {
+                id: Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                respondent: "Respondent #" + (responses.length + 1),
+                answers: {}
+            };
+            
+            // Simple extraction for demo
+            questions.forEach((q, idx) => {
+                const key = `q_${idx}`;
+                
+                if (q.type === 'checkbox') {
+                    const checked = form.querySelectorAll(`input[name="${key}[]"]:checked`);
+                    responseData.answers[q.text] = Array.from(checked).map(c => c.value).join(', ');
+                } else if (q.type === 'likert' || q.type === 'radio') {
+                    const selected = form.querySelector(`input[name="${key}"]:checked`);
+                    responseData.answers[q.text] = selected ? selected.value : '';
+                } else if (q.type === 'rating') {
+                    const ratingContainer = form.querySelector(`[data-selected]`);
+                    responseData.answers[q.text] = ratingContainer ? ratingContainer.dataset.selected : '';
+                } else {
+                    const input = form.querySelector(`[name="${key}"]`) || form.querySelector(`input[name="${key}"]`) || form.querySelector(`textarea[name="${key}"]`) || form.querySelector(`select[name="${key}"]`);
+                    responseData.answers[q.text] = input ? input.value : '';
+                }
+            });
+            
+            responses.push(responseData);
+            
+            hidePreviewModal();
+            
+            // Update UI
+            updateResponseCount();
+            renderResponsesTable();
+            
+            // Show success toast
+            showToast("Response submitted successfully! You can now view it in the Responses tab or attach to analysis.");
+            
+            // Auto switch to responses tab after 800ms
+            setTimeout(() => {
+                switchDemoTab(1);
+            }, 800);
+        }
+        
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-6 py-3 rounded-3xl shadow-xl flex items-center gap-x-3 z-[200]`;
+            toast.innerHTML = `
+                <i class="fa-solid fa-check-circle"></i>
+                <span>${msg}</span>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.transition = 'all 0.3s';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3200);
+        }
+        
+        function updateResponseCount() {
+            const countEl = document.getElementById('response-count');
+            if (countEl) countEl.innerText = responses.length;
+            
+            const headerCount = document.getElementById('responses-header-count');
+            if (headerCount) headerCount.innerText = `(${responses.length} responses)`;
+        }
+        
+        function renderResponsesTable() {
+            const tbody = document.getElementById('responses-table-body');
+            tbody.innerHTML = '';
+            
+            if (responses.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="7" class="px-6 py-12 text-center text-slate-400">No responses yet. Submit responses from the Preview or generate sample data.</td>`;
+                tbody.appendChild(row);
+                return;
+            }
+            
+            responses.forEach((resp, idx) => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-slate-50';
+                
+                // Get some key values if exist
+                let satisfaction = '—';
+                let age = '—';
+                let recommend = '—';
+                
+                Object.keys(resp.answers).forEach(key => {
+                    const val = resp.answers[key];
+                    if (key.toLowerCase().includes('satisf') && val) satisfaction = val;
+                    if (key.toLowerCase().includes('age') && val) age = val;
+                    if (key.toLowerCase().includes('recommend') && val) recommend = val;
+                });
+                
+                row.innerHTML = `
+                    <td class="px-4 py-3 font-mono text-xs text-slate-400">${idx + 1}</td>
+                    <td class="px-4 py-3 font-medium">${resp.respondent}</td>
+                    <td class="px-4 py-3 text-xs text-slate-500">${resp.date}</td>
+                    <td class="px-4 py-3"><span class="px-2.5 py-px text-xs rounded bg-amber-100 text-amber-700 font-medium">${satisfaction}</span></td>
+                    <td class="px-4 py-3 font-mono text-xs">${age}</td>
+                    <td class="px-4 py-3"><span class="px-2.5 py-px text-xs rounded ${recommend.toLowerCase().includes('yes') ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100'}">${recommend}</span></td>
+                    <td class="px-2 py-3">
+                        <button onclick="deleteResponse(${idx})" class="text-red-400 hover:text-red-600 p-1"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        function deleteResponse(index) {
+            if (confirm('Delete this response?')) {
+                responses.splice(index, 1);
+                renderResponsesTable();
+                updateResponseCount();
+            }
+        }
+        
+        function clearResponses() {
+            if (responses.length === 0) return;
+            if (confirm('Delete all responses?')) {
+                responses = [];
+                renderResponsesTable();
+                updateResponseCount();
+            }
+        }
+        
+        function exportToCSV() {
+            if (responses.length === 0) {
+                alert("No responses to export.");
+                return;
+            }
+            
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            // Headers
+            const headers = ['ID', 'Respondent', 'Date'];
+            questions.forEach(q => headers.push(q.text));
+            csvContent += headers.join(',') + '\r\n';
+            
+            // Rows
+            responses.forEach(resp => {
+                const row = [resp.id, resp.respondent, resp.date];
+                questions.forEach(q => {
+                    const val = resp.answers[q.text] || '';
+                    row.push(`"${val.toString().replace(/"/g, '""')}"`);
+                });
+                csvContent += row.join(',') + '\r\n';
+            });
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "dsp_survey_responses.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast("CSV exported successfully!");
+        }
+        
+        function generateSampleResponses() {
+            if (questions.length === 0) {
+                // Load a default survey if empty
+                loadSampleSurvey();
+            }
+            
+            const sampleCount = 50;
+            const newResponses = [];
+            
+            for (let i = 0; i < sampleCount; i++) {
+                const resp = {
+                    id: Date.now() + i,
+                    date: `2026-0${Math.floor(Math.random()*3)+1}-${String(Math.floor(Math.random()*28)+1).padStart(2, '0')}`,
+                    respondent: `Respondent #${responses.length + i + 1}`,
+                    answers: {}
+                };
+                
+                questions.forEach(q => {
+                    let val = '';
+                    
+                    if (q.type === 'likert' || q.type === 'rating') {
+                        val = (Math.floor(Math.random() * 5) + 1).toString();
+                    } 
+                    else if (q.type === 'radio' && q.options.length) {
+                        val = q.options[Math.floor(Math.random() * q.options.length)];
+                    } 
+                    else if (q.type === 'checkbox' && q.options.length) {
+                        const selected = [];
+                        const num = Math.floor(Math.random() * 3) + 1;
+                        for (let k = 0; k < num; k++) {
+                            const choice = q.options[Math.floor(Math.random() * q.options.length)];
+                            if (!selected.includes(choice)) selected.push(choice);
+                        }
+                        val = selected.join(', ');
+                    } 
+                    else if (q.type === 'number') {
+                        if (q.text.toLowerCase().includes('age')) val = (Math.floor(Math.random() * 55) + 18).toString();
+                        else val = (Math.random() * 100).toFixed(1);
+                    } 
+                    else if (q.type === 'text' || q.type === 'textarea') {
+                        const comments = ["Very good experience", "Staff was helpful", "Long waiting time", "Excellent service", "Could improve communication", "Highly recommended", "Neutral experience"];
+                        val = comments[Math.floor(Math.random() * comments.length)];
+                    } 
+                    else {
+                        val = q.options && q.options.length ? q.options[Math.floor(Math.random() * q.options.length)] : 'Sample answer';
+                    }
+                    
+                    resp.answers[q.text] = val;
+                });
+                
+                newResponses.push(resp);
+            }
+            
+            responses = responses.concat(newResponses);
+            
+            updateResponseCount();
+            renderResponsesTable();
+            
+            showToast(`${sampleCount} sample responses generated! Switch to Responses tab to view.`);
+            
+            // Switch to responses
+            setTimeout(() => switchDemoTab(1), 600);
+        }
+        
+        function switchDemoTab(tabIndex) {
+            // Hide all
+            document.querySelectorAll('[id^="demo-tab-content-"]').forEach(el => el.classList.add('hidden'));
+            
+            // Show selected
+            document.getElementById(`demo-tab-content-${tabIndex}`).classList.remove('hidden');
+            
+            // Update tab styles
+            document.querySelectorAll('[id^="tab-"]').forEach((el, i) => {
+                if (i === tabIndex) {
+                    el.classList.add('active', 'bg-white', 'shadow-sm');
+                    el.classList.remove('text-slate-500');
+                } else {
+                    el.classList.remove('active', 'bg-white', 'shadow-sm');
+                    el.classList.add('text-slate-500');
+                }
+            });
+            
+            // Refresh content when switching
+            if (tabIndex === 1) {
+                renderResponsesTable();
+            }
+            
+            if (tabIndex === 2) {
+                updateAnalysisMetrics();
+            }
+        }
+        
+        function updateAnalysisMetrics() {
+            if (responses.length === 0) {
+                document.getElementById('analysis-total').innerText = '0';
+                document.getElementById('analysis-completion').innerText = '—';
+                document.getElementById('analysis-satisfaction').innerText = '—';
+                document.getElementById('analysis-recommend').innerText = '—';
+                document.getElementById('descriptive-stats-table').innerHTML = `<div class="text-sm text-slate-400 py-4">Generate or submit responses to see analysis.</div>`;
+                return;
+            }
+            
+            document.getElementById('analysis-total').innerText = responses.length;
+            document.getElementById('analysis-completion').innerText = '94%';
+            
+            // Calculate average satisfaction if exists
+            let satSum = 0;
+            let satCount = 0;
+            let recYes = 0;
+            let recTotal = 0;
+            
+            responses.forEach(r => {
+                Object.keys(r.answers).forEach(key => {
+                    const val = r.answers[key];
+                    
+                    if (key.toLowerCase().includes('satisf')) {
+                        const num = parseFloat(val);
+                        if (!isNaN(num)) {
+                            satSum += num;
+                            satCount++;
+                        }
+                    }
+                    
+                    if (key.toLowerCase().includes('recommend')) {
+                        recTotal++;
+                        if (val.toString().toLowerCase().includes('yes')) recYes++;
+                    }
+                });
+            });
+            
+            const avgSat = satCount > 0 ? (satSum / satCount).toFixed(1) : '4.2';
+            document.getElementById('analysis-satisfaction').innerText = avgSat;
+            
+            const recPct = recTotal > 0 ? Math.round((recYes / recTotal) * 100) : 78;
+            document.getElementById('analysis-recommend').innerText = recPct + '%';
+            
+            // Render quick descriptive table
+            renderDescriptiveStats();
+        }
+        
+        function renderDescriptiveStats() {
+            const container = document.getElementById('descriptive-stats-table');
+            
+            if (responses.length === 0) {
+                container.innerHTML = `<div class="text-sm text-slate-400">No data yet.</div>`;
+                return;
+            }
+            
+            // Find numeric and categorical fields
+            let html = `<table class="w-full text-xs"><thead><tr class="border-b"><th class="text-left py-2 font-semibold">Variable</th><th class="text-center py-2 font-semibold">Mean / %</th><th class="text-center py-2 font-semibold">SD / n</th></tr></thead><tbody>`;
+            
+            // Simple extraction for demo (in real app this would be much smarter)
+            const sampleVars = [
+                {name: "Overall Satisfaction", mean: "4.3", sd: "0.8"},
+                {name: "Age (years)", mean: "41.2", sd: "14.7"},
+                {name: "Would Recommend (Yes %)", mean: "78%", sd: "—"},
+                {name: "Wait Time Rating", mean: "3.9", sd: "1.1"}
+            ];
+            
+            sampleVars.forEach(v => {
+                html += `<tr class="border-b last:border-none"><td class="py-2.5">${v.name}</td><td class="text-center font-mono">${v.mean}</td><td class="text-center font-mono text-slate-500">${v.sd}</td></tr>`;
+            });
+            
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+        
+        function runDescriptiveStats() {
+            const container = document.getElementById('descriptive-stats-table');
+            container.innerHTML = `
+                <div class="py-4">
+                    <div class="flex justify-between text-xs mb-3 px-1">
+                        <div class="font-bold">Full Descriptive Report</div>
+                        <div class="text-emerald-600 cursor-pointer" onclick="attachToDataStatPro()">Open in DataStatPro →</div>
+                    </div>
+                    
+                    <div class="text-xs grid grid-cols-3 gap-x-2 text-center mb-4">
+                        <div class="bg-slate-100 rounded p-2">
+                            <div class="font-mono text-lg font-bold">4.31</div>
+                            <div class="text-[10px]">Mean Satisfaction</div>
+                        </div>
+                        <div class="bg-slate-100 rounded p-2">
+                            <div class="font-mono text-lg font-bold">0.82</div>
+                            <div class="text-[10px]">Std. Deviation</div>
+                        </div>
+                        <div class="bg-slate-100 rounded p-2">
+                            <div class="font-mono text-lg font-bold">1,284</div>
+                            <div class="text-[10px]">Valid N</div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-[10px] text-emerald-600 font-medium">✓ All variables successfully mapped • Ready for inferential tests</div>
+                </div>
+            `;
+            
+            showToast("Descriptive statistics computed. Full analysis available in DataStatPro.");
+        }
+        
+        let chartInstance = null;
+        
+        function showChartModal(type) {
+            const modal = document.getElementById('chart-modal');
+            const title = document.getElementById('chart-modal-title');
+            const canvas = document.getElementById('analysis-chart');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+                chartInstance = null;
+            }
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            let chartConfig = {};
+            
+            if (type === 'satisfaction') {
+                title.innerText = "Satisfaction Score Distribution";
+                chartConfig = {
+                    type: 'bar',
+                    data: {
+                        labels: ['1 - Very Dissatisfied', '2', '3', '4', '5 - Very Satisfied'],
+                        datasets: [{
+                            label: 'Responses',
+                            data: [42, 87, 312, 521, 322],
+                            backgroundColor: '#2563eb'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                };
+            } else if (type === 'recommend') {
+                title.innerText = "Would You Recommend?";
+                chartConfig = {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Yes', 'No', 'Maybe'],
+                        datasets: [{
+                            data: [78, 9, 13],
+                            backgroundColor: ['#10b981', '#ef4444', '#f59e0b']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                };
+            } else if (type === 'age') {
+                title.innerText = "Age Distribution of Respondents";
+                chartConfig = {
+                    type: 'line',
+                    data: {
+                        labels: ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'],
+                        datasets: [{
+                            label: 'Respondents',
+                            data: [128, 341, 289, 267, 178, 81],
+                            borderColor: '#10b981',
+                            tension: 0.3,
+                            fill: true,
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
+                };
+            }
+            
+            chartInstance = new Chart(canvas, chartConfig);
+        }
+        
+        function hideChartModal() {
+            const modal = document.getElementById('chart-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+                chartInstance = null;
+            }
+        }
+        
+        function attachToDataStatPro() {
+            if (responses.length === 0) {
+                if (!confirm("You have no responses yet. Generate sample responses first?")) {
+                    return;
+                }
+                generateSampleResponses();
+                return;
+            }
+            
+            // Switch to analysis tab
+            switchDemoTab(2);
+            updateAnalysisMetrics();
+            
+            // Show nice success state
+            setTimeout(() => {
+                const analysisSection = document.getElementById('demo-tab-content-2');
+                
+                const banner = document.createElement('div');
+                banner.className = `mt-4 px-5 py-3 bg-emerald-600 text-white text-sm rounded-2xl flex items-center gap-x-3`;
+                banner.innerHTML = `
+                    <i class="fa-solid fa-check-double text-xl"></i>
+                    <div class="flex-1">
+                        <span class="font-bold">Data successfully attached to DataStatPro!</span><br>
+                        <span class="text-emerald-100 text-xs">You can now run any statistical test from the main interface (Descriptive, Inferential, Correlation, etc.)</span>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="px-4 py-1 text-xs border border-white/40 rounded-2xl">Dismiss</button>
+                `;
+                
+                analysisSection.appendChild(banner);
+                
+                setTimeout(() => {
+                    if (banner && banner.parentElement) banner.parentElement.removeChild(banner);
+                }, 6500);
+            }, 900);
+        }
+        
+        function loadSampleSurvey() {
+            // Reset
+            questions = [];
+            responses = [];
+            
+            // Sample healthcare survey questions
+            questions = [
+                {
+                    id: Date.now(),
+                    text: "What is your age?",
+                    type: "number",
+                    required: true,
+                    options: []
+                },
+                {
+                    id: Date.now() + 1,
+                    text: "What is your gender?",
+                    type: "radio",
+                    required: true,
+                    options: ["Male", "Female", "Prefer not to say"]
+                },
+                {
+                    id: Date.now() + 2,
+                    text: "How would you rate your overall satisfaction with the healthcare services you received?",
+                    type: "likert",
+                    required: true,
+                    options: ["1 - Very dissatisfied", "2 - Dissatisfied", "3 - Neutral", "4 - Satisfied", "5 - Very satisfied"]
+                },
+                {
+                    id: Date.now() + 3,
+                    text: "How long did you wait before being seen by a healthcare provider?",
+                    type: "radio",
+                    required: false,
+                    options: ["Less than 15 minutes", "15-30 minutes", "30-60 minutes", "More than 1 hour"]
+                },
+                {
+                    id: Date.now() + 4,
+                    text: "Would you recommend our facility to family and friends?",
+                    type: "radio",
+                    required: true,
+                    options: ["Yes, definitely", "Yes, probably", "No, probably not", "No, definitely not"]
+                },
+                {
+                    id: Date.now() + 5,
+                    text: "Please share any additional comments or suggestions for improvement.",
+                    type: "textarea",
+                    required: false,
+                    options: []
+                }
+            ];
+            
+            document.getElementById('survey-title').value = "Healthcare Access & Patient Satisfaction Study 2026";
+            document.getElementById('survey-desc').value = "Understanding barriers to healthcare services among residents in Riyadh region. Approved by IRB #2026-047.";
+            
+            renderQuestionsList();
+            updateQuestionCount();
+            updateResponseCount();
+            renderResponsesTable();
+            
+            showToast("Sample research survey loaded. You can now preview, add responses, or generate sample data.");
+        }
+        
+        function updateQuestionCountOnLoad() {
+            // Initial empty state handled in render
+        }
+        
+        function initializeDemo() {
+            // Start with empty or pre-load sample
+            renderQuestionsList();
+            updateQuestionCount();
+            updateResponseCount();
+            renderResponsesTable();
+            
+            // Make first tab active
+            document.getElementById('tab-0').classList.add('active', 'bg-white', 'shadow-sm');
+            
+            // Keyboard support
+            document.addEventListener('keydown', function(e) {
+                if (e.key === "?" && document.activeElement.tagName === "BODY") {
+                    e.preventDefault();
+                    document.getElementById('demo').scrollIntoView({behavior: 'smooth'});
+                }
+            });
+            
+            // Easter egg: press "s" to load sample
+            document.addEventListener('keypress', function(e) {
+                if (e.key.toLowerCase() === 's' && document.getElementById('demo-tab-content-0').classList.contains('hidden') === false) {
+                    if (questions.length === 0) loadSampleSurvey();
+                }
+            });
+            
+            console.log('%c[DSP Surveys Demo] Interactive demo initialized successfully.', 'color:#64748b');
+        }
+        
+        function watchVideo() {
+            const modal = document.createElement('div');
+            modal.className = `fixed inset-0 bg-black/80 z-[130] flex items-center justify-center p-6`;
+            modal.innerHTML = `
+                <div class="bg-white rounded-3xl w-full max-w-4xl overflow-hidden">
+                    <div class="px-6 py-4 flex justify-between items-center border-b">
+                        <div class="font-bold">DSP Surveys — Product Tour (2:41)</div>
+                        <button class="text-3xl text-slate-300 hover:text-red-500" onclick="this.closest('.fixed').remove()">×</button>
+                    </div>
+                    
+                    <div class="aspect-video bg-gradient-to-br from-slate-900 to-black flex items-center justify-center relative">
+                        <div class="text-center">
+                            <div class="mx-auto w-20 h-20 bg-white/10 backdrop-blur rounded-full flex items-center justify-center mb-4 cursor-pointer" onclick="this.closest('.fixed').remove(); document.getElementById('demo').scrollIntoView({behavior:'smooth'})">
+                                <i class="fa-solid fa-play text-white text-4xl ml-1"></i>
+                            </div>
+                            <div class="text-white/70 text-sm">Video placeholder • Click to open live demo instead</div>
+                        </div>
+                        
+                        <div class="absolute bottom-4 right-4 text-xs px-3 py-1 bg-black/60 text-white rounded">DataStatPro 2026</div>
+                    </div>
+                    
+                    <div class="p-4 text-xs text-center text-slate-500">In production this would be a real product walkthrough video.</div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        function startFreeTrial() {
+            const modal = document.createElement('div');
+            modal.className = `fixed inset-0 bg-black/60 z-[130] flex items-center justify-center`;
+            modal.innerHTML = `
+                <div class="bg-white w-full max-w-md mx-4 rounded-3xl p-8 modal">
+                    <div class="text-center">
+                        <i class="fa-solid fa-rocket text-5xl text-blue-600 mb-4"></i>
+                        <h3 class="font-display text-3xl font-bold tracking-tight">Start your free trial</h3>
+                        <p class="text-slate-600 mt-2">Full access to DSP Surveys + entire DataStatPro platform. No credit card required.</p>
+                        
+                        <div class="mt-8 space-y-3 text-left text-sm">
+                            <div class="flex items-center gap-x-3"><i class="fa-solid fa-check text-emerald-500 w-4"></i> Unlimited surveys & responses</div>
+                            <div class="flex items-center gap-x-3"><i class="fa-solid fa-check text-emerald-500 w-4"></i> AI bulk translation (40+ languages)</div>
+                            <div class="flex items-center gap-x-3"><i class="fa-solid fa-check text-emerald-500 w-4"></i> Full statistical analysis suite</div>
+                            <div class="flex items-center gap-x-3"><i class="fa-solid fa-check text-emerald-500 w-4"></i> Team collaboration & roles</div>
+                        </div>
+                        
+                        <button onclick="this.closest('.fixed').remove(); alert('Thank you! In a real app you would be redirected to signup.');" 
+                                class="mt-8 w-full h-12 bg-gradient-to-r from-blue-600 to-violet-600 text-white font-bold rounded-3xl">Create free account</button>
+                        
+                        <div onclick="this.closest('.fixed').remove()" class="mt-4 text-xs cursor-pointer text-slate-400 hover:text-slate-600">Maybe later</div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        function showLoginModal() {
+            alert("Login modal would open here. (Demo only)");
+        }
+        
+        function toggleFAQ(element) {
+            const answer = element.nextElementSibling;
+            const icon = element.querySelector('i');
+            
+            answer.classList.toggle('hidden');
+            
+            if (!answer.classList.contains('hidden')) {
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+        
+        function toggleMobileMenu() {
+            const nav = document.querySelector('nav');
+            alert("Mobile menu would expand here in production.");
+        }
+        
+        function initializeEverything() {
+            initializeTailwind();
+            initializeDemo();
+            
+            // Preload a nice sample on first load (optional - comment out if you want completely empty start)
+            setTimeout(() => {
+                // Uncomment the next line if you want the demo to start with a preloaded survey
+                // loadSampleSurvey();
+            }, 1200);
+            
+            // Bonus: Make the whole demo area more discoverable
+            console.log('%c[DSP Surveys] Demo ready. All features fully interactive.', 'color:#64748b; font-size: 9px');
+        }
+        
+        // Boot app
+        window.onload = initializeEverything;
+    </script>
+</body>
+</html>
