@@ -9,3 +9,4 @@
 - [Free Crossref verify in V4](free-verify-crossref.md) — Crossref is CORS-enabled so DOI verification runs client-side, no backend/key/cost; mirror uploaded-file text into state for sync gating.
 - [Muhakkim hero design](muhakkim-hero-design.md) — brand word uses solid gold, not gradient-clip text (transparent-fill can make text invisible on partial-support mobile browsers).
 - [Tool catalog architecture](tool-catalog.md) — GROUPS + ToolHub/HUBS + StdTool fallback + TOOL_GUIDE; «أجنحة التميّز» are UNIQUE not duplicates; only `report` was redundant (→master_report). Rich guide shows only for top-level GROUPS tools.
+- [Muqyas embedded in Muhakkim](muqyas-muhakkim-merge.md) — Muqyas vendored as self-contained copy, surfaced via Muhakkim navbar with `mq_`-prefixed keys + `ext:true`; embed component takes {embed,initialTool,dark}.

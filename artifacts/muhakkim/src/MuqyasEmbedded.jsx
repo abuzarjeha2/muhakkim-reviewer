@@ -1,33 +1,4 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import * as Lucide from "lucide-react";
-import MuqyasEmbedded, { MUQYAS_GROUPS } from "./MuqyasEmbedded.jsx";
-const AI_ENDPOINT = (import.meta.env.BASE_URL || "/") + "api/ai";
-
-// ── نظام الأيقونات الاحترافية (Lucide) — يستبدل الإيموجي في واجهة الاستخدام ──
-const ICON_NAME = {
- "🧑‍🏫":"GraduationCap","👨‍🏫":"GraduationCap","🎓":"GraduationCap","🧠":"Brain",
- "•":"Dot","√":"Calculator","∫":"Sigma","⊞":"Table","⏳":"Hourglass",
- "⚕":"Stethoscope","⚖":"Scale","⚙":"Settings","⚛":"Atom","⚠":"AlertTriangle","⚡":"Zap","⚽":"Trophy",
- "✅":"CircleCheck","✉":"Mail","✍":"PenLine","✏":"Pencil","✒":"PenTool","✨":"Sparkles","❓":"CircleHelp",
- "🇫🇷":"Flag","🇬🇧":"Flag","🇳🇱":"Flag","🇸🇦":"Flag","🇺🇸":"Flag",
- "🌉":"Building2","🌍":"Globe","🌐":"Globe","🌙":"Moon","🌟":"Star","🌱":"Sprout","🌳":"TreePine","🌹":"Flower2","🌾":"Wheat","🌿":"Leaf","🍃":"Leaf",
- "🎁":"Gift","🆓":"Gift","🎤":"Mic","🎨":"Palette","🎭":"Drama","🎯":"Target",
- "🏃":"Footprints","🏅":"Medal","🏆":"Trophy","🏗":"Construction","🏛":"Landmark","🏢":"Building2","🏥":"Hospital","🏦":"Building","🏫":"School","🏷":"Tag",
- "🐍":"Code","👁":"Eye","👥":"Users","👻":"Ghost",
- "💊":"Pill","💎":"Gem","💡":"Lightbulb","💪":"Dumbbell","💬":"MessageCircle","💰":"Wallet","💻":"Laptop","💼":"Briefcase",
- "📂":"FolderOpen","📄":"FileText","📅":"Calendar","📈":"TrendingUp","📉":"TrendingDown","📊":"BarChart3","📋":"ClipboardList","📏":"Ruler","📐":"PencilRuler","📑":"Files","📓":"Notebook",
- "📕":"Book","📖":"BookOpen","📗":"Book","📘":"Book","📙":"Book","📚":"Library","📜":"ScrollText","📝":"NotebookPen","📥":"Inbox","📰":"Newspaper","📷":"Camera","📿":"Sparkles",
- "🔀":"Shuffle","🔁":"Repeat","🔄":"RefreshCw","🔌":"Plug","🔍":"Search","🔎":"Search","🔓":"LockOpen","🔖":"Bookmark","🔗":"Link","🔢":"Hash","🔤":"Type","🔧":"Wrench","🔬":"Microscope","🔭":"Telescope","🔮":"Sparkles","🔷":"Diamond",
- "🕋":"Landmark","🕌":"Landmark","🕵":"UserSearch","🕸":"Network","🖋":"PenLine","🖥":"Monitor","🖼":"Image","🗂":"FolderTree","🗃":"Archive","🗣":"Speech","🗺":"Map",
- "🚀":"Rocket","🚨":"Siren","🛠":"Wrench","🛡":"Shield","🤖":"Bot","🤝":"Handshake","🤸":"Activity"
-};
-function EmIcon({ e, s, c }){
-  if(e==null || e==="") return null;
-  const k = (""+e).replace(/[\uFE0F\u20E3]/g,"");
-  const C = ICON_NAME[k] && Lucide[ICON_NAME[k]];
-  if(!C) return <>{e}</>;
-  return <C size={s||"1em"} color={c} strokeWidth={2} style={{verticalAlign:"-0.14em",flexShrink:0,display:"inline-block"}}/>;
-}
 
 
 
@@ -134,7 +105,6 @@ function useTheme() {
     card:"#0d1a30", border:"#1a3050", text:"#dde6f5", textS:"#8896ab", textSec:"#8896ab",
     textD:"#3d5070", textDim:"#3d5070",
     gold:"#f5b942", goldG:"linear-gradient(135deg,#f5b942,#d4850a)", accent:"#f5b942",
-    blueG:"linear-gradient(135deg,#3b82f6,#1e40af)",
     emerald:"#34d399", green:"#34d399", rose:"#fb7185", blue:"#60a5fa", violet:"#a78bfa",
     amber:"#fbbf24", cyan:"#22d3ee", teal:"#2dd4bf", orange:"#fb923c",
     shadow:"0 2px 16px #00000050", shadowH:"0 8px 30px #00000070"
@@ -143,7 +113,6 @@ function useTheme() {
     card:"#ffffff", border:"#dde4f0", text:"#1a2540", textS:"#4a5568", textSec:"#4a5568",
     textD:"#8896ab", textDim:"#8896ab",
     gold:"#b45309", goldG:"linear-gradient(135deg,#d4a017,#b45309)", accent:"#b45309",
-    blueG:"linear-gradient(135deg,#1e40af,#3b82f6)",
     emerald:"#047857", green:"#047857", rose:"#be123c", blue:"#1d4ed8", violet:"#6d28d9",
     amber:"#92400e", cyan:"#0e7490", teal:"#0f766e", orange:"#c2410c",
     shadow:"0 2px 16px #1a254014", shadowH:"0 8px 30px #1a254022"
@@ -153,7 +122,7 @@ function useTheme() {
 
 // ═══ محرّك النزاهة والتحقق العلمي (مدمج) ═══
 async function inAI(sys, user, mt = 2000) {
-  const r = await fetch(AI_ENDPOINT, {
+  const r = await fetch("/api/ai", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:mt,system:sys,messages:[{role:"user",content:user}]})
   });
@@ -280,7 +249,7 @@ function IntegrityEngineSystem({ T }) {
   };
   const dl=(c,m,e)=>{const b=new Blob(["\uFEFF"+c],{type:m+";charset=utf-8"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=`${mod.ar}_${title||""}.${e}`;a.click();URL.revokeObjectURL(u);};
 
-  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:18}}>
         <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"6px 16px",background:T.rose+"15",border:`1px solid ${T.rose}44`,borderRadius:24,marginBottom:10}}>
@@ -296,7 +265,7 @@ function IntegrityEngineSystem({ T }) {
           onMouseEnter={e=>{e.currentTarget.style.borderColor=m.color;e.currentTarget.style.transform="translateY(-3px)";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
           <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:8}}>
-            <div style={{width:46,height:46,borderRadius:12,background:m.color+"1a",border:`1px solid ${m.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}><EmIcon e={m.icon}/></div>
+            <div style={{width:46,height:46,borderRadius:12,background:m.color+"1a",border:`1px solid ${m.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{m.icon}</div>
             <div style={{fontSize:14,fontWeight:800,color:T.text}}>{m.ar}</div>
           </div>
           <p style={{margin:0,fontSize:11,color:T.textD}}>{m.desc}</p>
@@ -306,7 +275,7 @@ function IntegrityEngineSystem({ T }) {
       {mod && !result && !loading && <div>
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:16}}>
           <InBtn ch="← الوحدات" onClick={()=>setMod(null)} v="ghost" size="sm" T={T}/>
-          <div style={{width:44,height:44,borderRadius:12,background:mod.color+"1a",border:`1px solid ${mod.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}><EmIcon e={mod.icon}/></div>
+          <div style={{width:44,height:44,borderRadius:12,background:mod.color+"1a",border:`1px solid ${mod.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{mod.icon}</div>
           <div><h2 style={{margin:0,fontSize:18,fontWeight:900,color:T.text}}>{mod.ar}</h2><p style={{margin:0,fontSize:12,color:T.textD}}>{mod.desc}</p></div>
         </div>
         <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,padding:16,boxShadow:T.shadow}}>
@@ -318,7 +287,7 @@ function IntegrityEngineSystem({ T }) {
           </div>
           <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="أو الصق نص العمل كاملاً..." rows={6} style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",marginBottom:11}}/>
           {mod.id==="source_match" && <textarea value={source} onChange={e=>setSource(e.target.value)} placeholder="الصق المصدر الأصلي للمقارنة (اختياري)..." rows={4} style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",marginBottom:11}}/>}
-          <InBtn ch={<><EmIcon e={mod.icon}/> ابدأ {mod.ar}</>} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
+          <InBtn ch={`${mod.icon} ابدأ ${mod.ar}`} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
         </div>
       </div>}
 
@@ -382,7 +351,7 @@ function IntegrityEngineSystem({ T }) {
 
 // ═══ مركز الاختبارات والتقييم الذكي (مدمج) ═══
 async function asAI(sys, user, mt = 2000) {
-  const r = await fetch(AI_ENDPOINT, {
+  const r = await fetch("/api/ai", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:mt,system:sys,messages:[{role:"user",content:user}]})
   });
@@ -485,7 +454,7 @@ function AssessmentCenterSystem({ T }) {
   const dl=(c,m,e)=>{const b=new Blob(["\uFEFF"+c],{type:m+";charset=utf-8"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=`${mod.ar}_${title||""}.${e}`;a.click();URL.revokeObjectURL(u);};
   const wordHTML=()=>`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>${mod.ar}</title><style>body{font-family:Arial;padding:40px;line-height:1.9;white-space:pre-wrap}h1{color:${mod.color}}</style></head><body><h1>${mod.icon} ${mod.ar} — ${title}</h1>${result.replace(/</g,"&lt;")}</body></html>`;
 
-  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:18}}>
         <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"6px 16px",background:T.blue+"15",border:`1px solid ${T.blue}44`,borderRadius:24,marginBottom:10}}>
@@ -501,7 +470,7 @@ function AssessmentCenterSystem({ T }) {
           onMouseEnter={e=>{e.currentTarget.style.borderColor=m.color;e.currentTarget.style.transform="translateY(-3px)";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
           <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:8}}>
-            <div style={{width:46,height:46,borderRadius:12,background:m.color+"1a",border:`1px solid ${m.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}><EmIcon e={m.icon}/></div>
+            <div style={{width:46,height:46,borderRadius:12,background:m.color+"1a",border:`1px solid ${m.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{m.icon}</div>
             <div style={{fontSize:14,fontWeight:800,color:T.text}}>{m.ar}</div>
           </div>
           <p style={{margin:0,fontSize:11,color:T.textD}}>{m.desc}</p>
@@ -511,7 +480,7 @@ function AssessmentCenterSystem({ T }) {
       {mod && !result && !loading && <div>
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:16}}>
           <AsBtn ch="← الوحدات" onClick={()=>setMod(null)} v="ghost" size="sm" T={T}/>
-          <div style={{width:44,height:44,borderRadius:12,background:mod.color+"1a",border:`1px solid ${mod.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}><EmIcon e={mod.icon}/></div>
+          <div style={{width:44,height:44,borderRadius:12,background:mod.color+"1a",border:`1px solid ${mod.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{mod.icon}</div>
           <div><h2 style={{margin:0,fontSize:18,fontWeight:900,color:T.text}}>{mod.ar}</h2><p style={{margin:0,fontSize:12,color:T.textD}}>{mod.desc}</p></div>
         </div>
         <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,padding:16,boxShadow:T.shadow}}>
@@ -525,7 +494,7 @@ function AssessmentCenterSystem({ T }) {
             {files.length?<p style={{margin:0,fontSize:12,color:T.emerald,fontWeight:700}}>✅ {files.map(f=>f.name).join("، ")}</p>:<p style={{margin:0,fontSize:12,color:T.textS}}>📎 ارفع المحتوى/المحاضرات/البيانات (Word · PDF · Excel · PPT) أو الصق النص</p>}
           </div>
           <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="أو الصق المحتوى/البيانات كاملاً..." rows={6} style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",marginBottom:12}}/>
-          <AsBtn ch={<><EmIcon e={mod.icon}/> ابدأ {mod.ar}</>} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
+          <AsBtn ch={`${mod.icon} ابدأ ${mod.ar}`} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
         </div>
       </div>}
 
@@ -577,36 +546,12 @@ function Card({ children, T, style={}, glow }) {
 }
 function FileZone({ files, setFiles, T }) {
   const TT = T || {};
-  const em = TT.emerald||"#047857", bd = TT.border||"#dde4f0", bs = TT.bgSec||TT.bgS||"#eef2fb", ts = TT.textS||TT.textSec||"#4a5568", td = TT.textDim||"#94a3b8";
-  const [drag, setDrag] = useState(false);
-  const inpRef = useRef(null);
-  // النمط المُعتمد في بقية التطبيق: div قابل للنقر يستدعي input مخفي (display:none) عبر ref.click().
-  // أكثر موثوقية على Chrome/أندرويد من الإدخال الشفّاف المتراكب. تصفير القيمة عند الضغط (لا داخل
-  // onChange) حتى لا يُسقط الملف المختار، ويسمح بإعادة اختيار الملف نفسه.
-  const take = list => { const arr = Array.from(list||[]).slice(0,3); if(arr.length) setFiles(arr); };
-  const fmt = f => { const kb=f.size/1024; return kb>1024?(kb/1024).toFixed(1)+"MB":Math.round(kb)+"KB"; };
-  const openPicker = () => { const el = inpRef.current; if(el){ try{el.value="";}catch(x){} el.click(); } };
-  return (
-    <div>
-      <div
-        onClick={openPicker}
-        onKeyDown={e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openPicker(); } }}
-        role="button" tabIndex={0}
-        onDragOver={e=>{e.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)}
-        onDrop={e=>{e.preventDefault();setDrag(false);take(e.dataTransfer.files);}}
-        style={{position:"relative",display:"block",width:"100%",boxSizing:"border-box",
-          border:`2px dashed ${files.length?em:(drag?(TT.gold||"#B45309"):bd)}`,borderRadius:12,padding:"16px 14px",
-          textAlign:"center",cursor:"pointer",background:files.length?em+"0c":(drag?(TT.gold||"#B45309")+"0c":bs),transition:"all .15s"}}>
-        <input ref={inpRef} type="file" multiple
-          onChange={e=>{ take(e.target.files); }}
-          style={{display:"none"}}/>
-        {files.length
-          ? <div style={{fontSize:12.5,color:em,fontWeight:700,lineHeight:1.7}}>✅ {files.map(f=>f.name+" ("+fmt(f)+")").join("، ")}<div style={{fontSize:10.5,color:ts,fontWeight:500,marginTop:3}}>اضغط للتغيير أو أضف المزيد</div></div>
-          : <div style={{fontSize:12.5,color:ts,lineHeight:1.7}}>📎 اضغط لرفع ملف <span style={{fontSize:11,color:td}}>(Word · PDF · Excel · صورة)</span> أو اسحبه هنا — أو الصق النص أدناه</div>}
-      </div>
-      <div style={{fontSize:9.5,color:td,marginTop:4,lineHeight:1.6}}>إن لم تُفتح نافذة الاختيار داخل معاينة Claude (قيد أمني) فجرّبها على الموقع المنشور، أو الصق النص مباشرة.</div>
-    </div>
-  );
+  const ref = useRef();
+  return <div onClick={()=>ref.current?.click()} onDrop={e=>{e.preventDefault();setFiles(Array.from(e.dataTransfer.files).slice(0,3));}} onDragOver={e=>e.preventDefault()}
+    style={{border:`2px dashed ${files.length?(TT.emerald||"#047857"):(TT.border||"#dde4f0")}`,borderRadius:11,padding:"14px",textAlign:"center",cursor:"pointer",background:files.length?(TT.emerald||"#047857")+"08":(TT.bgSec||TT.bgS||"#eef2fb")}}>
+    <input ref={ref} type="file" multiple accept=".txt,.md,.pdf,.doc,.docx,.csv,.json,.rtf,.xlsx,.pptx,.png,.jpg,.jpeg,.webp" style={{display:"none"}} onChange={e=>setFiles(Array.from(e.target.files).slice(0,3))}/>
+    {files.length?<p style={{margin:0,fontSize:12,color:TT.emerald||"#047857",fontWeight:700}}>✅ {files.map(f=>f.name).join("، ")}</p>:<p style={{margin:0,fontSize:12,color:TT.textS||TT.textSec||"#4a5568"}}>📎 ارفع ملف (Word · PDF · Excel · صورة) أو الصق النص أدناه</p>}
+  </div>;
 }
 
 // مكوّن القائمة المنسدلة الموحّد للاختيار
@@ -650,7 +595,7 @@ async function callAI(sys, user, mt = 1000) {
     let lastErr = null;
     for (let attempt = 0; attempt < 4; attempt++) {
       try {
-        const r = await fetch(AI_ENDPOINT, {
+        const r = await fetch("/api/ai", {
           method:"POST", headers:{"Content-Type":"application/json"},
           body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:mt,system:sys,messages:[{role:"user",content:user}]})
         });
@@ -696,7 +641,24 @@ async function readFile(file) {
       r.readAsText(file,"utf-8");
     });
   }
-  if (name.endsWith(".pdf")) return await readPdfText(file, 16000);
+  if (name.endsWith(".pdf")) {
+    return new Promise(res=>{
+      const r=new FileReader();
+      r.onload=()=>{
+        const bytes=new Uint8Array(r.result);
+        let text="";
+        for(let i=0;i<bytes.length-1;i++){
+          if(bytes[i]>=32&&bytes[i]<127)text+=String.fromCharCode(bytes[i]);
+          else if(bytes[i]===10||bytes[i]===13)text+=" ";
+        }
+        const m=text.match(/BT[\s\S]*?ET/g)||[];
+        const ex=m.map(x=>x.replace(/BT|ET|\d+\.\d+|\d+ \d+ \d+|\//g," ").replace(/\s+/g," ").trim()).join(" ");
+        res(ex.slice(0,6000)||`[PDF:${file.name}|${size}KB]`);
+      };
+      r.onerror=()=>res(`[PDF:${file.name}]`);
+      r.readAsArrayBuffer(file);
+    });
+  }
   if (name.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
     return new Promise(res=>{const r=new FileReader();r.onload=()=>res(`[صورة:${file.name}|${size}KB]`);r.onerror=()=>res(`[${file.name}]`);r.readAsDataURL(file);});
   }
@@ -814,89 +776,69 @@ const TH = {
 
 // ── ALL GROUPS ───────────────────────────────────────────────
 const GROUPS = [
-  { id:"deep_review", icon:"🤝", ar:"المراجعة والتحكيم", color:"#be123c", desc:"مراجعة وتحكيم بمعايير أكاديمية دقيقة: أدوار بشرية، تقارير موحّدة، لجان مناقشة، ونزاهة علمية.", tools:[
-    {key:"rev_roles", icon:"🧑‍🏫", ar:"المراجعة بالأدوار البشرية", en:"Human Role Review", badge:"الأساسي"},
-    {key:"review_center", icon:"⚖️", ar:"مركز المراجعة الموحّد", en:"Unified Review Center", badge:"موحّد"},
-    {key:"lifecycle", icon:"🔄", ar:"دورة حياة البحث الذكية", en:"AI Research Lifecycle", badge:"المنظومة"},
-    {key:"forms_studio", icon:"🗂️", ar:"استوديو النماذج الإلكترونية", en:"Smart e-Forms Studio", badge:"جديد"},
-    {key:"review_suite", icon:"✨", ar:"جناح التميّز للمراجعة", en:"Review Pro Suite", badge:"حصري"},
-    {key:"master_report", icon:"🧾", ar:"التقرير الشامل الموحّد", en:"Master Unified Report", badge:"الأقوى"},
-    {key:"committee_hub", icon:"👥", ar:"اللجان والمناقشة", en:"Committees & Defense"},
-    {key:"assess_hub", icon:"⚖️", ar:"التقييم والنزاهة", en:"Assessment & Integrity"},
-    {key:"verify_lab", icon:"🛡️", ar:"مختبر التحقق الشامل", en:"Verification Lab", badge:"عالمي"},
-    {key:"free_verify", icon:"🔖", ar:"التحقق المجاني والتكلفة", en:"Free Verify & Cost", badge:"مجاني"},
-    {key:"course_quality", icon:"🏆", ar:"نظام جودة المقرر الأكاديمي", en:"Course Quality System", badge:"جديد"},
+  { id:"quality", icon:"🏆", ar:"الجودة والتقييم والاختبارات", color:"#0369a1", desc:"ضمان الجودة والاعتماد + التصحيح والتقييم الإلكتروني", tools:[
+    {key:"qa_platform", sec:"نماذج الاعتماد NCAAA", icon:"🏛️", ar:"منصة ضمان الجودة (11 وحدة)", en:"QA Platform", badge:"جديد"},
+    {key:"quality_track", sec:"المؤشرات والمتابعة", icon:"🗂️", ar:"متابعة أعمال الجودة", en:"Quality Portfolio", badge:"جديد"},
+    {key:"t76", sec:"نماذج الاعتماد NCAAA", icon:"📄", ar:"T76 توصيف المقرر", en:"T76 Course Spec", badge:"NCAAA"},
+    {key:"blueprint", sec:"الاختبارات والتقييم", icon:"📐", ar:"Blueprint", en:"Test Blueprint", badge:"NCAAA"},
+    {key:"tia", sec:"الاختبارات والتقييم", icon:"📊", ar:"TIA تحليل البنود", en:"Item Analysis", badge:"NCAAA"},
+    {key:"cloplo", sec:"نماذج الاعتماد NCAAA", icon:"🔗", ar:"خريطة CLO-PLO", en:"CLO-PLO Map", badge:"NCAAA"},
+    {key:"t45", sec:"نماذج الاعتماد NCAAA", icon:"🏛️", ar:"T45 ملف البرنامج", en:"T45 Program", badge:"NCAAA"},
+    {key:"selfStudy", sec:"نماذج الاعتماد NCAAA", icon:"📑", ar:"التقرير الذاتي", en:"Self-Study", badge:"NCAAA"},
+    {key:"kpi_quality", sec:"المؤشرات والمتابعة", icon:"📈", ar:"مؤشرات الجودة", en:"Quality KPIs"},
+    {key:"cohort", sec:"المؤشرات والمتابعة", icon:"👥", ar:"تحليل الدفعات", en:"Cohort Analysis"},
+    {key:"exam_grader", sec:"الاختبارات والتقييم", icon:"📝", ar:"التصحيح الإلكتروني", en:"Exam Grader", badge:"جديد"},
+    {key:"assess_center", sec:"الاختبارات والتقييم", icon:"🧠", ar:"مركز التقييم الذكي", en:"Assessment Center", badge:"جديد"},
+  
   ]},
-  { id:"writing", icon:"✍️", ar:"الكتابة والتحليل", color:"#1d4ed8", desc:"تحرير النصوص الأكاديمية وصياغتها وتدقيقها، مع كشف الانتحال وبصمة الذكاء الاصطناعي.", tools:[
-    {key:"research_os", icon:"🔬", ar:"نظام البحث العلمي المتكامل", en:"Research OS (Q1 Grade)", badge:"عالمي"},
-    {key:"smart_writing", icon:"✒️", ar:"النظام الذكي للكتابة والتحليل", en:"Smart Writing System", badge:"الأحدث"},
-    {key:"publishing_studio", icon:"🚀", ar:"منظومة النشر الذكية", en:"AI Publishing Studio", badge:"منظومة"},
-    {key:"writing_suite", icon:"✨", ar:"جناح التميّز للكتابة", en:"Writing Pro Suite", badge:"حصري"},
-    {key:"text_hub", icon:"✍️", ar:"استوديو النص والكاتب الذكي", en:"Writing Studio"},
-    {key:"research_hub", icon:"🔭", ar:"مركز البحث والمصادر", en:"Research & Sources Hub"},
+  { id:"education", icon:"🎓", ar:"التعليم والإرشاد الأكاديمي", color:"#0e7490", desc:"بناء المقررات والمحتوى والتقييم + إرشاد الطلاب ومتابعتهم", tools:[
+    {key:"academic_journey", sec:"الطالب والتعلّم", icon:"🗺️", ar:"رحلة المسار الأكاديمي", en:"Academic Journey", badge:"مميز"},
+    {key:"math_solver", sec:"الطالب والتعلّم", icon:"🧮", ar:"حلّال المسائل الرياضية", en:"Math Solver", badge:"جديد"},
+    {key:"student_toolkit", sec:"الطالب والتعلّم", icon:"🎓", ar:"أدوات الطالب الأكاديمية", en:"Student Toolkit", badge:"جديد"},
+    {key:"bb_course", sec:"بناء المقررات والمحتوى", icon:"🎓", ar:"بناء مقرر إلكتروني", en:"Build E-Course"},
+    {key:"bb_content", sec:"بناء المقررات والمحتوى", icon:"📦", ar:"محتوى تعليمي", en:"Content Builder"},
+    {key:"bb_rubric", sec:"التقييم والواجبات والدرجات", icon:"📏", ar:"Rubric التقييم", en:"Rubric Builder"},
+    {key:"bb_quiz", sec:"التقييم والواجبات والدرجات", icon:"❓", ar:"اختبار إلكتروني", en:"Quiz Builder"},
+    {key:"bb_gradebook", sec:"التقييم والواجبات والدرجات", icon:"📒", ar:"دفتر الدرجات", en:"Grade Book"},
+    {key:"bb_discussion", sec:"بناء المقررات والمحتوى", icon:"💬", ar:"منتدى نقاش", en:"Discussion Board"},
+    {key:"bb_assignment", sec:"التقييم والواجبات والدرجات", icon:"📝", ar:"الواجبات", en:"Assignments"},
+    {key:"bb_analytics", sec:"التقييم والواجبات والدرجات", icon:"📉", ar:"تحليل أداء الطلاب", en:"Student Analytics"},
+    {key:"acad_tutor", sec:"الطالب والتعلّم", icon:"🤖", ar:"المرشد الذكي", en:"AI Tutor"},
+    {key:"acad_tracks", sec:"الطالب والتعلّم", icon:"📚", ar:"المسارات التعليمية", en:"Learning Tracks"},
+    {key:"acad_certify", sec:"التقييم والواجبات والدرجات", icon:"🏅", ar:"الشهادات", en:"Certificates"},
+    {key:"slides", sec:"بناء المقررات والمحتوى", icon:"📊", ar:"مولّد العروض", en:"Slide Generator"},
+    {key:"predictive_advisor", sec:"الإرشاد والمتابعة", icon:"🔮", ar:"المرشد التنبؤي الذكي", en:"Predictive Advisor", badge:"مميز"},
+    {key:"student_success", sec:"الإرشاد والمتابعة", icon:"🌟", ar:"مركز نجاح الطالب", en:"Student Success Center", badge:"مميز"},
+    {key:"academic_archive", sec:"الإرشاد والمتابعة", icon:"🗄️", ar:"أرشيف الرحلة الأكاديمية", en:"Academic Archive (AJAS)", badge:"مميز"},
+    {key:"student_file", sec:"الإرشاد والمتابعة", icon:"🧭", ar:"ملف الطالب للإرشاد", en:"Student Advising"},
+    {key:"adv_plan", sec:"الإرشاد والمتابعة", icon:"🗺️", ar:"الخطة الدراسية", en:"Study Plan"},
+    {key:"adv_gpa", sec:"الإرشاد والمتابعة", icon:"📐", ar:"حساب المعدل التراكمي", en:"GPA Calculator"},
+    {key:"adv_risk", sec:"الإرشاد والمتابعة", icon:"⚠️", ar:"الطلاب المعرضون للخطر", en:"At-Risk Students"},
+    {key:"adv_career", sec:"الإرشاد والمتابعة", icon:"💼", ar:"التوجيه المهني", en:"Career Guidance"},
+    {key:"adv_report", sec:"الإرشاد والمتابعة", icon:"📋", ar:"تقرير المرشد", en:"Advisor Report"},
+    {key:"adv_letter", sec:"الإرشاد والمتابعة", icon:"📨", ar:"خطاب الإرشاد", en:"Advisory Letter"},
+  
   ]},
-  { id:"arabic_research", icon:"🕌", ar:"البحوث والدراسات العربية", color:"#047857", desc:"بحوث عربية أصيلة في العلوم الإسلامية والعربية والقانون والاقتصاد، وفق منهجية كل تخصص.", tools:[
-    {key:"arabic_finder", icon:"🔎", ar:"الباحث العربي الذكي", en:"Arabic Smart Finder", badge:"فريد"},
-    {key:"islamic_center", icon:"🕌", ar:"مركز التخصصات العربية والإسلامية", en:"Islamic & Arabic Disciplines", badge:"حصري"},
-    {key:"vision_align", icon:"🇸🇦", ar:"بوصلة الرؤية والتمويل", en:"Vision 2030 & Funding Compass", badge:"فريد"},
-    {key:"arab_toolkit", icon:"🛠️", ar:"عُدّة الباحث العربي", en:"Arab Researcher Toolkit", badge:"حصري"},
-  ]},
-  { id:"analysis", icon:"📊", ar:"تحليل البيانات والبحث", color:"#047857", desc:"تحليل إحصائي متقدّم للبيانات وعرضها بمخرجات بحثية دقيقة.", tools:[
-    {key:"analysis_suite", icon:"✨", ar:"جناح التميّز للتحليل", en:"Analysis Pro Suite", badge:"حصري"},
-    {key:"research_brain", icon:"🔬", ar:"النظام البحثي الذكي المتكامل", en:"Integrated Research Intelligence", badge:"عالمي"},
-    {key:"smart_center", icon:"📈", ar:"استوديو البيانات: الداشبورد والمصحح", en:"Data Studio: Dashboard & Fixer"},
-    {key:"ds_lab", icon:"🧪", ar:"مختبر عالم البيانات", en:"Data Science Lab", badge:"عالمي"},
-    {key:"data_quality_hub", icon:"📊", ar:"مركز البيانات وجودة البحث", en:"Data & Research Quality Hub", badge:"موحّد"},
-    {key:"research_viz", icon:"🎨", ar:"تحويل البحث لمخرجات بصرية", en:"Research Visualizer"},
-  ]},
-  { id:"journal", icon:"📖", ar:"المجلة العلمية المحكّمة", color:"#1d4ed8", desc:"مجلة علمية محكّمة تدير دورة النشر الأكاديمي من التحكيم إلى الإصدار.", tools:[
-    {key:"ejournal_studio", icon:"📰", ar:"استوديو المجلة الإلكترونية الذكية", en:"Smart e-Journal Studio", badge:"الأحدث"},
-    {key:"accredit_pipeline", icon:"🏅", ar:"مسار الاعتماد والنشر", en:"Accreditation Pipeline", badge:"مميز"},
-    {key:"journal", icon:"📖", ar:"المجلات العلمية المحكّمة", en:"Peer-Reviewed Journals", badge:"مميز"},
-    {key:"journal_designer", icon:"🎨", ar:"مصمّم المجلة الذكي", en:"AI Journal Designer", badge:"حصري"},
-  ]},
-  { id:"tools", icon:"🛠️", ar:"أدوات وخدمات", color:"#be123c", desc:"أدوات وخدمات مساندة تيسّر عمل الباحث.", tools:[
-    {key:"guide", icon:"📖", ar:"الدليل التفاعلي", en:"Interactive Guide", badge:"جديد"},
-    {key:"prof_writer", icon:"💼", ar:"الكتابة المهنية", en:"Professional Writer", badge:"جديد"},
-    {key:"qr", icon:"📷", ar:"مولّد QR", en:"QR Code"},
-    {key:"about", icon:"👨‍🏫", ar:"عن المنصة", en:"About"},
-    {key:"pricing", icon:"💎", ar:"الباقات والأسعار", en:"Pricing", badge:"جديد"},
+  { id:"erp", icon:"🏢", ar:"الإدارة الأكاديمية والمؤسسة", color:"#6d28d9", desc:"الشؤون الأكاديمية والإدارية واللجان + ملفات الأقسام والنماذج", tools:[
+    {key:"erp_academic", sec:"الشؤون الأكاديمية والإدارية", icon:"📚", ar:"المستشار الأكاديمي", en:"Academic Advisor"},
+    {key:"supervision", sec:"الدراسات العليا والإشراف", icon:"🎓", ar:"مركز إدارة الإشراف والرسائل", en:"Supervision Center", badge:"حصري"},
+    {key:"grad_vision", sec:"الدراسات العليا والإشراف", icon:"🏛️", ar:"مشروع نظام الدراسات العليا", en:"Grad Studies System (Vision)", badge:"رؤية"},
+    {key:"grad_live", sec:"الدراسات العليا والإشراف", icon:"🖥️", ar:"نظام الدراسات العليا التفاعلي", en:"Grad Studies (Live)", badge:"تفاعلي"},
+    {key:"erp_reports", sec:"الشؤون الأكاديمية والإدارية", icon:"📋", ar:"التقارير الدورية", en:"Reports"},
+    {key:"erp_admission", sec:"الشؤون الأكاديمية والإدارية", icon:"🎓", ar:"القبول والتسجيل", en:"Admission"},
+    {key:"erp_hr", sec:"الشؤون الأكاديمية والإدارية", icon:"👥", ar:"الموارد البشرية", en:"HR"},
+    {key:"erp_finance", sec:"الشؤون الأكاديمية والإدارية", icon:"💰", ar:"الحسابات", en:"Finance"},
+    {key:"erp_schedule", sec:"الشؤون الأكاديمية والإدارية", icon:"🗓️", ar:"الجداول الدراسية", en:"Schedules"},
+    {key:"comm_struct", sec:"اللجان", icon:"📋", ar:"هيكل اللجان", en:"Committees"},
+    {key:"comm_minutes", sec:"اللجان", icon:"📝", ar:"محاضر الاجتماعات", en:"Minutes"},
+    {key:"comm_report", sec:"اللجان", icon:"📊", ar:"تقرير اللجنة", en:"Committee Report"},
+    {key:"comm_kpis", sec:"اللجان", icon:"📈", ar:"مؤشرات اللجان", en:"Committee KPIs"},
+    {key:"dept_files", sec:"الملفات والنماذج", icon:"🗂️", ar:"ملفات الأقسام والوحدات", en:"Department Files", badge:"جديد"},
+    {key:"committees_sys", sec:"الملفات والنماذج", icon:"🏛️", ar:"اللجان والوحدات والمراكز", en:"Committees & Units", badge:"جديد"},
+    {key:"form_gen", sec:"الملفات والنماذج", icon:"📋", ar:"مولّد النماذج", en:"Form Generator", badge:"جديد"},
+  
   ]},
 ];
-
-// ── مجموعات مُقياس برو المدمجة (الجودة · التعليم · الإدارة) ──
-// مفاتيح ذات بادئة mq_ ووسم ext لتُعرض ضمن قائمة محكّم وتُوجَّه لمكوّن مُقياس المدمج.
-const MQ_PREFIX = "mq_";
-MUQYAS_GROUPS.forEach(g => {
-  GROUPS.push({
-    id: MQ_PREFIX + g.id,
-    ext: true,
-    icon: g.icon,
-    ar: g.ar,
-    en: g.en,
-    color: g.color,
-    desc: g.desc,
-    tools: g.tools.map(t => ({
-      key: MQ_PREFIX + t.key,
-      ek: t.key,
-      icon: t.icon,
-      ar: t.ar,
-      en: t.en,
-      badge: t.badge,
-    })),
-  });
-});
-
-function CourseQualitySystem({ T }) {
-  const src = (import.meta.env.BASE_URL || "/") + "quality-system.html";
-  return (
-    <iframe
-      src={src}
-      title="نظام جودة المقرر الأكاديمي"
-      style={{ width: "100%", height: "calc(100vh - 200px)", minHeight: 680, border: "none", borderRadius: 12, background: T.bg, display: "block" }}
-    />
-  );
-}
 
 function DataLabSystem({ T }) {
   const [rawData, setRawData] = useState("");
@@ -1010,7 +952,7 @@ function DataLabSystem({ T }) {
     finally { setLoading(false); setLoadMsg(""); }
   };
 
-  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
 
     <div style={{maxWidth:1100,margin:"0 auto"}}>
       {/* Header */}
@@ -1080,7 +1022,7 @@ function DataLabSystem({ T }) {
       <div style={{display:"flex",gap:0,borderBottom:`2px solid ${T.border}`,marginBottom:18,overflowX:"auto",scrollbarWidth:"none"}}>
         {TABS.map(tab=><button key={tab.id} onClick={()=>setActiveTab(tab.id)}
           style={{padding:"10px 14px",border:"none",background:"transparent",borderBottom:activeTab===tab.id?`3px solid ${T.gold}`:"3px solid transparent",color:activeTab===tab.id?T.gold:T.textS,fontWeight:activeTab===tab.id?700:500,fontSize:12,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:5,transition:"all .15s"}}>
-          <EmIcon e={tab.icon}/> {tab.label}
+          {tab.icon} {tab.label}
         </button>)}
       </div>
 
@@ -1428,7 +1370,7 @@ function DataLabSystem({ T }) {
 
 // ═══ قسم الأبحاث العربية المتخصص (مدمج) ═══
 async function arAI(sys, user, mt = 1100) {
-  const r = await fetch(AI_ENDPOINT, {
+  const r = await fetch("/api/ai", {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: mt, system: sys, messages: [{ role: "user", content: user }] })
   });
@@ -1634,7 +1576,7 @@ ${Object.entries(byPage).sort(([a],[b])=>+a-+b).map(([pg,os])=>`<h2>📄 صفح�
   };
 
   // ════════════════════════════════════════════════════════
-  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
 
       {/* Header */}
@@ -1654,7 +1596,7 @@ ${Object.entries(byPage).sort(([a],[b])=>+a-+b).map(([pg,os])=>`<h2>📄 صفح�
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))",gap:10}}>
             {DISCIPLINES.map(d=><button key={d.id} onClick={()=>{setDiscipline(d);setSubField("");}}
               style={{background:discipline?.id===d.id?d.color+"1a":T.bgS,border:`1.5px solid ${discipline?.id===d.id?d.color:T.border}`,borderRadius:12,padding:"13px 12px",cursor:"pointer",fontFamily:"inherit",textAlign:"center",transition:"all .15s"}}>
-              <div style={{fontSize:26,marginBottom:6}}><EmIcon e={d.icon}/></div>
+              <div style={{fontSize:26,marginBottom:6}}>{d.icon}</div>
               <div style={{fontSize:12,fontWeight:700,color:discipline?.id===d.id?d.color:T.text}}>{d.ar}</div>
               <div style={{fontSize:9,color:T.textD,marginTop:3}}>{d.sub.length} فرع</div>
             </button>)}
@@ -1690,7 +1632,7 @@ ${Object.entries(byPage).sort(([a],[b])=>+a-+b).map(([pg,os])=>`<h2>📄 صفح�
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:8}}>
             {TRACKS.map(tr=><label key={tr.id} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 11px",background:tracks.includes(tr.id)?tr.color+"12":T.bgS,border:`1px solid ${tracks.includes(tr.id)?tr.color+"44":T.border}`,borderRadius:9,cursor:"pointer"}}>
               <input type="checkbox" checked={tracks.includes(tr.id)} onChange={e=>setTracks(p=>e.target.checked?[...p,tr.id]:p.filter(x=>x!==tr.id))} style={{accentColor:tr.color,cursor:"pointer"}}/>
-              <span style={{fontSize:15}}><EmIcon e={tr.icon}/></span>
+              <span style={{fontSize:15}}>{tr.icon}</span>
               <span style={{fontSize:12,fontWeight:tracks.includes(tr.id)?700:500,color:tracks.includes(tr.id)?tr.color:T.textS}}>{tr.ar}</span>
             </label>)}
           </div>
@@ -1851,7 +1793,7 @@ ${Object.entries(byPage).sort(([a],[b])=>+a-+b).map(([pg,os])=>`<h2>📄 صفح�
 
 // ═══ نظام متابعة أعمال الجودة (مدمج) ═══
 async function qAI(sys, user, mt = 1100) {
-  const r = await fetch(AI_ENDPOINT, {
+  const r = await fetch("/api/ai", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:mt,system:sys,messages:[{role:"user",content:user}]})
   });
@@ -2024,7 +1966,7 @@ function QualityTrackingSystem({ T }) {
   const STATUS_ICON = { done:"✅", na:"➖", none:"⬜" };
   const STATUS_COLOR = (s)=> s==="done"?T.emerald:s==="na"?T.textD:T.border;
 
-  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
 
       {/* Header */}
@@ -2181,7 +2123,7 @@ function QualityTrackingSystem({ T }) {
 
 // ═══ مولّد النماذج الإلكترونية (مدمج) ═══
 async function fAI(sys, user, mt = 1400) {
-  const r = await fetch(AI_ENDPOINT, {
+  const r = await fetch("/api/ai", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:mt,system:sys,messages:[{role:"user",content:user}]})
   });
@@ -2429,7 +2371,7 @@ function FormGeneratorSystem({ T }) {
   const forms = FORMS.filter(f=>f.cat===cat);
   const curCat = CATEGORIES.find(c=>c.id===cat);
 
-  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
 
       {/* Header */}
@@ -2457,7 +2399,7 @@ function FormGeneratorSystem({ T }) {
         <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
           {CATEGORIES.map(c=><button key={c.id} onClick={()=>setCat(c.id)}
             style={{display:"flex",alignItems:"center",gap:7,padding:"9px 16px",borderRadius:11,border:`1.5px solid ${cat===c.id?c.color:T.border}`,background:cat===c.id?c.color+"15":T.card,color:cat===c.id?c.color:T.textS,fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>
-            <span style={{fontSize:17}}><EmIcon e={c.icon}/></span>{c.ar}
+            <span style={{fontSize:17}}>{c.icon}</span>{c.ar}
           </button>)}
         </div>
 
@@ -2467,7 +2409,7 @@ function FormGeneratorSystem({ T }) {
             style={{background:T.card,border:`1.5px solid ${T.border}`,borderRadius:14,padding:"16px",display:"flex",alignItems:"center",gap:13,cursor:"pointer",fontFamily:"inherit",textAlign:"right",transition:"all .18s"}}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=curCat.color;e.currentTarget.style.boxShadow=T.shadow;e.currentTarget.style.transform="translateY(-2px)";}}
             onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="none";}}>
-            <div style={{width:48,height:48,borderRadius:13,background:curCat.color+"18",border:`1px solid ${curCat.color}35`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:23,flexShrink:0}}><EmIcon e={f.icon}/></div>
+            <div style={{width:48,height:48,borderRadius:13,background:curCat.color+"18",border:`1px solid ${curCat.color}35`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:23,flexShrink:0}}>{f.icon}</div>
             <div style={{flex:1}}>
               <div style={{color:T.text,fontWeight:800,fontSize:13,marginBottom:4}}>{f.ar}</div>
               <div style={{color:T.textD,fontSize:10,lineHeight:1.5}}>{f.desc}</div>
@@ -2479,7 +2421,7 @@ function FormGeneratorSystem({ T }) {
         {/* Form fill view */}
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:18}}>
           <FBtn ch="← رجوع للنماذج" onClick={()=>setActiveForm(null)} v="ghost" size="sm" T={T}/>
-          <div style={{width:42,height:42,borderRadius:11,background:curCat.color+"18",border:`1px solid ${curCat.color}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:21}}><EmIcon e={activeForm.icon}/></div>
+          <div style={{width:42,height:42,borderRadius:11,background:curCat.color+"18",border:`1px solid ${curCat.color}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:21}}>{activeForm.icon}</div>
           <div>
             <h2 style={{margin:"0 0 2px",fontSize:18,fontWeight:900,color:T.text}}>{activeForm.ar}</h2>
             <p style={{margin:0,fontSize:11,color:T.textD}}>{activeForm.desc}</p>
@@ -2523,7 +2465,7 @@ function FormGeneratorSystem({ T }) {
 
 // ═══ ملفات الأقسام والوحدات (مدمج) ═══
 async function dpAI(sys, user, mt = 1300) {
-  const r = await fetch(AI_ENDPOINT, {
+  const r = await fetch("/api/ai", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:mt,system:sys,messages:[{role:"user",content:user}]})
   });
@@ -2648,7 +2590,7 @@ function DeptFilesSystem({ T }) {
     a.href=url;a.download=`ملف_الجودة_${depts[activeDept].name}.csv`;a.click();URL.revokeObjectURL(url);
   };
 
-  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1120,margin:"0 auto"}}>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={e=>{if(uploadTarget&&e.target.files.length){addFiles(uploadTarget.di,uploadTarget.fid,e.target.files);setUploadTarget(null);}}}/>
 
@@ -2816,7 +2758,7 @@ function StructureBuilder({ T }) {
 
 // ═══ اللجان والوحدات والمراكز (مدمج) ═══
 async function cmAI(sys, user, mt = 1300) {
-  const r = await fetch(AI_ENDPOINT, {
+  const r = await fetch("/api/ai", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:mt,system:sys,messages:[{role:"user",content:user}]})
   });
@@ -2907,7 +2849,7 @@ function CommitteesSystem({ T }) {
     a.href=url;a.download=`${selected}_${task.ar}.txt`;a.click();URL.revokeObjectURL(url);
   };
 
-  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1120,margin:"0 auto"}}>
 
       {/* Header */}
@@ -2921,7 +2863,7 @@ function CommitteesSystem({ T }) {
         <div style={{display:"flex",gap:10,justifyContent:"center",marginBottom:18,flexWrap:"wrap"}}>
           {Object.entries(ENTITIES).map(([k,e])=><button key={k} onClick={()=>setEtype(k)}
             style={{display:"flex",alignItems:"center",gap:8,padding:"10px 20px",borderRadius:12,border:`1.5px solid ${etype===k?e.color:T.border}`,background:etype===k?e.color+"18":T.card,color:etype===k?e.color:T.text,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:14}}>
-            <span style={{fontSize:18}}><EmIcon e={e.icon}/></span>{e.ar}<CmTag ch={e.items.length} color={etype===k?e.color:T.textD}/>
+            <span style={{fontSize:18}}>{e.icon}</span>{e.ar}<CmTag ch={e.items.length} color={etype===k?e.color:T.textD}/>
           </button>)}
         </div>
 
@@ -2931,7 +2873,7 @@ function CommitteesSystem({ T }) {
             style={{background:T.card,border:`1.5px solid ${T.border}`,borderRadius:12,padding:"14px 15px",display:"flex",alignItems:"center",gap:11,cursor:"pointer",fontFamily:"inherit",textAlign:"right",transition:"all .18s"}}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=ent.color;e.currentTarget.style.transform="translateX(-3px)";}}
             onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
-            <div style={{width:40,height:40,borderRadius:10,background:ent.color+"1a",border:`1px solid ${ent.color}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}><EmIcon e={ent.icon}/></div>
+            <div style={{width:40,height:40,borderRadius:10,background:ent.color+"1a",border:`1px solid ${ent.color}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{ent.icon}</div>
             <span style={{flex:1,fontSize:13,fontWeight:700,color:T.text}}>{item}</span>
             <span style={{color:ent.color,fontSize:16,opacity:.5}}>←</span>
           </button>)}
@@ -2942,7 +2884,7 @@ function CommitteesSystem({ T }) {
       {selected && <div>
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:18,flexWrap:"wrap"}}>
           <CmBtn ch="← رجوع" onClick={()=>{setSelected(null);setTask(null);setResult("");}} v="ghost" size="sm" T={T}/>
-          <div style={{width:44,height:44,borderRadius:11,background:ent.color+"1a",border:`1px solid ${ent.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:21}}><EmIcon e={ent.icon}/></div>
+          <div style={{width:44,height:44,borderRadius:11,background:ent.color+"1a",border:`1px solid ${ent.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:21}}>{ent.icon}</div>
           <h2 style={{margin:0,fontSize:18,fontWeight:900,color:T.text}}>{selected}</h2>
         </div>
 
@@ -2950,13 +2892,13 @@ function CommitteesSystem({ T }) {
         <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
           {TASKS.map(t=><button key={t.id} onClick={()=>{setTask(t);setResult("");}}
             style={{display:"flex",alignItems:"center",gap:7,padding:"9px 15px",borderRadius:10,border:`1.5px solid ${task?.id===t.id?ent.color:T.border}`,background:task?.id===t.id?ent.color+"18":T.card,color:task?.id===t.id?ent.color:T.text,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:12}}>
-            <span><EmIcon e={t.icon}/></span>{t.ar}
+            <span>{t.icon}</span>{t.ar}
           </button>)}
         </div>
 
         {task && <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
           <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,padding:16,boxShadow:T.shadow}}>
-            <h3 style={{margin:"0 0 12px",fontSize:14,fontWeight:800,color:T.text}}><EmIcon e={task.icon}/> {task.ar}</h3>
+            <h3 style={{margin:"0 0 12px",fontSize:14,fontWeight:800,color:T.text}}>{task.icon} {task.ar}</h3>
             <label style={{display:"block",marginBottom:5,fontSize:12,fontWeight:700,color:T.textS}}>بيانات إضافية (الأعضاء، التاريخ، البنود، الأنشطة...)</label>
             <textarea value={extra} onChange={e=>setExtra(e.target.value)} rows={6} placeholder="أدخل التفاصيل الخاصة بهذه الجهة..."
               style={{width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",marginBottom:11}}/>
@@ -2975,7 +2917,7 @@ function CommitteesSystem({ T }) {
               </div>}
             </div>
             {result?<pre style={{margin:0,fontSize:12,color:T.text,lineHeight:1.85,whiteSpace:"pre-wrap",fontFamily:"inherit",maxHeight:"55vh",overflow:"auto"}}>{result}</pre>
-            :<div style={{textAlign:"center",padding:"50px 20px",color:T.textD}}><p style={{fontSize:34,margin:"0 0 10px"}}><EmIcon e={task.icon}/></p><p style={{fontSize:13}}>أدخل البيانات واضغط توليد</p></div>}
+            :<div style={{textAlign:"center",padding:"50px 20px",color:T.textD}}><p style={{fontSize:34,margin:"0 0 10px"}}>{task.icon}</p><p style={{fontSize:13}}>أدخل البيانات واضغط توليد</p></div>}
           </div>
         </div>}
       </div>}
@@ -2986,7 +2928,7 @@ function CommitteesSystem({ T }) {
 
 // ═══ ملف الطالب للإرشاد (مدمج) ═══
 async function stAI(sys, user, mt = 1300) {
-  const r = await fetch(AI_ENDPOINT, {
+  const r = await fetch("/api/ai", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:mt,system:sys,messages:[{role:"user",content:user}]})
   });
@@ -3067,7 +3009,7 @@ function StudentAdvisingSystem({ T }) {
   };
   const risk = riskLevel();
 
-  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
 
       <div style={{textAlign:"center",marginBottom:20}}>
@@ -3189,7 +3131,7 @@ function StudentAdvisingSystem({ T }) {
 
 // ═══ مراجعة الرسائل للمناقشة (مدمج) ═══
 async function thAI(sys, user, mt = 1400) {
-  const r = await fetch(AI_ENDPOINT, {
+  const r = await fetch("/api/ai", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:mt,system:sys,messages:[{role:"user",content:user}]})
   });
@@ -3364,7 +3306,7 @@ function ThesisDefenseSystem({ T }) {
   const pageCnt = { "حرجة":pageObs.filter(o=>o.severity==="حرجة").length, "مهمة":pageObs.filter(o=>o.severity==="مهمة").length, "طفيفة":pageObs.filter(o=>o.severity==="طفيفة").length };
   const byPg = {}; pageShown.forEach(o=>{ const p=o.page||1; (byPg[p]=byPg[p]||[]).push(o); });
 
-  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
 
       <div style={{textAlign:"center",marginBottom:20}}>
@@ -3388,7 +3330,7 @@ function ThesisDefenseSystem({ T }) {
             {ROLES.map(r=><button key={r.id} onClick={()=>setRole(r)}
               style={{background:role.id===r.id?r.color+"14":T.bgS,border:`1.5px solid ${role.id===r.id?r.color:T.border}`,borderRadius:13,padding:"14px",cursor:"pointer",fontFamily:"inherit",textAlign:"right",transition:"all .15s"}}>
               <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:7}}>
-                <span style={{fontSize:22}}><EmIcon e={r.icon}/></span>
+                <span style={{fontSize:22}}>{r.icon}</span>
                 <span style={{fontSize:14,fontWeight:800,color:role.id===r.id?r.color:T.text}}>{r.ar}</span>
               </div>
               <p style={{margin:0,fontSize:11,color:T.textS,lineHeight:1.5}}>{r.focus}</p>
@@ -3411,14 +3353,14 @@ function ThesisDefenseSystem({ T }) {
             style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none"}}/>
         </div>
 
-        <ThBtn ch={<><EmIcon e={role.icon}/> ابدأ المراجعة من منظور {role.ar}</>} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
+        <ThBtn ch={`${role.icon} ابدأ المراجعة من منظور ${role.ar}`} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
       </div>}
 
       {/* RESULT */}
       {phase==="result" && <div>
         {loading && <div style={{background:T.card,border:`1px solid ${role.color}44`,borderRadius:14,padding:40,textAlign:"center",boxShadow:T.shadow}}>
           <div style={{display:"flex",justifyContent:"center",marginBottom:14}}><ThSp c={role.color}/></div>
-          <h3 style={{margin:"0 0 6px",fontSize:17,fontWeight:900,color:role.color}}><EmIcon e={role.icon}/> المراجعة من منظور {role.ar}</h3>
+          <h3 style={{margin:"0 0 6px",fontSize:17,fontWeight:900,color:role.color}}>{role.icon} المراجعة من منظور {role.ar}</h3>
           <p style={{margin:0,fontSize:12,color:T.textS}}>{prog}</p>
         </div>}
 
@@ -3426,7 +3368,7 @@ function ThesisDefenseSystem({ T }) {
           {/* Header bar */}
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16,flexWrap:"wrap"}}>
             <ThBtn ch="← مراجعة جديدة" onClick={()=>{setPhase("setup");setReview(null);}} v="ghost" size="sm" T={T}/>
-            <ThTag ch={<><EmIcon e={role.icon}/> {role.ar}</>} color={role.color}/>
+            <ThTag ch={`${role.icon} ${role.ar}`} color={role.color}/>
             <ThTag ch={degree} color={T.gold}/>
             <div style={{flex:1}}/>
             <ThBtn ch="🖨️ طباعة التقرير" onClick={printReport} v="ghost" size="sm" T={T}/>
@@ -3473,7 +3415,7 @@ function ThesisDefenseSystem({ T }) {
               <p style={{fontSize:34,margin:"0 0 10px"}}>🔬</p>
               <h3 style={{margin:"0 0 8px",color:T.text,fontSize:16}}>المراجعة الحقيقية فقرة بفقرة</h3>
               <p style={{margin:"0 0 16px",color:T.textS,fontSize:12,lineHeight:1.6}}>مراجعة دقيقة صفحة بصفحة بنص حرفي مقتبس من رسالتك — بلا هلوسة.<br/>كل ملاحظة مرتبطة باقتباس فعلي من النص.</p>
-              <ThBtn ch={<><EmIcon e={role.icon}/> ابدأ المراجعة الصفحية من منظور {role.ar}</>} onClick={runPageReview} T={T}/>
+              <ThBtn ch={`${role.icon} ابدأ المراجعة الصفحية من منظور ${role.ar}`} onClick={runPageReview} T={T}/>
             </div>}
             {pageLoading && <div style={{background:T.card,border:`1px solid ${role.color}44`,borderRadius:14,padding:32,textAlign:"center",boxShadow:T.shadow,marginBottom:14}}>
               <div style={{display:"flex",justifyContent:"center",marginBottom:12}}><ThSp c={role.color}/></div>
@@ -3555,7 +3497,7 @@ function ThesisDefenseSystem({ T }) {
 
 // ═══ مركز التحكيم الشامل الموحّد (مدمج) ═══
 async function ucAI(sys, user, mt = 1200) {
-  const r = await fetch(AI_ENDPOINT, {
+  const r = await fetch("/api/ai", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:mt,system:sys,messages:[{role:"user",content:user}]})
   });
@@ -3696,7 +3638,7 @@ function UnifiedReviewCenter({ T }) {
   const byPg={}; pageObs.forEach(o=>{const p=o.page||1;(byPg[p]=byPg[p]||[]).push(o);});
   const doneCount = Object.keys(results).length + (pageObs.length>0?1:0);
 
-  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1100,margin:"0 auto"}}>
 
       <div style={{textAlign:"center",marginBottom:20}}>
@@ -3735,7 +3677,7 @@ function UnifiedReviewCenter({ T }) {
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:9}}>
           {ENGINES.map(e=><label key={e.id} style={{display:"flex",alignItems:"center",gap:9,padding:"10px 12px",background:selected.includes(e.id)?e.color+"12":T.bgS,border:`1.5px solid ${selected.includes(e.id)?e.color+"55":T.border}`,borderRadius:10,cursor:"pointer",transition:"all .15s"}}>
             <input type="checkbox" checked={selected.includes(e.id)} onChange={()=>toggle(e.id)} style={{accentColor:e.color,cursor:"pointer",width:16,height:16}}/>
-            <span style={{fontSize:17}}><EmIcon e={e.icon}/></span>
+            <span style={{fontSize:17}}>{e.icon}</span>
             <span style={{fontSize:12,fontWeight:700,color:selected.includes(e.id)?e.color:T.text,flex:1}}>{e.ar}</span>
           </label>)}
           <label style={{display:"flex",alignItems:"center",gap:9,padding:"10px 12px",background:doPages?T.gold+"12":T.bgS,border:`1.5px solid ${doPages?T.gold+"55":T.border}`,borderRadius:10,cursor:"pointer"}}>
@@ -3760,7 +3702,7 @@ function UnifiedReviewCenter({ T }) {
         <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:14}}>
           {ENGINES.filter(e=>results[e.id]).map(e=><button key={e.id} onClick={()=>setActiveRes(e.id)}
             style={{display:"flex",alignItems:"center",gap:6,padding:"7px 13px",borderRadius:9,border:`1.5px solid ${activeRes===e.id?e.color:T.border}`,background:activeRes===e.id?e.color+"18":T.card,color:activeRes===e.id?e.color:T.text,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:12}}>
-            <EmIcon e={e.icon}/> {e.ar}
+            {e.icon} {e.ar}
           </button>)}
           {pageObs.length>0&&<button onClick={()=>setActiveRes("pages")}
             style={{display:"flex",alignItems:"center",gap:6,padding:"7px 13px",borderRadius:9,border:`1.5px solid ${activeRes==="pages"?T.gold:T.border}`,background:activeRes==="pages"?T.gold+"18":T.card,color:activeRes==="pages"?T.gold:T.text,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:12}}>
@@ -3911,7 +3853,7 @@ ${sections}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:8}}>
         {stdTools.map(t=><label key={t.key} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 11px",background:selected.includes(t.key)?(grp.color||T.gold)+"12":T.card,border:`1.5px solid ${selected.includes(t.key)?(grp.color||T.gold)+"55":T.border}`,borderRadius:9,cursor:"pointer"}}>
           <input type="checkbox" checked={selected.includes(t.key)} onChange={()=>toggle(t.key)} style={{accentColor:grp.color||T.gold,cursor:"pointer",width:15,height:15}}/>
-          <span style={{fontSize:15}}><EmIcon e={t.icon}/></span>
+          <span style={{fontSize:15}}>{t.icon}</span>
           <span style={{fontSize:12,fontWeight:700,color:selected.includes(t.key)?(grp.color||T.gold):T.text}}>{t.ar}</span>
         </label>)}
       </div>
@@ -3927,7 +3869,7 @@ ${sections}
       <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:14}}>
         {stdTools.filter(t=>results[t.key]).map(t=><button key={t.key} onClick={()=>setActive(t.key)}
           style={{display:"flex",alignItems:"center",gap:6,padding:"7px 13px",borderRadius:9,border:`1.5px solid ${active===t.key?(grp.color||T.gold):T.border}`,background:active===t.key?(grp.color||T.gold)+"18":T.card,color:active===t.key?(grp.color||T.gold):T.text,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:12}}>
-          <EmIcon e={t.icon}/> {t.ar}
+          {t.icon} {t.ar}
         </button>)}
       </div>
       {active && results[active] && <div style={{background:T.bgSec,border:`1px solid ${T.border}`,borderRadius:12,padding:16}}>
@@ -3940,7 +3882,7 @@ ${sections}
 
 // ═══ نظام التصحيح الإلكتروني وتحليل الاختبارات (مدمج) ═══
 async function grAI(sys, user, mt = 1400) {
-  const r = await fetch(AI_ENDPOINT, {
+  const r = await fetch("/api/ai", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:mt,system:sys,messages:[{role:"user",content:user}]})
   });
@@ -3951,7 +3893,7 @@ async function grAI(sys, user, mt = 1400) {
 async function grVision(sys, prompt, imageB64, mt = 1500) {
   const media = imageB64.startsWith("data:") ? imageB64.split(",")[1] : imageB64;
   const mt2 = imageB64.match(/data:(image\/\w+)/);
-  const r = await fetch(AI_ENDPOINT, {
+  const r = await fetch("/api/ai", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:mt,system:sys,messages:[{role:"user",content:[
       {type:"image",source:{type:"base64",media_type:mt2?mt2[1]:"image/jpeg",data:media}},
@@ -4113,7 +4055,7 @@ function ExamGraderSystem({ T }) {
     setScanning(true); setScanMsg(`قراءة ${fname}...`);
     try {
       const b64 = dataUrl.split(",")[1];
-      const r = await fetch(AI_ENDPOINT, {
+      const r = await fetch("/api/ai", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:2000,
           system:"أنت نظام تصحيح اختبارات. اقرأ أوراق الإجابة من المستند. لكل طالب استخرج اسمه ورقمه وإجاباته المظللة بالترتيب. لا تخترع إجابات غير ظاهرة. Reply ONLY valid JSON no backticks.",
@@ -4253,7 +4195,7 @@ ${cloAnalysis?`تحقق المخرجات: ${cloAnalysis.map(c=>`${c.clo}=${c.ach
 
   const TABS=[["setup","⚙️ الإعداد"],["scan","📷 التصحيح بالتصوير"],["results","📋 النتائج"],["analysis","📊 تحليل البنود"],["report","📄 التقارير"]];
 
-  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1120,margin:"0 auto"}}>
 
       <div style={{textAlign:"center",marginBottom:18}}>
@@ -4590,7 +4532,7 @@ ${body}</body></html>`;
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:9}}>
         {groupsWithTools.map(g=>{const n=g.tools.filter(t=>TC[t.key]).length;return <label key={g.id} style={{display:"flex",alignItems:"center",gap:9,padding:"10px 12px",background:selGroups.includes(g.id)?(g.color||T.gold)+"12":T.bgSec,border:`1.5px solid ${selGroups.includes(g.id)?(g.color||T.gold)+"55":T.border}`,borderRadius:10,cursor:"pointer"}}>
           <input type="checkbox" checked={selGroups.includes(g.id)} onChange={()=>toggleGroup(g.id)} style={{accentColor:g.color||T.gold,cursor:"pointer",width:16,height:16}}/>
-          <span style={{fontSize:17}}><EmIcon e={g.icon}/></span>
+          <span style={{fontSize:17}}>{g.icon}</span>
           <span style={{fontSize:12,fontWeight:700,color:selGroups.includes(g.id)?(g.color||T.gold):T.text,flex:1}}>{g.ar}</span>
           <span style={{fontSize:10,color:T.textDim}}>{n}</span>
         </label>;})}
@@ -4615,7 +4557,7 @@ ${body}</body></html>`;
       <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
         {activeTools.filter(t=>results[t.key]).map(t=><button key={t.key} onClick={()=>setActive(t.key)}
           style={{display:"flex",alignItems:"center",gap:5,padding:"6px 11px",borderRadius:8,border:`1.5px solid ${active===t.key?(t.gcolor||T.gold):T.border}`,background:active===t.key?(t.gcolor||T.gold)+"18":T.card,color:active===t.key?(t.gcolor||T.gold):T.text,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:11}}>
-          <EmIcon e={t.icon}/> {t.ar}
+          {t.icon} {t.ar}
         </button>)}
       </div>
       {active && results[active] && <Card T={T}>
@@ -4628,7 +4570,7 @@ ${body}</body></html>`;
 
 // ═══ المراجعة الدقيقة صفحة بصفحة (مدمج) ═══
 async function dpgAI(sys, user, mt = 1600) {
-  const r = await fetch(AI_ENDPOINT, {
+  const r = await fetch("/api/ai", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:mt,system:sys,messages:[{role:"user",content:user}]})
   });
@@ -4846,7 +4788,7 @@ ol{padding-right:20px}
   };
   const dl=(c,m,e)=>{const b=new Blob(["\uFEFF"+c],{type:m+";charset=utf-8"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=`تقرير_المراجعة_${title||docType}.${e}`;a.click();URL.revokeObjectURL(u);};
 
-  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
 
       <div style={{textAlign:"center",marginBottom:18}}>
@@ -4886,7 +4828,7 @@ ol{padding-right:20px}
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:9}}>
             {Object.entries(CHECK_TYPES).map(([k,v])=><label key={k} style={{display:"flex",alignItems:"center",gap:9,padding:"9px 11px",background:activeChecks.includes(k)?v.c+"12":T.bgS,border:`1.5px solid ${activeChecks.includes(k)?v.c+"55":T.border}`,borderRadius:10,cursor:"pointer"}}>
               <input type="checkbox" checked={activeChecks.includes(k)} onChange={()=>toggleCheck(k)} style={{accentColor:v.c,cursor:"pointer",width:15,height:15}}/>
-              <span style={{fontSize:15}}><EmIcon e={v.icon}/></span>
+              <span style={{fontSize:15}}>{v.icon}</span>
               <div style={{flex:1}}>
                 <div style={{fontSize:12,fontWeight:700,color:activeChecks.includes(k)?v.c:T.text}}>{k.replace("_"," ")}</div>
                 <div style={{fontSize:9,color:T.textD}}>{v.d}</div>
@@ -4957,7 +4899,7 @@ ol{padding-right:20px}
               : p.observations.map((o,i)=>{const ct=CHECK_TYPES[o.type]||{c:T.textD,icon:"•"};const sv=DpgSEV[o.severity]||{c:T.textD};return <div key={i} style={{padding:"11px",marginTop:9,background:T.bgS,border:`1px solid ${T.border}`,borderRight:`4px solid ${sv.c}`,borderRadius:10}}>
                 <div style={{display:"flex",gap:6,marginBottom:7,flexWrap:"wrap",alignItems:"center"}}>
                   <span style={{fontSize:11,fontWeight:900,color:T.textD}}>{i+1}.</span>
-                  <DpgTag ch={<><EmIcon e={ct.icon}/> {o.type.replace("_"," ")}</>} color={ct.c}/>
+                  <DpgTag ch={`${ct.icon} ${o.type.replace("_"," ")}`} color={ct.c}/>
                   <DpgTag ch={o.severity} color={sv.c}/>
                   {o.paragraph&&<span style={{fontSize:10,color:T.textD}}>{o.paragraph}</span>}
                 </div>
@@ -4977,7 +4919,7 @@ ol{padding-right:20px}
 
 // ═══ نظام التحكيم بالدرجات المتكامل (مدمج) ═══
 async function grdAI(sys, user, mt = 1600) {
-  const r = await fetch(AI_ENDPOINT, {
+  const r = await fetch("/api/ai", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:mt,system:sys,messages:[{role:"user",content:user}]})
   });
@@ -5162,7 +5104,7 @@ ${finalReport?`<h2>تقرير المحكم التفصيلي</h2><div class="box"
 
   const TABS=[["data","📋 البيانات"],["input","📥 الرسالة"],["scoring","📊 التقييم بالدرجات"],["report","📄 التقرير النهائي"]];
 
-  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:18}}>
         <h1 style={{margin:"0 0 6px",fontSize:24,fontWeight:900,color:T.gold}}>⚖️ نظام التحكيم والمناقشة المتكامل</h1>
@@ -5288,7 +5230,7 @@ ${finalReport?`<h2>تقرير المحكم التفصيلي</h2><div class="box"
 
 // ═══ التقييم من المنظورات الأربعة (مدمج) ═══
 async function p4AI(sys, user, mt = 1700) {
-  const r = await fetch(AI_ENDPOINT, {
+  const r = await fetch("/api/ai", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:mt,system:sys,messages:[{role:"user",content:user}]})
   });
@@ -5407,7 +5349,7 @@ function FourPerspectiveSystem({ T }) {
   };
   const dl=(c,m,e)=>{const b=new Blob(["\uFEFF"+c],{type:m+";charset=utf-8"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=`المنظورات_الأربعة_${title||degree}.${e}`;a.click();URL.revokeObjectURL(u);};
 
-  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:18}}>
         <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"6px 16px",background:T.violet+"15",border:`1px solid ${T.violet}44`,borderRadius:24,marginBottom:10}}>
@@ -5439,7 +5381,7 @@ function FourPerspectiveSystem({ T }) {
           {PERSPECTIVES.map(p=><div key={p.id} style={{marginBottom:10}}>
             <label style={{display:"flex",alignItems:"center",gap:9,padding:"10px 12px",background:selected.includes(p.id)?p.color+"12":T.bgS,border:`1.5px solid ${selected.includes(p.id)?p.color+"55":T.border}`,borderRadius:10,cursor:"pointer"}}>
               <input type="checkbox" checked={selected.includes(p.id)} onChange={()=>toggle(p.id)} style={{accentColor:p.color,cursor:"pointer",width:16,height:16}}/>
-              <span style={{fontSize:18}}><EmIcon e={p.icon}/></span>
+              <span style={{fontSize:18}}>{p.icon}</span>
               <span style={{fontSize:14,fontWeight:800,color:selected.includes(p.id)?p.color:T.text,flex:1}}>{p.ar}</span>
               <P4Tag ch={`${p.layers.length} طبقات`} color={p.color}/>
             </label>
@@ -5469,7 +5411,7 @@ function FourPerspectiveSystem({ T }) {
         <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:14}}>
           {PERSPECTIVES.filter(p=>results[p.id]).map(p=><button key={p.id} onClick={()=>setActive(p.id)}
             style={{display:"flex",alignItems:"center",gap:6,padding:"7px 13px",borderRadius:9,border:`1.5px solid ${active===p.id?p.color:T.border}`,background:active===p.id?p.color+"18":T.card,color:active===p.id?p.color:T.text,cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:12}}>
-            <EmIcon e={p.icon}/> {p.ar} {results[p.id]?.overallScore!=null&&<P4Tag ch={results[p.id].overallScore} color={p.color}/>}
+            {p.icon} {p.ar} {results[p.id]?.overallScore!=null&&<P4Tag ch={results[p.id].overallScore} color={p.color}/>}
           </button>)}
         </div>
 
@@ -5503,7 +5445,7 @@ function FourPerspectiveSystem({ T }) {
 
 // ═══ المراجعة الشاملة لأنواع الأعمال (مدمج) ═══
 async function mdAI(sys, user, mt = 1700) {
-  const r = await fetch(AI_ENDPOINT, {
+  const r = await fetch("/api/ai", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:mt,system:sys,messages:[{role:"user",content:user}]})
   });
@@ -5623,7 +5565,7 @@ ${crit}
   };
   const dl=(c,m,e)=>{const b=new Blob(["\uFEFF"+c],{type:m+";charset=utf-8"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=`مراجعة_${docType.ar}_${title||""}.${e}`;a.click();URL.revokeObjectURL(u);};
 
-  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:18}}>
         <h1 style={{margin:"0 0 6px",fontSize:24,fontWeight:900,color:T.gold}}>📚 المراجعة الشاملة لأنواع الأعمال</h1>
@@ -5636,7 +5578,7 @@ ${crit}
           onMouseEnter={e=>{e.currentTarget.style.borderColor=d.color;e.currentTarget.style.transform="translateY(-3px)";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
           <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:9}}>
-            <div style={{width:46,height:46,borderRadius:12,background:d.color+"1a",border:`1px solid ${d.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}><EmIcon e={d.icon}/></div>
+            <div style={{width:46,height:46,borderRadius:12,background:d.color+"1a",border:`1px solid ${d.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{d.icon}</div>
             <div><div style={{fontSize:15,fontWeight:800,color:T.text}}>{d.ar}</div><div style={{fontSize:11,color:T.textD}}>{d.desc}</div></div>
           </div>
           <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
@@ -5648,7 +5590,7 @@ ${crit}
       {docType && !result && !loading && <div>
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:16}}>
           <MdBtn ch="← الأنواع" onClick={()=>setDocType(null)} v="ghost" size="sm" T={T}/>
-          <div style={{width:42,height:42,borderRadius:11,background:docType.color+"1a",border:`1px solid ${docType.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}><EmIcon e={docType.icon}/></div>
+          <div style={{width:42,height:42,borderRadius:11,background:docType.color+"1a",border:`1px solid ${docType.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>{docType.icon}</div>
           <h2 style={{margin:0,fontSize:18,fontWeight:900,color:T.text}}>{docType.ar}</h2>
         </div>
         <div style={{background:docType.color+"0d",border:`1px solid ${docType.color}33`,borderRadius:12,padding:13,marginBottom:14}}>
@@ -5666,7 +5608,7 @@ ${crit}
             {files.length?<p style={{margin:0,fontSize:12,color:T.emerald,fontWeight:700}}>✅ {files.map(f=>f.name).join("، ")}</p>:<p style={{margin:0,fontSize:12,color:T.textS}}>📎 ارفع العمل (Word · PDF · TXT) أو الصق النص</p>}
           </div>
           <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="أو الصق نص العمل كاملاً..." rows={6} style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",marginBottom:12}}/>
-          <MdBtn ch={<><EmIcon e={docType.icon}/> ابدأ مراجعة {docType.ar}</>} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
+          <MdBtn ch={`${docType.icon} ابدأ مراجعة ${docType.ar}`} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
         </div>
       </div>}
 
@@ -5727,7 +5669,7 @@ ${crit}
 
 // ═══ منصة ضمان جودة البحوث (مدمج) ═══
 async function qaAI(sys, user, mt = 1800) {
-  const r = await fetch(AI_ENDPOINT, {
+  const r = await fetch("/api/ai", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:mt,system:sys,messages:[{role:"user",content:user}]})
   });
@@ -5847,7 +5789,7 @@ ${idx?`<h2>المؤشرات</h2><div>${idx}</div>`:""}
   const grouped = {};
   QA_MODULES.forEach(m=>{ (grouped[m.grp]=grouped[m.grp]||[]).push(m); });
 
-  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:18}}>
         <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"6px 16px",background:T.gold+"15",border:`1px solid ${T.gold}44`,borderRadius:24,marginBottom:10}}>
@@ -5868,7 +5810,7 @@ ${idx?`<h2>المؤشرات</h2><div>${idx}</div>`:""}
               style={{background:T.card,border:`1.5px solid ${T.border}`,borderRadius:13,padding:14,cursor:"pointer",fontFamily:"inherit",textAlign:"right",display:"flex",alignItems:"center",gap:11,transition:"all .18s"}}
               onMouseEnter={e=>{e.currentTarget.style.borderColor=m.color;e.currentTarget.style.transform="translateY(-2px)";}}
               onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
-              <div style={{width:42,height:42,borderRadius:11,background:m.color+"1a",border:`1px solid ${m.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}><EmIcon e={m.icon}/></div>
+              <div style={{width:42,height:42,borderRadius:11,background:m.color+"1a",border:`1px solid ${m.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{m.icon}</div>
               <span style={{fontSize:13,fontWeight:700,color:T.text}}>{m.ar}</span>
             </button>)}
           </div>
@@ -5878,7 +5820,7 @@ ${idx?`<h2>المؤشرات</h2><div>${idx}</div>`:""}
       {mod && !result && !loading && <div>
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:16}}>
           <QaBtn ch="← الوحدات" onClick={()=>setMod(null)} v="ghost" size="sm" T={T}/>
-          <div style={{width:42,height:42,borderRadius:11,background:mod.color+"1a",border:`1px solid ${mod.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}><EmIcon e={mod.icon}/></div>
+          <div style={{width:42,height:42,borderRadius:11,background:mod.color+"1a",border:`1px solid ${mod.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>{mod.icon}</div>
           <h2 style={{margin:0,fontSize:18,fontWeight:900,color:T.text}}>{mod.ar}</h2>
         </div>
         <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,padding:16,boxShadow:T.shadow}}>
@@ -5892,7 +5834,7 @@ ${idx?`<h2>المؤشرات</h2><div>${idx}</div>`:""}
             {files.length?<p style={{margin:0,fontSize:12,color:T.emerald,fontWeight:700}}>✅ {files.map(f=>f.name).join("، ")}</p>:<p style={{margin:0,fontSize:12,color:T.textS}}>📎 ارفع العمل (Word · PDF · Excel · CSV) أو الصق النص/البيانات</p>}
           </div>
           <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="أو الصق المحتوى/البيانات كاملاً..." rows={6} style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",marginBottom:12}}/>
-          <QaBtn ch={<><EmIcon e={mod.icon}/> ابدأ {mod.ar}</>} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
+          <QaBtn ch={`${mod.icon} ابدأ ${mod.ar}`} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
         </div>
       </div>}
 
@@ -5951,7 +5893,7 @@ ${idx?`<h2>المؤشرات</h2><div>${idx}</div>`:""}
 
 // ═══ المراجعة العميقة المتخصصة (مدمج) ═══
 async function ddAI(sys, user, mt = 2000) {
-  const r = await fetch(AI_ENDPOINT, {
+  const r = await fetch("/api/ai", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:mt,system:sys,messages:[{role:"user",content:user}]})
   });
@@ -6100,7 +6042,7 @@ function DeepDisciplineSystem({ T }) {
 
   const shown = filter==="all"?pages:pages.map(p=>({...p,observations:p.observations.filter(o=>o.severity===filter)}));
 
-  return <div dir="rtl" style={{fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
+  return <div dir="rtl" style={{fontFamily:"'Segoe UI','Tajawal',sans-serif",color:T.text,background:T.bg,minHeight:"100vh",padding:"20px 16px"}}>
     <div style={{maxWidth:1080,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:18}}>
         <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"6px 16px",background:T.violet+"15",border:`1px solid ${T.violet}44`,borderRadius:24,marginBottom:10}}>
@@ -6115,7 +6057,7 @@ function DeepDisciplineSystem({ T }) {
           style={{background:T.card,border:`1.5px solid ${T.border}`,borderRadius:14,padding:16,cursor:"pointer",fontFamily:"inherit",textAlign:"center",transition:"all .18s"}}
           onMouseEnter={e=>{e.currentTarget.style.borderColor=d.color;e.currentTarget.style.transform="translateY(-3px)";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
-          <div style={{width:52,height:52,margin:"0 auto 10px",borderRadius:14,background:d.color+"1a",border:`1px solid ${d.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26}}><EmIcon e={d.icon}/></div>
+          <div style={{width:52,height:52,margin:"0 auto 10px",borderRadius:14,background:d.color+"1a",border:`1px solid ${d.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26}}>{d.icon}</div>
           <div style={{fontSize:13,fontWeight:800,color:T.text,marginBottom:4}}>{d.ar}</div>
           <DdTag ch={`${d.checks.length} معايير دقيقة`} color={d.color}/>
         </button>)}
@@ -6124,7 +6066,7 @@ function DeepDisciplineSystem({ T }) {
       {disc && pages.length===0 && !loading && <div>
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:14}}>
           <DdBtn ch="← التخصصات" onClick={()=>setDisc(null)} v="ghost" size="sm" T={T}/>
-          <div style={{width:44,height:44,borderRadius:12,background:disc.color+"1a",border:`1px solid ${disc.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}><EmIcon e={disc.icon}/></div>
+          <div style={{width:44,height:44,borderRadius:12,background:disc.color+"1a",border:`1px solid ${disc.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{disc.icon}</div>
           <h2 style={{margin:0,fontSize:18,fontWeight:900,color:T.text}}>{disc.ar}</h2>
         </div>
         <div style={{background:disc.color+"0d",border:`1px solid ${disc.color}33`,borderRadius:12,padding:13,marginBottom:14}}>
@@ -6143,7 +6085,7 @@ function DeepDisciplineSystem({ T }) {
             <span style={{fontSize:12,color:T.textS,fontWeight:700}}>كلمات/صفحة:</span>
             <input type="number" value={wpp} onChange={e=>setWpp(parseInt(e.target.value)||400)} step="50" style={{width:85,padding:"7px 10px",borderRadius:8,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:12,fontFamily:"inherit",outline:"none"}}/>
           </div>
-          <DdBtn ch={<><EmIcon e={disc.icon}/> ابدأ المراجعة المتخصصة العميقة</>} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
+          <DdBtn ch={`${disc.icon} ابدأ المراجعة المتخصصة العميقة`} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
         </div>
       </div>}
 
@@ -6154,7 +6096,7 @@ function DeepDisciplineSystem({ T }) {
       {pages.length>0 && <div>
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:14,flexWrap:"wrap"}}>
           <DdBtn ch="← جديد" onClick={()=>{setPages([]);setSummary(null);setDisc(null);}} v="ghost" size="sm" T={T}/>
-          <DdTag ch={<><EmIcon e={disc.icon}/> {disc.ar}</>} color={disc.color}/>
+          <DdTag ch={`${disc.icon} ${disc.ar}`} color={disc.color}/>
           {title&&<span style={{fontSize:13,fontWeight:700,color:T.text}}>{title}</span>}
           <div style={{flex:1}}/>
           {!loading && <><DdBtn ch="📄 Word" onClick={()=>dl(buildReport(),"application/msword","doc")} v="gold" size="sm" T={T}/>
@@ -6216,7 +6158,7 @@ const TC = {
   dna: {s:"أنت محلل أسلوب الكتابة. حلّل بصمة النص: الأسلوب، التعقيد، السمات المميزة، الاتساق الأسلوبي.", lbl:"DNA الأسلوبي", ph:"الصق النص أو ارفع الملف لـDNA الأسلوبي...", btn:"تشغيل DNA الأسلوبي"},
   aidetect: {s:"أنت كاشف للكتابة بالذكاء الاصطناعي. حلّل مؤشرات الكتابة الآلية (العبارات النمطية، العمومية، التكرار، الانتقالات الآلية) وأعطِ نسبة اشتباه مع الأدلة.", lbl:"كشف الذكاء الاصطناعي", ph:"الصق النص أو ارفع الملف لـكشف الذكاء الاصطناعي...", btn:"تشغيل كشف الذكاء الاصطناعي"},
   citation: {s:"أنت خبير توثيق علمي (APA). دقّق الاقتباسات والمراجع: التنسيق، التطابق بين النص والقائمة، المراجع الناقصة أو الزائدة.", lbl:"التوثيق والمراجع", ph:"الصق النص أو ارفع الملف لـالتوثيق والمراجع...", btn:"تشغيل التوثيق والمراجع"},
-  method: {s:"أنت خبير مناهج البحث. دقّق المنهجية: التوافق بين السؤال والمنهج والأداة، الافتراضات، الأخطاء، المنهج البديل الأفضل. قيّم أيضاً جودة البحث الشاملة: الترابط المعرفي، فرص قبول النشر، الموقع بين الأبحاث المماثلة، والأثر المجتمعي.", lbl:"الصحة المنهجية", ph:"الصق النص أو ارفع الملف لـالصحة المنهجية...", btn:"تشغيل الصحة المنهجية"},
+  method: {s:"أنت خبير مناهج البحث. دقّق المنهجية: التوافق بين السؤال والمنهج والأداة، الافتراضات، الأخطاء، المنهج البديل الأفضل.", lbl:"الصحة المنهجية", ph:"الصق النص أو ارفع الملف لـالصحة المنهجية...", btn:"تشغيل الصحة المنهجية"},
   graph: {s:"أنت خبير عرض البيانات. اقترح أنسب الرسوم البيانية للبيانات وحلّل جودة العرض البصري الحالي.", lbl:"الترابط المعرفي", ph:"الصق النص أو ارفع الملف لـالترابط المعرفي...", btn:"تشغيل الترابط المعرفي"},
   predict: {s:"أنت خبير التنبؤ والسلاسل الزمنية. حلّل البيانات واقترح نماذج التنبؤ المناسبة وفسّر النتائج.", lbl:"التنبؤ بالنشر", ph:"الصق النص أو ارفع الملف لـالتنبؤ بالنشر...", btn:"تشغيل التنبؤ بالنشر"},
   bench: {s:"أنت خبير المقارنة المرجعية. قارن الأداء بالمعايير والأفضل في المجال وحدّد الفجوات.", lbl:"المقارنة الأكاديمية", ph:"الصق النص أو ارفع الملف لـالمقارنة الأكاديمية...", btn:"تشغيل المقارنة الأكاديمية"},
@@ -6435,7 +6377,7 @@ function AutoReviewCenter({ T }) {
 
       {ENGINES.map(e=> results[e.key] && <Card key={e.key} T={T} style={{marginBottom:12}}>
         <h4 style={{margin:"0 0 8px",fontSize:14,fontWeight:800,color:T.text,display:"flex",alignItems:"center",gap:7}}>
-          <span style={{fontSize:18}}><EmIcon e={e.icon}/></span> {e.ar}
+          <span style={{fontSize:18}}>{e.icon}</span> {e.ar}
         </h4>
         <pre style={{margin:0,fontSize:12.5,color:T.text,lineHeight:1.85,whiteSpace:"pre-wrap",fontFamily:"inherit"}}>{results[e.key]}</pre>
       </Card>)}
@@ -6512,7 +6454,7 @@ function ResearchVizSystem({ T }) {
           style={{background:T.card,border:`1.5px solid ${T.border}`,borderRadius:14,padding:15,cursor:"pointer",fontFamily:"inherit",textAlign:"right",display:"flex",alignItems:"center",gap:11,transition:"all .18s"}}
           onMouseEnter={e=>{e.currentTarget.style.borderColor=v.color;e.currentTarget.style.transform="translateY(-2px)";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
-          <div style={{width:46,height:46,borderRadius:12,background:v.color+"1a",border:`1px solid ${v.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}><EmIcon e={v.icon}/></div>
+          <div style={{width:46,height:46,borderRadius:12,background:v.color+"1a",border:`1px solid ${v.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{v.icon}</div>
           <span style={{fontSize:13,fontWeight:700,color:T.text}}>{v.ar}</span>
         </button>)}
       </div>
@@ -6521,14 +6463,14 @@ function ResearchVizSystem({ T }) {
     {vizType && !output && !loading && <div>
       <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:16}}>
         <Btn ch="← الأنواع" onClick={()=>setVizType(null)} v="ghost" size="sm" T={T}/>
-        <div style={{width:44,height:44,borderRadius:12,background:vizType.color+"1a",border:`1px solid ${vizType.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}><EmIcon e={vizType.icon}/></div>
+        <div style={{width:44,height:44,borderRadius:12,background:vizType.color+"1a",border:`1px solid ${vizType.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{vizType.icon}</div>
         <h2 style={{margin:0,fontSize:18,fontWeight:900,color:T.text}}>{vizType.ar}</h2>
       </div>
       <Card T={T}>
         <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="عنوان البحث" style={{width:"100%",padding:"10px 13px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",outline:"none",marginBottom:12}}/>
         <FileZone files={files} setFiles={setFiles} T={T}/>
         <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="أو الصق نص البحث/الملخص هنا..." rows={6} style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",margin:"12px 0"}}/>
-        <Btn ch={<><EmIcon e={vizType.icon}/> توليد {vizType.ar}</>} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
+        <Btn ch={`${vizType.icon} توليد ${vizType.ar}`} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
       </Card>
     </div>}
 
@@ -6673,7 +6615,7 @@ function StatsInterpretSystem({ T }) {
           onMouseEnter={e=>{e.currentTarget.style.borderColor=m.color;e.currentTarget.style.transform="translateY(-3px)";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
           <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:8}}>
-            <div style={{width:46,height:46,borderRadius:12,background:m.color+"1a",border:`1px solid ${m.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}><EmIcon e={m.icon}/></div>
+            <div style={{width:46,height:46,borderRadius:12,background:m.color+"1a",border:`1px solid ${m.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{m.icon}</div>
             <div style={{fontSize:14,fontWeight:800,color:T.text}}>{m.ar}</div>
           </div>
           <p style={{margin:0,fontSize:11,color:T.textD}}>{m.desc}</p>
@@ -6684,7 +6626,7 @@ function StatsInterpretSystem({ T }) {
     {mode && !result && !loading && <div>
       <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:16}}>
         <Btn ch="← الأنواع" onClick={()=>setMode(null)} v="ghost" size="sm" T={T}/>
-        <div style={{width:44,height:44,borderRadius:12,background:mode.color+"1a",border:`1px solid ${mode.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}><EmIcon e={mode.icon}/></div>
+        <div style={{width:44,height:44,borderRadius:12,background:mode.color+"1a",border:`1px solid ${mode.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{mode.icon}</div>
         <h2 style={{margin:0,fontSize:17,fontWeight:900,color:T.text}}>{mode.ar}</h2>
       </div>
       <Card T={T}>
@@ -6696,7 +6638,7 @@ function StatsInterpretSystem({ T }) {
         <textarea value={hypotheses} onChange={e=>setHypotheses(e.target.value)} placeholder="فرضيات الدراسة (اختياري)" rows={2} style={{width:"100%",padding:"9px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:12,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",marginBottom:10}}/>
         <FileZone files={files} setFiles={setFiles} T={T}/>
         <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="الصق نتائج التحليل الإحصائي (الجداول، مخرجات SPSS/Excel، قيم الاختبارات...)" rows={6} style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",margin:"12px 0"}}/>
-        <Btn ch={<><EmIcon e={mode.icon}/> ابدأ {mode.ar}</>} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
+        <Btn ch={`${mode.icon} ابدأ ${mode.ar}`} onClick={run} disabled={!text.trim()&&!files.length} full T={T} size="lg"/>
       </Card>
     </div>}
 
@@ -6800,7 +6742,7 @@ function ResearchLabSystem({ T }) {
           style={{background:T.card,border:`1.5px solid ${T.border}`,borderRadius:14,padding:15,cursor:"pointer",fontFamily:"inherit",textAlign:"right",display:"flex",alignItems:"center",gap:11,transition:"all .18s"}}
           onMouseEnter={e=>{e.currentTarget.style.borderColor=s.color;e.currentTarget.style.transform="translateY(-2px)";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
-          <div style={{width:46,height:46,borderRadius:12,background:s.color+"1a",border:`1px solid ${s.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}><EmIcon e={s.icon}/></div>
+          <div style={{width:46,height:46,borderRadius:12,background:s.color+"1a",border:`1px solid ${s.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{s.icon}</div>
           <span style={{fontSize:13,fontWeight:700,color:T.text}}>{s.ar}</span>
         </button>)}
       </div>
@@ -6809,7 +6751,7 @@ function ResearchLabSystem({ T }) {
     {stage && !result && !loading && <div>
       <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:16}}>
         <Btn ch="← المراحل" onClick={()=>setStage(null)} v="ghost" size="sm" T={T}/>
-        <div style={{width:44,height:44,borderRadius:12,background:stage.color+"1a",border:`1px solid ${stage.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}><EmIcon e={stage.icon}/></div>
+        <div style={{width:44,height:44,borderRadius:12,background:stage.color+"1a",border:`1px solid ${stage.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{stage.icon}</div>
         <h2 style={{margin:0,fontSize:18,fontWeight:900,color:T.text}}>{stage.ar}</h2>
       </div>
       <Card T={T}>
@@ -6819,7 +6761,7 @@ function ResearchLabSystem({ T }) {
         </div>
         <FileZone files={files} setFiles={setFiles} T={T}/>
         <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="تفاصيل إضافية أو نص للاستناد إليه (اختياري)..." rows={4} style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",outline:"none",margin:"12px 0"}}/>
-        <Btn ch={<><EmIcon e={stage.icon}/> {stage.ar}</>} onClick={run} disabled={!field.trim()&&!topic.trim()&&!text.trim()&&!files.length} full T={T} size="lg"/>
+        <Btn ch={`${stage.icon} ${stage.ar}`} onClick={run} disabled={!field.trim()&&!topic.trim()&&!text.trim()&&!files.length} full T={T} size="lg"/>
       </Card>
     </div>}
 
@@ -7462,7 +7404,7 @@ function JournalSystem({ T }) {
         onMouseEnter={e=>{e.currentTarget.style.borderColor=j.color;e.currentTarget.style.transform="translateY(-3px)";}}
         onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
         <div style={{background:`linear-gradient(135deg,${j.color},${j.color}cc)`,padding:"18px 16px",color:"#fff"}}>
-          <div style={{fontSize:32,marginBottom:6}}><EmIcon e={j.icon}/></div>
+          <div style={{fontSize:32,marginBottom:6}}>{j.icon}</div>
           <h3 style={{margin:"0 0 3px",fontSize:16,fontWeight:900}}>{j.ar}</h3>
           <p style={{margin:0,fontSize:10.5,opacity:.9}}>{j.en}</p>
         </div>
@@ -7568,7 +7510,7 @@ ${d.citationApa?`<div class="cite-box"><b>للاقتباس من هذا البح�
     <div style={{background:`linear-gradient(135deg,${C},${C}bb)`,borderRadius:16,padding:"20px",marginBottom:14,color:"#fff",boxShadow:T.shadowH,position:"relative"}}>
       <button onClick={()=>setJournal(null)} style={{position:"absolute",top:14,left:14,background:"rgba(255,255,255,.2)",border:"none",borderRadius:8,padding:"5px 11px",color:"#fff",cursor:"pointer",fontFamily:"inherit",fontSize:11,fontWeight:700}}>← المجلات</button>
       <div style={{textAlign:"center"}}>
-        <div style={{fontSize:34,marginBottom:4}}><EmIcon e={J.icon}/></div>
+        <div style={{fontSize:34,marginBottom:4}}>{J.icon}</div>
         <div style={{fontSize:10,letterSpacing:1.5,opacity:.85,marginBottom:4}}>PEER-REVIEWED · OPEN ACCESS · ISSN {J.issn}</div>
         <h1 style={{margin:"0 0 3px",fontSize:21,fontWeight:900}}>{J.ar}</h1>
         <p style={{margin:0,fontSize:11,opacity:.9}}>{J.en}</p>
@@ -7916,7 +7858,7 @@ function AccreditationPipeline({ T }) {
           </div>
           <Card T={T} style={{flex:1,marginBottom:0,opacity:pending?0.5:1,borderRight:r?`4px solid ${r.passed?T.emerald:T.rose}`:`4px solid ${active?g.color:T.border}`}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:6}}>
-              <div style={{display:"flex",alignItems:"center",gap:7}}><span style={{fontSize:12,fontWeight:900,color:g.color}}>{i+1}</span><h4 style={{margin:0,fontSize:13.5,fontWeight:800,color:T.text}}><EmIcon e={g.icon}/> {g.ar}</h4></div>
+              <div style={{display:"flex",alignItems:"center",gap:7}}><span style={{fontSize:12,fontWeight:900,color:g.color}}>{i+1}</span><h4 style={{margin:0,fontSize:13.5,fontWeight:800,color:T.text}}>{g.icon} {g.ar}</h4></div>
               {r&&<div style={{display:"flex",gap:6,alignItems:"center"}}>
                 <span style={{fontSize:14,fontWeight:900,color:r.passed?T.emerald:T.rose}}>{r.score}</span>
                 <span style={{background:(r.passed?T.emerald:T.rose)+"22",color:r.passed?T.emerald:T.rose,borderRadius:20,padding:"2px 9px",fontSize:11,fontWeight:700}}>{r.passed?"اجتاز":"لم يجتز"}</span>
@@ -8273,7 +8215,7 @@ ${d.citationApa?`<div class="cite"><b>للاقتباس:</b> ${esc(d.citationApa)
       </Card>}
       <Card T={T} glow={bundle.color} style={{marginBottom:14}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-          <div style={{width:50,height:50,borderRadius:13,background:bundle.color+"1a",border:`1px solid ${bundle.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26}}><EmIcon e={bundle.icon}/></div>
+          <div style={{width:50,height:50,borderRadius:13,background:bundle.color+"1a",border:`1px solid ${bundle.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26}}>{bundle.icon}</div>
           <div><div style={{fontSize:11,color:T.textD}}>الإجراء المقترح</div><h3 style={{margin:0,fontSize:18,fontWeight:900,color:bundle.color}}>{bundle.ar}</h3></div>
         </div>
         <p style={{margin:"0 0 10px",fontSize:12.5,color:T.textS}}>سيشغّل {bundle.engines.length} أدوات تلقائياً:</p>
@@ -8350,7 +8292,7 @@ ${d.citationApa?`<div class="cite"><b>للاقتباس:</b> ${esc(d.citationApa)
     {(phase==="running"||phase==="done") && bundle && !batchMode && <div>
       <Card T={T} style={{marginBottom:14}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <h3 style={{margin:0,fontSize:15,fontWeight:800,color:bundle.color}}><EmIcon e={bundle.icon}/> {bundle.ar}</h3>
+          <h3 style={{margin:0,fontSize:15,fontWeight:800,color:bundle.color}}>{bundle.icon} {bundle.ar}</h3>
           <span style={{fontSize:12,color:T.textD}}>{Math.min(cur,(bundle.special==="publish"?4:bundle.engines.length))}/{bundle.special==="publish"?4:bundle.engines.length}</span>
         </div>
         <div style={{height:8,background:T.bgSec,borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",width:`${Math.min(cur,(bundle.special==="publish"?4:bundle.engines.length))/(bundle.special==="publish"?4:bundle.engines.length)*100}%`,background:bundle.color,borderRadius:4,transition:"width .4s"}}/></div>
@@ -8636,7 +8578,7 @@ function ThesisSourcesSystem({ T }) {
     <div style={{display:"flex",flexDirection:"column",gap:11,marginBottom:14}}>
       {items.map((s,i)=><Card key={i} T={T} style={{borderRight:`4px solid ${cur.color}`}}>
         <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
-          <div style={{width:46,height:46,borderRadius:12,background:cur.color+"15",border:`1px solid ${cur.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:23,flexShrink:0}}><EmIcon e={s.icon}/></div>
+          <div style={{width:46,height:46,borderRadius:12,background:cur.color+"15",border:`1px solid ${cur.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:23,flexShrink:0}}>{s.icon}</div>
           <div style={{flex:1,minWidth:0}}>
             <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:3}}>
               <h3 style={{margin:0,fontSize:14.5,fontWeight:800,color:T.text}}>{s.ar}</h3>
@@ -8848,7 +8790,7 @@ function AcademicJourneySystem({ T }) {
     {/* Journey path */}
     {STAGES.map((s,i)=><div key={s.id} style={{display:"flex",gap:12,marginBottom:10}}>
       <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
-        <div onClick={()=>setActive(active===s.id?null:s.id)} style={{width:48,height:48,borderRadius:"50%",background:active===s.id?s.color:s.color+"18",border:`2px solid ${s.color}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0,cursor:"pointer",transition:"all .2s"}}><EmIcon e={s.icon}/></div>
+        <div onClick={()=>setActive(active===s.id?null:s.id)} style={{width:48,height:48,borderRadius:"50%",background:active===s.id?s.color:s.color+"18",border:`2px solid ${s.color}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0,cursor:"pointer",transition:"all .2s"}}>{s.icon}</div>
         {i<STAGES.length-1&&<div style={{width:3,flex:1,minHeight:20,background:`linear-gradient(${s.color},${STAGES[i+1].color})`,opacity:.4}}/>}
       </div>
       <Card T={T} style={{flex:1,marginBottom:0,borderRight:`4px solid ${s.color}`,cursor:"pointer"}} >
@@ -10130,7 +10072,7 @@ function AIExpertTeamSystem({ T }) {
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))",gap:9}}>
           {EXPERTS.map(e=><div key={e.id} onClick={()=>setSelected({...selected,[e.id]:!selected[e.id]})} style={{cursor:"pointer",background:selected[e.id]?e.color+"15":T.card,border:`1.5px solid ${selected[e.id]?e.color:T.border}`,borderRadius:11,padding:"11px",display:"flex",alignItems:"center",gap:9}}>
-            <span style={{fontSize:22}}><EmIcon e={e.icon}/></span>
+            <span style={{fontSize:22}}>{e.icon}</span>
             <span style={{fontSize:12.5,fontWeight:700,color:selected[e.id]?e.color:T.text}}>{e.ar}</span>
           </div>)}
         </div>
@@ -10161,7 +10103,7 @@ function AIExpertTeamSystem({ T }) {
 
       {chosenList.map((e,i)=>{ const r=results[e.id]; const active=phase==="running"&&cur===i;
         return (r||active) && <Card key={e.id} T={T} style={{marginBottom:10,borderRight:`4px solid ${e.color}`}}>
-          <h4 style={{margin:"0 0 8px",fontSize:14,fontWeight:800,color:e.color,display:"flex",alignItems:"center",gap:8}}>{active?<Spin color={e.color}/>:<span style={{fontSize:18}}><EmIcon e={e.icon}/></span>}{e.ar}</h4>
+          <h4 style={{margin:"0 0 8px",fontSize:14,fontWeight:800,color:e.color,display:"flex",alignItems:"center",gap:8}}>{active?<Spin color={e.color}/>:<span style={{fontSize:18}}>{e.icon}</span>}{e.ar}</h4>
           {r&&<pre style={{margin:0,fontSize:12.5,color:T.text,lineHeight:1.85,whiteSpace:"pre-wrap",fontFamily:"inherit"}}>{r}</pre>}
           {active&&!r&&<p style={{margin:0,fontSize:12,color:e.color}}>يحلّل...</p>}
         </Card>;
@@ -10214,7 +10156,7 @@ function PricingSystem({ T }) {
         return <div key={p.id} style={{background:T.card,border:`2px solid ${p.popular?p.color:T.border}`,borderRadius:16,padding:0,overflow:"hidden",position:"relative",boxShadow:p.popular?T.shadowH:"none"}}>
           {p.popular&&<div style={{position:"absolute",top:12,left:0,background:p.color,color:"#fff",fontSize:10,fontWeight:800,padding:"3px 12px",borderRadius:"0 7px 7px 0"}}>الأكثر طلباً</div>}
           <div style={{background:`linear-gradient(135deg,${p.color},${p.color}cc)`,padding:"18px 16px",color:"#fff",textAlign:"center"}}>
-            <div style={{fontSize:30}}><EmIcon e={p.icon}/></div>
+            <div style={{fontSize:30}}>{p.icon}</div>
             <h3 style={{margin:"4px 0 2px",fontSize:17,fontWeight:900}}>{p.ar}</h3>
             <p style={{margin:0,fontSize:11,opacity:.9}}>{p.tagline}</p>
           </div>
@@ -10303,7 +10245,7 @@ function MathSolverSystem({ T }) {
                 border:`1.5px solid ${type===t.id?T.gold:T.border}`,
                 background:type===t.id?T.gold+"18":T.inputBg,color:type===t.id?T.gold:T.text,
                 fontWeight:type===t.id?700:500,fontSize:12,fontFamily:"inherit",cursor:"pointer"}}>
-              <span style={{fontSize:15}}><EmIcon e={t.icon}/></span>{t.ar}
+              <span style={{fontSize:15}}>{t.icon}</span>{t.ar}
             </button>
           ))}
         </div>
@@ -10405,13 +10347,13 @@ function StudentToolkitSystem({ T }) {
                 border:`1.5px solid ${tid===t.id?T.gold:T.border}`,
                 background:tid===t.id?T.gold+"18":T.inputBg,color:tid===t.id?T.gold:T.text,
                 fontWeight:tid===t.id?700:500,fontSize:12,fontFamily:"inherit",cursor:"pointer"}}>
-              <span style={{fontSize:15}}><EmIcon e={t.icon}/></span>{t.ar}
+              <span style={{fontSize:15}}>{t.icon}</span>{t.ar}
             </button>
           ))}
         </div>
 
         <div style={{padding:"9px 12px",borderRadius:9,background:T.bgS||T.inputBg,marginBottom:12,fontSize:12.5,color:T.textS}}>
-          <b style={{color:T.text}}><EmIcon e={cur.icon}/> {cur.ar}:</b> {cur.desc}
+          <b style={{color:T.text}}>{cur.icon} {cur.ar}:</b> {cur.desc}
         </div>
 
         <textarea value={input} onChange={e=>setInput(e.target.value)} rows={5}
@@ -10427,7 +10369,7 @@ function StudentToolkitSystem({ T }) {
       {out && (
         <Card T={T} style={{marginTop:12}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-            <div style={{fontWeight:800,fontSize:15,color:T.gold}}><EmIcon e={cur.icon}/> النتيجة</div>
+            <div style={{fontWeight:800,fontSize:15,color:T.gold}}>{cur.icon} النتيجة</div>
             <Btn ch="📋 نسخ" v="ghost" onClick={()=>navigator.clipboard?.writeText(out)} T={T}/>
           </div>
           <div style={{whiteSpace:"pre-wrap",lineHeight:2,fontSize:14,color:T.text}}>{out}</div>
@@ -10507,13 +10449,13 @@ function ProfessionalWriterSystem({ T }) {
                 border:`1.5px solid ${tid===t.id?T.gold:T.border}`,
                 background:tid===t.id?T.gold+"18":T.inputBg,color:tid===t.id?T.gold:T.text,
                 fontWeight:tid===t.id?700:500,fontSize:12,fontFamily:"inherit",cursor:"pointer"}}>
-              <span style={{fontSize:15}}><EmIcon e={t.icon}/></span>{t.ar}
+              <span style={{fontSize:15}}>{t.icon}</span>{t.ar}
             </button>
           ))}
         </div>
 
         <div style={{padding:"9px 12px",borderRadius:9,background:T.bgS||T.inputBg,marginBottom:12,fontSize:12.5,color:T.textS}}>
-          <b style={{color:T.text}}><EmIcon e={cur.icon}/> {cur.ar}:</b> {cur.desc}
+          <b style={{color:T.text}}>{cur.icon} {cur.ar}:</b> {cur.desc}
         </div>
 
         <textarea value={input} onChange={e=>setInput(e.target.value)} rows={5}
@@ -10529,7 +10471,7 @@ function ProfessionalWriterSystem({ T }) {
       {out && (
         <Card T={T} style={{marginTop:12}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-            <div style={{fontWeight:800,fontSize:15,color:T.gold}}><EmIcon e={cur.icon}/> النتيجة</div>
+            <div style={{fontWeight:800,fontSize:15,color:T.gold}}>{cur.icon} النتيجة</div>
             <Btn ch="📋 نسخ" v="ghost" onClick={()=>navigator.clipboard?.writeText(out)} T={T}/>
           </div>
           <div style={{whiteSpace:"pre-wrap",lineHeight:2,fontSize:14,color:T.text}}>{out}</div>
@@ -10704,7 +10646,7 @@ body{font-family:${TH.font};color:${TH.head};background:#fff;line-height:1.8}
   <div class="stats-grid">
     <div class="stat-card"><div class="stat-num">${st.submitted||0}</div><div class="stat-lbl">بحث مُقدَّم</div></div>
     <div class="stat-card"><div class="stat-num">${st.accepted||0}</div><div class="stat-lbl">بحث مقبول</div></div>
-    <div class="stat-card"><div class="stat-num">${st.reviewers||0}</div><div class="stat-lbl">محكّم</div></div>
+    <div class="stat-card"><div class="stat-num">${st.reviewers||0}</div><div class="stat-lbl">مُقياس</div></div>
     <div class="stat-card"><div class="stat-num">${st.countries||0}</div><div class="stat-lbl">دولة</div></div>
   </div>
 </div>
@@ -10887,172 +10829,6 @@ body{font-family:${TH.font};color:${TH.head};background:#fff;line-height:1.8}
 
 // ── دليل الأدوات المدمج ──────────────────────────────────────
 const TOOL_GUIDE = {
-  course_quality: {
-    what:"نظام متكامل لإدارة وتحليل جودة المقررات الجامعية وفق معايير الاعتماد الأكاديمي (NCAAA): معلومات المقرر وتوصيفه، مخرجات التعلم CLO، مصفوفة التقييم Blueprint، الدرجات والتصحيح، أوراق التقييم، تحليل الفقرات وتحقق المخرجات، رفع وتحليل الملفات، والتقرير النهائي.",
-    need:"افتح الأداة وعبّئ تبويباتها بالترتيب: معلومات المقرر، التوصيف، مخرجات التعلم، ثم أدخل الدرجات وأوراق التقييم. تُحفظ بياناتك تلقائياً في متصفحك. أزرار التحليل الذكي تعمل عبر محرّك محكّم.",
-    out:"تقرير جودة مقرر شامل مع تحليل صعوبة وتمييز الفقرات، نِسب تحقق مخرجات التعلم، وتفسير ذكي للنتائج بمعايير الاعتماد الأكاديمي — جاهز للطباعة.",
-    diff:"نظام جودة مقرر متكامل مدمج داخل محكّم، يجمع التوصيف ومصفوفة Blueprint وتحليل الفقرات والتقرير في مكان واحد، مع حفظ تلقائي محلي وتفسير ذكي آمن عبر خادم محكّم.",
-  },
-  research_os: {
-    what:"نظام بحث علمي متكامل يغطي دورة البحث كاملة بمعايير الجامعات العالمية ومجلات Q1، بثماني خدمات: بلورة الفكرة والعنوان والمشكلة والفرضيات، مراجعة الأدبيات وبناء الإطار النظري، تصميم المنهجية والعينة والاختبار المناسب، مراجعة الورقة بمعايير محكّم Q1، موجّه النشر ومطابقة مجلات Q1، التحرير اللغوي الأكاديمي، المستشار البحثي الذكي، وبناء المقترح البحثي وخطة المنحة.",
-    need:"اختر الخدمة من البطاقات، اكتب موضوعك/سؤالك، ثم ارفع الملف (PDF/Word) أو الصق النص. بعض الخدمات (الفكرة، المنهجية، المقترح، المستشار) تعمل حتى بلا ملف.",
-    out:"مخرج متخصص بحسب الخدمة: إطار بحثي كامل، مراجعة أدبيات، تصميم منهجي، تقرير تحكيم Q1، قائمة مجلات مطابقة، نص محرَّر، استشارة، أو مقترح منحة — كلها قابلة للطباعة كتقرير احترافي بترويسة محكّم.",
-    diff:"يربط دورة البحث كاملة (فكرة ← أدبيات ← منهجية ← كتابة ← تحكيم ← نشر) في نظام واحد بمعايير Q1، ويستند للمحتوى الفعلي وحساب وصفي حقيقي دون اختلاق مراجع. للتحكيم العميق صفحة بصفحة: مركز المراجعة الموحّد."
-  },
-  data_quality_hub: {
-    what:"مركز موحّد بقسمين يضم 13 أداة بأسمائها — البيانات والتحليل: تجهيز البيانات، التحليل الذكي، المستشار والتدقيق الإحصائي، تفسير النتائج، vCDO، الدراسات والمسوح الوطنية · جودة البحث: تقييم المنهجية، خريطة المفاهيم، التنبؤ بالنشر، المقارنة المرجعية، الأثر المجتمعي، نمو الباحث، الحوكمة والأخلاقيات.",
-    need:"اختر القسم ثم الأداة. لأفضل نتيجة: حدد التخصص ونوع البيانات/البحث في أول سطر من مدخلاتك.",
-    out:"بحسب الأداة: خطة تجهيز، تحليل وتفسير، تقرير تدقيق إحصائي، خرائط مفاهيم، تقييم جودة وتنبؤ بالنشر — كلها بدليل مدمج داخل كل أداة.",
-    diff:"بدل بطاقتين منفصلتين بأدوات متناثرة، رحلة واحدة: جهّز وحلّل بياناتك ثم قيّم جودة بحثك — في واجهة واحدة بقسمين."
-  },
-  research_brain: {
-    what:"نظام تحليل بحثي متكامل بنمط مراكز التحليل العالمية: (1) يفهم الأهداف ويصوغ الفرضيات إحصائياً (H₀/H₁) ويفحص التصميم وحجم العينة، (2) محرّك قرار يوصي بالاختبار الإحصائي المناسب لكل فرضية مع الافتراضات والبدائل وأكواد SPSS/Python/R وحجم الأثر وأساليب حديثة (SEM، متعدد المستويات، Bootstrap، بايزي)، (3) يحلل البيانات ويفسّر كل نتيجة مرتبطة بفرضيتها ثم يبني التوصيات والمستخلص والربط الكلي للبحث في سردية واحدة.",
-    need:"املأ إطار البحث المشترك (الأهداف، الفرضيات، المجال، المتغيرات) مرة واحدة فيخدم الأقسام الثلاثة. للتركيب: ارفع بياناتك أو الصق مخرجات تحليلك.",
-    out:"فرضيات مصاغة + فحص تصميم + توصية اختبار بأكوادها لكل فرضية + تفسير قرارات (تُقبل/تُرفض) + توصيات بأولويات + مستخلص أكاديمي بكلمات مفتاحية + فقرة الربط الكلي — قابلة للطباعة كتقرير احترافي.",
-    diff:"يربط السلسلة كاملة (هدف ← فرضية ← اختبار ← نتيجة ← توصية ← مستخلص) بدل أدوات منفصلة، ويستند لملف تعريفي محسوب فعلياً من بياناتك لا لتخمين. للحساب الإحصائي التفاعلي المباشر: مختبر عالم البيانات."
-  },
-  review_center: {
-    what:"مركز موحّد يجمع عشر أدوات مراجعة في ثلاثة أقسام: المراجعة السريعة (المساعد الذكي، مركز التحكيم، التلقائية الشاملة، السريعة)، المراجعة الدقيقة بالموضع (صفحة بصفحة، الصفحية Pro، الأقسام)، والمراجعة المتخصصة والعربية (العميقة المتخصصة، بمصطلحات المجال، العربي الشامل).",
-    need:"اختر القسم ثم المسار المناسب لعملك: السريعة لفحص أولي، الدقيقة عند الحاجة لملاحظات بالموضع، المتخصصة لأبحاث مجال دقيق أو عربية.",
-    out:"تقرير مراجعة بحسب المسار المختار: ملخص سريع، أو ملاحظات صفحة بصفحة بمواضعها، أو تقييم متخصص بمعايير المجال.",
-    diff:"بدل التنقل بين عدة أدوات متشابهة، كل مسارات المراجعة منظّمة في واجهة واحدة بأقسام واضحة — نمط المنصات العالمية."
-  },
-  forms_studio: {
-    what:"كل نماذج دورة حياة البحث إلكترونية بالذكاء الاصطناعي: 10 نماذج رسمية (تكليف مشرف، تشكيل لجنة، محاضر الاجتماعات، التقرير الدوري، طلب المناقشة، صحيفة حكم المناقش، اعتماد النسخة النهائية، شهادة المناقشة، طلب التمديد، تعهد الأمانة العلمية) — حقول منظمة تتحول لوثيقة رسمية كاملة.",
-    need:"اختر النموذج من الشبكة، عبّئ الحقول الإلكترونية (التواريخ تُحسب هجري/ميلادي تلقائياً بأم القرى)، ثم ولّد.",
-    out:"وثيقة رسمية رصينة + طباعة A4 بترويسة الجهة ورقم صادر وتاريخ مزدوج وخانات توقيع إلكتروني لكل الموقّعين المعنيين.",
-    diff:"يحوّل أبطأ أعمال الدراسات العليا الورقية إلى دقائق — والوثيقة تُعتمد دائماً بالتوقيع البشري وفق أنظمة الجهة (مبدأ المنصة)."
-  },
-  publishing_studio: {
-    what:"منظومة النشر الكاملة بنمط خدمات Elsevier/Springer للمؤلفين: موجّه المجلات بفلاتر (التصنيف، الرسوم) وروابط تحقق حقيقية (Scimago/Clarivate/DOAJ)، التهيئة لقوالب 9 ناشرين عالميين مع كل Declarations، محاكي 3 محكمين بمتنبئ القبول (أشرطة درجات + احتمالية)، وحزمة التقديم (Cover Letter + CRediT + كل البيانات).",
-    need:"للموجّه: العنوان والملخص. للبقية: ارفع الورقة أو الصقها واختر الناشر/المجلة.",
-    out:"مجلات مرشّحة بنسب ملاءمة وروابط القواعد + ورقة مهيأة بقالب الناشر + تقرير لجنة كامل باحتمالية القبول + حزمة تقديم جاهزة بالإنجليزية.",
-    diff:"يختصر خدمات تدفع فيها الباحثة مئات الدولارات لدى Edanz وأمثالها. ترشيحات المجلات تقديرية — تحقق عبر الروابط؛ المطابقة الحيّة بقواعد Scopus/JCR ضمن النسخة المؤسسية. للرد على المحكمين بعد ورود الملاحظات: جناح التميّز للمراجعة."
-  },
-  lifecycle: {
-    what:"نموذج المنظومة الكاملة لإدارة دورة حياة البحث العلمي: 14 دوراً (من الباحث إلى عمادة الدراسات العليا ومدير المجلة) بمهامها وذكائها الاصطناعي، سير العمل الموحّد من الفكرة إلى DOI، وتجربة حية لأربعة أدوار بمهام ذكية فعلية.",
-    need:"تصفح الأدوار وسير العمل، ثم جرّب: المشرف (الصق فصلاً)، المناقش (موضوع الرسالة)، المحكم (الصق بحثاً لتقرير الدرجات)، الباحث (ملاحظات المشرف لمهام).",
-    out:"بطاقات الأدوار قابلة للطيّ + خريطة سير عمل ملوّنة (بنفسجي = AI، ذهبي = قرار بشري) + مخرجات حية: تقرير مشرف، بنك أسئلة، تقرير درجات بأشرطة، خطة مهام.",
-    diff:"الرؤية الكاملة للمنصة المؤسسية وتجربتها — النظام متعدد المستخدمين الفعلي (حسابات، توقيعات، اعتمادات، Audit Trail) ضمن النسخة المؤسسية على الخادم."
-  },
-  vision_align: {
-    what:"الأولى من نوعها: تحاذي بحثك مع ركائز رؤية 2030 وأولويات البحث والتطوير والابتكار الوطنية (RDIA)، بدرجة مواءمة من 100، وتولّد «فقرة المواءمة الوطنية» الجاهزة للصق في مقترح التمويل، مع ترشيح جهات التمويل المناسبة ونقد صريح بعين الممول.",
-    need:"عنوان البحث (+ الملخص للأدق). كلما وضح أثر البحث التطبيقي ارتفعت الدقة.",
-    out:"عدّاد مواءمة دائري + الركائز المطابقة بدرجاتها + فقرة تمويل جاهزة + برامج مرشّحة بنصائح التقديم + ما يرفع فرصك ونقطة ضعفك بصراحة.",
-    diff:"لا تقدمها أي منصة: تخاطب أهم سؤال لدى الممول السعودي (المواءمة الوطنية). تحقق من دورات التقديم الحالية لدى الجهات — البرامج تتغير دورياً."
-  },
-  arab_toolkit: {
-    what:"عُدّة حصرية بحسابات حقيقية: محول هجري↔ميلادي بتقويم أم القرى الفعلي (عبر محرك المتصفح لا جداول تقريبية) مع صيغة التاريخ المزدوج للخطابات، تفقيط الأرقام كتابةً حتى المليارات، ومولّد مسرد المصطلحات (إنجليزي→عربي) الذي تشترطه الرسائل العربية.",
-    need:"للهجري: اختر التاريخ. للتفقيط: الرقم والوحدة. للمسرد: الصق النص الإنجليزي أو قائمة مصطلحاتك.",
-    out:"تواريخ محوّلة بدقة أم القرى + صيغة «الموافق» الرسمية + تفقيط جاهز للعقود + جدول مسرد قابل للنسخ مباشرة في الرسالة.",
-    diff:"أدوات يومية لا غنى عنها للباحث السعودي والعربي، التحويلان والتفقيط محسوبة فعلياً (لا ذكاء اصطناعي يخطئ في التواريخ) — والمسرد وحده يوفّر ساعات على كل رسالة."
-  },
-  ds_lab: {
-    what:"مختبر علوم بيانات بنمط الأنظمة العالمية وبحوسبة حقيقية في متصفحك: ملف تعريفي شامل Auto-EDA (بنمط pandas-profiling: نوع كل متغير، الفقد، القيم الفريدة، الإحصاءات، المتطرفات z>3)، مصفوفة ارتباط Pearson حرارية، تعلم آلي فعلي (عنقدة K-means وانحدار خطي بالمربعات الصغرى مع R²)، ومستشار ذكي يقرأ نتائجك المحسوبة.",
-    need:"ارفع CSV أو Excel أو Word أو PDF أو الصق بياناتك (يدعم الأرقام العربية). CSV/Excel الأدق؛ جداول PDF/Word تُستخرج بأفضل جهد. للتعلم الآلي تحتاج متغيرين رقميين على الأقل.",
-    out:"بطاقات مؤشرات + جدول تعريف المتغيرات + خريطة ارتباط حرارية + مبعثر العناقيد/خط الانحدار بمعادلته وR² + توصيات هندسة المتغيرات والنمذجة.",
-    diff:"الفارق الجوهري: الخوارزميات تعمل فعلياً في متصفحك (لا توليد نصي) — وهو نهج المنصات العالمية الحديثة: حساب حقيقي + مرافق ذكي. النماذج المتقدمة (XGBoost، الشبكات) تتطلب خادم Python — ضمن النسخة المؤسسية."
-  },
-  arabic_finder: {
-    what:"أول باحث عربي ذكي من نوعه: يولّد استراتيجية بحث كاملة لموضوعك (صيغ عربية وإنجليزية + كلمات مفتاحية + معادلة بوليانية) ثم يمنحك روابط بحث حقيقية: عربياً أولاً (دار المنظومة، e-Marefa، Scholar عربي، ASJP، المستودعات) وإن قلّت النتائج فعالمياً (Semantic Scholar، OpenAlex، CORE، BASE).",
-    need:"اكتب موضوعك بدقة + التخصص، وحدد إن كنت تريد الحديث فقط (آخر 5 سنوات). الروابط تفتح قواعد البيانات الفعلية بصيغك الجاهزة.",
-    out:"استراتيجية بحث احترافية + أزرار بحث مباشرة في 10 قواعد عربية وعالمية + نصائح خاصة بكل قاعدة.",
-    diff:"فريد عربياً: لا يخمّن نتائج بل يسلّحك بصيغ الخبراء وروابط القواعد الحقيقية. بعض القواعد العربية تتطلب اشتراكاً مؤسسياً — والربط الآلي المباشر ضمن النسخة المؤسسية."
-  },
-  islamic_center: {
-    what:"أول مركز عربي يقدّم مساعداً بحثياً بتقاليد كل تخصص: 12 تخصصاً (الفقه، الحديث، التفسير، العقيدة، النحو، البلاغة، الأدب، اللسانيات، القانون، الاقتصاد الإسلامي، الإدارة، التاريخ) بثلاثة أنماط: مستشار بحثي يلتزم منهجية التخصص، توثيق تراثي، وبوابات مباشرة (الدرر السنية، Sunnah.com، الشاملة، المعاجم، المنظومة).",
-    need:"اختر التخصص ثم النمط. للمستشار: اكتب سؤالك البحثي. للتوثيق: الصق النص التراثي المراد تخريجه أو توثيقه.",
-    out:"إجابات بمنهجية التخصص وتقاليده العلمية + روابط بوابات التخصص الحقيقية + ضوابط صريحة.",
-    diff:"حصري عالمياً بالعربية. بضوابط صادقة مدمجة: لا يُفتي، ولا يخترع تخريجات أو نصوصاً أو أرقام صفحات — يحيلك للمصادر الأصلية للتثبت."
-  },
-  smart_writing: {
-    what:"أحدث نظام كتابة بحثي: مدقق المراجع وكشف الهلوسة (تقييم كل مرجع 🔴🟡🟢 مع روابط تحقق حقيقية في Google Scholar وCrossref)، الكاتب المرافق البشري (تحسين + نقد صريح + ما يحتاج توثيقاً دفعة واحدة)، والاقتباس الذكي الموثّق APA7.",
-    need:"للمدقق: الصق النص متضمناً قائمة المراجع. للمرافق: فقرة أو مقطع. للاقتباس: مقتطف المصدر وبياناته.",
-    out:"بطاقات تقييم لكل مرجع بروابط تحقق فعلية + ادعاءات تحتاج توثيقاً · نسخة محسّنة بشرية + نقد + متطلبات التوثيق · اقتباس مباشر وصياغة ومدخل مراجع APA7.",
-    diff:"الوحيد الذي يمنحك روابط تحقق خارجية حقيقية لكل مرجع (قواعد البيانات الفعلية لا التخمين) — أقوى رد عملي على هلوسة المراجع. الربط الآلي بـCrossref API ضمن النسخة المؤسسية."
-  },
-  smart_center: {
-    what:"استوديو بيانات عملي بقسمين: الداشبورد التفاعلي (مؤشرات وإحصاءات ورسوم محسوبة فعلياً من ملفك) ومصحح Excel/CSV (6 إصلاحات آلية للملفات الفوضوية مع تنزيل النسخة النظيفة).",
-    need:"ارفع CSV أو Excel أو Word أو PDF أو الصق بياناتك. للمصحح: اختر الإصلاحات المطلوبة قبل التشغيل.",
-    out:"داشبورد ببطاقات مؤشرات ورسوم + ملف مُصحَّح قابل للتنزيل بتقرير ما أُصلح.",
-    diff:"حسابات حقيقية في متصفحك لا توليداً. ولفهم الأهداف والفرضيات وربط البحث كاملاً: النظام البحثي الذكي المتكامل 🔬 — ولـ EDA والتعلم الآلي: مختبر عالم البيانات 🧪."
-  },
-  ejournal_studio: {
-    what:"يولّد عدداً إلكترونياً كاملاً بنمط المجلات العالمية الحديثة: غلاف توليدي، افتتاحية، مقالات بأشكال علمية SVG مرسومة من بيانات الذكاء الاصطناعي، نقاط رئيسية، كلمات مفتاحية، استماع صوتي للملخصات، واستشهاد BibTeX لكل مقال.",
-    need:"اكتب المجال العلمي بدقة (ومحور العدد اختياري). كل عدد بمقالين أو ثلاثة للحفاظ على الجودة والسرعة.",
-    out:"عدد تفاعلي داخل المنصة + تصدير HTML فاخر قابل للطباعة/PDF بهوية المجلات العالمية، مع تنويه أن المحتوى مولّد للنماذج وDOI توضيحي.",
-    diff:"الأحدث في مجموعة المجلة: ينتج العدد كاملاً بمحتواه وأشكاله. «مصمّم المجلة» يصمّم هوية المجلة، وهذا يولّد أعدادها — والصور الفوتوغرافية الواقعية ضمن خطة النسخة المؤسسية (خدمة توليد صور بخادم)."
-  },
-  verify_lab: {
-    what:"محرك تحقق يجمع آليات الفحص العالمية الخمس: الانتحال والأصالة (تحليل أسلوبي)، تدقيق المراجع والاستشهادات (المفقود والمختلَق)، بصمة الذكاء الاصطناعي، نزاهة الاقتباس، واتساق الأرقام بنمط statcheck/GRIM — فحص فقرة بفقرة بأسلوب مراجع بشري.",
-    need:"اختر الفحوص (الكل افتراضياً) ثم ارفع الملف أو الصق النص. يخدم المراجعة والكتابة وتحليل البيانات معاً — محور الأرقام مخصص للفصول الإحصائية.",
-    out:"ملاحظات لكل صفحة (الموضع بالاقتباس + المحور + الخطورة 🔴🟡🟢 + الإجراء) + تقرير موحّد بجدول الملاحظات وأخطر النتائج والتوصية.",
-    diff:"الأشمل للتحقق قبل التسليم أو النشر. ملاحظة صدق: المطابقة مع قواعد ملايين المنشورات (Turnitin) تتطلب خادماً — هذه فحوص تحليلية استرشادية عميقة."
-  },
-  free_verify: {
-    what:"فحوص مجانية حقيقية بلا ذكاء اصطناعي: (1) التحقق من المراجع عبر قاعدة Crossref العالمية — يستخرج معرّفات DOI ويتأكد من وجودها فعلياً ليكشف المراجع المختلقة؛ (2) مطابقة محلية لحساب نسبة التشابه بين بحثك ونص مصدر مشتبه؛ (3) تقدير تكلفة الفحص الذكي قبل تنفيذه.",
-    need:"ارفع الملف أو الصق نص البحث مع قائمة المراجع. للمطابقة المحلية الصق النص المصدر للمقارنة. لتقدير التكلفة اختر مستوى العمق وعدد الفحوص.",
-    out:"قائمة بكل مرجع (موثّق ✓ بعنوانه وسنته ومجلته، أو مشبوه ✗) مع عدّاد إجمالي/موثّق/مشبوه + نسبة التشابه المحلي ومقاطعه + تقدير التكلفة بالدولار والريال.",
-    diff:"الوحيد الذي يتحقق من وجود المراجع فعلياً في قاعدة بيانات عالمية (مجاناً وبلا تكلفة API)، بينما باقي أدوات التحقق تحليلية بالذكاء الاصطناعي. مثالي لكشف المراجع الوهمية وتقدير الكلفة قبل البدء."
-  },
-  rev_roles: {
-    what:"مركز موحّد للمراجعة البشرية بأربعة أدوار: المشرف (بنّاء)، المناقش الداخلي (منهجي)، الخارجي (صارم)، والذاتية (زميل صريح) — مراجعة صفحة بصفحة وفقرة بفقرة.",
-    need:"اختر الدور من البطاقات ثم ارفع الملف أو الصق النص. للرسائل الطويلة الصق النص مباشرة.",
-    out:"بطاقات ملاحظات لكل صفحة بأسلوب بشري + تقرير ختامي بالتوصية.",
-    diff:"نقطة البداية لأي مراجعة. ابدأ بالمشرف أثناء الكتابة، وانتقل للأدوار الأصرم كلما نضج العمل."
-  },  page_hub: {
-    what:"مركز المراجعة بالموضع: صفحة بصفحة (الأساسي بالاقتباس)، الصفحية Pro التحكيمية، ومراجعة الأقسام (مقدمة/منهجية/نتائج...).",
-    need:"ارفع ملفاً نصياً واضحاً أو الصق النص. اختر النمط من البطاقات.",
-    out:"ملاحظات مرتبطة بمواضعها الدقيقة في الصفحات أو الأقسام.",
-    diff:"الأدق في تحديد المواضع. يكمّل «السريعة» (نظرة شاملة) بالتفصيل الموضعي."
-  },
-  committee_hub: {
-    what:"مركز اللجان والمناقشة: فريق 10 خبراء، 3 محكّمين، 4 منظورات، جلسة تفاعلية حية، وتجهيز أسئلة المناقشة المتوقعة.",
-    need:"اختر شكل اللجنة من البطاقات. للتجهيز للمناقشة الفعلية ابدأ بـ«تجهيز المناقشة» ثم «الجلسة التفاعلية» للتمرّن.",
-    out:"تقارير متعددة الزوايا أو حوار محاكى أو قائمة أسئلة متوقعة.",
-    diff:"يحاكي القرار الجماعي والمناقشة. يكمّل المراجعات الفردية بتوازن وجهات النظر."
-  },
-  assess_hub: {
-    what:"مركز التقييم والنزاهة: التحكيم بالدرجات (100)، مراجعة أنواع الأعمال، النزاهة العلمية، الاقتباس والتشابه، والتوأم الرقمي.",
-    need:"اختر الفحص المطلوب. للنزاهة والاقتباس ارفع العمل كاملاً لنتيجة أدق.",
-    out:"درجات ببنود، أو تقارير نزاهة وتشابه، أو بصمة العمل.",
-    diff:"للتقييم الكمّي والتحقق. يكمّل المراجعات النصية بالأرقام والفحوص."
-  },
-  text_hub: {
-    what:"استوديو موحّد يضم ثماني أدوات نصية بأسمائها: تحسين الكتابة (أسلوب أرصن)، التدقيق اللغوي، إعادة الصياغة، التحسين بجولات، الكاتب الأكاديمي (يبني من نقاطك)، البصمة الأسلوبية، كشف الذكاء الاصطناعي (استرشادي)، وتنسيق المراجع APA.",
-    need:"اختر الأداة من الشبكة ثم الصق نصك. لأفضل نتيجة: حدد التخصص ونوع الوثيقة في أول سطر من النص، وللكاتب الأكاديمي قدّم نقاطك مرتبة.",
-    out:"نص محسّن أو مدقق أو مُعاد صياغته بحسب الأداة + ملاحظات التغيير، وتقارير أسلوبية للبصمة والكشف، ومراجع منسقة جاهزة.",
-    diff:"كل أدوات النص في مكان واحد بدل التنقل — وكشف الذكاء الاصطناعي لدينا مصرَّح بأنه تقدير احتمالي لا حكم قاطع (الصدق أولاً)."
-  },
-  research_hub: {
-    what:"مركز البحث: مختبر إدارة البحث من الفكرة، الكاتب الموثّق بـAPA، البحث في المكتبات، اقتراح الموضوعات، والدردشة مع ملفاتك.",
-    need:"بلا موضوع؟ ابدأ بالاقتراح. لديك فكرة؟ المختبر. تحتاج مراجع؟ البحث في المكتبات. عندك ملف طويل؟ اسأله مباشرة.",
-    out:"موضوعات، خطط بحثية، نصوص موثّقة، مراجع، وإجابات من ملفاتك.",
-    diff:"كل ما قبل الكتابة النهائية وما حولها من مصادر — تحقّق دائماً من المراجع المقترحة."
-  },  human_review: {
-    what:"المراجعة البشرية الموحّدة: اختر الدور (مشرف داعم / مناقش داخلي دقيق / مناقش خارجي صارم / زميل للمراجعة الذاتية) ثم ارفع الملف فيُراجَع صفحة بصفحة وفقرة بفقرة بأسلوب بشري طبيعي.",
-    need:"اختر الدور المناسب لمرحلتك (المشرف أثناء الكتابة، الخارجي للنسخة شبه النهائية)، ثم ارفع الملف أو الصق النص الكامل.",
-    out:"بطاقة ملاحظات لكل صفحة (تعليق فقرة بفقرة مع اقتباس الموضع) + تقرير ختامي بأبرز النقاط والتوصية.",
-    diff:"يجمع الأدوار الأربعة في أداة واحدة بمحدد بسيط — أقرب تجربة لمراجعة بشرية حقيقية في المنصة."
-  },
-  writing_suite: {
-    what:"ثلاث ميزات حصرية: الترجمة الأكاديمية المتخصصة (عربي↔إنجليزي مع معجم مصطلحات)، حزمة النشر الجاهزة (عناوين + ملخص عربي/إنجليزي + كلمات مفتاحية + Highlights)، ومحاكي أسلوب المجلات العالمية (Q1).",
-    need:"الصق النص المطلوب لكل تبويب. للحزمة الصق أهم أجزاء البحث (مقدمة، منهجية، نتائج).",
-    out:"ترجمة أكاديمية + جدول مصطلحات · حزمة تقديم كاملة للمجلة · نص مرفوع لمستوى النشر الدولي مع شرح ما تحسّن.",
-    diff:"يحل أكبر عائق للباحث العربي: النشر بالإنجليزية. لا تقدمه أدوات الترجمة العامة بهذا التخصص الأكاديمي."
-  },
-  analysis_suite: {
-    what:"ثلاث ميزات حصرية: صانع فصل النتائج (من جداول SPSS إلى الفصل الرابع مكتوباً)، مخطط المنهجية الكامل (مع حساب العينة بكوكران)، ومنسّق جداول APA7.",
-    need:"للفصل: الصق أسئلتك وجداولك كما هي. للمخطط: اكتب سؤال بحثك وحجم المجتمع. لـAPA: الصق النتائج الخام.",
-    out:"فصل نتائج جاهز بصياغة الرسائل · مخطط منهجي متكامل (تصميم، عينة، أداة، اختبارات، خطة) · جداول APA7 مع أسطر الكتابة في المتن.",
-    diff:"كتابة فصل النتائج أصعب مرحلة على طالب الدراسات العليا — هذه الأداة تحوّل جداوله الخام إلى فصل مكتوب، ولا مثيل لها عربياً."
-  },
-  review_suite: {
-    what:"ثلاث ميزات حصرية: مولّد خطاب الرد على المحكمين (Point-by-Point)، التصحيح التتبعي (العبارة الأصلية ← الصياغة البديلة كمحرر بشري)، وشهادة مراجعة موثّقة برقم تحقق قابلة للطباعة.",
-    need:"للرد: الصق ملاحظات المحكمين كما وصلتك. للتتبعي: الصق النص. للشهادة: عبّئ بيانات العمل بعد إتمام مراجعته بالمنصة.",
-    out:"خطاب رد جاهز للإرسال للمجلة (عربي/إنجليزي) + بطاقات تعديل ملوّنة بنوع كل تعديل + شهادة أنيقة للطباعة برقم تحقق.",
-    diff:"لا مثيل لهذه الأدوات في المنصات العربية — خطاب الرد يحتاجه كل باحث يتعامل مع المجلات، والشهادة تمنح مخرجاً ملموساً موثّقاً للمراجعة."
-  },
   master_report: {
     what:"ترفع ملفاً واحداً فيُفحص من 4 زوايا (المنهجية والبنية، اللغة والصياغة، التحليل والأدلة، التوثيق والنزاهة) ثم تُدمج النتائج في تقرير نهائي واحد بلا تكرار.",
     need:"ارفع الملف أو الصق النص. يُفحص حتى ~8500 حرف لكل زاوية — للرسائل الكاملة افحص فصلاً فصلاً.",
@@ -12665,8 +12441,7 @@ function HumanReviewSystem({ T, role }) {
     self: { icon:"✍️", name:"المراجعة الذاتية للباحث", tone:"عين ناقدة تساعد الباحث على تحسين عمله قبل التسليم",
       persona:"أنت زميل باحث متمرّس يساعد الباحث على مراجعة عمله قبل التسليم. تركّز على ما سيلاحظه المشرف والمناقشون: الوضوح، التسلسل، الصياغة، الأخطاء الشائعة. أسلوبك صريح وودود كزميل يريد لك النجاح." },
   };
-  const [selRole, setSelRole] = useState(role||"supervisor");
-  const R = ROLES[selRole] || ROLES.supervisor;
+  const R = ROLES[role] || ROLES.supervisor;
   const [files, setFiles] = useState([]);
   const [pasted, setPasted] = useState("");
   const [pages, setPages] = useState([]);
@@ -12734,7 +12509,7 @@ function HumanReviewSystem({ T, role }) {
     <div style={{maxWidth:800,margin:"0 auto"}}>
       <Card T={T}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:27}}><EmIcon e={R.icon}/></span>
+          <span style={{fontSize:27}}>{R.icon}</span>
           <div>
             <div style={{fontWeight:800,fontSize:17,color:T.text}}>{R.name}</div>
             <div style={{fontSize:12,color:T.textS}}>{R.tone} · مراجعة صفحة بصفحة وفقرة بفقرة</div>
@@ -12742,18 +12517,6 @@ function HumanReviewSystem({ T, role }) {
         </div>
       </Card>
 
-      {!role && !running && results.length===0 && (
-        <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
-          {Object.entries(ROLES).map(([k,r])=>(
-            <button key={k} onClick={()=>setSelRole(k)}
-              style={{flex:"1 1 auto",padding:"10px 8px",borderRadius:10,border:`1.5px solid ${selRole===k?T.gold:T.border}`,
-                background:selRole===k?T.gold+"18":T.card,color:selRole===k?T.gold:T.text,
-                fontWeight:selRole===k?700:500,fontSize:12.5,fontFamily:"inherit",cursor:"pointer"}}>
-              <EmIcon e={r.icon}/> {r.name.replace("مراجعة ","").replace(" للباحث","")}
-            </button>
-          ))}
-        </div>
-      )}
       {!running && results.length===0 && (
         <Card T={T} style={{marginTop:12}}>
           <FileZone files={files} setFiles={setFiles} T={T}/>
@@ -12900,7 +12663,7 @@ function MasterReportSystem({ T }) {
           <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
             {LENSES.map(L=>(
               <span key={L.id} style={{fontSize:12,padding:"5px 12px",borderRadius:18,background:T.gold+"14",color:T.gold,border:`1px solid ${T.gold}30`,fontWeight:600}}>
-                <EmIcon e={L.icon}/> {L.name}
+                {L.icon} {L.name}
               </span>
             ))}
           </div>
@@ -12979,3732 +12742,18 @@ function MasterReportSystem({ T }) {
   );
 }
 
-
-// ── جناح التميّز للمراجعة ──────────────────────────────────────
-function ReviewProSuiteSystem({ T }) {
-  const [tab, setTab] = useState("response");
-  const TABS = [["response","📨 الرد على المحكمين"],["track","✏️ المراجعة التتبعية"],["cert","🏅 شهادة المراجعة"]];
-  const [files, setFiles] = useState([]);
-
-  // ===== 1) خطاب الرد على المحكمين =====
-  const [rvComments, setRvComments] = useState("");
-  const [rvChanges, setRvChanges] = useState("");
-  const [rvLang, setRvLang] = useState("العربية");
-  const [rvOut, setRvOut] = useState("");
-  const [rvLoading, setRvLoading] = useState(false);
-  async function genResponse() {
-    let src = rvComments.trim();
-    if(!src && files.length){ try{ src = await readFile(files[0]); }catch(e){} }
-    if(!src) return;
-    setRvLoading(true); setRvOut("");
-    const sys = "أنت باحث خبير في الرد على ملاحظات المحكمين في المجلات العلمية. تكتب خطابات رد احترافية مهذبة ومقنعة بنقطة-نقطة (Point-by-Point Response).";
-    const user = `ملاحظات المحكمين:\n"""${src.slice(0,5000)}"""\n\nما عدّلته في البحث (إن وُجد):\n"""${rvChanges.slice(0,3000) || "لم يُحدد — اقترح الردود المناسبة"}"""\n\nاكتب خطاب رد ${rvLang==="الإنجليزية"?"بالإنجليزية":"بالعربية"} بصيغة المجلات: تحية وشكر للمحكمين، ثم لكل ملاحظة: [ملاحظة المحكم باختصار] → [ردنا: ما عُدّل وأين، أو الدفاع المهذب مع المبرر]. رقّم الردود. اختم بفقرة ختامية لائقة. كن محدداً ومهنياً.`;
-    try { setRvOut(await callAI(sys, user, 2200)); } catch(e){ setRvOut("تعذّر التوليد."); }
-    setRvLoading(false);
-  }
-
-  // ===== 2) المراجعة التتبعية =====
-  const [trText, setTrText] = useState("");
-  const [trItems, setTrItems] = useState(null);
-  const [trLoading, setTrLoading] = useState(false);
-  async function runTrack() {
-    let src = trText.trim();
-    if(!src && files.length){ try{ src = await readFile(files[0]); }catch(e){} }
-    if(!src) return;
-    setTrLoading(true); setTrItems(null);
-    const sys = "أنت محرر أكاديمي بشري محترف يصحّح النص مباشرة كما في Track Changes. ترد بصيغة JSON فقط دون أي نص آخر.";
-    const user = `صحّح هذا النص تصحيحاً تتبعياً:\n"""${src.slice(0,6000)}"""\n\nأرجع JSON: {"items":[{"quote":"العبارة الأصلية كما هي حرفياً (قصيرة)","type":"لغوي|أسلوبي|علمي|وضوح","note":"سبب التعديل بإيجاز","rewrite":"الصياغة البديلة المقترحة"}]} — أهم 8 إلى 15 تعديلاً، الأهم أولاً.`;
-    try {
-      const d = await callAIJson(sys, user, 2200);
-      setTrItems(d.items||[]);
-    } catch(e){ setTrItems([]); }
-    setTrLoading(false);
-  }
-  const typeColor = t => t==="علمي"?T.rose : t==="أسلوبي"?T.violet : t==="وضوح"?T.amber : T.blue;
-
-  // ===== 3) شهادة المراجعة =====
-  const [ct, setCt] = useState({ title:"", author:"", type:"مراجعة شاملة (4 زوايا)", result:"اجتاز المراجعة مع ملاحظات", score:"" });
-  const certId = useRef("MHK-"+Date.now().toString(36).toUpperCase()).current;
-  function printCert() {
-    if(!ct.title.trim()||!ct.author.trim()) return;
-    const d = new Date().toLocaleDateString("ar-SA");
-    const html = `<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>شهادة مراجعة</title><style>
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap');
-body{font-family:'Tajawal',Arial,sans-serif;margin:0;background:#f4f1ea;display:flex;align-items:center;justify-content:center;min-height:100vh}
-.cert{background:#fff;width:850px;padding:60px 70px;border:3px double #B45309;border-radius:6px;position:relative;box-shadow:0 10px 40px rgba(0,0,0,.12)}
-.cert::before{content:"";position:absolute;inset:14px;border:1px solid #B4530940;border-radius:3px;pointer-events:none}
-.head{text-align:center;border-bottom:2px solid #B45309;padding-bottom:18px;margin-bottom:26px}
-.brand{font-size:30px;font-weight:800;color:#1F3864}.brand span{color:#B45309}
-.sub{font-size:13px;color:#777;margin-top:4px}
-h1{text-align:center;font-size:26px;color:#B45309;margin:6px 0 24px;letter-spacing:1px}
-.body{font-size:16px;line-height:2.1;color:#333;text-align:center}
-.title{font-size:20px;font-weight:800;color:#1F3864;margin:8px 0}
-.meta{display:flex;justify-content:space-between;margin-top:38px;font-size:13px;color:#555}
-.score{display:inline-block;background:#1F386412;border:1.5px solid #1F3864;color:#1F3864;font-weight:800;font-size:18px;padding:8px 26px;border-radius:30px;margin-top:14px}
-.vid{font-family:monospace;font-size:12px;color:#888;text-align:center;margin-top:26px;border-top:1px dashed #ccc;padding-top:12px}
-@media print{body{background:#fff}.cert{box-shadow:none}}
-</style></head><body><div class="cert">
-<div class="head"><div class="brand">⚖️ محكّم <span>Pro</span></div><div class="sub">منصة المراجعة والتحكيم الأكاديمي الذكي</div></div>
-<h1>شهادة مراجعة علمية</h1>
-<div class="body">تشهد منصة محكّم برو بأن العمل الموسوم بـ:
-<div class="title">«${ct.title}»</div>
-للباحث/ة: <b>${ct.author}</b><br>
-قد خضع لـ <b>${ct.type}</b> عبر أنظمة المراجعة الذكية بالمنصة<br>
-وكانت النتيجة: <b>${ct.result}</b>
-${ct.score?`<div class="score">درجة الجودة: ${ct.score} / 100</div>`:""}
-</div>
-<div class="meta"><span>التاريخ: ${d}</span><span>muhakkim.com</span></div>
-<div class="vid">رقم التحقق: ${certId} · هذه الشهادة توثّق إجراء المراجعة عبر المنصة ولا تُعد تحكيماً رسمياً من جهة أكاديمية</div>
-</div><script>setTimeout(()=>print(),500)</script></body></html>`;
-    const w = window.open("","_blank"); if(w){ w.document.write(html); w.document.close(); }
-  }
-
-  const ipt = {width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",outline:"none"};
-  const ta = {...ipt, resize:"vertical"};
-  const lbl = {display:"block",fontSize:12,fontWeight:700,color:T.textS,marginBottom:5};
-
-  return (
-    <div style={{maxWidth:800,margin:"0 auto"}}>
-      <Card T={T}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:27}}>✨</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:17,color:T.text}}>جناح التميّز للمراجعة</div>
-            <div style={{fontSize:12,color:T.textS}}>الرد على المحكمين · التصحيح التتبعي · شهادة المراجعة الموثّقة</div>
-          </div>
-        </div>
-      </Card>
-
-      <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
-        {TABS.map(([k,l])=>(
-          <button key={k} onClick={()=>setTab(k)}
-            style={{flex:"1 1 auto",padding:"9px 8px",borderRadius:10,border:`1.5px solid ${tab===k?T.gold:T.border}`,
-              background:tab===k?T.gold+"18":T.card,color:tab===k?T.gold:T.text,fontWeight:tab===k?700:500,
-              fontSize:12.5,fontFamily:"inherit",cursor:"pointer"}}>{l}</button>
-        ))}
-      </div>
-
-      {tab==="response" && <>
-        <Card T={T} style={{marginTop:12}}>
-          <FileZone files={files} setFiles={setFiles} T={T}/>
-          <div style={{fontSize:11,color:T.textDim,margin:"6px 0 10px"}}>ارفع ملف الملاحظات أو الصقها نصاً:</div>
-          <label style={lbl}>الصق ملاحظات المحكمين كما وصلتك *</label>
-          <textarea rows={6} value={rvComments} onChange={e=>setRvComments(e.target.value)} style={ta}
-            placeholder="Reviewer 1: ... / المحكم الأول: ..."/>
-          <label style={{...lbl,marginTop:10}}>ما عدّلته في البحث (اختياري — إن تركته أقترح الردود)</label>
-          <textarea rows={3} value={rvChanges} onChange={e=>setRvChanges(e.target.value)} style={ta}
-            placeholder="عدّلت المنهجية في ص12، أضفت جدول... "/>
-          <div style={{display:"flex",gap:10,alignItems:"center",marginTop:10,flexWrap:"wrap"}}>
-            <Dropdown T={T} value={rvLang} onChange={setRvLang} options={["العربية","الإنجليزية"]}/>
-            <div style={{flex:1}}/>
-            <Btn ch={rvLoading?<><Spin/> جارٍ الكتابة…</>:"📨 توليد خطاب الرد"} v="gold" T={T} onClick={genResponse} disabled={rvLoading||(!rvComments.trim()&&!files.length)}/>
-          </div>
-        </Card>
-        {rvOut && <Card T={T} style={{marginTop:12}}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-            <div style={{fontWeight:800,fontSize:14,color:T.gold}}>📨 خطاب الرد (Point-by-Point)</div>
-            <Btn ch="📋 نسخ" v="ghost" T={T} onClick={()=>navigator.clipboard?.writeText(rvOut)}/> <ReportBtn T={T} title="تقرير الأداة — محكّم برو" body={rvOut} opts={{icon:"📋"}}/>
-          </div>
-          <div style={{whiteSpace:"pre-wrap",lineHeight:1.95,fontSize:13.5,color:T.text}}>{rvOut}</div>
-        </Card>}
-      </>}
-
-      {tab==="track" && <>
-        <Card T={T} style={{marginTop:12}}>
-          <FileZone files={files} setFiles={setFiles} T={T}/>
-          <div style={{fontSize:11,color:T.textDim,margin:"6px 0 10px"}}>ارفع الملف أو الصق النص:</div>
-          <label style={lbl}>الصق النص ليُصحَّح تصحيحاً تتبعياً (كمحرر بشري)</label>
-          <textarea rows={7} value={trText} onChange={e=>setTrText(e.target.value)} style={ta}
-            placeholder="الصق فقرات من بحثك..."/>
-          <div style={{display:"flex",justifyContent:"flex-end",marginTop:10}}>
-            <Btn ch={trLoading?<><Spin/> جارٍ التصحيح…</>:"✏️ صحّح تتبعياً"} v="gold" T={T} onClick={runTrack} disabled={trLoading||(!trText.trim()&&!files.length)}/>
-          </div>
-        </Card>
-        {trItems && <Card T={T} style={{marginTop:12}}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
-            <div style={{fontWeight:800,fontSize:14,color:T.gold}}>✏️ التعديلات المقترحة ({trItems.length})</div>
-            <Btn ch="📋 نسخ الكل" v="ghost" T={T} onClick={()=>navigator.clipboard?.writeText(trItems.map((x,i)=>`${i+1}. «${x.quote}» ← «${x.rewrite}» (${x.type}: ${x.note})`).join("\n"))}/>
-          </div>
-          {trItems.length===0 && <div style={{color:T.textS,fontSize:13}}>لم تُستخرج تعديلات — جرّب نصاً أطول.</div>}
-          {trItems.map((x,i)=>(
-            <div key={i} style={{padding:"12px 14px",borderRadius:11,background:T.bgS,border:`1px solid ${T.border}`,marginBottom:9}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:7}}>
-                <span style={{fontSize:10.5,fontWeight:800,color:typeColor(x.type),background:typeColor(x.type)+"18",border:`1px solid ${typeColor(x.type)}35`,padding:"2px 10px",borderRadius:14}}>{x.type}</span>
-                <span style={{fontSize:11.5,color:T.textS}}>{x.note}</span>
-              </div>
-              <div style={{fontSize:13.5,lineHeight:1.9}}>
-                <span style={{color:T.rose,textDecoration:"line-through",opacity:.75}}>«{x.quote}»</span>
-                <span style={{color:T.textS,margin:"0 8px"}}>←</span>
-                <span style={{color:T.emerald,fontWeight:700}}>«{x.rewrite}»</span>
-              </div>
-            </div>
-          ))}
-        </Card>}
-      </>}
-
-      {tab==="cert" && <Card T={T} style={{marginTop:12}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          <div style={{gridColumn:"1/3"}}><label style={lbl}>عنوان العمل *</label><input style={ipt} value={ct.title} onChange={e=>setCt({...ct,title:e.target.value})}/></div>
-          <div><label style={lbl}>اسم الباحث/ة *</label><input style={ipt} value={ct.author} onChange={e=>setCt({...ct,author:e.target.value})}/></div>
-          <div><label style={lbl}>نوع المراجعة</label>
-            <Dropdown T={T} value={ct.type} onChange={v=>setCt({...ct,type:v})}
-              options={["مراجعة شاملة (4 زوايا)","مراجعة صفحة بصفحة","مراجعة المشرف","مراجعة المناقش الخارجي","تحكيم بالدرجات"]}/></div>
-          <div><label style={lbl}>النتيجة</label>
-            <Dropdown T={T} value={ct.result} onChange={v=>setCt({...ct,result:v})}
-              options={["اجتاز المراجعة مع ملاحظات","اجتاز المراجعة بتميّز","يحتاج تعديلات جوهرية"]}/></div>
-          <div><label style={lbl}>درجة الجودة /100 (اختياري)</label><input style={ipt} value={ct.score} onChange={e=>setCt({...ct,score:e.target.value})} type="number"/></div>
-        </div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:14,gap:10,flexWrap:"wrap"}}>
-          <div style={{fontSize:11,color:T.textDim}}>رقم التحقق: <b style={{fontFamily:"monospace"}}>{certId}</b> · الشهادة توثّق إجراء المراجعة عبر المنصة (ليست تحكيماً رسمياً من جهة أكاديمية)</div>
-          <Btn ch="🏅 إنشاء وطباعة الشهادة" v="gold" T={T} onClick={printCert} disabled={!ct.title.trim()||!ct.author.trim()}/>
-        </div>
-      </Card>}
-    </div>
-  );
-}
-
-
-// ── جناح التميّز للكتابة ───────────────────────────────────────
-function WritingProSuiteSystem({ T }) {
-  const [tab, setTab] = useState("translate");
-  const TABS = [["translate","🌐 الترجمة الأكاديمية"],["pack","📦 حزمة النشر"],["style","🎓 محاكي أسلوب المجلات"]];
-  const [files, setFiles] = useState([]);
-  const [busy, setBusy] = useState(false);
-  const [out, setOut] = useState("");
-  const ta = {width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",outline:"none",resize:"vertical"};
-  const lbl = {display:"block",fontSize:12,fontWeight:700,color:T.textS,marginBottom:5};
-
-  const [trIn, setTrIn] = useState(""); const [trDir, setTrDir] = useState("عربي → إنجليزي أكاديمي");
-  const [pkIn, setPkIn] = useState("");
-  const [stIn, setStIn] = useState(""); const [stTier, setStTier] = useState("مجلة Q1 (Scopus/WoS)");
-
-  async function run(kind) {
-    setBusy(true); setOut("");
-    let fileText = "";
-    if (files.length) { try { fileText = await readFile(files[0]); } catch(e){} }
-    let sys="", user="";
-    if(kind==="translate"){
-      sys="أنت مترجم أكاديمي متخصص محترف. تترجم النصوص العلمية بدقة المصطلح وسلاسة الأسلوب الأكاديمي، لا ترجمة حرفية.";
-      user=`ترجم هذا النص ترجمة أكاديمية (${trDir}):\n"""${(trIn.trim()||fileText).slice(0,5500)}"""\n\nأخرج: 1) الترجمة كاملة بأسلوب أكاديمي رصين. 2) جدول المصطلحات المفتاحية (المصطلح الأصلي ← المقابل المعتمد) لأهم 8-12 مصطلحاً. 3) ملاحظتان لغويتان إن وُجدت بدائل ترجمة مهمة.`;
-    } else if(kind==="pack"){
-      sys="أنت خبير نشر علمي يجهّز حزم التقديم للمجلات المحكّمة.";
-      user=`من هذا البحث:\n"""${(pkIn.trim()||fileText).slice(0,6000)}"""\n\nولّد حزمة النشر الكاملة: 1) ثلاثة عناوين مقترحة (عربي + إنجليزي). 2) الملخص العربي (200-250 كلمة) بصيغة IMRaD. 3) Abstract إنجليزي مكافئ. 4) الكلمات المفتاحية (5-7 عربي + إنجليزي). 5) Highlights (3-5 نقاط إنجليزية). 6) سطر "أهمية البحث" لخطاب التغطية.`;
-    } else {
-      sys="أنت محرر مجلات علمية عالمية تعيد صياغة النصوص لمستوى النشر الدولي.";
-      user=`أعد صياغة هذا النص لمستوى ${stTier}:\n"""${(stIn.trim()||fileText).slice(0,5000)}"""\n\nأخرج: 1) النص بعد الارتقاء به (حجة أقوى، دقة مصطلح، إيجاز علمي، ربط منطقي). 2) قائمة "ما الذي رفعته" (5 نقاط تشرح الفرق). 3) تحذير من أي ادعاء يحتاج مصدراً قبل التقديم.`;
-    }
-    try { setOut(await callAI(sys+" اكتب بالعربية إلا ما طُلب بالإنجليزية.", user, 2400)); } catch(e){ setOut("تعذّر التوليد."); }
-    setBusy(false);
-  }
-
-  return (
-    <div style={{maxWidth:800,margin:"0 auto"}}>
-      <Card T={T}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:27}}>✨</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:17,color:T.text}}>جناح التميّز للكتابة</div>
-            <div style={{fontSize:12,color:T.textS}}>الترجمة الأكاديمية المتخصصة · حزمة النشر الجاهزة · محاكي أسلوب المجلات العالمية</div>
-          </div>
-        </div>
-      </Card>
-      <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
-        {TABS.map(([k,l])=>(
-          <button key={k} onClick={()=>{setTab(k);setOut("");}}
-            style={{flex:"1 1 auto",padding:"9px 8px",borderRadius:10,border:`1.5px solid ${tab===k?T.gold:T.border}`,
-              background:tab===k?T.gold+"18":T.card,color:tab===k?T.gold:T.text,fontWeight:tab===k?700:500,fontSize:12.5,fontFamily:"inherit",cursor:"pointer"}}>{l}</button>
-        ))}
-      </div>
-      <Card T={T} style={{marginTop:12}}>
-        <FileZone files={files} setFiles={setFiles} T={T}/>
-        <div style={{fontSize:11,color:T.textDim,margin:"6px 0 10px"}}>ارفع ملفاً (Word/PDF نصي) أو الصق النص في الخانة:</div>
-        {tab==="translate" && <>
-          <label style={lbl}>النص الأكاديمي المراد ترجمته</label>
-          <textarea rows={7} value={trIn} onChange={e=>setTrIn(e.target.value)} style={ta} placeholder="الصق الملخص أو الفقرات..."/>
-          <div style={{display:"flex",gap:10,alignItems:"center",marginTop:10,flexWrap:"wrap"}}>
-            <Dropdown T={T} value={trDir} onChange={setTrDir} options={["عربي → إنجليزي أكاديمي","إنجليزي → عربي أكاديمي"]}/>
-            <div style={{flex:1}}/>
-            <Btn ch={busy?<><Spin/> جارٍ الترجمة…</>:"🌐 ترجم مع معجم المصطلحات"} v="gold" T={T} onClick={()=>run("translate")} disabled={busy||(!trIn.trim()&&!files.length)}/>
-          </div>
-        </>}
-        {tab==="pack" && <>
-          <label style={lbl}>الصق بحثك (أو أهم أجزائه: المقدمة والمنهجية والنتائج)</label>
-          <textarea rows={8} value={pkIn} onChange={e=>setPkIn(e.target.value)} style={ta} placeholder="الصق النص..."/>
-          <div style={{display:"flex",justifyContent:"flex-end",marginTop:10}}>
-            <Btn ch={busy?<><Spin/> جارٍ التجهيز…</>:"📦 ولّد حزمة النشر الكاملة"} v="gold" T={T} onClick={()=>run("pack")} disabled={busy||(!pkIn.trim()&&!files.length)}/>
-          </div>
-        </>}
-        {tab==="style" && <>
-          <label style={lbl}>النص المراد رفعه لمستوى النشر الدولي</label>
-          <textarea rows={7} value={stIn} onChange={e=>setStIn(e.target.value)} style={ta} placeholder="الصق المقدمة أو المناقشة..."/>
-          <div style={{display:"flex",gap:10,alignItems:"center",marginTop:10,flexWrap:"wrap"}}>
-            <Dropdown T={T} value={stTier} onChange={setStTier} options={["مجلة Q1 (Scopus/WoS)","مجلة محكّمة إقليمية","رسالة دكتوراه","مؤتمر دولي"]}/>
-            <div style={{flex:1}}/>
-            <Btn ch={busy?<><Spin/> جارٍ الارتقاء…</>:"🎓 ارفعه لمستوى المجلة"} v="gold" T={T} onClick={()=>run("style")} disabled={busy||(!stIn.trim()&&!files.length)}/>
-          </div>
-        </>}
-      </Card>
-      {out && <Card T={T} style={{marginTop:12}}>
-        <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-          <div style={{fontWeight:800,fontSize:14,color:T.gold}}>✨ النتيجة</div>
-          <Btn ch="📋 نسخ" v="ghost" T={T} onClick={()=>navigator.clipboard?.writeText(out)}/> <ReportBtn T={T} title="تقرير الأداة — محكّم برو" body={out} opts={{icon:"📋"}}/>
-        </div>
-        <div style={{whiteSpace:"pre-wrap",lineHeight:1.95,fontSize:13.5,color:T.text}}>{out}</div>
-      </Card>}
-    </div>
-  );
-}
-
-// ── جناح التميّز للتحليل ───────────────────────────────────────
-function AnalysisProSuiteSystem({ T }) {
-  const [tab, setTab] = useState("chapter4");
-  const TABS = [["chapter4","📊 صانع فصل النتائج"],["method","🧭 مخطط المنهجية"],["apa","📋 جداول APA"]];
-  const [files, setFiles] = useState([]);
-  const [busy, setBusy] = useState(false);
-  const [out, setOut] = useState("");
-  const ta = {width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",outline:"none",resize:"vertical"};
-  const lbl = {display:"block",fontSize:12,fontWeight:700,color:T.textS,marginBottom:5};
-
-  const [c4Q, setC4Q] = useState(""); const [c4R, setC4R] = useState("");
-  const [mtQ, setMtQ] = useState(""); const [mtPop, setMtPop] = useState("");
-  const [apaIn, setApaIn] = useState("");
-
-  async function run(kind) {
-    setBusy(true); setOut("");
-    let fileText = "";
-    if (files.length) { try { fileText = await readFile(files[0]); } catch(e){} }
-    let sys="", user="";
-    if(kind==="chapter4"){
-      sys="أنت أستاذ إحصاء يكتب فصول النتائج (الفصل الرابع) للرسائل العلمية بصياغة أكاديمية معتمدة.";
-      user=`أسئلة/فرضيات البحث:\n"""${c4Q.slice(0,1500)}"""\n\nمخرجات التحليل (جداول/أرقام كما هي من SPSS أو غيره):\n"""${(c4R.trim()||fileText).slice(0,5500)}"""\n\nاكتب فصل النتائج كاملاً بصياغة الرسائل: لكل سؤال/فرضية: تمهيد، عرض النتيجة بالأرقام (M, SD, t, F, p, حجم الأثر إن توفر)، صياغة قرار الفرضية، وتفسير علمي موجز. ثم خلاصة الفصل. نبّه على أي نقص في المعطيات بدل اختلاقه.`;
-    } else if(kind==="method"){
-      sys="أنت مستشار منهجية بحث وإحصاء بخبرة عشرين عاماً. تبني خطط منهجية متكاملة دقيقة.";
-      user=`سؤال/هدف البحث:\n"""${mtQ.slice(0,1500)}"""\nالمجتمع المتاح: ${mtPop||"غير محدد"}\n\nابنِ المخطط المنهجي الكامل: 1) المنهج والتصميم الأنسب ولماذا. 2) المجتمع والعينة: احسب الحجم بمعادلة كوكران (95%، هامش 5%) إن توفر حجم المجتمع، واذكر أسلوب المعاينة. 3) الأداة المقترحة ومحاورها وصدقها وثباتها. 4) الاختبارات الإحصائية لكل سؤال مع المبرر والبدائل اللامعلمية. 5) خطة التحليل خطوة بخطوة. 6) حدود متوقعة وكيف تُعالج.`;
-    } else {
-      sys="أنت خبير تنسيق أكاديمي وفق دليل APA الإصدار السابع.";
-      user=`هذه نتائج خام/جداول غير منسقة:\n"""${(apaIn.trim()||fileText).slice(0,5000)}"""\n\nحوّلها إلى: 1) جداول بتنسيق APA7 (نصية منظمة بعناوين Table رقمية وملاحظات Note). 2) سطر الكتابة الأكاديمية لكل جدول (كيف يُذكر في المتن بالصيغة الصحيحة للإحصاءات). 3) تنبيهات على أي قيم ناقصة يتطلبها APA (مثل حجم الأثر أو فترات الثقة).`;
-    }
-    try { setOut(await callAI(sys+" اكتب بالعربية.", user, 2600)); } catch(e){ setOut("تعذّر التوليد."); }
-    setBusy(false);
-  }
-
-  return (
-    <div style={{maxWidth:800,margin:"0 auto"}}>
-      <Card T={T}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:27}}>✨</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:17,color:T.text}}>جناح التميّز للتحليل</div>
-            <div style={{fontSize:12,color:T.textS}}>من الجداول إلى فصل النتائج الجاهز · مخطط المنهجية بحساب العينة · جداول APA7</div>
-          </div>
-        </div>
-      </Card>
-      <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
-        {TABS.map(([k,l])=>(
-          <button key={k} onClick={()=>{setTab(k);setOut("");}}
-            style={{flex:"1 1 auto",padding:"9px 8px",borderRadius:10,border:`1.5px solid ${tab===k?T.gold:T.border}`,
-              background:tab===k?T.gold+"18":T.card,color:tab===k?T.gold:T.text,fontWeight:tab===k?700:500,fontSize:12.5,fontFamily:"inherit",cursor:"pointer"}}>{l}</button>
-        ))}
-      </div>
-      <Card T={T} style={{marginTop:12}}>
-        <FileZone files={files} setFiles={setFiles} T={T}/>
-        <div style={{fontSize:11,color:T.textDim,margin:"6px 0 10px"}}>ارفع ملف الجداول/النتائج أو الصقها نصاً:</div>
-        {tab==="chapter4" && <>
-          <label style={lbl}>أسئلة/فرضيات البحث</label>
-          <textarea rows={3} value={c4Q} onChange={e=>setC4Q(e.target.value)} style={ta} placeholder="س1: ... / ف1: ..."/>
-          <label style={{...lbl,marginTop:10}}>مخرجات التحليل (الصق الجداول كما هي من SPSS/Excel)</label>
-          <textarea rows={7} value={c4R} onChange={e=>setC4R(e.target.value)} style={ta} placeholder="الصق الجداول والأرقام..."/>
-          <div style={{display:"flex",justifyContent:"flex-end",marginTop:10}}>
-            <Btn ch={busy?<><Spin/> جارٍ الكتابة…</>:"📊 اكتب فصل النتائج"} v="gold" T={T} onClick={()=>run("chapter4")} disabled={busy||(!c4R.trim()&&!files.length)}/>
-          </div>
-        </>}
-        {tab==="method" && <>
-          <label style={lbl}>سؤال/هدف البحث</label>
-          <textarea rows={3} value={mtQ} onChange={e=>setMtQ(e.target.value)} style={ta} placeholder="ما أثر..."/>
-          <label style={{...lbl,marginTop:10}}>حجم المجتمع إن عُرف (لحساب العينة بكوكران)</label>
-          <input value={mtPop} onChange={e=>setMtPop(e.target.value)} style={{...ta,resize:"none"}} placeholder="مثال: 2400 موظف"/>
-          <div style={{display:"flex",justifyContent:"flex-end",marginTop:10}}>
-            <Btn ch={busy?<><Spin/> جارٍ البناء…</>:"🧭 ابنِ المخطط المنهجي"} v="gold" T={T} onClick={()=>run("method")} disabled={busy||!mtQ.trim()}/>
-          </div>
-        </>}
-        {tab==="apa" && <>
-          <label style={lbl}>الصق النتائج الخام / الجداول غير المنسقة</label>
-          <textarea rows={8} value={apaIn} onChange={e=>setApaIn(e.target.value)} style={ta} placeholder="الصق من SPSS أو Excel..."/>
-          <div style={{display:"flex",justifyContent:"flex-end",marginTop:10}}>
-            <Btn ch={busy?<><Spin/> جارٍ التنسيق…</>:"📋 نسّق وفق APA7"} v="gold" T={T} onClick={()=>run("apa")} disabled={busy||(!apaIn.trim()&&!files.length)}/>
-          </div>
-        </>}
-      </Card>
-      {out && <Card T={T} style={{marginTop:12}}>
-        <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-          <div style={{fontWeight:800,fontSize:14,color:T.gold}}>✨ النتيجة</div>
-          <Btn ch="📋 نسخ" v="ghost" T={T} onClick={()=>navigator.clipboard?.writeText(out)}/> <ReportBtn T={T} title="تقرير الأداة — محكّم برو" body={out} opts={{icon:"📋"}}/>
-        </div>
-        <div style={{whiteSpace:"pre-wrap",lineHeight:1.95,fontSize:13.5,color:T.text}}>{out}</div>
-      </Card>}
-    </div>
-  );
-}
-
-
-// ── ToolHub: مراكز موحّدة بنمط المواقع العالمية ────────────────
-const HUBS = {
-  rev_roles: { icon:"🧑‍🏫", title:"المراجعة بالأدوار البشرية", desc:"اختر دور المراجع — مراجعة صفحة بصفحة بأسلوب بشري طبيعي", options:[
-    {key:"supervisor", icon:"🧑‍🏫", label:"المشرف", hint:"بنّاء وداعم", render:T=><HumanReviewSystem T={T} role="supervisor"/>},
-    {key:"internal", icon:"🔎", label:"المناقش الداخلي", hint:"دقيق منهجي", render:T=><HumanReviewSystem T={T} role="internal"/>},
-    {key:"external", icon:"🌍", label:"المناقش الخارجي", hint:"صارم بمعايير عالية", render:T=><HumanReviewSystem T={T} role="external"/>},
-    {key:"self", icon:"✍️", label:"المراجعة الذاتية", hint:"زميل صريح", render:T=><HumanReviewSystem T={T} role="self"/>},
-  ]},
-  review_center: { icon:"⚖️", title:"مركز المراجعة الموحّد", desc:"كل مسارات المراجعة في مكان واحد — منظّمة في ثلاثة أقسام، اختر المسار الأنسب لعملك", options:[
-    {key:"smart_orch", sec:"⚡ المراجعة السريعة", icon:"🤖", label:"المساعد الذكي", hint:"يرشدك للمسار الأنسب", render:T=><SmartOrchestrator T={T}/>},
-    {key:"unified", sec:"⚡ المراجعة السريعة", icon:"⚡", label:"مركز التحكيم", hint:"بوابة التحكيم الموحّدة", render:T=><UnifiedReviewCenter T={T}/>},
-    {key:"auto_review", sec:"⚡ المراجعة السريعة", icon:"🔄", label:"التلقائية الشاملة", hint:"مراجعة آلية كاملة", render:T=><AutoReviewCenter T={T}/>},
-    {key:"smartreview", sec:"⚡ المراجعة السريعة", icon:"🚀", label:"الذكية السريعة", hint:"فحص أولي سريع", render:T=><StdTool toolKey="smartreview" T={T}/>},
-    {key:"deep_page", sec:"🔬 المراجعة الدقيقة بالموضع", icon:"🔬", label:"صفحة بصفحة", hint:"الأساسي بالاقتباس", render:T=><DeepPageReviewSystem T={T}/>},
-    {key:"deepreview", sec:"🔬 المراجعة الدقيقة بالموضع", icon:"🧪", label:"الصفحية Pro", hint:"تحكيمية متقدمة", render:T=><DeepReview T={T}/>},
-    {key:"sectionreview", sec:"🔬 المراجعة الدقيقة بالموضع", icon:"📘", label:"مراجعة الأقسام", hint:"قسم بقسم بمعاييره", render:T=><StdTool toolKey="sectionreview" T={T}/>},
-    {key:"deep_disc", sec:"🎯 المراجعة المتخصصة والعربية", icon:"🔬", label:"العميقة المتخصصة", hint:"بعمق التخصص", render:T=><DeepDisciplineSystem T={T}/>},
-    {key:"specialize", sec:"🎯 المراجعة المتخصصة والعربية", icon:"🎯", label:"التحكيم المتخصص", hint:"بمصطلحات المجال", render:T=><StdTool toolKey="specialize" T={T}/>},
-    {key:"ar_review", sec:"🎯 المراجعة المتخصصة والعربية", icon:"🌟", label:"العربي الشامل", hint:"للبحث العربي", render:T=><ArabicResearchSystem T={T}/>},
-  ]},  committee_hub: { icon:"👥", title:"اللجان والمناقشة", desc:"محاكاة لجان التحكيم وجلسات المناقشة بكل أشكالها", options:[
-    {key:"expert_team", icon:"🧠", label:"فريق الخبراء", hint:"10 خبراء افتراضيون", render:T=><AIExpertTeamSystem T={T}/>},
-    {key:"collab", icon:"🤝", label:"3 محكّمين", hint:"تحكيم تعاوني", render:T=><StdTool toolKey="collab" T={T}/>},
-    {key:"four_persp", icon:"👥", label:"4 منظورات", hint:"زوايا متعمّقة", render:T=><FourPerspectiveSystem T={T}/>},
-    {key:"roleplay", icon:"🎭", label:"جلسة تفاعلية", hint:"حوار مناقشة حي", render:T=><StdTool toolKey="roleplay" T={T}/>},
-    {key:"thesis_defense", icon:"🎓", label:"تجهيز المناقشة", hint:"أسئلة اللجنة المتوقعة", render:T=><ThesisDefenseSystem T={T}/>},
-  ]},
-  assess_hub: { icon:"⚖️", title:"التقييم والنزاهة", desc:"التحكيم بالدرجات وفحوص النزاهة والاقتباس", options:[
-    {key:"grading", icon:"⚖️", label:"التحكيم بالدرجات", hint:"من 100 ببنود", render:T=><GradingReviewSystem T={T}/>},
-    {key:"multidoc", icon:"📚", label:"أنواع الأعمال", hint:"رسالة/مقال/تقرير", render:T=><MultiDocReviewSystem T={T}/>},
-    {key:"integrity", icon:"🛡️", label:"النزاهة العلمية", hint:"تحقق وموثوقية", render:T=><IntegrityEngineSystem T={T}/>},
-    {key:"citation_plag", icon:"📑", label:"الاقتباس والتشابه", hint:"كشف السرقة العلمية", render:T=><CitationPlagiarismSystem T={T}/>},
-    {key:"digital_twin", icon:"🧬", label:"التوأم الرقمي", hint:"بصمة العمل الأكاديمية", render:T=><DigitalTwinSystem T={T}/>},
-  ]},
-  text_hub: { icon:"✍️", title:"استوديو النص والكاتب الذكي", desc:"كل تحسينات النص وأدوات الكاتب في استوديو واحد: ارتقاء، تدقيق، صياغة، كتابة، أسلوب، توثيق", options:[
-    {key:"human_writing", icon:"✨", label:"تحسين الكتابة", hint:"أسلوب أكاديمي أرصن", render:T=><HumanWritingSystem T={T}/>},
-    {key:"proofread", icon:"📝", label:"التدقيق اللغوي", hint:"تصحيح الأخطاء", render:T=><StdTool toolKey="proofread" T={T}/>},
-    {key:"paraphraser", icon:"🔄", label:"إعادة الصياغة", hint:"تعبير مختلف بنفس المعنى", render:T=><StdTool toolKey="paraphraser" T={T}/>},
-    {key:"iterative", icon:"🔁", label:"تحسين بجولات", hint:"صقل متدرّج", render:T=><StdTool toolKey="iterative" T={T}/>},
-    {key:"aiwriter", icon:"🖋️", label:"الكاتب الأكاديمي", hint:"يبني من نقاطك", render:T=><StdTool toolKey="aiwriter" T={T}/>},
-    {key:"dna", icon:"🧬", label:"البصمة الأسلوبية", hint:"تحليل أسلوبك", render:T=><StdTool toolKey="dna" T={T}/>},
-    {key:"aidetect", icon:"🤖", label:"كشف الذكاء الاصطناعي", hint:"تقدير استرشادي", render:T=><StdTool toolKey="aidetect" T={T}/>},
-    {key:"citation", icon:"📚", label:"تنسيق المراجع", hint:"APA وغيرها", render:T=><StdTool toolKey="citation" T={T}/>},
-  ]},
-  data_quality_hub: { icon:"📊", title:"مركز البيانات وجودة البحث", desc:"كل أدوات البيانات وتقييم جودة البحث في مركز واحد بقسمين واضحين", options:[
-    {sec:"📊 البيانات والتحليل", key:"data_prep", icon:"🧹", label:"تجهيز البيانات", hint:"تنظيف فعلي (ابدأ هنا)", render:T=><DataPrepSystem T={T}/>},
-    {sec:"📊 البيانات والتحليل", key:"datalab", icon:"🔬", label:"التحليل الذكي", hint:"تحليل ورسوم", render:T=><DataLabSystem T={T}/>},
-    {sec:"📊 البيانات والتحليل", key:"stat_audit", icon:"🕵️", label:"المستشار والتدقيق", hint:"الاختبار الأنسب + أكواد", render:T=><StatAuditSystem T={T}/>},
-    {sec:"📊 البيانات والتحليل", key:"stats_interp", icon:"💬", label:"تفسير النتائج", hint:"معنى الأرقام", render:T=><StatsInterpretSystem T={T}/>},
-    {sec:"📊 البيانات والتحليل", key:"data_science", icon:"🧠", label:"vCDO", hint:"اسأل بياناتك بالعربية", render:T=><DataScienceCenterSystem T={T}/>},
-    {sec:"📊 البيانات والتحليل", key:"national_survey", icon:"📋", label:"الدراسات والمسوح", hint:"حاسبة العينة + استبانة", render:T=><NationalSurveySystem T={T}/>},
-  
-    {sec:"🏅 جودة البحث وتقييمه", key:"method", icon:"🧭", label:"المنهجية", hint:"سلامة المنهج", render:T=><StdTool toolKey="method" T={T}/>},
-    {sec:"🏅 جودة البحث وتقييمه", key:"graph", icon:"🕸️", label:"خريطة المفاهيم", hint:"ترابط الأفكار", render:T=><StdTool toolKey="graph" T={T}/>},
-    {sec:"🏅 جودة البحث وتقييمه", key:"predict", icon:"🔮", label:"التنبؤ بالنشر", hint:"فرص القبول", render:T=><StdTool toolKey="predict" T={T}/>},
-    {sec:"🏅 جودة البحث وتقييمه", key:"bench", icon:"📏", label:"المقارنة المرجعية", hint:"موقعك بين الأقران", render:T=><StdTool toolKey="bench" T={T}/>},
-    {sec:"🏅 جودة البحث وتقييمه", key:"impact", icon:"🌍", label:"الأثر المجتمعي", hint:"قيمة البحث", render:T=><StdTool toolKey="impact" T={T}/>},
-    {sec:"🏅 جودة البحث وتقييمه", key:"growth", icon:"📈", label:"نمو الباحث", hint:"مسيرتك عبر الزمن", render:T=><StdTool toolKey="growth" T={T}/>},
-    {sec:"🏅 جودة البحث وتقييمه", key:"governance", icon:"🏛️", label:"الحوكمة والأخلاقيات", hint:"الالتزام البحثي", render:T=><StdTool toolKey="governance" T={T}/>},
-  
-  ]},
-  research_hub: { icon:"🔭", title:"مركز البحث والمصادر", desc:"من الفكرة إلى المراجع: مختبر، كتابة موثّقة، بحث، ودردشة مع ملفاتك", options:[
-    {key:"research_lab", icon:"🧪", label:"مختبر البحث", hint:"من الفكرة للمقترح", render:T=><ResearchLabSystem T={T}/>},
-    {key:"research_writer", icon:"📝", label:"كاتب موثّق", hint:"بحث باستشهادات APA", render:T=><ResearchWriterSystem T={T}/>},
-    {key:"research", icon:"🔭", label:"البحث في المكتبات", hint:"ملايين الأوراق", render:T=><StdTool toolKey="research" T={T}/>},
-    {key:"findtopics", icon:"💡", label:"اقتراح الموضوعات", hint:"أفكار في تخصصك", render:T=><StdTool toolKey="findtopics" T={T}/>},
-    {key:"chatpdf", icon:"💬", label:"اسأل ملفك", hint:"إجابات من مستندك", render:T=><StdTool toolKey="chatpdf" T={T}/>},
-    {key:"thesis_sources", icon:"📚", label:"دليل 114 مصدراً", hint:"مكتبات بحسب التخصص", render:T=><ThesisSourcesSystem T={T}/>},
-  ]},
-
-};
-
-function ToolHub({ T, hubKey }) {
-  const hub = HUBS[hubKey];
-  const [sel, setSel] = useState(hub.options[0].key);
-  const cur = hub.options.find(o=>o.key===sel) || hub.options[0];
-  return (
-    <div style={{maxWidth:880,margin:"0 auto"}}>
-      <Card T={T}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
-          <span style={{fontSize:26}}><EmIcon e={hub.icon}/></span>
-          <div>
-            <div style={{fontWeight:800,fontSize:17,color:T.text}}>{hub.title}</div>
-            <div style={{fontSize:12,color:T.textS}}>{hub.desc}</div>
-          </div>
-        </div>
-        {(()=>{
-          const secs = []; const seen = {};
-          hub.options.forEach(o=>{ const k=o.sec||""; if(!seen[k]){seen[k]=[];secs.push(k);} seen[k].push(o); });
-          const tile = o => { const on=o.key===sel; return (
-            <button key={o.key} onClick={()=>setSel(o.key)}
-              style={{padding:"11px 8px",borderRadius:12,cursor:"pointer",fontFamily:"inherit",textAlign:"center",
-                border:`1.5px solid ${on?T.gold:T.border}`,background:on?T.gold+"15":T.card,
-                transition:"all .15s",boxShadow:on?(T.shadow||"none"):"none"}}>
-              <div style={{fontSize:21,marginBottom:4}}><EmIcon e={o.icon}/></div>
-              <div style={{fontSize:12.5,fontWeight:on?800:600,color:on?T.gold:T.text}}>{o.label}</div>
-              <div style={{fontSize:10,color:T.textDim,marginTop:2}}>{o.hint}</div>
-            </button>
-          ); };
-          const gridS = {display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:8,marginTop:8};
-          if(secs.length===1 && secs[0]==="") return <div style={gridS}>{hub.options.map(tile)}</div>;
-          return <div style={{marginTop:10}}>{secs.map((sname,i)=>(
-            <div key={i} style={{marginBottom:i<secs.length-1?14:0}}>
-              {sname && <div style={{fontSize:11.5,fontWeight:800,color:T.gold,marginBottom:6,paddingBottom:4,borderBottom:`1px solid ${T.border}`}}>{sname}</div>}
-              <div style={gridS}>{seen[sname].map(tile)}</div>
-            </div>
-          ))}</div>;
-        })()}
-      </Card>
-      <div style={{marginTop:12}}>{cur.render(T)}</div>
-    </div>
-  );
-}
-
-
-// ── مختبر التحقق الشامل (آليات الفحص العالمية) ─────────────────
-function VerificationLabSystem({ T }) {
-  const CHECKS = [
-    {id:"plag",  icon:"🔍", name:"الانتحال والأصالة", d:"تحولات الأسلوب، مقاطع منقولة الطابع، ادعاءات بلا نسبة"},
-    {id:"refs",  icon:"📚", name:"المراجع والاستشهادات", d:"استشهادات بلا مرجع، مراجع بلا استشهاد، علامات مراجع مختلَقة"},
-    {id:"ai",    icon:"🤖", name:"بصمة الذكاء الاصطناعي", d:"إشارات النص المولّد آلياً فقرة بفقرة (تقديري)"},
-    {id:"quote", icon:"✒️", name:"نزاهة الاقتباس", d:"اقتباس بلا مصدر، إفراط، صياغة لصيقة بالأصل"},
-    {id:"stats", icon:"📊", name:"اتساق الأرقام (statcheck)", d:"تطابق p مع الإحصاءة، درجات الحرية، مجاميع النسب، الجداول مع النص"},
-  ];
-  const [on, setOn] = useState({plag:true,refs:true,ai:true,quote:true,stats:true});
-  const [files, setFiles] = useState([]);
-  const [pasted, setPasted] = useState("");
-  const [pages, setPages] = useState([]);
-  const [results, setResults] = useState([]);
-  const [running, setRunning] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [summary, setSummary] = useState("");
-  const [merging, setMerging] = useState(false);
-  const stopRef = useRef(false);
-
-  function splitPages(text) {
-    const paras = text.split(/\n+/).map(t=>t.trim()).filter(Boolean);
-    const chunks=[]; let cur="";
-    for (const p of paras) {
-      if ((cur+"\n\n"+p).length > 2300 && cur) { chunks.push(cur); cur=p; }
-      else cur = cur ? cur+"\n\n"+p : p;
-    }
-    if (cur) chunks.push(cur);
-    return chunks;
-  }
-
-  async function start() {
-    let text = pasted.trim();
-    if (!text && files.length) { try{ text = await readFile(files[0]); }catch(e){} }
-    if (!text || text.length < 80) return;
-    const sel = CHECKS.filter(c=>on[c.id]);
-    if (!sel.length) return;
-    const all = splitPages(text);
-    const capped = all.slice(0, 20);
-    setPages(capped); setResults([]); setSummary(""); setProgress(0);
-    setRunning(true); stopRef.current=false;
-
-    const sys = "أنت خبير نزاهة علمية وجودة أكاديمية تجمع منهجيات الفحص العالمية: تحليل الأصالة الأسلوبي، تدقيق الاستشهادات، رصد إشارات النص المولّد آلياً، نزاهة الاقتباس، وفحص اتساق الأرقام بنمط statcheck وGRIM. تكتب ملاحظاتك كمراجع بشري حقيقي بلغة طبيعية، وتتجنب الاتهام القاطع — تذكر «مؤشرات» و«إشارات» وتدعو للتحقق.";
-    const axes = sel.map(c=>"• "+c.name+": "+c.d).join("\n");
-    const collected = [];
-    for (let i=0; i<capped.length; i++) {
-      if (stopRef.current) break;
-      setProgress(i+1);
-      const user = `الصفحة ${i+1} من ${capped.length}:\n"""${capped[i]}"""\n\nافحصها فقرةً بفقرة وفق هذه المحاور فقط:\n${axes}\n\nلكل ملاحظة: العبارة بين علامتي اقتباس لتحديد الموضع + اسم المحور + درجة الخطورة (🔴 حرجة / 🟡 مهمة / 🟢 تنبيه) + التوضيح والإجراء المقترح بإيجاز بشري طبيعي. إن خلت فقرة من الملاحظات فتجاوزها بصمت. اختم بسطر واحد: خلاصة الصفحة.`;
-      try {
-        const out = await callAI(sys, user, 1400);
-        collected.push({page:i+1, text:out});
-        setResults([...collected]);
-      } catch(e) {
-        collected.push({page:i+1, text:"تعذّر فحص هذه الصفحة (ازدحام) — أعد المحاولة لاحقاً."});
-        setResults([...collected]);
-      }
-    }
-    // التقرير الموحّد
-    setMerging(true);
-    try {
-      const verdicts = collected.map(r=>`صفحة ${r.page}:\n${r.text.slice(0,900)}`).join("\n\n");
-      const rep = await callAI(sys,
-        `هذه نتائج فحص الصفحات:\n${verdicts.slice(0,9000)}\n\nاكتب التقرير الموحّد النهائي: 1) جدول موجز: عدد الملاحظات لكل محور ولكل درجة خطورة. 2) أخطر 5-7 نتائج (الموضع + الإجراء) دون تكرار. 3) تقييم الجاهزية العام وفق الفحوص. 4) توصية ختامية صريحة. بأسلوب مراجع بشري.`, 1800);
-      setSummary(rep);
-    } catch(e){ setSummary(""); }
-    setMerging(false);
-    if (all.length > 20) collected.push({page:0, text:`فُحصت أول 20 صفحة من ${all.length} — الصق الباقي في جولة ثانية.`});
-    setResults([...collected]);
-    setRunning(false);
-  }
-
-  function copyAll() {
-    const full = "تقرير مختبر التحقق الشامل\n"+"=".repeat(30)+"\n\n"+
-      (summary?("التقرير الموحّد:\n"+summary+"\n\n"+"─".repeat(30)+"\n\n"):"")+
-      results.filter(r=>r.page>0).map(r=>`── صفحة ${r.page} ──\n${r.text}`).join("\n\n");
-    navigator.clipboard?.writeText(full);
-  }
-
-  return (
-    <div style={{maxWidth:820,margin:"0 auto"}}>
-      <Card T={T}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:27}}>🛡️</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:17,color:T.text}}>مختبر التحقق الشامل</div>
-            <div style={{fontSize:12,color:T.textS}}>آليات الفحص العالمية الخمس · صفحة بصفحة وفقرة بفقرة · بأسلوب مراجع بشري</div>
-          </div>
-        </div>
-        <div style={{marginTop:10,padding:"8px 12px",borderRadius:9,background:T.amber+"12",border:`1px solid ${T.amber}30`,fontSize:11,color:T.textS,lineHeight:1.8}}>
-          ⚖️ صدقاً: هذه فحوص تحليلية ذكية (أنماط وأدلة داخل النص). المطابقة الحرفية مع قواعد ملايين المنشورات (كما في Turnitin/iThenticate) تتطلب خادماً وقواعد بيانات — مدرجة في خطة البنية التحتية. نتائج محوري الذكاء الاصطناعي والانتحال مؤشرات استرشادية لا أحكام قاطعة.
-        </div>
-      </Card>
-
-      {!running && results.length===0 && (
-        <Card T={T} style={{marginTop:12}}>
-          <div style={{fontSize:12.5,fontWeight:800,color:T.text,marginBottom:8}}>اختر الفحوص (الكل مفعّل افتراضياً):</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:8,marginBottom:14}}>
-            {CHECKS.map(c=>{
-              const a = on[c.id];
-              return (
-                <button key={c.id} onClick={()=>setOn({...on,[c.id]:!a})}
-                  style={{padding:"10px 12px",borderRadius:11,textAlign:"right",cursor:"pointer",fontFamily:"inherit",
-                    border:`1.5px solid ${a?T.gold:T.border}`,background:a?T.gold+"12":T.card}}>
-                  <div style={{display:"flex",alignItems:"center",gap:7}}>
-                    <span style={{fontSize:17}}><EmIcon e={c.icon}/></span>
-                    <span style={{fontSize:12.5,fontWeight:800,color:a?T.gold:T.text}}>{c.name}</span>
-                    <span style={{marginRight:"auto",fontSize:13}}>{a?"✅":"⬜"}</span>
-                  </div>
-                  <div style={{fontSize:10.5,color:T.textDim,marginTop:4,lineHeight:1.6}}>{c.d}</div>
-                </button>
-              );
-            })}
-          </div>
-          <FileZone files={files} setFiles={setFiles} T={T}/>
-          <div style={{margin:"10px 0 6px",fontSize:12,fontWeight:700,color:T.textS}}>أو الصق النص كاملاً (الأفضل للأعمال الطويلة):</div>
-          <textarea value={pasted} onChange={e=>setPasted(e.target.value)} rows={6}
-            placeholder="الصق نص البحث..."
-            style={{width:"100%",padding:"11px 13px",borderRadius:10,border:`1.5px solid ${T.border}`,
-              background:T.inputBg,color:T.text,fontSize:13.5,fontFamily:"inherit",boxSizing:"border-box",outline:"none",resize:"vertical"}}/>
-          <div style={{display:"flex",justifyContent:"flex-end",marginTop:10}}>
-            <Btn ch="🛡️ ابدأ التحقق الشامل" v="gold" T={T} onClick={start}
-              disabled={(!pasted.trim() && !files.length) || !CHECKS.some(c=>on[c.id])}/>
-          </div>
-        </Card>
-      )}
-
-      {(running || results.length>0) && (
-        <>
-          <Card T={T} style={{marginTop:12}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
-              <div style={{fontSize:13,fontWeight:700,color:T.text}}>
-                {merging ? "🧩 جارٍ بناء التقرير الموحّد…" :
-                 running ? `جارٍ فحص الصفحة ${progress} من ${pages.length}…` :
-                 `اكتمل التحقق — ${results.filter(r=>r.page>0).length} صفحة`}
-              </div>
-              <div style={{display:"flex",gap:6}}>
-                {running && !merging && <Btn ch="⏹️ إيقاف" v="ghost" T={T} onClick={()=>{stopRef.current=true;}}/>}
-                {!running && results.length>0 && <>
-                  <Btn ch="📋 نسخ الكل" v="ghost" T={T} onClick={copyAll}/>
-                  <Btn ch="🔄 فحص جديد" v="gold" T={T} onClick={()=>{setResults([]);setSummary("");setFiles([]);setPasted("");}}/>
-                </>}
-              </div>
-            </div>
-            {running && (
-              <div style={{height:8,background:T.bgS,borderRadius:5,overflow:"hidden",marginTop:10}}>
-                <div style={{height:"100%",width:`${pages.length?Math.round(progress/pages.length*100):0}%`,
-                  background:`linear-gradient(90deg,${T.gold},${T.emerald})`,borderRadius:5,transition:"width .4s"}}/>
-              </div>
-            )}
-          </Card>
-
-          {summary && (
-            <Card T={T} style={{marginTop:12}}>
-              <div style={{fontWeight:800,fontSize:14,color:T.gold,marginBottom:8}}>🧾 التقرير الموحّد</div>
-              <div style={{whiteSpace:"pre-wrap",lineHeight:1.95,fontSize:13.5,color:T.text}}>{summary}</div>
-            </Card>
-          )}
-
-          {results.map((r,i)=>(
-            <Card T={T} key={i} style={{marginTop:12}}>
-              {r.page>0 ? <>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                  <span style={{width:30,height:30,borderRadius:"50%",background:T.gold+"20",color:T.gold,
-                    display:"inline-flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:13}}>{r.page}</span>
-                  <span style={{fontWeight:800,fontSize:13.5,color:T.text}}>الصفحة {r.page}</span>
-                </div>
-                <div style={{whiteSpace:"pre-wrap",lineHeight:1.95,fontSize:13.5,color:T.text}}>{r.text}</div>
-              </> : <div style={{fontSize:12.5,color:T.amber}}>{r.text}</div>}
-            </Card>
-          ))}
-        </>
-      )}
-    </div>
-  );
-}
-
-
-// ── استوديو المجلة الإلكترونية الذكية ──────────────────────────
-function FigureSVG({ spec, T }) {
-  if (!spec) return null;
-  const W=560, H=260, P=44;
-  const labels = spec.labels||[], values=(spec.values||[]).map(Number);
-  const max = Math.max(...values, 1);
-  const colors = [T.gold,T.teal,T.violet,T.emerald,T.rose,T.cyan,T.amber,T.blue];
-  let inner = null;
-  if (spec.type==="pie" || spec.type==="donut") {
-    const total = values.reduce((a,b)=>a+b,0)||1;
-    let ang = -Math.PI/2; const cx=150, cy=H/2, r=88;
-    const arcs = values.map((v,i)=>{
-      const a2 = ang + (v/total)*Math.PI*2;
-      const x1=cx+r*Math.cos(ang), y1=cy+r*Math.sin(ang), x2=cx+r*Math.cos(a2), y2=cy+r*Math.sin(a2);
-      const large = (a2-ang)>Math.PI?1:0;
-      const d=`M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`;
-      ang=a2;
-      return <path key={i} d={d} fill={colors[i%8]} opacity="0.9"/>;
-    });
-    inner = <>
-      {arcs}
-      {spec.type==="donut" && <circle cx={cx} cy={cy} r={r*0.55} fill={T.card}/>}
-      {labels.map((l,i)=>(
-        <g key={"lg"+i}>
-          <rect x={300} y={40+i*26} width={13} height={13} rx={3} fill={colors[i%8]}/>
-          <text x={320} y={51+i*26} fontSize="12" fill={T.text}>{l} ({values[i]})</text>
-        </g>
-      ))}
-    </>;
-  } else if (spec.type==="line") {
-    const n=values.length||1, step=(W-2*P)/Math.max(n-1,1);
-    const pts = values.map((v,i)=>`${P+i*step},${H-P-(v/max)*(H-2*P)}`).join(" ");
-    inner = <>
-      <line x1={P} y1={H-P} x2={W-P} y2={H-P} stroke={T.border} strokeWidth="1.5"/>
-      <line x1={P} y1={P-10} x2={P} y2={H-P} stroke={T.border} strokeWidth="1.5"/>
-      <polyline points={pts} fill="none" stroke={T.gold} strokeWidth="3" strokeLinejoin="round"/>
-      {values.map((v,i)=>(
-        <g key={i}>
-          <circle cx={P+i*step} cy={H-P-(v/max)*(H-2*P)} r="4.5" fill={T.gold}/>
-          <text x={P+i*step} y={H-P+18} fontSize="10.5" fill={T.textS} textAnchor="middle">{labels[i]||""}</text>
-        </g>
-      ))}
-    </>;
-  } else if (spec.type==="flow") {
-    const steps = labels.slice(0,5);
-    const bw=(W-2*P-((steps.length-1)*34))/steps.length;
-    inner = steps.map((l,i)=>{
-      const x=P+i*(bw+34);
-      return <g key={i}>
-        <rect x={x} y={H/2-34} width={bw} height={68} rx={12} fill={colors[i%8]+"22"} stroke={colors[i%8]} strokeWidth="1.8"/>
-        <text x={x+bw/2} y={H/2+4} fontSize="11.5" fontWeight="700" fill={T.text} textAnchor="middle">{l}</text>
-        {i<steps.length-1 && <text x={x+bw+17} y={H/2+5} fontSize="17" fill={T.textS} textAnchor="middle">←</text>}
-      </g>;
-    });
-  } else { // bar
-    const n=values.length||1, bw=Math.min(54,(W-2*P)/n*0.6), gap=(W-2*P)/n;
-    inner = <>
-      <line x1={P} y1={H-P} x2={W-P} y2={H-P} stroke={T.border} strokeWidth="1.5"/>
-      {values.map((v,i)=>{
-        const h=(v/max)*(H-2*P), x=P+i*gap+(gap-bw)/2;
-        return <g key={i}>
-          <rect x={x} y={H-P-h} width={bw} height={h} rx="7" fill={colors[i%8]} opacity="0.9"/>
-          <text x={x+bw/2} y={H-P-h-7} fontSize="11" fontWeight="700" fill={T.textS} textAnchor="middle">{v}</text>
-          <text x={x+bw/2} y={H-P+18} fontSize="10.5" fill={T.textS} textAnchor="middle">{labels[i]||""}</text>
-        </g>;
-      })}
-    </>;
-  }
-  return (
-    <div style={{margin:"14px 0",padding:"14px",borderRadius:13,background:T.bgS,border:`1px solid ${T.border}`}}>
-      <div style={{fontSize:12.5,fontWeight:800,color:T.text,marginBottom:6}}>📊 {spec.title}</div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",display:"block"}}>{inner}</svg>
-      {spec.caption && <div style={{fontSize:11,color:T.textDim,marginTop:6,lineHeight:1.7}}>شكل: {spec.caption}</div>}
-    </div>
-  );
-}
-
-function EJournalStudioSystem({ T }) {
-  const [form, setForm] = useState({ name:"مجلة محكّم للعلوم", field:"", theme:"", n:"2", style:"حديث فاخر (نمط Nature)" });
-  const [busy, setBusy] = useState(false);
-  const [step, setStep] = useState("");
-  const [issue, setIssue] = useState(null);
-  const issueNo = useRef(Math.floor(Math.random()*20)+1).current;
-
-  function speak(text){
-    try { speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text); u.lang="ar-SA"; u.rate=0.95;
-      speechSynthesis.speak(u);
-    } catch(e){}
-  }
-  function bibtex(a, i){
-    const yr = new Date().getFullYear();
-    return `@article{muhakkim${yr}_${i+1},\n  title={${a.title}},\n  author={${(a.authors||[]).join(" and ")}},\n  journal={${form.name}},\n  year={${yr}},\n  number={${issueNo}},\n  publisher={Muhakkim Pro}\n}`;
-  }
-
-  async function generate() {
-    if (!form.field.trim()) return;
-    setBusy(true); setIssue(null);
-    try {
-      setStep("🧠 توليد خطة العدد والمقالات…");
-      const d = await callAIJson(
-        "أنت رئيس تحرير مجلة علمية عالمية حديثة (بمستوى Nature). تولّد أعداداً إلكترونية متكاملة بالعربية الرصينة. ترد بـJSON فقط.",
-        `ولّد عدداً إلكترونياً لمجلة "${form.name}" في مجال "${form.field}"${form.theme?` بمحور "${form.theme}"`:""} بعدد ${form.n} مقالات.\nJSON: {"issue":{"title":"عنوان العدد","subtitle":"سطر فرعي","editorial":"افتتاحية 70-90 كلمة"},"articles":[{"title":"عنوان بحثي جذاب","authors":["د. اسم عربي واقعي","د. ..."],"affil":"جهة أكاديمية","abstract":"ملخص 60-80 كلمة","keypoints":["نقطة",
-"نقطة","نقطة"],"keywords":["4 كلمات"],"figure":{"type":"bar|line|pie|donut|flow","title":"عنوان الشكل","labels":["3-6 تسميات قصيرة"],"values":[أرقام منطقية بنفس العدد — للflow اتركها []],"caption":"وصف علمي للشكل"},"body":[{"h":"عنوان قسم","p":"فقرة 60-90 كلمة"},{"h":"..","p":".."},{"h":"..","p":".."}]}]}\nاجعل البيانات والأرقام منطقية متسقة مع النص.`,
-        3600);
-      if (!d || !d.articles) throw new Error("بنية غير مكتملة");
-      setIssue(d);
-    } catch(e) {
-      setIssue({error:"تعذّر التوليد — الضغط مرتفع، حاول مجدداً."});
-    }
-    setStep(""); setBusy(false);
-  }
-
-  function exportHTML() {
-    if (!issue || issue.error) return;
-    const yr=new Date().getFullYear();
-    const figs = issue.articles.map(a=>{
-      // rebuild static SVG per article for export
-      const s=a.figure||{}; const labels=s.labels||[]; const vals=(s.values||[]).map(Number); const mx=Math.max(...vals,1);
-      const cols=["#B45309","#0E7490","#6D28D9","#047857","#BE123C","#0891B2"];
-      let body="";
-      if(s.type==="flow"){
-        const st=labels.slice(0,5), bw=(560-88-((st.length-1)*34))/st.length;
-        body=st.map((l,i)=>{const x=44+i*(bw+34);return `<rect x="${x}" y="96" width="${bw}" height="68" rx="12" fill="${cols[i%6]}22" stroke="${cols[i%6]}" stroke-width="1.8"/><text x="${x+bw/2}" y="134" font-size="11.5" font-weight="700" fill="#222" text-anchor="middle">${l}</text>`+(i<st.length-1?`<text x="${x+bw+17}" y="135" font-size="17" fill="#888" text-anchor="middle">←</text>`:"");}).join("");
-      } else if(s.type==="pie"||s.type==="donut"){
-        const tot=vals.reduce((a,b)=>a+b,0)||1; let ang=-Math.PI/2;
-        body=vals.map((v,i)=>{const a2=ang+(v/tot)*Math.PI*2;const x1=150+88*Math.cos(ang),y1=130+88*Math.sin(ang),x2=150+88*Math.cos(a2),y2=130+88*Math.sin(a2);const lg=(a2-ang)>Math.PI?1:0;const dd=`M150 130 L${x1} ${y1} A88 88 0 ${lg} 1 ${x2} ${y2} Z`;ang=a2;return `<path d="${dd}" fill="${cols[i%6]}" opacity=".9"/>`;}).join("")+
-          (s.type==="donut"?`<circle cx="150" cy="130" r="48" fill="#fff"/>`:"")+
-          labels.map((l,i)=>`<rect x="300" y="${40+i*26}" width="13" height="13" rx="3" fill="${cols[i%6]}"/><text x="320" y="${51+i*26}" font-size="12" fill="#333">${l} (${vals[i]})</text>`).join("");
-      } else if(s.type==="line"){
-        const n=vals.length||1, stp=(560-88)/Math.max(n-1,1);
-        const pts=vals.map((v,i)=>`${44+i*stp},${216-(v/mx)*172}`).join(" ");
-        body=`<line x1="44" y1="216" x2="516" y2="216" stroke="#ddd"/><polyline points="${pts}" fill="none" stroke="#B45309" stroke-width="3"/>`+
-          vals.map((v,i)=>`<circle cx="${44+i*stp}" cy="${216-(v/mx)*172}" r="4.5" fill="#B45309"/><text x="${44+i*stp}" y="234" font-size="10.5" fill="#777" text-anchor="middle">${labels[i]||""}</text>`).join("");
-      } else {
-        const n=vals.length||1, gap=(560-88)/n, bw=Math.min(54,gap*0.6);
-        body=`<line x1="44" y1="216" x2="516" y2="216" stroke="#ddd"/>`+
-          vals.map((v,i)=>{const h=(v/mx)*172,x=44+i*gap+(gap-bw)/2;return `<rect x="${x}" y="${216-h}" width="${bw}" height="${h}" rx="7" fill="${cols[i%6]}" opacity=".9"/><text x="${x+bw/2}" y="${209-h}" font-size="11" font-weight="700" fill="#777" text-anchor="middle">${v}</text><text x="${x+bw/2}" y="234" font-size="10.5" fill="#777" text-anchor="middle">${labels[i]||""}</text>`;}).join("");
-      }
-      return `<svg viewBox="0 0 560 260" style="width:100%">${body}</svg>`;
-    });
-    const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${form.name} — العدد ${issueNo}</title><style>
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
-*{box-sizing:border-box}body{font-family:'Tajawal',sans-serif;margin:0;background:#f6f4ef;color:#222}
-.wrap{max-width:880px;margin:0 auto;padding:24px 18px}
-.cover{background:linear-gradient(135deg,#1F3864,#0E7490);border-radius:22px;color:#fff;padding:54px 40px;position:relative;overflow:hidden}
-.cover::before{content:"";position:absolute;left:-60px;top:-60px;width:260px;height:260px;border-radius:50%;background:#B4530955}
-.cover::after{content:"";position:absolute;right:-40px;bottom:-80px;width:300px;height:300px;border-radius:50%;background:#ffffff14}
-.jname{font-size:15px;letter-spacing:2px;opacity:.85}.ititle{font-size:34px;font-weight:800;margin:10px 0 6px;position:relative}
-.isub{font-size:16px;opacity:.9;position:relative}.imeta{margin-top:24px;font-size:12.5px;opacity:.8;position:relative}
-.edit{background:#fff;border-radius:16px;padding:24px 26px;margin:18px 0;border-right:5px solid #B45309;box-shadow:0 4px 18px #0001}
-.edit h3{margin:0 0 8px;color:#B45309}
-.art{background:#fff;border-radius:18px;padding:30px 28px;margin:22px 0;box-shadow:0 6px 24px #0001}
-.atitle{font-size:23px;font-weight:800;color:#1F3864;margin:0 0 8px;line-height:1.6}
-.auth{font-size:13px;color:#0E7490;font-weight:700}.affil{font-size:11.5px;color:#999;margin-bottom:12px}
-.abs{background:#f8f6f1;border-radius:12px;padding:14px 16px;font-size:13.5px;line-height:2;border:1px solid #eee}
-.abs b{color:#B45309}
-.kps{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
-.kp{flex:1 1 200px;background:#1F386408;border:1px solid #1F386422;border-radius:11px;padding:10px 13px;font-size:12.5px;line-height:1.8}
-.kp::before{content:"◆ ";color:#B45309}
-h4{color:#0E7490;margin:18px 0 6px}p{line-height:2.05;font-size:14px;margin:6px 0}
-.fig{background:#fbfaf7;border:1px solid #eee;border-radius:13px;padding:14px;margin:14px 0}
-.figc{font-size:11px;color:#888;margin-top:6px}
-.kw{display:inline-block;background:#0E749012;color:#0E7490;border:1px solid #0E749030;border-radius:20px;padding:2px 13px;font-size:11.5px;margin:3px}
-.meta2{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:11px;color:#999;border-top:1px dashed #ddd;margin-top:16px;padding-top:10px}
-.foot{text-align:center;font-size:12px;color:#888;margin:30px 0 14px}
-.note{background:#FEF3C7;border:1px solid #F59E0B55;border-radius:11px;padding:10px 14px;font-size:11.5px;color:#92400E;margin:16px 0}
-@media print{.cover{-webkit-print-color-adjust:exact}}
-</style></head><body><div class="wrap">
-<div class="cover"><div class="jname">${form.name} · ISSN قيد التسجيل</div>
-<div class="ititle">${issue.issue.title}</div><div class="isub">${issue.issue.subtitle||""}</div>
-<div class="imeta">العدد ${issueNo} · ${yr} · إصدار إلكتروني تفاعلي · مولّد بالذكاء الاصطناعي عبر محكّم برو</div></div>
-<div class="edit"><h3>📝 الافتتاحية</h3><p>${issue.issue.editorial}</p></div>
-${issue.articles.map((a,i)=>`<div class="art">
-<div class="atitle">${a.title}</div>
-<div class="auth">${(a.authors||[]).join(" · ")}</div><div class="affil">${a.affil||""}</div>
-<div class="abs"><b>الملخص:</b> ${a.abstract}</div>
-<div class="kps">${(a.keypoints||[]).map(k=>`<div class="kp">${k}</div>`).join("")}</div>
-${(a.body||[]).map(s=>`<h4>${s.h}</h4><p>${s.p}</p>`).join("")}
-<div class="fig">${figs[i]}<div class="figc">شكل ${i+1}: ${(a.figure||{}).caption||""}</div></div>
-<div>${(a.keywords||[]).map(k=>`<span class="kw">${k}</span>`).join("")}</div>
-<div class="meta2"><span>DOI تجريبي: 10.0000/muhakkim.${yr}.${issueNo}.${i+1}</span><span>استلام/قبول: ${yr} · وصول مفتوح</span></div>
-</div>`).join("")}
-<div class="note">⚖️ محتوى هذا العدد مولّد بالذكاء الاصطناعي لأغراض العرض والنماذج — الأشكال علمية متجهية مولّدة من بيانات النموذج، ومعرّفات DOI توضيحية حتى الربط الرسمي بـCrossref.</div>
-<div class="foot">${form.name} · مدعوم بمنصة محكّم برو · ${yr} ©<br><button onclick="print()" style="margin-top:10px;padding:9px 26px;border-radius:24px;border:none;background:#B45309;color:#fff;font-family:inherit;font-weight:700;cursor:pointer">🖨️ طباعة / PDF</button></div>
-</div></body></html>`;
-    const w = window.open("","_blank"); if(w){ w.document.write(html); w.document.close(); }
-  }
-
-  const ipt = {width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",outline:"none"};
-  const lbl = {display:"block",fontSize:12,fontWeight:700,color:T.textS,marginBottom:5};
-
-  return (
-    <div style={{maxWidth:840,margin:"0 auto"}}>
-      <Card T={T}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:27}}>📰</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:17,color:T.text}}>استوديو المجلة الإلكترونية الذكية</div>
-            <div style={{fontSize:12,color:T.textS}}>أعداد كاملة بنمط المجلات العالمية: مقالات + أشكال علمية + استماع صوتي + تصدير تفاعلي</div>
-          </div>
-        </div>
-        <div style={{marginTop:10,padding:"8px 12px",borderRadius:9,background:T.amber+"12",border:`1px solid ${T.amber}30`,fontSize:11,color:T.textS,lineHeight:1.8}}>
-          ⚖️ الأشكال علمية متجهية (SVG) مولّدة من بيانات الذكاء الاصطناعي. الصور الفوتوغرافية الواقعية تتطلب خدمة توليد صور عبر خادم — ضمن خطة النسخة المؤسسية. معرّفات DOI توضيحية حتى الربط بـCrossref.
-        </div>
-      </Card>
-
-      <Card T={T} style={{marginTop:12}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          <div><label style={lbl}>اسم المجلة</label><input style={ipt} value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></div>
-          <div><label style={lbl}>المجال العلمي *</label><input style={ipt} value={form.field} onChange={e=>setForm({...form,field:e.target.value})} placeholder="الإحصاء التطبيقي، الصحة العامة..."/></div>
-          <div><label style={lbl}>محور العدد (اختياري)</label><input style={ipt} value={form.theme} onChange={e=>setForm({...form,theme:e.target.value})} placeholder="الذكاء الاصطناعي في..."/></div>
-          <div><label style={lbl}>عدد المقالات</label>
-            <Dropdown T={T} value={form.n} onChange={v=>setForm({...form,n:v})} options={["2","3"]}/></div>
-        </div>
-        <div style={{display:"flex",justifyContent:"flex-end",marginTop:12}}>
-          <Btn ch={busy?<><Spin/> {step||"جارٍ التوليد…"}</>:"📰 ولّد العدد الإلكتروني"} v="gold" T={T} onClick={generate} disabled={busy||!form.field.trim()}/>
-        </div>
-      </Card>
-
-      {issue && issue.error && <Card T={T} style={{marginTop:12}}><div style={{color:T.rose,fontSize:13}}>{issue.error}</div></Card>}
-
-      {issue && !issue.error && <>
-        {/* الغلاف */}
-        <div style={{marginTop:14,borderRadius:20,overflow:"hidden",position:"relative",
-          background:"linear-gradient(135deg,#1F3864,#0E7490)",padding:"38px 28px",color:"#fff"}}>
-          <div style={{position:"absolute",left:-50,top:-50,width:200,height:200,borderRadius:"50%",background:"#B4530955"}}/>
-          <div style={{position:"absolute",right:-40,bottom:-70,width:240,height:240,borderRadius:"50%",background:"#ffffff14"}}/>
-          <div style={{position:"relative"}}>
-            <div style={{fontSize:12,letterSpacing:2,opacity:.85}}>{form.name}</div>
-            <div style={{fontSize:25,fontWeight:800,margin:"8px 0 4px",lineHeight:1.5}}>{issue.issue.title}</div>
-            <div style={{fontSize:14,opacity:.9}}>{issue.issue.subtitle}</div>
-            <div style={{marginTop:16,fontSize:11.5,opacity:.8}}>العدد {issueNo} · {new Date().getFullYear()} · إصدار إلكتروني تفاعلي</div>
-          </div>
-        </div>
-
-        <Card T={T} style={{marginTop:12}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-            <div style={{fontWeight:800,fontSize:14,color:T.gold}}>📝 الافتتاحية</div>
-            <div style={{display:"flex",gap:6}}>
-              <Btn ch="🔊 استمع" v="ghost" T={T} onClick={()=>speak(issue.issue.editorial)}/>
-              <Btn ch="📄 تصدير العدد HTML/طباعة" v="gold" T={T} onClick={exportHTML}/>
-            </div>
-          </div>
-          <div style={{fontSize:13.5,lineHeight:2,color:T.text,marginTop:8}}>{issue.issue.editorial}</div>
-          <div style={{fontSize:10.5,color:T.textDim,marginTop:6}}>* الاستماع يعتمد على أصوات جهازك (قد يختلف توفر العربية بين الأجهزة)</div>
-        </Card>
-
-        {issue.articles.map((a,i)=>(
-          <Card T={T} key={i} style={{marginTop:14}}>
-            <div style={{fontSize:18,fontWeight:800,color:T.text,lineHeight:1.7}}>{a.title}</div>
-            <div style={{fontSize:12.5,color:T.teal,fontWeight:700,marginTop:4}}>{(a.authors||[]).join(" · ")}</div>
-            <div style={{fontSize:11,color:T.textDim,marginBottom:10}}>{a.affil}</div>
-            <div style={{padding:"12px 14px",borderRadius:11,background:T.bgS,border:`1px solid ${T.border}`,fontSize:13,lineHeight:1.95}}>
-              <b style={{color:T.gold}}>الملخص: </b>{a.abstract}
-              <div style={{marginTop:8}}>
-                <Btn ch="🔊 استمع للملخص" v="ghost" T={T} onClick={()=>speak(a.abstract)}/>
-              </div>
-            </div>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",margin:"12px 0"}}>
-              {(a.keypoints||[]).map((k,j)=>(
-                <div key={j} style={{flex:"1 1 180px",padding:"9px 12px",borderRadius:10,background:T.blue+"0d",border:`1px solid ${T.blue}25`,fontSize:12,lineHeight:1.8,color:T.text}}>◆ {k}</div>
-              ))}
-            </div>
-            {(a.body||[]).map((s,j)=>(
-              <div key={j}>
-                <div style={{fontSize:14,fontWeight:800,color:T.teal,margin:"12px 0 4px"}}>{s.h}</div>
-                <div style={{fontSize:13.5,lineHeight:2.05,color:T.text}}>{s.p}</div>
-              </div>
-            ))}
-            <FigureSVG spec={a.figure} T={T}/>
-            <div style={{margin:"8px 0"}}>
-              {(a.keywords||[]).map((k,j)=>(
-                <span key={j} style={{display:"inline-block",margin:3,padding:"2px 13px",borderRadius:20,fontSize:11.5,
-                  background:T.teal+"12",color:T.teal,border:`1px solid ${T.teal}30`}}>{k}</span>
-              ))}
-            </div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,
-              borderTop:`1px dashed ${T.border}`,paddingTop:10,marginTop:8}}>
-              <span style={{fontSize:10.5,color:T.textDim,fontFamily:"monospace"}}>DOI تجريبي: 10.0000/muhakkim.{new Date().getFullYear()}.{issueNo}.{i+1}</span>
-              <Btn ch="📋 نسخ استشهاد BibTeX" v="ghost" T={T} onClick={()=>navigator.clipboard?.writeText(bibtex(a,i))}/>
-            </div>
-          </Card>
-        ))}
-      </>}
-    </div>
-  );
-}
-
-
-// ── مركز التحليل الذكي المتكامل ────────────────────────────────
-function SmartAnalysisCenterSystem({ T }) {
-  const [tab, setTab] = useState("dash");
-  const TABS = [["dash","📊 الداشبورد التفاعلي"],["fixer","🛠️ مصحح Excel/CSV"]];
-  const ta = {width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",outline:"none",resize:"vertical"};
-  const lbl = {display:"block",fontSize:12,fontWeight:700,color:T.textS,marginBottom:5};
-
-  // ===== مشترك: تحليل CSV حقيقي =====
-  const normDigits = s => String(s).replace(/[٠-٩]/g, d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[۰-۹]/g, d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d));
-  function parseCSV(text){
-    const lines = text.replace(/\r/g,"").split("\n").filter(l=>l.trim()!=="");
-    if(!lines.length) return null;
-    const delims=[",",";","\t"]; const counts=delims.map(d=>(lines[0].split(d).length));
-    const delim = delims[counts.indexOf(Math.max(...counts))];
-    const rows = lines.map(l=>l.split(delim).map(c=>c.trim()));
-    const header = rows[0];
-    return { header, rows: rows.slice(1), delim };
-  }
-  function colStats(data, ci){
-    const vals = data.rows.map(r=>parseFloat(normDigits((r[ci]||"").replace(",",".")))).filter(v=>!isNaN(v));
-    if(!vals.length) return null;
-    const n=vals.length, mean=vals.reduce((a,b)=>a+b,0)/n;
-    const sd=Math.sqrt(vals.reduce((a,b)=>a+(b-mean)**2,0)/Math.max(n-1,1));
-    return {n, mean, sd, min:Math.min(...vals), max:Math.max(...vals), vals};
-  }
-
-  // ===== 1) النظام البحثي المتكامل =====
-  const [pObj, setPObj] = useState("");
-  const [pHyp, setPHyp] = useState("");
-  const [pData, setPData] = useState("");
-  const [pField, setPField] = useState("");
-  const [pFiles, setPFiles] = useState([]);
-  const [pSteps, setPSteps] = useState({});
-  const [pBusy, setPBusy] = useState(false);
-  const [pOpen, setPOpen] = useState("results");
-  const PIPE = [
-    ["align","🧭 المنهجية والربط"],["results","📊 النتائج والقرارات"],
-    ["recs","💡 التوصيات المرتبطة"],["abstract","📄 المستخلص"],
-  ];
-  async function runPipeline(){
-    let dataTxt = pData.trim();
-    if(!dataTxt && pFiles.length){ try{ dataTxt = await readFile(pFiles[0]); }catch(e){} }
-    if(!pObj.trim() || !dataTxt) return;
-    setPBusy(true); setPSteps({});
-    const base = `المجال: ${pField||"عام"}\nالأهداف/الأسئلة:\n${pObj.slice(0,1500)}\n${pHyp.trim()?`الفرضيات:\n${pHyp.slice(0,1200)}\n`:""}مخرجات البيانات/الجداول:\n"""${dataTxt.slice(0,5000)}"""`;
-    const sys = "أنت وحدة تحليل بحثي بمستوى المراكز العالمية: تربط كل تحليل بالهدف والفرضية، وتلتزم بما في المعطيات دون اختلاق أرقام، وتنبّه على أي نقص.";
-    const steps = [
-      ["align", `${base}\n\nالمهمة 1: لكل هدف/فرضية حدّد الاختبار الإحصائي المناسب المستخدم أو الواجب، وافحص اتساق المنهجية مع الأهداف. جدول موجز: الهدف/الفرضية ← الاختبار ← الملاحظة.`, 1200],
-      ["results", `${base}\n\nالمهمة 2: اكتب النتائج لكل هدف/فرضية بصياغة الرسائل العلمية: الأرقام كما وردت (M, SD, t/F/χ², p)، قرار الفرضية صراحة، وتفسير موجز. نبّه على أي قيمة ناقصة يتطلبها التقرير.`, 1900],
-      ["recs", `${base}\n\nالمهمة 3: اكتب التوصيات بحيث ترتبط كل توصية بنتيجة محددة (توصية ← مبنية على نتيجة كذا) + مقترحات بحوث مستقبلية. لا توصيات عامة منفصلة عن النتائج.`, 1100],
-      ["abstract", `${base}\n\nالمهمة 4: اكتب المستخلص (200-250 كلمة) بهيكل: المقدمة والهدف، المنهجية، أبرز النتائج بالأرقام، الخلاصة والتوصية الرئيسة + الكلمات المفتاحية (5).`, 900],
-    ];
-    for(const [k,prompt,mt] of steps){
-      try { const out = await callAI(sys, prompt, mt); setPSteps(prev=>({...prev,[k]:out})); }
-      catch(e){ setPSteps(prev=>({...prev,[k]:"تعذّر هذا القسم — أعد المحاولة."})); }
-    }
-    setPBusy(false);
-  }
-  function copyPipeline(){
-    const full = PIPE.map(([k,l])=>pSteps[k]?`══ ${l} ══\n${pSteps[k]}`:"").filter(Boolean).join("\n\n");
-    navigator.clipboard?.writeText(full);
-  }
-
-  // ===== 2) الداشبورد التفاعلي =====
-  const [csvText, setCsvText] = useState("");
-  const [dFiles, setDFiles] = useState([]);
-  const [data, setData] = useState(null);
-  const [dBusy, setDBusy] = useState(false);
-  const [dErr, setDErr] = useState("");
-  const [selNum, setSelNum] = useState("");
-  const [selCat, setSelCat] = useState("");
-  const [chart, setChart] = useState("bar");
-  async function loadCSV(){
-    setDErr(""); setDBusy(true);
-    let t = csvText.trim(); let fromFile = false;
-    if(!t && dFiles.length){
-      fromFile = true;
-      try { t = await extractTabularFile(dFiles[0]); }
-      catch(e){ setDErr("تعذّرت قراءة الملف — جرّب CSV أو Excel."); setDBusy(false); return; }
-    }
-    if(!t){ setDBusy(false); return; }
-    if(fromFile && t.startsWith("[") && t.endsWith("]")){ setDErr(t.slice(1,-1)); setDBusy(false); return; }
-    t = normDigits(t);
-    let d = parseCSV(t);
-    if(!d || d.header.length<2){
-      const tb = tableizeText(t);
-      if(tb) d = {header: tb[0], rows: tb.slice(1), delim: ","};
-    }
-    if(d && d.rows.length){ setData(d);
-      const nums = d.header.map((h,i)=>colStats(d,i)?i:-1).filter(i=>i>=0);
-      setSelNum(String(nums[0]??0)); setSelCat(String(d.header.findIndex((h,i)=>!nums.includes(i))));
-    } else setDErr("تعذّر استخراج جدول صالح من الملف — جداول PDF تفقد بنيتها أحياناً؛ الأدق CSV أو Excel.");
-    setDBusy(false);
-  }
-  const dashStats = useMemo(()=>{
-    if(!data) return null;
-    const numCols = data.header.map((h,i)=>({h,i,st:colStats(data,i)})).filter(x=>x.st);
-    const totalCells = data.rows.length*data.header.length;
-    const missing = data.rows.reduce((a,r)=>a+data.header.filter((_,i)=>!(r[i]||"").trim()).length,0);
-    return { numCols, missing, missPct: totalCells?Math.round(missing/totalCells*100):0 };
-  },[data]);
-  function chartSpec(){
-    if(!data||!dashStats) return null;
-    if(chart==="means") return {type:"bar", title:"متوسطات المتغيرات الرقمية",
-      labels:dashStats.numCols.slice(0,6).map(x=>x.h), values:dashStats.numCols.slice(0,6).map(x=>+x.st.mean.toFixed(2)), caption:"محسوبة فعلياً من بياناتك"};
-    if(chart==="pie"){
-      const ci=+selCat; if(ci<0||isNaN(ci)) return null;
-      const freq={};
-      data.rows.forEach(r=>{const v=(r[ci]||"").trim()||"(فارغ)"; freq[v]=(freq[v]||0)+1;});
-      const top=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,6);
-      return {type:"donut", title:"توزيع: "+(data.header[ci]||""), labels:top.map(x=>x[0]), values:top.map(x=>x[1]), caption:"التكرارات الفعلية"};
-    }
-    const ci=+selNum; const st=colStats(data,ci); if(!st) return null;
-    if(chart==="line") return {type:"line", title:"مسار: "+data.header[ci], labels:st.vals.slice(0,12).map((_,i)=>String(i+1)), values:st.vals.slice(0,12).map(v=>+v.toFixed(2)), caption:"أول 12 قيمة"};
-    // histogram
-    const bins=8, w=(st.max-st.min)/bins||1, counts=Array(bins).fill(0);
-    st.vals.forEach(v=>counts[Math.min(bins-1,Math.floor((v-st.min)/w))]++);
-    return {type:"bar", title:"التوزيع التكراري: "+data.header[ci],
-      labels:counts.map((_,i)=>(st.min+i*w).toFixed(0)), values:counts, caption:`n=${st.n} · M=${st.mean.toFixed(2)} · SD=${st.sd.toFixed(2)}`};
-  }
-
-  // ===== 3) مصحح Excel/CSV =====
-  const [fFiles, setFFiles] = useState([]);
-  const [fText, setFText] = useState("");
-  const [fix, setFix] = useState({digits:true,decimal:true,trim:true,empty:true,dups:true,na:true});
-  const [fixed, setFixed] = useState(null);
-  const FIXES = [
-    ["digits","تحويل الأرقام العربية ٠١٢ إلى 012"],["decimal","الفاصلة العشرية ، إلى ."],
-    ["trim","إزالة الفراغات الزائدة"],["empty","حذف الصفوف والأعمدة الفارغة"],
-    ["dups","حذف الصفوف المكررة"],["na","توحيد رموز الفقد (NA، -، فارغ)"],
-  ];
-  async function runFixer(){
-    let t = fText.trim();
-    if(!t && fFiles.length){
-      const f = fFiles[0];
-      if(/\.xlsx?$/i.test(f.name)){
-        try {
-          const XLSX = await import("xlsx");
-          const buf = await f.arrayBuffer();
-          const wb = XLSX.read(buf); 
-          t = XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]);
-        } catch(e){ setFixed({error:"تعذّرت قراءة xlsx في هذه البيئة — احفظ الملف بصيغة CSV وارفعه (يعمل دائماً)."}); return; }
-      } else if(/\.pdf$/i.test(f.name)){
-        try { t = await readPdfText(f, 60000); } catch(e){ t=""; }
-        if(!t || (t.startsWith("[") && t.endsWith("]"))){ setFixed({error: t ? t.slice(1,-1) : "تعذّرت قراءة الـPDF"}); return; }
-      } else if(/\.docx?$/i.test(f.name)){ try{ t = await readFile(f); }catch(e){} }
-      else { try{ t = await f.text(); }catch(e){} }
-    }
-    if(!t) return;
-    const log = [];
-    if(fix.digits){ const before=t; t=normDigits(t); if(before!==t) log.push("حُوّلت الأرقام العربية/الفارسية إلى لاتينية"); }
-    let d = parseCSV(t);
-    if(!d || d.header.length<2){
-      const tb = tableizeText(t);
-      if(tb) d = {header: tb[0], rows: tb.slice(1), delim: ","};
-    }
-    if(!d || d.header.length<2){ setFixed({error:"تعذّر استخراج جدول من الملف — جداول PDF/Word تفقد بنيتها أحياناً؛ الأدق CSV أو Excel."}); return; }
-    let rows = d.rows, header = d.header;
-    if(fix.trim){ header=header.map(c=>c.trim()); rows=rows.map(r=>r.map(c=>(c||"").trim())); log.push("أزيلت الفراغات الزائدة"); }
-    if(fix.na){ let n=0; rows=rows.map(r=>r.map(c=>{ if(/^(na|n\/a|-|—|null|فارغ|لا يوجد)$/i.test(c)){n++;return "";} return c;})); if(n) log.push(`وُحّدت ${n} خلية فقد`); }
-    if(fix.decimal){ let n=0; rows=rows.map(r=>r.map(c=>{ const m=c.match(/^\d+،\d+$/); if(m){n++;return c.replace("،",".");} const m2=c.match(/^\d+,\d+$/); if(m2 && !c.includes(".")){n++;return c.replace(",",".");} return c;})); if(n) log.push(`صُححت ${n} فاصلة عشرية`); }
-    if(fix.empty){
-      const r0=rows.length; rows=rows.filter(r=>r.some(c=>c!=="")); if(rows.length<r0) log.push(`حُذف ${r0-rows.length} صف فارغ`);
-      const keep=header.map((_,i)=>header[i]!==""||rows.some(r=>(r[i]||"")!==""));
-      if(keep.includes(false)){ const cut=keep.filter(k=>!k).length; header=header.filter((_,i)=>keep[i]); rows=rows.map(r=>r.filter((_,i)=>keep[i])); log.push(`حُذف ${cut} عمود فارغ`);}
-    }
-    if(fix.dups){ const seen=new Set(); const r0=rows.length; rows=rows.filter(r=>{const k=r.join("\u0001"); if(seen.has(k))return false; seen.add(k); return true;}); if(rows.length<r0) log.push(`حُذف ${r0-rows.length} صف مكرر`);}
-    const csv = [header, ...rows].map(r=>r.map(c=>/[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c).join(",")).join("\n");
-    setFixed({header, rows, csv, log: log.length?log:["لا إصلاحات لازمة — ملفك سليم"]});
-  }
-  function downloadFixed(){
-    if(!fixed||!fixed.csv) return;
-    const blob = new Blob(["\ufeff"+fixed.csv], {type:"text/csv;charset=utf-8"});
-    const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="data_fixed.csv"; a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href), 3000);
-  }
-
-  return (
-    <div style={{maxWidth:860,margin:"0 auto"}}>
-      <Card T={T}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:27}}>🧠</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:17,color:T.text}}>مركز التحليل الذكي المتكامل</div>
-            <div style={{fontSize:12,color:T.textS}}>من الأهداف إلى المستخلص · داشبورد يحسب من بياناتك فعلياً · مصحح Excel/CSV حقيقي</div>
-          </div>
-        </div>
-      </Card>
-      <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
-        {TABS.map(([k,l])=>(
-          <button key={k} onClick={()=>setTab(k)}
-            style={{flex:"1 1 auto",padding:"9px 8px",borderRadius:10,border:`1.5px solid ${tab===k?T.gold:T.border}`,
-              background:tab===k?T.gold+"18":T.card,color:tab===k?T.gold:T.text,fontWeight:tab===k?700:500,fontSize:12.5,fontFamily:"inherit",cursor:"pointer"}}>{l}</button>
-        ))}
-      </div>
-
-      {/* ===== النظام البحثي ===== */}
-      {tab==="dash" && <>
-        <Card T={T} style={{marginTop:12}}>
-          <div style={{fontSize:12,color:T.textS,marginBottom:8}}>📥 ارفع ملف بيانات (CSV · Excel · Word · PDF) أو الصق — الحسابات <b>فعلية</b> من بياناتك:</div>
-          <FilePick T={T} accept=".csv,.txt,.xlsx,.xls,.docx,.pdf" file={dFiles[0]} onPick={f=>setDFiles([f])} hint="CSV · Excel · Word · PDF"/>
-          <textarea rows={4} value={csvText} onChange={e=>setCsvText(e.target.value)} style={ta}
-            placeholder={"العمر,الدرجة,القسم\n23,88,إحصاء\n25,91,رياضيات"}/>
-          <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
-            <Btn ch={dBusy?<><Spin/> جارٍ قراءة الملف…</>:"📊 حمّل وابنِ الداشبورد"} v="gold" T={T} onClick={loadCSV} disabled={dBusy||(!csvText.trim()&&!dFiles.length)}/>
-          </div>
-          {dErr && <div style={{marginTop:8,fontSize:12,color:T.rose}}>{dErr}</div>}
-        </Card>
-        {data && dashStats && <>
-          <div style={{marginTop:12,display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10}}>
-            {[["📋","الصفوف",data.rows.length,T.blue],["🧮","المتغيرات",data.header.length,T.violet],
-              ["🔢","رقمية",dashStats.numCols.length,T.teal],["⚠️","فقد",dashStats.missPct+"%",dashStats.missPct>10?T.rose:T.emerald]].map((k,i)=>(
-              <div key={i} style={{padding:"14px",borderRadius:13,background:T.card,border:`1px solid ${T.border}`,textAlign:"center"}}>
-                <div style={{fontSize:18}}>{k[0]}</div>
-                <div style={{fontSize:21,fontWeight:800,color:k[3]}}>{k[2]}</div>
-                <div style={{fontSize:10.5,color:T.textS}}>{k[1]}</div>
-              </div>
-            ))}
-          </div>
-          <Card T={T} style={{marginTop:12}}>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:6}}>
-              {[["bar","📊 توزيع تكراري"],["line","📈 مسار"],["means","📐 المتوسطات"],["pie","🥧 فئوي"]].map(([k,l])=>(
-                <button key={k} onClick={()=>setChart(k)}
-                  style={{padding:"7px 13px",borderRadius:18,border:`1.5px solid ${chart===k?T.gold:T.border}`,
-                    background:chart===k?T.gold+"15":T.card,color:chart===k?T.gold:T.text,fontSize:12,fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>{l}</button>
-              ))}
-              {(chart==="bar"||chart==="line") && dashStats.numCols.length>0 &&
-                <select value={selNum} onChange={e=>setSelNum(e.target.value)}
-                  style={{padding:"7px 11px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:12,fontFamily:"inherit"}}>
-                  {dashStats.numCols.map(x=><option key={x.i} value={x.i}>{x.h}</option>)}
-                </select>}
-              {chart==="pie" &&
-                <select value={selCat} onChange={e=>setSelCat(e.target.value)}
-                  style={{padding:"7px 11px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:12,fontFamily:"inherit"}}>
-                  {data.header.map((h,i)=><option key={i} value={i}>{h}</option>)}
-                </select>}
-            </div>
-            <FigureSVG spec={chartSpec()} T={T}/>
-          </Card>
-          <Card T={T} style={{marginTop:12}}>
-            <div style={{fontSize:13,fontWeight:800,color:T.text,marginBottom:8}}>الإحصاءات الوصفية (محسوبة فعلياً)</div>
-            <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
-              <thead><tr>{["المتغير","n","المتوسط","الانحراف","الأدنى","الأقصى"].map(h=>
-                <th key={h} style={{padding:"7px 9px",textAlign:"right",borderBottom:`2px solid ${T.border}`,color:T.textS,fontSize:11}}>{h}</th>)}</tr></thead>
-              <tbody>{dashStats.numCols.map(x=>(
-                <tr key={x.i}>
-                  <td style={{padding:"7px 9px",borderBottom:`1px solid ${T.border}`,color:T.text,fontWeight:700}}>{x.h}</td>
-                  <td style={{padding:"7px 9px",borderBottom:`1px solid ${T.border}`,color:T.text}}>{x.st.n}</td>
-                  <td style={{padding:"7px 9px",borderBottom:`1px solid ${T.border}`,color:T.gold,fontWeight:700}}>{x.st.mean.toFixed(2)}</td>
-                  <td style={{padding:"7px 9px",borderBottom:`1px solid ${T.border}`,color:T.text}}>{x.st.sd.toFixed(2)}</td>
-                  <td style={{padding:"7px 9px",borderBottom:`1px solid ${T.border}`,color:T.text}}>{x.st.min}</td>
-                  <td style={{padding:"7px 9px",borderBottom:`1px solid ${T.border}`,color:T.text}}>{x.st.max}</td>
-                </tr>
-              ))}</tbody>
-            </table></div>
-          </Card>
-        </>}
-      </>}
-
-      {/* ===== المصحح ===== */}
-      {tab==="fixer" && <>
-        <Card T={T} style={{marginTop:12}}>
-          <div style={{fontSize:12.5,fontWeight:800,color:T.text,marginBottom:8}}>الإصلاحات (فعلية، تُطبق على ملفك):</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:8,marginBottom:12}}>
-            {FIXES.map(([k,l])=>(
-              <button key={k} onClick={()=>setFix({...fix,[k]:!fix[k]})}
-                style={{padding:"9px 12px",borderRadius:10,textAlign:"right",cursor:"pointer",fontFamily:"inherit",fontSize:12,
-                  border:`1.5px solid ${fix[k]?T.gold:T.border}`,background:fix[k]?T.gold+"10":T.card,color:fix[k]?T.gold:T.text,fontWeight:600}}>
-                {fix[k]?"✅":"⬜"} {l}
-              </button>
-            ))}
-          </div>
-          <FilePick T={T} accept=".csv,.txt,.xlsx,.xls,.docx,.pdf" file={fFiles[0]} onPick={f=>setFFiles([f])} hint="CSV · Excel · Word · PDF"/>
-          <textarea rows={4} value={fText} onChange={e=>setFText(e.target.value)} style={ta} placeholder="أو الصق بيانات الجدول هنا..."/>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8,gap:8,flexWrap:"wrap"}}>
-            <div style={{fontSize:10.5,color:T.textDim}}>يدعم CSV مباشرة، وxlsx عبر محرك SheetJS (إن تعذّر في المعاينة احفظ CSV)</div>
-            <Btn ch="🛠️ صحّح الملف" v="gold" T={T} onClick={runFixer} disabled={!fText.trim()&&!fFiles.length}/>
-          </div>
-        </Card>
-        {fixed && (
-          <Card T={T} style={{marginTop:12}}>
-            {fixed.error ? <div style={{color:T.rose,fontSize:13}}>{fixed.error}</div> : <>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:8}}>
-                <div style={{fontWeight:800,fontSize:14,color:T.emerald}}>✅ اكتمل التصحيح — {fixed.rows.length} صف × {fixed.header.length} عمود</div>
-                <Btn ch="⬇️ تنزيل CSV المصحَّح" v="gold" T={T} onClick={downloadFixed}/>
-              </div>
-              {fixed.log.map((l,i)=>(
-                <div key={i} style={{fontSize:12.5,color:T.text,marginBottom:4}}>• {l}</div>
-              ))}
-              <div style={{overflowX:"auto",marginTop:10}}><table style={{borderCollapse:"collapse",fontSize:11.5,width:"100%"}}>
-                <thead><tr>{fixed.header.map((h,i)=><th key={i} style={{padding:"6px 9px",background:T.bgS,border:`1px solid ${T.border}`,color:T.textS}}>{h}</th>)}</tr></thead>
-                <tbody>{fixed.rows.slice(0,8).map((r,i)=>(
-                  <tr key={i}>{fixed.header.map((_,j)=><td key={j} style={{padding:"5px 9px",border:`1px solid ${T.border}`,color:T.text}}>{r[j]||""}</td>)}</tr>
-                ))}</tbody>
-              </table></div>
-              {fixed.rows.length>8 && <div style={{fontSize:10.5,color:T.textDim,marginTop:5}}>معاينة أول 8 صفوف — الملف الكامل في التنزيل</div>}
-            </>}
-          </Card>
-        )}
-      </>}
-    </div>
-  );
-}
-
-
-// ── النظام الذكي للكتابة والتحليل ──────────────────────────────
-function SmartWritingSystem({ T }) {
-  const [tab, setTab] = useState("refs");
-  const TABS = [["refs","🛡️ مدقق المراجع والهلوسة"],["coauthor","✒️ الكاتب المرافق"],["cite","📑 الاقتباس الذكي"]];
-  const ta = {width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",outline:"none",resize:"vertical"};
-  const lbl = {display:"block",fontSize:12,fontWeight:700,color:T.textS,marginBottom:5};
-  const riskColor = r => r==="🔴"?T.rose : r==="🟡"?T.amber : T.emerald;
-  const scholarUrl = q => "https://scholar.google.com/scholar?q="+encodeURIComponent(q);
-  const crossrefUrl = q => "https://search.crossref.org/search/works?q="+encodeURIComponent(q)+"&from_ui=yes";
-
-  // ===== 1) مدقق المراجع =====
-  const [rfFiles, setRfFiles] = useState([]);
-  const [rfText, setRfText] = useState("");
-  const [rfBusy, setRfBusy] = useState(false);
-  const [rf, setRf] = useState(null);
-  async function runRefs(){
-    let t = rfText.trim();
-    if(!t && rfFiles.length){ try{ t = await readFile(rfFiles[0]); }catch(e){} }
-    if(!t) return;
-    setRfBusy(true); setRf(null);
-    try {
-      const d = await callAIJson(
-        "أنت خبير توثيق علمي وكشف المراجع المختلَقة (الهلوسة). تحلل بدقة وتتجنب الاتهام القاطع — تذكر مؤشرات وتدعو للتحقق. JSON فقط.",
-        `حلّل هذا النص ومراجعه:\n"""${t.slice(0,7500)}"""\n\nJSON: {"refs":[{"ref":"المرجع كما ورد (مختصراً)","risk":"🔴|🟡|🟢","why":"سبب التقييم: مؤشرات اختلاق (DOI شاذ، بيانات غير متسقة، عنوان عام مريب) أو سلامة","verify":"ما يُتحقق منه تحديداً"}],"intext":[{"quote":"موضع من النص","issue":"استشهاد بلا مرجع / مرجع بلا استشهاد / تنسيق"}],"missing":[{"quote":"ادعاء يحتاج توثيقاً","why":"السبب"}]} — قيّم كل مرجع في القائمة، وأهم 5 لكل قسم آخر.`, 2400);
-      setRf(d && d.refs ? d : {error:"لم تُستخرج مراجع — تأكد من تضمين قائمة المراجع في النص."});
-    } catch(e){ setRf({error:"تعذّر الفحص — أعد المحاولة."}); }
-    setRfBusy(false);
-  }
-
-  // ===== 2) الكاتب المرافق =====
-  const [coIn, setCoIn] = useState("");
-  const [coBusy, setCoBusy] = useState(false);
-  const [co, setCo] = useState(null);
-  async function runCo(){
-    if(!coIn.trim()) return;
-    setCoBusy(true); setCo(null);
-    try {
-      const d = await callAIJson(
-        "أنت كاتب أكاديمي بشري متمرّس يرافق الباحث: تحسّن النص بأسلوب طبيعي رصين (جُمل متفاوتة الطول، ربط منطقي، لا قوالب آلية)، وتنقد بصدق، وتحدد ما يحتاج توثيقاً. JSON فقط.",
-        `النص:\n"""${coIn.slice(0,4500)}"""\n\nJSON: {"improved":"النسخة المحسّنة بأسلوب بشري أكاديمي طبيعي","critique":["3-4 ملاحظات نقدية صريحة"],"citations_needed":[{"quote":"عبارة تحتاج مصدراً","suggestion":"نوع المصدر المناسب"}],"strength":"أقوى ما في النص بجملة"}`, 2200);
-      setCo(d && d.improved ? d : {error:"تعذّر — أعد المحاولة."});
-    } catch(e){ setCo({error:"تعذّر — أعد المحاولة."}); }
-    setCoBusy(false);
-  }
-
-  // ===== 3) الاقتباس الذكي =====
-  const [ctSrc, setCtSrc] = useState("");
-  const [ctMeta, setCtMeta] = useState("");
-  const [ctBusy, setCtBusy] = useState(false);
-  const [ct, setCt] = useState("");
-  async function runCite(){
-    if(!ctSrc.trim()) return;
-    setCtBusy(true); setCt("");
-    try {
-      const out = await callAI(
-        "أنت خبير توثيق APA7 ودمج الاقتباسات في النص الأكاديمي بسلاسة.",
-        `مقتطف المصدر:\n"""${ctSrc.slice(0,2500)}"""\nبيانات المصدر (المؤلف/السنة/العنوان إن وُجدت): ${ctMeta||"غير محددة — استخدم (المؤلف، السنة) كعناصر نائبة"}\n\nأخرج: 1) اقتباس مباشر مدمج بجملة تمهيد + توثيق APA7 داخل النص. 2) إعادة صياغة (Paraphrase) سليمة بعيدة عن نص الأصل + توثيقها. 3) مدخل قائمة المراجع APA7. 4) تنبيه: متى يفضَّل المباشر ومتى الصياغة لهذا المقتطف.`, 1300);
-      setCt(out);
-    } catch(e){ setCt("تعذّر — أعد المحاولة."); }
-    setCtBusy(false);
-  }
-
-  return (
-    <div style={{maxWidth:840,margin:"0 auto"}}>
-      <Card T={T}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:27}}>✒️</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:17,color:T.text}}>النظام الذكي للكتابة والتحليل</div>
-            <div style={{fontSize:12,color:T.textS}}>دقة المراجع وكشف الهلوسة بروابط تحقق حقيقية · كاتب مرافق بشري · اقتباس موثّق</div>
-          </div>
-        </div>
-      </Card>
-      <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
-        {TABS.map(([k,l])=>(
-          <button key={k} onClick={()=>setTab(k)}
-            style={{flex:"1 1 auto",padding:"9px 8px",borderRadius:10,border:`1.5px solid ${tab===k?T.gold:T.border}`,
-              background:tab===k?T.gold+"18":T.card,color:tab===k?T.gold:T.text,fontWeight:tab===k?700:500,fontSize:12.5,fontFamily:"inherit",cursor:"pointer"}}>{l}</button>
-        ))}
-      </div>
-
-      {tab==="refs" && <>
-        <Card T={T} style={{marginTop:12}}>
-          <FileZone files={rfFiles} setFiles={setRfFiles} T={T}/>
-          <div style={{margin:"8px 0 6px",fontSize:12,fontWeight:700,color:T.textS}}>أو الصق النص <b>متضمناً قائمة المراجع</b>:</div>
-          <textarea rows={6} value={rfText} onChange={e=>setRfText(e.target.value)} style={ta} placeholder="الصق البحث مع قائمة مراجعه..."/>
-          <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
-            <Btn ch={rfBusy?<><Spin/> جارٍ الفحص…</>:"🛡️ افحص المراجع والهلوسة"} v="gold" T={T} onClick={runRefs} disabled={rfBusy||(!rfText.trim()&&!rfFiles.length)}/>
-          </div>
-        </Card>
-        {rf && rf.error && <Card T={T} style={{marginTop:12}}><div style={{color:T.rose,fontSize:13}}>{rf.error}</div></Card>}
-        {rf && !rf.error && <>
-          <Card T={T} style={{marginTop:12}}>
-            <div style={{fontWeight:800,fontSize:14,color:T.gold,marginBottom:10}}>📚 تقييم المراجع ({(rf.refs||[]).length}) — مع روابط تحقق حقيقية</div>
-            {(rf.refs||[]).map((r,i)=>(
-              <div key={i} style={{padding:"12px 14px",borderRadius:11,background:T.bgS,border:`1.5px solid ${riskColor(r.risk)}40`,marginBottom:9}}>
-                <div style={{display:"flex",gap:8,alignItems:"flex-start",marginBottom:6}}>
-                  <span style={{fontSize:16}}>{r.risk}</span>
-                  <span style={{fontSize:13,fontWeight:700,color:T.text,flex:1,lineHeight:1.8}}>{r.ref}</span>
-                </div>
-                <div style={{fontSize:12,color:T.textS,lineHeight:1.8,marginBottom:4}}>{r.why}</div>
-                <div style={{fontSize:11.5,color:riskColor(r.risk),fontWeight:700,marginBottom:8}}>🔎 تحقق من: {r.verify}</div>
-                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                  <a href={scholarUrl(r.ref)} target="_blank" rel="noreferrer"
-                    style={{fontSize:11,padding:"5px 13px",borderRadius:16,background:T.blue+"15",color:T.blue,border:`1px solid ${T.blue}35`,textDecoration:"none",fontWeight:700}}>🎓 تحقق في Google Scholar</a>
-                  <a href={crossrefUrl(r.ref)} target="_blank" rel="noreferrer"
-                    style={{fontSize:11,padding:"5px 13px",borderRadius:16,background:T.teal+"15",color:T.teal,border:`1px solid ${T.teal}35`,textDecoration:"none",fontWeight:700}}>🔗 تحقق في Crossref</a>
-                </div>
-              </div>
-            ))}
-          </Card>
-          {(rf.missing||[]).length>0 && <Card T={T} style={{marginTop:12}}>
-            <div style={{fontWeight:800,fontSize:13.5,color:T.amber,marginBottom:8}}>⚠️ ادعاءات تحتاج توثيقاً</div>
-            {(rf.missing||[]).map((m,i)=>(
-              <div key={i} style={{fontSize:12.5,lineHeight:1.9,marginBottom:7,color:T.text}}>
-                <span style={{color:T.rose}}>«{m.quote}»</span> — {m.why}
-              </div>
-            ))}
-          </Card>}
-          {(rf.intext||[]).length>0 && <Card T={T} style={{marginTop:12}}>
-            <div style={{fontWeight:800,fontSize:13.5,color:T.teal,marginBottom:8}}>🔁 اتساق الاستشهادات الداخلية</div>
-            {(rf.intext||[]).map((m,i)=>(
-              <div key={i} style={{fontSize:12.5,lineHeight:1.9,marginBottom:7,color:T.text}}>«{m.quote}» — {m.issue}</div>
-            ))}
-          </Card>}
-          <div style={{marginTop:10,padding:"8px 12px",borderRadius:9,background:T.amber+"10",border:`1px solid ${T.amber}30`,fontSize:11,color:T.textS,lineHeight:1.8}}>
-            ⚖️ التقييم تحليلي استرشادي — الحكم النهائي عبر روابط التحقق أعلاه (هي قواعد البيانات الحقيقية). الربط الآلي المباشر بـCrossref API ضمن النسخة المؤسسية.
-          </div>
-        </>}
-      </>}
-
-      {tab==="coauthor" && <>
-        <Card T={T} style={{marginTop:12}}>
-          <label style={lbl}>الصق فقرتك أو مقطعك ليرافقك الكاتب الذكي</label>
-          <textarea rows={6} value={coIn} onChange={e=>setCoIn(e.target.value)} style={ta} placeholder="الصق ما كتبته..."/>
-          <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
-            <Btn ch={coBusy?<><Spin/> يرافقك…</>:"✒️ حسّن وانقد ووثّق"} v="gold" T={T} onClick={runCo} disabled={coBusy||!coIn.trim()}/>
-          </div>
-        </Card>
-        {co && co.error && <Card T={T} style={{marginTop:12}}><div style={{color:T.rose,fontSize:13}}>{co.error}</div></Card>}
-        {co && !co.error && <>
-          <Card T={T} style={{marginTop:12}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-              <div style={{fontWeight:800,fontSize:14,color:T.emerald}}>✨ النسخة المحسّنة (بأسلوب بشري طبيعي)</div>
-              <Btn ch="📋 نسخ" v="ghost" T={T} onClick={()=>navigator.clipboard?.writeText(co.improved)}/> <ReportBtn T={T} title="النص المحسّن — الكاتب المرافق" body={co.improved} opts={{icon:"✒️",subtitle:"النظام الذكي للكتابة الأكاديمية"}}/>
-            </div>
-            <div style={{whiteSpace:"pre-wrap",lineHeight:2,fontSize:13.5,color:T.text}}>{co.improved}</div>
-          </Card>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:12,marginTop:12}}>
-            <Card T={T}>
-              <div style={{fontWeight:800,fontSize:13,color:T.rose,marginBottom:8}}>🔍 النقد الصريح</div>
-              {(co.critique||[]).map((x,i)=><div key={i} style={{fontSize:12.5,lineHeight:1.9,marginBottom:6,color:T.text}}>• {x}</div>)}
-              {co.strength && <div style={{fontSize:12,color:T.emerald,marginTop:8,fontWeight:700}}>💪 {co.strength}</div>}
-            </Card>
-            <Card T={T}>
-              <div style={{fontWeight:800,fontSize:13,color:T.amber,marginBottom:8}}>📌 يحتاج توثيقاً</div>
-              {(co.citations_needed||[]).length===0 && <div style={{fontSize:12.5,color:T.textS}}>لا ادعاءات تحتاج مصادر — جيد.</div>}
-              {(co.citations_needed||[]).map((x,i)=>(
-                <div key={i} style={{fontSize:12.5,lineHeight:1.9,marginBottom:7,color:T.text}}>
-                  <span style={{color:T.amber}}>«{x.quote}»</span> ← {x.suggestion}
-                </div>
-              ))}
-            </Card>
-          </div>
-        </>}
-      </>}
-
-      {tab==="cite" && <>
-        <Card T={T} style={{marginTop:12}}>
-          <label style={lbl}>مقتطف المصدر الذي تريد الاقتباس منه *</label>
-          <textarea rows={4} value={ctSrc} onChange={e=>setCtSrc(e.target.value)} style={ta} placeholder="الصق النص من المصدر..."/>
-          <label style={{...lbl,marginTop:10}}>بيانات المصدر (المؤلف، السنة، العنوان...)</label>
-          <input value={ctMeta} onChange={e=>setCtMeta(e.target.value)} style={{...ta,resize:"none"}} placeholder="العتيبي، 2024، أثر الذكاء الاصطناعي..."/>
-          <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
-            <Btn ch={ctBusy?<><Spin/> جارٍ التوثيق…</>:"📑 ولّد الاقتباس الموثّق"} v="gold" T={T} onClick={runCite} disabled={ctBusy||!ctSrc.trim()}/>
-          </div>
-        </Card>
-        {ct && <Card T={T} style={{marginTop:12}}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-            <div style={{fontWeight:800,fontSize:14,color:T.gold}}>📑 الاقتباس الموثّق (APA7)</div>
-            <Btn ch="📋 نسخ" v="ghost" T={T} onClick={()=>navigator.clipboard?.writeText(ct)}/> <ReportBtn T={T} title="الاقتباس الموثّق (APA7)" body={ct} opts={{icon:"📑",subtitle:"التوثيق الأكاديمي"}}/>
-          </div>
-          <div style={{whiteSpace:"pre-wrap",lineHeight:2,fontSize:13.5,color:T.text}}>{ct}</div>
-        </Card>}
-      </>}
-    </div>
-  );
-}
-
-
-// ── الباحث العربي الذكي ────────────────────────────────────────
-function ArabicFinderSystem({ T }) {
-  const e = encodeURIComponent;
-  const [topic, setTopic] = useState("");
-  const [disc, setDisc] = useState("عام");
-  const [recent, setRecent] = useState("آخر 5 سنوات");
-  const [busy, setBusy] = useState(false);
-  const [st, setSt] = useState(null);
-  const yr = recent==="آخر 5 سنوات" ? new Date().getFullYear()-5 : recent==="آخر 10 سنوات" ? new Date().getFullYear()-10 : 0;
-
-  async function run(){
-    if(!topic.trim()) return;
-    setBusy(true); setSt(null);
-    try {
-      const d = await callAIJson(
-        "أنت خبير استرجاع معلومات أكاديمي متخصص في قواعد البيانات العربية والعالمية. تبني استراتيجيات بحث دقيقة. JSON فقط.",
-        `الموضوع: "${topic}" — التخصص: ${disc}.\nJSON: {"ar_queries":["3 استعلامات عربية محسّنة بمترادفات مختلفة"],"en_queries":["3 استعلامات إنجليزية أكاديمية مكافئة"],"keywords_ar":["5-7 كلمات مفتاحية عربية"],"keywords_en":["5-7 إنجليزية"],"boolean":"صيغة بوليانية إنجليزية واحدة قوية (AND/OR/أقواس)","best_ar_dbs":["أنسب 3 قواعد عربية لهذا الموضوع بالترتيب"],"tips":["3 نصائح بحث دقيقة لهذا الموضوع تحديداً"]}`, 1400);
-      setSt(d && d.ar_queries ? d : {error:"تعذّر — أعد المحاولة"});
-    } catch(err){ setSt({error:"تعذّر — أعد المحاولة"}); }
-    setBusy(false);
-  }
-  const q_ar = st && st.ar_queries ? st.ar_queries[0] : topic;
-  const q_en = st && st.en_queries ? st.en_queries[0] : topic;
-  const AR_DBS = [
-    ["📗 دار المنظومة", q=>"http://search.mandumah.com/Search/Results?lookfor="+e(q), "أكبر قاعدة عربية (قد تتطلب اشتراك جامعتك)"],
-    ["📘 معرفة e-Marefa", q=>"https://search.emarefa.net/ar/search?query="+e(q), "رسائل ودوريات عربية"],
-    ["🎓 Google Scholar عربي", q=>"https://scholar.google.com/scholar?hl=ar"+(yr?("&as_ylo="+yr):"")+"&q="+e(q), "مع فلتر الحداثة"],
-    ["🇩🇿 ASJP الجزائرية", q=>"https://www.google.com/search?q=site:asjp.cerist.dz+"+e(q), "آلاف المجلات العربية المفتوحة"],
-    ["🏛️ المستودعات العربية", q=>"https://www.google.com/search?q="+e(q)+"+filetype:pdf+بحث+محكم", "بحث PDF مباشر"],
-  ];
-  const EN_DBS = [
-    ["🌐 Google Scholar", q=>"https://scholar.google.com/scholar?hl=en"+(yr?("&as_ylo="+yr):"")+"&q="+e(q), "الأشمل عالمياً"],
-    ["🧠 Semantic Scholar", q=>"https://www.semanticscholar.org/search?sort=pub-date&q="+e(q), "ذكاء اصطناعي + الأحدث أولاً"],
-    ["🔓 OpenAlex", q=>"https://openalex.org/works?search="+e(q), "250+ مليون عمل مفتوح"],
-    ["📚 CORE", q=>"https://core.ac.uk/search?q="+e(q), "وصول مفتوح كامل النص"],
-    ["🗄️ BASE", q=>"https://www.base-search.net/Search/Results?lookfor="+e(q), "مستودعات الجامعات العالمية"],
-  ];
-  const linkBtn = (label, href, hint, color) => (
-    <a key={label} href={href} target="_blank" rel="noreferrer"
-      style={{display:"block",padding:"11px 14px",borderRadius:11,background:T.card,border:`1.5px solid ${color}35`,
-        textDecoration:"none",marginBottom:8}}>
-      <div style={{fontSize:13,fontWeight:800,color}}>{label} ↗</div>
-      <div style={{fontSize:10.5,color:T.textDim,marginTop:2}}>{hint}</div>
-    </a>
-  );
-  const ipt = {width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",outline:"none"};
-
-  return (
-    <div style={{maxWidth:820,margin:"0 auto"}}>
-      <Card T={T}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:27}}>🔎</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:17,color:T.text}}>الباحث العربي الذكي</div>
-            <div style={{fontSize:12,color:T.textS}}>عربي أولاً ← ثم عالمي: استراتيجية ذكاء اصطناعي + روابط حقيقية لقواعد البيانات</div>
-          </div>
-        </div>
-      </Card>
-      <Card T={T} style={{marginTop:12}}>
-        <input value={topic} onChange={ev=>setTopic(ev.target.value)} style={ipt} placeholder="موضوع بحثك بالعربية... (مثال: أثر الذكاء الاصطناعي على جودة التعليم العالي)"/>
-        <div style={{display:"flex",gap:10,marginTop:10,flexWrap:"wrap",alignItems:"center"}}>
-          <Dropdown T={T} value={disc} onChange={setDisc} options={["عام","التربية","الإدارة والاقتصاد","الشريعة والقانون","اللغة والأدب","العلوم الصحية","الحاسب والتقنية","العلوم الاجتماعية"]}/>
-          <Dropdown T={T} value={recent} onChange={setRecent} options={["آخر 5 سنوات","آخر 10 سنوات","كل السنوات"]}/>
-          <div style={{flex:1}}/>
-          <Btn ch={busy?<><Spin/> يبني الاستراتيجية…</>:"🔎 ابنِ استراتيجية البحث"} v="gold" T={T} onClick={run} disabled={busy||!topic.trim()}/>
-        </div>
-      </Card>
-
-      {st && st.error && <Card T={T} style={{marginTop:12}}><div style={{color:T.rose,fontSize:13}}>{st.error}</div></Card>}
-      {st && !st.error && <>
-        <Card T={T} style={{marginTop:12}}>
-          <div style={{fontWeight:800,fontSize:13.5,color:T.gold,marginBottom:8}}>🧠 استراتيجيتك الذكية</div>
-          <div style={{fontSize:12,color:T.textS,marginBottom:4}}>استعلامات عربية محسّنة:</div>
-          {(st.ar_queries||[]).map((q,i)=>(
-            <div key={i} style={{fontSize:12.5,color:T.text,padding:"7px 11px",background:T.bgS,borderRadius:8,marginBottom:5,display:"flex",justifyContent:"space-between",gap:8}}>
-              <span>{q}</span>
-              <button onClick={()=>navigator.clipboard?.writeText(q)} style={{background:"none",border:"none",cursor:"pointer",color:T.gold,fontSize:13}}>📋</button>
-            </div>
-          ))}
-          <div style={{fontSize:12,color:T.textS,margin:"8px 0 4px"}}>استعلامات إنجليزية (للفجوة العربية):</div>
-          {(st.en_queries||[]).map((q,i)=>(
-            <div key={i} style={{fontSize:12,color:T.text,padding:"7px 11px",background:T.bgS,borderRadius:8,marginBottom:5,direction:"ltr",textAlign:"left",display:"flex",justifyContent:"space-between",gap:8}}>
-              <span>{q}</span>
-              <button onClick={()=>navigator.clipboard?.writeText(q)} style={{background:"none",border:"none",cursor:"pointer",color:T.gold,fontSize:13}}>📋</button>
-            </div>
-          ))}
-          {st.boolean && <div style={{fontSize:11.5,fontFamily:"monospace",direction:"ltr",textAlign:"left",padding:"8px 11px",background:T.teal+"10",border:`1px solid ${T.teal}30`,borderRadius:8,color:T.teal,marginTop:6}}>{st.boolean}</div>}
-          {(st.tips||[]).map((t2,i)=><div key={i} style={{fontSize:11.5,color:T.textS,marginTop:6}}>💡 {t2}</div>)}
-        </Card>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:12,marginTop:12}}>
-          <Card T={T}>
-            <div style={{fontWeight:800,fontSize:14,color:T.emerald,marginBottom:10}}>🇸🇦 ابحث عربياً أولاً</div>
-            {AR_DBS.map(([l,fn,h])=>linkBtn(l, fn(q_ar), h, T.emerald))}
-          </Card>
-          <Card T={T}>
-            <div style={{fontWeight:800,fontSize:14,color:T.blue,marginBottom:10}}>🌍 إن لم يوجد عربي — العالمية</div>
-            {EN_DBS.map(([l,fn,h])=>linkBtn(l, fn(q_en), h, T.blue))}
-          </Card>
-        </div>
-        <div style={{marginTop:10,padding:"8px 12px",borderRadius:9,background:T.bgS,fontSize:11,color:T.textDim,textAlign:"center"}}>
-          الروابط تفتح قواعد البيانات الحقيقية باستعلامك الجاهز · بعض القواعد العربية تتطلب اشتراك مؤسستك · الربط الآلي بالنتائج داخل المنصة ضمن النسخة المؤسسية
-        </div>
-      </>}
-    </div>
-  );
-}
-
-// ── مركز التخصصات العربية والإسلامية ───────────────────────────
-function IslamicArabicCenterSystem({ T }) {
-  const e = encodeURIComponent;
-  const DISC = [
-    {id:"fiqh", icon:"📿", name:"الفقه وأصوله"},{id:"hadith", icon:"📜", name:"الحديث وعلومه"},
-    {id:"tafsir", icon:"📖", name:"التفسير وعلوم القرآن"},{id:"aqeedah", icon:"🕌", name:"العقيدة"},
-    {id:"nahw", icon:"✒️", name:"النحو والصرف"},{id:"balagha", icon:"🎭", name:"البلاغة والنقد"},
-    {id:"adab", icon:"📚", name:"الأدب"},{id:"lisan", icon:"🗣️", name:"اللسانيات"},
-    {id:"law", icon:"⚖️", name:"القانون والأنظمة"},{id:"econ", icon:"💰", name:"الاقتصاد والمصارف الإسلامية"},
-    {id:"mgmt", icon:"🏢", name:"الإدارة"},{id:"hist", icon:"🏛️", name:"التاريخ والحضارة"},
-  ];
-  const [disc, setDisc] = useState(DISC[0]);
-  const [mode, setMode] = useState("consult");
-  const [inp, setInp] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [out, setOut] = useState("");
-  const ta = {width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",outline:"none",resize:"vertical"};
-
-  async function run(){
-    if(!inp.trim()) return;
-    setBusy(true); setOut("");
-    const guard = "ضوابط صارمة: لا تُفتِ — المسائل الشرعية العملية تُحال لأهل العلم والجهات المختصة. لا تخترع تخريجاً لحديث أو نصاً تراثياً أو رقم صفحة — إن لم تتيقن قل ذلك وأحِل للمصادر الأصلية. التزم تقاليد التخصص في المصطلح والتوثيق.";
-    let sys="", user="";
-    if(mode==="consult"){
-      sys=`أنت مستشار بحثي خبير في ${disc.name} بمستوى أساتذة الجامعات العريقة، عارف بتقاليد التخصص ومناهجه ومصادره الأصلية والحديثة. ${guard}`;
-      user=`استشارة في ${disc.name}: "${inp.slice(0,2000)}"\n\nقدّم: 1) تأطير المسألة في التخصص. 2) إشكاليات بحثية حديثة متصلة بها (3-5) تصلح لرسائل وبحوث. 3) المنهج الأنسب بتقاليد ${disc.name}. 4) أهم المصادر الأصلية والحديثة (أصنافاً لا أرقام صفحات). 5) تنبيهات منهجية يقع فيها الباحثون.`;
-    } else {
-      sys=`أنت خبير توثيق علمي في ${disc.name} يتقن الإحالة لكتب التراث والمصادر بأسلوب أكاديمي. ${guard}`;
-      user=`النص/القول المراد توثيقه:\n"""${inp.slice(0,1500)}"""\n\nقدّم: 1) صيغة الإحالة العلمية الصحيحة بأسلوب ${disc.name} (وبصيغة APA7 العربية أيضاً). 2) ما يجب التحقق منه قبل الاعتماد. 3) المظانّ: في أي مصادر أصلية يُبحث عنه. ${disc.id==="hadith"||disc.id==="fiqh"||disc.id==="tafsir"||disc.id==="aqeedah"?"4) لا تذكر حكماً على الحديث من عندك — أحِل للتحقق عبر المحدّثين وقواعد التخريج.":""}`;
-    }
-    try { setOut(await callAI(sys, user, 1700)); } catch(err){ setOut("تعذّر — أعد المحاولة."); }
-    setBusy(false);
-  }
-
-  const islamic = ["fiqh","hadith","tafsir","aqeedah"].includes(disc.id);
-  const PORTALS = [
-    ...(islamic ? [
-      ["📜 الدرر السنية (تخريج)", "https://dorar.net/hadith?skeys="+e(inp||"")],
-      ["🕌 Sunnah.com", "https://sunnah.com/search?q="+e(inp||"")],
-      ["📚 المكتبة الشاملة", "https://www.google.com/search?q=site:shamela.ws+"+e(inp||disc.name)],
-      ["🗄️ المكتبة الوقفية", "https://www.google.com/search?q=site:waqfeya.net+"+e(inp||disc.name)],
-    ] : []),
-    ...(disc.id==="nahw"||disc.id==="balagha"||disc.id==="adab"||disc.id==="lisan" ? [
-      ["📕 معجم المعاني", "https://www.almaany.com/ar/dict/ar-ar/"+e((inp||"").split(" ")[0]||"لغة")+"/"],
-      ["🏛️ معجم الدوحة التاريخي", "https://www.dohadictionary.org/dictionary/"+e((inp||"").split(" ")[0]||"لغة")],
-    ] : []),
-    ["📗 دار المنظومة بالتخصص", "http://search.mandumah.com/Search/Results?lookfor="+e((inp||"")+" "+disc.name)],
-    ["🎓 Scholar بالتخصص", "https://scholar.google.com/scholar?hl=ar&q="+e((inp||"")+" "+disc.name)],
-  ];
-
-  return (
-    <div style={{maxWidth:840,margin:"0 auto"}}>
-      <Card T={T}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:27}}>🕌</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:17,color:T.text}}>مركز التخصصات العربية والإسلامية</div>
-            <div style={{fontSize:12,color:T.textS}}>12 تخصصاً بتقاليده العلمية: استشارة بحثية، توثيق تراثي، وبوابات المصادر الأصلية</div>
-          </div>
-        </div>
-        <div style={{marginTop:10,padding:"8px 12px",borderRadius:9,background:T.emerald+"10",border:`1px solid ${T.emerald}30`,fontSize:11,color:T.textS,lineHeight:1.8}}>
-          ⚖️ ضوابط المركز: لا فتوى (تُحال لأهل العلم) · لا اختراع تخريج أو نصوص تراثية — الإحالة دائماً للمصادر الأصلية عبر روابط التحقق.
-        </div>
-      </Card>
-
-      <Card T={T} style={{marginTop:12}}>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:8}}>
-          {DISC.map(d=>{
-            const on = d.id===disc.id;
-            return (
-              <button key={d.id} onClick={()=>{setDisc(d);setOut("");}}
-                style={{padding:"10px 8px",borderRadius:11,cursor:"pointer",fontFamily:"inherit",textAlign:"center",
-                  border:`1.5px solid ${on?T.gold:T.border}`,background:on?T.gold+"15":T.card}}>
-                <div style={{fontSize:19}}><EmIcon e={d.icon}/></div>
-                <div style={{fontSize:11.5,fontWeight:on?800:600,color:on?T.gold:T.text,marginTop:3}}>{d.name}</div>
-              </button>
-            );
-          })}
-        </div>
-      </Card>
-
-      <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
-        {[["consult","🧭 المستشار البحثي"],["cite","📜 التوثيق التراثي"],["portals","🔗 بوابات التخصص"]].map(([k,l])=>(
-          <button key={k} onClick={()=>setMode(k)}
-            style={{flex:"1 1 auto",padding:"9px 8px",borderRadius:10,border:`1.5px solid ${mode===k?T.gold:T.border}`,
-              background:mode===k?T.gold+"18":T.card,color:mode===k?T.gold:T.text,fontWeight:mode===k?700:500,fontSize:12.5,fontFamily:"inherit",cursor:"pointer"}}>{l}</button>
-        ))}
-      </div>
-
-      <Card T={T} style={{marginTop:12}}>
-        {mode!=="portals" ? <>
-          <textarea rows={4} value={inp} onChange={ev=>setInp(ev.target.value)} style={ta}
-            placeholder={mode==="consult" ? `موضوعك أو سؤالك البحثي في ${disc.name}...` : "الصق النص أو القول أو الحديث المراد توثيقه..."}/>
-          <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
-            <Btn ch={busy?<><Spin/> جارٍ…</>:(mode==="consult"?"🧭 استشر":"📜 وثّق بأسلوب التخصص")} v="gold" T={T} onClick={run} disabled={busy||!inp.trim()}/>
-          </div>
-          {out && <div style={{whiteSpace:"pre-wrap",lineHeight:2,fontSize:13.5,color:T.text,marginTop:12,
-            padding:"14px",borderRadius:11,background:T.bgS,border:`1px solid ${T.border}`}}>{out}</div>}
-        </> : <>
-          <input value={inp} onChange={ev=>setInp(ev.target.value)} style={{...ta,resize:"none"}}
-            placeholder={`كلمة أو عبارة للبحث في مصادر ${disc.name}...`}/>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:8,marginTop:12}}>
-            {PORTALS.map(([l,href])=>(
-              <a key={l} href={href} target="_blank" rel="noreferrer"
-                style={{display:"block",padding:"12px 14px",borderRadius:11,background:T.card,border:`1.5px solid ${T.emerald}30`,textDecoration:"none"}}>
-                <span style={{fontSize:13,fontWeight:800,color:T.emerald}}>{l} ↗</span>
-              </a>
-            ))}
-          </div>
-          <div style={{fontSize:10.5,color:T.textDim,marginTop:10,textAlign:"center"}}>روابط حقيقية للمصادر الأصلية وقواعد البيانات — تفتح ببحثك الجاهز</div>
-        </>}
-      </Card>
-    </div>
-  );
-}
-
-
-
-// ── مختبر عالم البيانات (حوسبة حقيقية + مرافق ذكي) ─────────────
-function DataScienceLabSystem({ T }) {
-  const [tab, setTab] = useState("profile");
-  const TABS = [["profile","📋 الملف التعريفي Auto-EDA"],["ml","🤖 استوديو التعلم الآلي"],["copilot","🧠 مستشار عالم البيانات"]];
-  const ta = {width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",outline:"none",resize:"vertical"};
-
-  // ===== أدوات حسابية حقيقية =====
-  const nd = s => String(s).replace(/[٠-٩]/g, d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[۰-۹]/g, d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d));
-  function parse(t){
-    const lines=t.replace(/\r/g,"").split("\n").filter(l=>l.trim());
-    if(lines.length<2) return null;
-    const dl=[",",";","\t"][[",",";","\t"].map(d=>lines[0].split(d).length).reduce((bi,v,i,a)=>v>a[bi]?i:bi,0)];
-    const rows=lines.map(l=>l.split(dl).map(c=>c.trim()));
-    return {header:rows[0], rows:rows.slice(1)};
-  }
-  const numv = (D,i)=>D.rows.map(r=>parseFloat(nd((r[i]||"").replace(",",".")))).filter(v=>!isNaN(v));
-  function stats(vals){
-    const n=vals.length; if(!n) return null;
-    const mean=vals.reduce((a,b)=>a+b,0)/n;
-    const sd=Math.sqrt(vals.reduce((a,b)=>a+(b-mean)**2,0)/Math.max(n-1,1));
-    const s=[...vals].sort((a,b)=>a-b);
-    return {n,mean,sd,min:s[0],max:s[n-1],med: n%2 ? s[(n-1)/2] : (s[n/2-1]+s[n/2])/2};
-  }
-  function pearson(a,b){
-    const n=Math.min(a.length,b.length); if(n<3) return 0;
-    const ma=a.slice(0,n).reduce((x,y)=>x+y,0)/n, mb=b.slice(0,n).reduce((x,y)=>x+y,0)/n;
-    let num=0,da=0,db=0;
-    for(let i=0;i<n;i++){const xa=a[i]-ma,xb=b[i]-mb;num+=xa*xb;da+=xa*xa;db+=xb*xb;}
-    return da&&db?num/Math.sqrt(da*db):0;
-  }
-  function kmeans(pts,k,iters=25){
-    let cent=pts.slice(0,k).map(p=>[...p]);
-    let asg=new Array(pts.length).fill(0);
-    for(let it=0;it<iters;it++){
-      asg=pts.map(p=>{let bi=0,bd=1e18;cent.forEach((c,i)=>{const d=p.reduce((s,v,j)=>s+(v-c[j])**2,0);if(d<bd){bd=d;bi=i;}});return bi;});
-      cent=cent.map((c,i)=>{const m=pts.filter((_,j)=>asg[j]===i);return m.length?c.map((_,j)=>m.reduce((s,p)=>s+p[j],0)/m.length):c;});
-    }
-    return {asg,cent};
-  }
-  function linreg(x,y){
-    const n=Math.min(x.length,y.length);
-    const mx=x.reduce((a,b)=>a+b,0)/n, my=y.reduce((a,b)=>a+b,0)/n;
-    let num=0,den=0; for(let i=0;i<n;i++){num+=(x[i]-mx)*(y[i]-my);den+=(x[i]-mx)**2;}
-    const b1=den?num/den:0, b0=my-b1*mx;
-    let ssr=0,sst=0; for(let i=0;i<n;i++){ssr+=(y[i]-(b0+b1*x[i]))**2;sst+=(y[i]-my)**2;}
-    return {b0,b1,r2:sst?1-ssr/sst:0,n};
-  }
-
-  // ===== الحالة =====
-  const [files, setFiles] = useState([]);
-  const [txt, setTxt] = useState("");
-  const [D, setD] = useState(null);
-  const [err, setErr] = useState("");
-  const [ldBusy, setLdBusy] = useState(false);
-  async function load(){
-    setErr(""); setLdBusy(true);
-    let t = txt.trim(); let fromFile = false;
-    if(!t && files.length){
-      fromFile = true;
-      try { t = await extractTabularFile(files[0]); }
-      catch(e){ setErr("تعذّرت قراءة الملف في هذه البيئة — جرّب CSV أو Excel."); setLdBusy(false); return; }
-    }
-    if(!t){ setLdBusy(false); return; }
-    if(fromFile && t.startsWith("[") && t.endsWith("]")){ setErr(t.slice(1,-1)); setLdBusy(false); return; }
-    t = nd(t);
-    let d = parse(t);
-    if(!d || d.header.length<2){
-      const tb = tableizeText(t);
-      if(tb) d = {header: tb[0], rows: tb.slice(1)};
-    }
-    if(d && d.header.length>=2 && d.rows.length>=2) setD(d);
-    else setErr("تعذّر استخراج جدول صالح — جداول PDF/Word تفقد بنيتها أحياناً عند الاستخراج؛ الأدق CSV أو Excel.");
-    setLdBusy(false);
-  }
-  const prof = useMemo(()=>{
-    if(!D) return null;
-    const cols = D.header.map((h,i)=>{
-      const raw=D.rows.map(r=>(r[i]||"").trim());
-      const miss=raw.filter(v=>!v).length;
-      const distinct=new Set(raw.filter(Boolean)).size;
-      const vals=numv(D,i);
-      const isNum=vals.length >= (D.rows.length-miss)*0.7 && vals.length>2;
-      return {h,i,miss,missPct:Math.round(miss/D.rows.length*100),distinct,isNum,st:isNum?stats(vals):null,vals:isNum?vals:null};
-    });
-    const nums=cols.filter(c=>c.isNum);
-    const corr=nums.map(a=>nums.map(b=>pearson(a.vals,b.vals)));
-    // outliers (z>3)
-    let outliers=0;
-    nums.forEach(c=>{ if(c.st&&c.st.sd>0) outliers+=c.vals.filter(v=>Math.abs((v-c.st.mean)/c.st.sd)>3).length; });
-    return {cols,nums,corr,outliers};
-  },[D]);
-
-  // ML state
-  const [mlMode,setMlMode]=useState("cluster");
-  const [kx,setKx]=useState("0"); const [ky,setKy]=useState("1"); const [kk,setKk]=useState("3");
-  const ml = useMemo(()=>{
-    if(!prof||prof.nums.length<2) return null;
-    const a=prof.nums[Math.min(+kx,prof.nums.length-1)], b=prof.nums[Math.min(+ky,prof.nums.length-1)];
-    const n=Math.min(a.vals.length,b.vals.length);
-    const X=a.vals.slice(0,n), Y=b.vals.slice(0,n);
-    if(mlMode==="reg") return {type:"reg", a,b, ...linreg(X,Y), X,Y};
-    // normalize for kmeans
-    const nx=v=>(v-a.st.min)/((a.st.max-a.st.min)||1), nyv=v=>(v-b.st.min)/((b.st.max-b.st.min)||1);
-    const pts=X.map((x,i)=>[nx(x),nyv(Y[i])]);
-    const {asg,cent}=kmeans(pts,Math.max(2,Math.min(5,+kk)));
-    const sizes={}; asg.forEach(c=>sizes[c]=(sizes[c]||0)+1);
-    return {type:"cluster", a,b, X,Y, asg, cent, sizes, k:Math.max(2,Math.min(5,+kk))};
-  },[prof,mlMode,kx,ky,kk]);
-
-  // Copilot
-  const [cpBusy,setCpBusy]=useState(false);
-  const [cp,setCp]=useState("");
-  async function runCopilot(){
-    if(!prof) return;
-    setCpBusy(true); setCp("");
-    const summary = `صفوف=${D.rows.length}، متغيرات=${D.header.length} (${prof.nums.length} رقمية)\n`+
-      prof.cols.map(c=>`${c.h}: ${c.isNum?`رقمي M=${c.st.mean.toFixed(2)} SD=${c.st.sd.toFixed(2)} [${c.st.min}-${c.st.max}]`:`فئوي distinct=${c.distinct}`} فقد=${c.missPct}%`).join("\n")+
-      `\nقيم متطرفة (z>3): ${prof.outliers}\nأقوى الارتباطات: `+
-      prof.nums.flatMap((a,i)=>prof.nums.slice(i+1).map((b,j)=>({p:`${a.h}×${prof.nums[i+j+1].h}`,r:prof.corr[i][i+j+1]}))).sort((x,y)=>Math.abs(y.r)-Math.abs(x.r)).slice(0,5).map(x=>`${x.p}=${x.r.toFixed(2)}`).join("، ");
-    try {
-      const out = await callAI(
-        "أنت كبير علماء بيانات بمستوى المنصات العالمية. تقرأ ملفاً تعريفياً محسوباً فعلياً وتقدم: قراءة الجودة، هندسة متغيرات مقترحة، أنسب أساليب النمذجة لهذه البيانات (مع البدائل)، وخارطة عمل. لا تختلق أرقاماً غير الواردة.",
-        `الملف التعريفي المحسوب فعلياً من بيانات المستخدم:\n${summary}\n\nقدّم: 1) حكم جودة البيانات وما يجب إصلاحه أولاً. 2) هندسة المتغيرات: 3-5 متغيرات مشتقة مقترحة ولماذا. 3) النمذجة الموصى بها (عنقدة/انحدار/تصنيف/سلاسل زمنية...) بالمبرر والبدائل. 4) خارطة عمل من 5 خطوات بترتيب التنفيذ. 5) تحذير من أي فخ في هذه البيانات تحديداً.`, 1800);
-      setCp(out);
-    } catch(e){ setCp("تعذّر — أعد المحاولة."); }
-    setCpBusy(false);
-  }
-
-  // ===== رسوم =====
-  function Heatmap(){
-    if(!prof||prof.nums.length<2) return null;
-    const n=prof.nums.length, cell=Math.min(54, 380/n), off=86;
-    const col=v=>{ const t=(v+1)/2; const r=Math.round(255*(1-t)*0.9+30), bl=Math.round(255*t*0.9+30); return `rgb(${v>0?40:r},${90+Math.abs(v)*40},${v>0?bl:60})`; };
-    return (
-      <svg viewBox={`0 0 ${off+n*cell+10} ${off+n*cell+10}`} style={{width:"100%",maxWidth:520}}>
-        {prof.nums.map((c,i)=><text key={"t"+i} x={off-6} y={off+i*cell+cell/2+4} fontSize="10" fill={T.textS} textAnchor="end">{c.h.slice(0,10)}</text>)}
-        {prof.nums.map((c,i)=><text key={"b"+i} x={off+i*cell+cell/2} y={off-8} fontSize="10" fill={T.textS} textAnchor="middle" transform={`rotate(-35 ${off+i*cell+cell/2} ${off-8})`}>{c.h.slice(0,10)}</text>)}
-        {prof.corr.map((row,i)=>row.map((v,j)=>(
-          <g key={i+"-"+j}>
-            <rect x={off+j*cell} y={off+i*cell} width={cell-2} height={cell-2} rx="4" fill={col(v)} opacity="0.92"/>
-            <text x={off+j*cell+cell/2-1} y={off+i*cell+cell/2+4} fontSize={cell>34?"11":"9"} fontWeight="700" fill="#fff" textAnchor="middle">{v.toFixed(2)}</text>
-          </g>
-        )))}
-      </svg>
-    );
-  }
-  function Scatter(){
-    if(!ml) return null;
-    const W=560,H=300,P=46;
-    const xs=ml.X, ys=ml.Y;
-    const xmin=Math.min(...xs),xmax=Math.max(...xs),ymin=Math.min(...ys),ymax=Math.max(...ys);
-    const px=v=>P+((v-xmin)/((xmax-xmin)||1))*(W-2*P);
-    const py=v=>H-P-((v-ymin)/((ymax-ymin)||1))*(H-2*P);
-    const cols=[T.gold,T.teal,T.violet,T.emerald,T.rose];
-    return (
-      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%"}}>
-        <line x1={P} y1={H-P} x2={W-P} y2={H-P} stroke={T.border} strokeWidth="1.5"/>
-        <line x1={P} y1={P-8} x2={P} y2={H-P} stroke={T.border} strokeWidth="1.5"/>
-        <text x={W/2} y={H-10} fontSize="11" fill={T.textS} textAnchor="middle">{ml.a.h}</text>
-        <text x={14} y={H/2} fontSize="11" fill={T.textS} textAnchor="middle" transform={`rotate(-90 14 ${H/2})`}>{ml.b.h}</text>
-        {xs.map((x,i)=>(
-          <circle key={i} cx={px(x)} cy={py(ys[i])} r="4.5"
-            fill={ml.type==="cluster"?cols[ml.asg[i]%5]:T.teal} opacity="0.75"/>
-        ))}
-        {ml.type==="reg" && (
-          <line x1={px(xmin)} y1={py(ml.b0+ml.b1*xmin)} x2={px(xmax)} y2={py(ml.b0+ml.b1*xmax)}
-            stroke={T.rose} strokeWidth="3" strokeDasharray="7 4"/>
-        )}
-      </svg>
-    );
-  }
-
-  const selStyle={padding:"7px 11px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:12,fontFamily:"inherit"};
-
-  return (
-    <div style={{maxWidth:880,margin:"0 auto"}}>
-      <Card T={T}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:27}}>🧪</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:17,color:T.text}}>مختبر عالم البيانات</div>
-            <div style={{fontSize:12,color:T.textS}}>Auto-EDA بنمط pandas-profiling · تعلم آلي حقيقي في متصفحك (K-means وانحدار) · مستشار ذكي يقرأ نتائجك المحسوبة</div>
-          </div>
-        </div>
-      </Card>
-
-      <Card T={T} style={{marginTop:12}}>
-        <div style={{fontSize:12,color:T.textS,marginBottom:8}}>📥 ارفع ملف بيانات (CSV · Excel · Word · PDF) أو الصق — <b>كل الحسابات حقيقية في متصفحك</b>. CSV/Excel الأدق، وجداول PDF/Word تُستخرج بأفضل جهد:</div>
-        <FilePick T={T} accept=".csv,.txt,.xlsx,.xls,.docx,.pdf" file={files[0]} onPick={f=>setFiles([f])} hint="CSV · Excel · Word · PDF"/>
-        <textarea rows={4} value={txt} onChange={e=>setTxt(e.target.value)} style={ta}
-          placeholder={"العمر,الدخل,سنوات_الخبرة,القسم\n25,9000,2,مبيعات\n34,15500,8,تقنية"}/>
-        <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
-          <Btn ch={ldBusy?<><Spin/> جارٍ قراءة الملف…</>:"🧪 حمّل في المختبر"} v="gold" T={T} onClick={load} disabled={ldBusy||(!txt.trim()&&!files.length)}/>
-        </div>
-        {err && <div style={{marginTop:8,fontSize:12,color:T.rose}}>{err}</div>}
-      </Card>
-
-      {D && prof && <>
-        <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
-          {TABS.map(([k,l])=>(
-            <button key={k} onClick={()=>setTab(k)}
-              style={{flex:"1 1 auto",padding:"9px 8px",borderRadius:10,border:`1.5px solid ${tab===k?T.gold:T.border}`,
-                background:tab===k?T.gold+"18":T.card,color:tab===k?T.gold:T.text,fontWeight:tab===k?700:500,fontSize:12.5,fontFamily:"inherit",cursor:"pointer"}}>{l}</button>
-          ))}
-        </div>
-
-        {tab==="profile" && <>
-          <div style={{marginTop:12,display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(125px,1fr))",gap:10}}>
-            {[["📋",D.rows.length,"صف",T.blue],["🧮",D.header.length,"متغير",T.violet],["🔢",prof.nums.length,"رقمي",T.teal],
-              ["⚠️",prof.outliers,"متطرفة z>3",prof.outliers?T.amber:T.emerald]].map((k,i)=>(
-              <div key={i} style={{padding:"13px",borderRadius:13,background:T.card,border:`1px solid ${T.border}`,textAlign:"center"}}>
-                <div style={{fontSize:17}}>{k[0]}</div>
-                <div style={{fontSize:20,fontWeight:800,color:k[3]}}>{k[1]}</div>
-                <div style={{fontSize:10.5,color:T.textS}}>{k[2]}</div>
-              </div>
-            ))}
-          </div>
-          <Card T={T} style={{marginTop:12}}>
-            <div style={{fontWeight:800,fontSize:13.5,color:T.text,marginBottom:8}}>📇 بطاقة كل متغير (محسوبة فعلياً)</div>
-            <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:11.5}}>
-              <thead><tr>{["المتغير","النوع","الفقد","القيم الفريدة","المتوسط","SD","الوسيط","المدى"].map(h=>
-                <th key={h} style={{padding:"6px 8px",textAlign:"right",borderBottom:`2px solid ${T.border}`,color:T.textS,fontSize:10.5}}>{h}</th>)}</tr></thead>
-              <tbody>{prof.cols.map(cc=>(
-                <tr key={cc.i}>
-                  <td style={{padding:"6px 8px",borderBottom:`1px solid ${T.border}`,fontWeight:700,color:T.text}}>{cc.h}</td>
-                  <td style={{padding:"6px 8px",borderBottom:`1px solid ${T.border}`}}>
-                    <span style={{fontSize:10,padding:"2px 9px",borderRadius:12,background:(cc.isNum?T.teal:T.violet)+"18",color:cc.isNum?T.teal:T.violet,fontWeight:700}}>{cc.isNum?"رقمي":"فئوي"}</span></td>
-                  <td style={{padding:"6px 8px",borderBottom:`1px solid ${T.border}`,color:cc.missPct>10?T.rose:T.text}}>{cc.missPct}%</td>
-                  <td style={{padding:"6px 8px",borderBottom:`1px solid ${T.border}`,color:T.text}}>{cc.distinct}</td>
-                  <td style={{padding:"6px 8px",borderBottom:`1px solid ${T.border}`,color:T.gold,fontWeight:700}}>{cc.st?cc.st.mean.toFixed(2):"—"}</td>
-                  <td style={{padding:"6px 8px",borderBottom:`1px solid ${T.border}`,color:T.text}}>{cc.st?cc.st.sd.toFixed(2):"—"}</td>
-                  <td style={{padding:"6px 8px",borderBottom:`1px solid ${T.border}`,color:T.text}}>{cc.st?cc.st.med:"—"}</td>
-                  <td style={{padding:"6px 8px",borderBottom:`1px solid ${T.border}`,color:T.text}}>{cc.st?`${cc.st.min} – ${cc.st.max}`:"—"}</td>
-                </tr>
-              ))}</tbody>
-            </table></div>
-          </Card>
-          {prof.nums.length>=2 && <Card T={T} style={{marginTop:12}}>
-            <div style={{fontWeight:800,fontSize:13.5,color:T.text,marginBottom:6}}>🔥 مصفوفة الارتباط الحرارية (Pearson محسوب فعلياً)</div>
-            <Heatmap/>
-            <div style={{fontSize:10.5,color:T.textDim,marginTop:4}}>أزرق = ارتباط موجب · أحمر = سالب · القيم حقيقية من بياناتك</div>
-          </Card>}
-        </>}
-
-        {tab==="ml" && <>
-          <Card T={T} style={{marginTop:12}}>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-              {[["cluster","🧩 عنقدة K-means"],["reg","📈 انحدار خطي"]].map(([k,l])=>(
-                <button key={k} onClick={()=>setMlMode(k)}
-                  style={{padding:"8px 15px",borderRadius:18,border:`1.5px solid ${mlMode===k?T.gold:T.border}`,
-                    background:mlMode===k?T.gold+"15":T.card,color:mlMode===k?T.gold:T.text,fontSize:12.5,fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>{l}</button>
-              ))}
-              {prof.nums.length>=2 && <>
-                <select value={kx} onChange={e=>setKx(e.target.value)} style={selStyle}>
-                  {prof.nums.map((c,i)=><option key={i} value={i}>{mlMode==="reg"?"X: ":""}{c.h}</option>)}
-                </select>
-                <select value={ky} onChange={e=>setKy(e.target.value)} style={selStyle}>
-                  {prof.nums.map((c,i)=><option key={i} value={i}>{mlMode==="reg"?"Y: ":""}{c.h}</option>)}
-                </select>
-                {mlMode==="cluster" && <select value={kk} onChange={e=>setKk(e.target.value)} style={selStyle}>
-                  {[2,3,4,5].map(k=><option key={k} value={k}>k = {k}</option>)}
-                </select>}
-              </>}
-            </div>
-            {prof.nums.length<2 && <div style={{fontSize:12.5,color:T.amber,marginTop:10}}>تحتاج متغيرين رقميين على الأقل.</div>}
-          </Card>
-          {ml && <Card T={T} style={{marginTop:12}}>
-            <Scatter/>
-            {ml.type==="cluster" ? (
-              <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:8}}>
-                {Object.entries(ml.sizes).map(([c,n])=>(
-                  <span key={c} style={{fontSize:11.5,padding:"5px 13px",borderRadius:16,fontWeight:700,
-                    background:[T.gold,T.teal,T.violet,T.emerald,T.rose][c%5]+"18",color:[T.gold,T.teal,T.violet,T.emerald,T.rose][c%5],
-                    border:`1px solid ${[T.gold,T.teal,T.violet,T.emerald,T.rose][c%5]}35`}}>العنقود {+c+1}: {n} نقطة</span>
-                ))}
-                <span style={{fontSize:10.5,color:T.textDim,alignSelf:"center"}}>عنقدة فعلية (25 تكراراً، بيانات معيّرة)</span>
-              </div>
-            ) : (
-              <div style={{marginTop:8,fontSize:13,lineHeight:2,color:T.text}}>
-                <b style={{color:T.gold}}>المعادلة:</b> {ml.b.h} = {ml.b0.toFixed(3)} + {ml.b1.toFixed(3)} × {ml.a.h}
-                <span style={{margin:"0 12px",color:T.emerald,fontWeight:800}}>R² = {ml.r2.toFixed(3)}</span>
-                <span style={{color:T.textS,fontSize:11.5}}>(n = {ml.n} · مربعات صغرى محسوبة فعلياً)</span>
-              </div>
-            )}
-          </Card>}
-        </>}
-
-        {tab==="copilot" && <>
-          <Card T={T} style={{marginTop:12}}>
-            <div style={{fontSize:12.5,color:T.textS,lineHeight:1.9,marginBottom:10}}>
-              المستشار يقرأ <b>الملف التعريفي المحسوب فعلياً</b> من بياناتك (لا يخمّن) ثم يقترح: جودة البيانات، هندسة المتغيرات، أسلوب النمذجة الأنسب، وخارطة العمل.
-            </div>
-            <Btn ch={cpBusy?<><Spin/> يحلل ملفك التعريفي…</>:"🧠 استشر عالم البيانات"} v="gold" T={T} onClick={runCopilot} disabled={cpBusy}/>
-          </Card>
-          {cp && <Card T={T} style={{marginTop:12}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-              <div style={{fontWeight:800,fontSize:14,color:T.gold}}>🧠 توصيات عالم البيانات</div>
-              <Btn ch="📋 نسخ" v="ghost" T={T} onClick={()=>navigator.clipboard?.writeText(cp)}/> <ReportBtn T={T} title="توصيات عالم البيانات" body={cp} opts={{icon:"🧠",subtitle:"مختبر علوم البيانات"}}/>
-            </div>
-            <div style={{whiteSpace:"pre-wrap",lineHeight:1.95,fontSize:13.5,color:T.text}}>{cp}</div>
-          </Card>}
-        </>}
-      </>}
-    </div>
-  );
-}
-
-
-// ── بوصلة الرؤية والتمويل ──────────────────────────────────────
-function VisionAlignSystem({ T }) {
-  const [title, setTitle] = useState("");
-  const [abs, setAbs] = useState("");
-  const [field, setField] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [res, setRes] = useState(null);
-  const ta = {width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",outline:"none",resize:"vertical"};
-  const lbl = {display:"block",fontSize:12,fontWeight:700,color:T.textS,marginBottom:5};
-
-  async function run(){
-    if(!title.trim() && !abs.trim()) return;
-    setBusy(true); setRes(null);
-    try {
-      const d = await callAIJson(
-        "أنت مستشار بحث وتمويل خبير بمنظومة البحث السعودية: رؤية 2030، أولويات البحث والتطوير والابتكار الوطنية (RDIA: صحة الإنسان، استدامة البيئة، الريادة في الطاقة، اقتصاديات المستقبل)، وبرامج التمويل (RDIA، كاكست، الجامعات). JSON فقط، وكن صادقاً في درجة المواءمة دون مبالغة.",
-        `البحث: "${title}"\nالمجال: ${field||"غير محدد"}\nالملخص:\n"""${abs.slice(0,3000)}"""\n\nJSON: {"score":عدد من 100 لقوة المواءمة الوطنية,"pillars":[{"name":"ركيزة الرؤية أو الأولوية الوطنية","fit":"عالية|متوسطة|محدودة","why":"السبب بإيجاز"}],"funding_paragraph":"فقرة المواءمة الوطنية الجاهزة للصق في مقترح التمويل (120-160 كلمة، رصينة، تربط البحث بالرؤية والأولويات دون مبالغة)","programs":[{"name":"برنامج/جهة تمويل مناسبة","fit":"سبب الملاءمة","tip":"نصيحة للتقديم"}],"boost":["3 تحسينات تزيد فرص التمويل"],"honest":"تقييم صريح: نقطة الضعف أمام الممول"}`, 2200);
-      setRes(d && d.pillars ? d : {error:"تعذّر التحليل — أعد المحاولة."});
-    } catch(e){ setRes({error:"تعذّر التحليل — أعد المحاولة."}); }
-    setBusy(false);
-  }
-  const fitColor = f => f==="عالية"?T.emerald : f==="متوسطة"?T.amber : T.textS;
-
-  return (
-    <div style={{maxWidth:820,margin:"0 auto"}}>
-      <Card T={T}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:27}}>🇸🇦</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:17,color:T.text}}>بوصلة الرؤية والتمويل</div>
-            <div style={{fontSize:12,color:T.textS}}>مواءمة بحثك مع رؤية 2030 وأولويات RDIA + فقرة المواءمة الجاهزة لمقترح التمويل</div>
-          </div>
-        </div>
-      </Card>
-      <Card T={T} style={{marginTop:12}}>
-        <label style={lbl}>عنوان البحث *</label>
-        <input style={{...ta,resize:"none"}} value={title} onChange={e=>setTitle(e.target.value)}/>
-        <label style={{...lbl,marginTop:10}}>الملخص أو وصف البحث</label>
-        <textarea rows={4} value={abs} onChange={e=>setAbs(e.target.value)} style={ta}/>
-        <div style={{display:"flex",gap:10,marginTop:10,alignItems:"center",flexWrap:"wrap"}}>
-          <input style={{...ta,resize:"none",flex:"1 1 160px",width:"auto"}} value={field} onChange={e=>setField(e.target.value)} placeholder="المجال (اختياري)"/>
-          <Btn ch={busy?<><Spin/> جارٍ المواءمة…</>:"🧭 حاذِ بحثي مع الرؤية"} v="gold" T={T} onClick={run} disabled={busy||(!title.trim()&&!abs.trim())}/>
-        </div>
-      </Card>
-      {res && res.error && <Card T={T} style={{marginTop:12}}><div style={{color:T.rose,fontSize:13}}>{res.error}</div></Card>}
-      {res && !res.error && <>
-        <Card T={T} style={{marginTop:12}}>
-          <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
-            <div style={{width:84,height:84,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",
-              background:`conic-gradient(${res.score>=70?T.emerald:res.score>=45?T.amber:T.rose} ${res.score*3.6}deg, ${T.bgS} 0deg)`}}>
-              <div style={{width:64,height:64,borderRadius:"50%",background:T.card,display:"flex",alignItems:"center",justifyContent:"center",
-                fontWeight:800,fontSize:19,color:res.score>=70?T.emerald:res.score>=45?T.amber:T.rose}}>{res.score}</div>
-            </div>
-            <div style={{flex:1,minWidth:200}}>
-              <div style={{fontWeight:800,fontSize:14,color:T.text,marginBottom:6}}>قوة المواءمة الوطنية</div>
-              {(res.pillars||[]).map((p,i)=>(
-                <div key={i} style={{fontSize:12.5,lineHeight:1.9,color:T.text}}>
-                  <span style={{fontWeight:700,color:fitColor(p.fit)}}>● {p.name}</span> — {p.fit}: {p.why}
-                </div>
-              ))}
-            </div>
-          </div>
-        </Card>
-        <Card T={T} style={{marginTop:12}}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-            <div style={{fontWeight:800,fontSize:13.5,color:T.gold}}>📄 فقرة المواءمة الوطنية (الصقها في مقترحك)</div>
-            <Btn ch="📋 نسخ" v="ghost" T={T} onClick={()=>navigator.clipboard?.writeText(res.funding_paragraph)}/>
-          </div>
-          <div style={{fontSize:13.5,lineHeight:2.05,color:T.text,padding:"12px 14px",borderRadius:11,background:T.bgS,border:`1px solid ${T.border}`}}>{res.funding_paragraph}</div>
-        </Card>
-        <Card T={T} style={{marginTop:12}}>
-          <div style={{fontWeight:800,fontSize:13.5,color:T.teal,marginBottom:8}}>💰 جهات وبرامج مرشّحة</div>
-          {(res.programs||[]).map((p,i)=>(
-            <div key={i} style={{padding:"10px 13px",borderRadius:10,background:T.bgS,border:`1px solid ${T.border}`,marginBottom:8}}>
-              <div style={{fontWeight:800,fontSize:13,color:T.text}}>{p.name}</div>
-              <div style={{fontSize:12,color:T.textS,lineHeight:1.8}}>{p.fit}</div>
-              <div style={{fontSize:11.5,color:T.teal,marginTop:3}}>💡 {p.tip}</div>
-            </div>
-          ))}
-          <div style={{fontSize:10.5,color:T.textDim}}>⚖️ تحقق من دورات التقديم الحالية في مواقع الجهات — البرامج تتغير دورياً.</div>
-        </Card>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(250px,1fr))",gap:12,marginTop:12}}>
-          <Card T={T}>
-            <div style={{fontWeight:800,fontSize:13,color:T.emerald,marginBottom:8}}>🚀 يرفع فرصك</div>
-            {(res.boost||[]).map((x,i)=><div key={i} style={{fontSize:12.5,lineHeight:1.9,color:T.text,marginBottom:5}}>• {x}</div>)}
-          </Card>
-          <Card T={T}>
-            <div style={{fontWeight:800,fontSize:13,color:T.rose,marginBottom:8}}>⚖️ بصراحة (عين الممول)</div>
-            <div style={{fontSize:12.5,lineHeight:1.9,color:T.text}}>{res.honest}</div>
-          </Card>
-        </div>
-      </>}
-    </div>
-  );
-}
-
-// ── عُدّة الباحث العربي (حسابات حقيقية) ─────────────────────────
-function ArabToolkitSystem({ T }) {
-  const [tab, setTab] = useState("hijri");
-  const TABS = [["hijri","📅 هجري ↔ ميلادي"],["tafqit","🔢 تفقيط الأرقام"],["glossary","📖 مسرد المصطلحات"]];
-  const ta = {width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",outline:"none"};
-  const lbl = {display:"block",fontSize:12,fontWeight:700,color:T.textS,marginBottom:5};
-
-  // ===== هجري بتقويم أم القرى الحقيقي =====
-  function hijriParts(date){
-    try {
-      const f = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura",{day:"numeric",month:"numeric",year:"numeric"});
-      const p = Object.fromEntries(f.formatToParts(date).filter(x=>x.type!=="literal").map(x=>[x.type,parseInt(x.value)]));
-      return p; // {day,month,year}
-    } catch(e){ return null; }
-  }
-  const HMONTHS=["محرم","صفر","ربيع الأول","ربيع الآخر","جمادى الأولى","جمادى الآخرة","رجب","شعبان","رمضان","شوال","ذو القعدة","ذو الحجة"];
-  const [gDate, setGDate] = useState(new Date().toISOString().slice(0,10));
-  const [hY,setHY]=useState("1447"); const [hM,setHM]=useState("1"); const [hD,setHD]=useState("1");
-  const g2h = useMemo(()=>{
-    const d=new Date(gDate+"T12:00:00"); const p=hijriParts(d);
-    return p?{txt:`${p.day} ${HMONTHS[p.month-1]} ${p.year}هـ`, p, d}:null;
-  },[gDate]);
-  const h2g = useMemo(()=>{
-    const ty=+hY,tm=+hM,td=+hD;
-    if(!ty||!tm||!td) return null;
-    // تقدير ثم مسح ±4 أيام بمطابقة أم القرى الفعلية
-    const approx = new Date(Date.UTC(Math.floor((ty-1)*354.367/365.25+622), 0, 1));
-    approx.setUTCDate(approx.getUTCDate() + Math.round(((ty-1)*354.367)%365.25) + (tm-1)*29.53 + td);
-    for(let off=-5; off<=5; off++){
-      const d=new Date(approx); d.setUTCDate(d.getUTCDate()+off);
-      const p=hijriParts(d);
-      if(p && p.year===ty && p.month===tm && p.day===td)
-        return d.toLocaleDateString("ar-SA-u-ca-gregory",{day:"numeric",month:"long",year:"numeric"})+"م";
-    }
-    return "تعذّرت المطابقة الدقيقة — تحقق من صحة التاريخ الهجري";
-  },[hY,hM,hD]);
-  const dual = g2h ? `${g2h.p.day}/${g2h.p.month}/${g2h.p.year}هـ الموافق ${new Date(gDate).toLocaleDateString("ar-SA-u-ca-gregory")}م` : "";
-
-  // ===== تفقيط حقيقي =====
-  const [num, setNum] = useState("");
-  const [unit, setUnit] = useState("ريال سعودي");
-  function tafqit(n){
-    n = Math.floor(Math.abs(+n||0));
-    if(n===0) return "صفر";
-    const ones=["","واحد","اثنان","ثلاثة","أربعة","خمسة","ستة","سبعة","ثمانية","تسعة","عشرة","أحد عشر","اثنا عشر","ثلاثة عشر","أربعة عشر","خمسة عشر","ستة عشر","سبعة عشر","ثمانية عشر","تسعة عشر"];
-    const tens=["","","عشرون","ثلاثون","أربعون","خمسون","ستون","سبعون","ثمانون","تسعون"];
-    const hund=["","مائة","مائتان","ثلاثمائة","أربعمائة","خمسمائة","ستمائة","سبعمائة","ثمانمائة","تسعمائة"];
-    function under1000(x){
-      const h=Math.floor(x/100), r=x%100;
-      let s = h?hund[h]:"";
-      if(r){
-        let rs;
-        if(r<20) rs=ones[r];
-        else { const o=r%10,t=Math.floor(r/10); rs = o?ones[o]+" و"+tens[t]:tens[t]; }
-        s = s? s+" و"+rs : rs;
-      }
-      return s;
-    }
-    const scales=[["","",""],["ألف","ألفان","آلاف"],["مليون","مليونان","ملايين"],["مليار","ملياران","مليارات"]];
-    const parts=[];
-    let i=0;
-    while(n>0 && i<4){
-      const g=n%1000;
-      if(g){
-        const [s1,s2,sp]=scales[i];
-        let seg;
-        if(i===0) seg=under1000(g);
-        else if(g===1) seg=s1;
-        else if(g===2) seg=s2;
-        else if(g<=10) seg=under1000(g)+" "+sp;
-        else seg=under1000(g)+" "+s1;
-        parts.unshift(seg);
-      }
-      n=Math.floor(n/1000); i++;
-    }
-    return parts.join(" و");
-  }
-  const tafqitOut = num ? `${tafqit(num)} ${unit} فقط لا غير` : "";
-
-  // ===== مسرد المصطلحات =====
-  const [glIn, setGlIn] = useState("");
-  const [glBusy, setGlBusy] = useState(false);
-  const [gl, setGl] = useState(null);
-  async function runGlossary(){
-    if(!glIn.trim()) return;
-    setGlBusy(true); setGl(null);
-    try {
-      const d = await callAIJson(
-        "أنت خبير مصطلحات أكاديمية ثنائي اللغة، تعتمد المقابلات العربية المستقرة في الأدبيات والمعاجم المتخصصة (المعجم الموحد، مجامع اللغة). JSON فقط.",
-        `استخرج المصطلحات الأكاديمية من هذا النص/القائمة وابنِ مسرداً:\n"""${glIn.slice(0,4000)}"""\n\nJSON: {"terms":[{"en":"المصطلح الإنجليزي","ar":"المقابل العربي الأكثر استقراراً","alt":"بديل شائع إن وُجد أو فارغ","note":"ملاحظة استخدام موجزة أو فارغ"}]} — رتّبها أبجدياً بالإنجليزية.`, 2000);
-      setGl(d && d.terms ? d : {error:"لم تُستخرج مصطلحات."});
-    } catch(e){ setGl({error:"تعذّر — أعد المحاولة."}); }
-    setGlBusy(false);
-  }
-  function copyGlossary(){
-    if(!gl||!gl.terms) return;
-    navigator.clipboard?.writeText("المصطلح الأجنبي\tالمقابل العربي\tملاحظات\n"+gl.terms.map(t=>`${t.en}\t${t.ar}${t.alt?` (${t.alt})`:""}\t${t.note||""}`).join("\n"));
-  }
-
-  return (
-    <div style={{maxWidth:820,margin:"0 auto"}}>
-      <Card T={T}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:27}}>🛠️</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:17,color:T.text}}>عُدّة الباحث العربي</div>
-            <div style={{fontSize:12,color:T.textS}}>هجري↔ميلادي بأم القرى الحقيقي · تفقيط للوثائق الرسمية · مسرد مصطلحات رسالتك</div>
-          </div>
-        </div>
-      </Card>
-      <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
-        {TABS.map(([k,l])=>(
-          <button key={k} onClick={()=>setTab(k)}
-            style={{flex:"1 1 auto",padding:"9px 8px",borderRadius:10,border:`1.5px solid ${tab===k?T.gold:T.border}`,
-              background:tab===k?T.gold+"18":T.card,color:tab===k?T.gold:T.text,fontWeight:tab===k?700:500,fontSize:12.5,fontFamily:"inherit",cursor:"pointer"}}>{l}</button>
-        ))}
-      </div>
-
-      {tab==="hijri" && <Card T={T} style={{marginTop:12}}>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:16}}>
-          <div>
-            <div style={{fontWeight:800,fontSize:13,color:T.teal,marginBottom:8}}>ميلادي ← هجري (أم القرى)</div>
-            <input type="date" value={gDate} onChange={e=>setGDate(e.target.value)} style={ta}/>
-            {g2h && <div style={{marginTop:10,padding:"12px 14px",borderRadius:11,background:T.emerald+"10",border:`1px solid ${T.emerald}30`,fontWeight:800,fontSize:15,color:T.emerald,textAlign:"center"}}>{g2h.txt}</div>}
-          </div>
-          <div>
-            <div style={{fontWeight:800,fontSize:13,color:T.gold,marginBottom:8}}>هجري ← ميلادي</div>
-            <div style={{display:"flex",gap:6}}>
-              <input value={hD} onChange={e=>setHD(e.target.value)} placeholder="اليوم" style={{...ta,width:"30%"}}/>
-              <select value={hM} onChange={e=>setHM(e.target.value)} style={{...ta,width:"40%"}}>
-                {HMONTHS.map((m,i)=><option key={i} value={i+1}>{m}</option>)}
-              </select>
-              <input value={hY} onChange={e=>setHY(e.target.value)} placeholder="السنة" style={{...ta,width:"30%"}}/>
-            </div>
-            {h2g && <div style={{marginTop:10,padding:"12px 14px",borderRadius:11,background:T.gold+"10",border:`1px solid ${T.gold}30`,fontWeight:800,fontSize:14,color:T.gold,textAlign:"center"}}>{h2g}</div>}
-          </div>
-        </div>
-        {dual && <div style={{marginTop:14,display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap",
-          padding:"11px 14px",borderRadius:11,background:T.bgS,border:`1px solid ${T.border}`}}>
-          <span style={{fontSize:13,color:T.text}}>📜 للوثائق الرسمية: <b>{dual}</b></span>
-          <Btn ch="📋 نسخ" v="ghost" T={T} onClick={()=>navigator.clipboard?.writeText(dual)}/> <ReportBtn T={T} title="تقرير الأداة — محكّم برو" body={dual} opts={{icon:"📋"}}/>
-        </div>}
-        <div style={{fontSize:10.5,color:T.textDim,marginTop:8}}>التحويل بتقويم أم القرى الفعلي عبر محرك متصفحك (Intl) — لا تقريب جدولي.</div>
-      </Card>}
-
-      {tab==="tafqit" && <Card T={T} style={{marginTop:12}}>
-        <label style={lbl}>الرقم</label>
-        <input value={num} onChange={e=>setNum(e.target.value.replace(/[^\d]/g,""))} style={ta} placeholder="520000"/>
-        <label style={{...lbl,marginTop:10}}>الوحدة</label>
-        <Dropdown T={T} value={unit} onChange={setUnit} options={["ريال سعودي","دولار أمريكي","درجة","نقطة","نسخة","بدون وحدة"]}/>
-        {tafqitOut && <div style={{marginTop:14,display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap",
-          padding:"14px 16px",borderRadius:11,background:T.emerald+"0d",border:`1.5px solid ${T.emerald}35`}}>
-          <span style={{fontSize:14.5,fontWeight:800,color:T.text,lineHeight:1.9}}>{num.replace(/\B(?=(\d{3})+(?!\d))/g,",")} = {tafqitOut.replace(" بدون وحدة","")}</span>
-          <Btn ch="📋 نسخ" v="ghost" T={T} onClick={()=>navigator.clipboard?.writeText(tafqitOut.replace(" بدون وحدة",""))}/>
-        </div>}
-        <div style={{fontSize:10.5,color:T.textDim,marginTop:8}}>تفقيط خوارزمي حقيقي حتى المليارات — للعقود والخطابات والشيكات.</div>
-      </Card>}
-
-      {tab==="glossary" && <>
-        <Card T={T} style={{marginTop:12}}>
-          <label style={lbl}>الصق النص الإنجليزي أو قائمة المصطلحات</label>
-          <textarea rows={5} value={glIn} onChange={e=>setGlIn(e.target.value)} style={{...ta,resize:"vertical"}} placeholder="machine learning, structural equation modeling..."/>
-          <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
-            <Btn ch={glBusy?<><Spin/> جارٍ البناء…</>:"📖 ابنِ مسرد المصطلحات"} v="gold" T={T} onClick={runGlossary} disabled={glBusy||!glIn.trim()}/>
-          </div>
-        </Card>
-        {gl && gl.error && <Card T={T} style={{marginTop:12}}><div style={{color:T.rose,fontSize:13}}>{gl.error}</div></Card>}
-        {gl && gl.terms && <Card T={T} style={{marginTop:12}}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-            <div style={{fontWeight:800,fontSize:13.5,color:T.gold}}>📖 مسرد المصطلحات ({gl.terms.length}) — جاهز للصق في رسالتك</div>
-            <Btn ch="📋 نسخ كجدول" v="ghost" T={T} onClick={copyGlossary}/>
-          </div>
-          <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:12.5}}>
-            <thead><tr>{["المصطلح الأجنبي","المقابل العربي","ملاحظات"].map(h=>
-              <th key={h} style={{padding:"7px 10px",textAlign:"right",borderBottom:`2px solid ${T.border}`,color:T.textS,fontSize:11}}>{h}</th>)}</tr></thead>
-            <tbody>{gl.terms.map((t,i)=>(
-              <tr key={i}>
-                <td style={{padding:"7px 10px",borderBottom:`1px solid ${T.border}`,color:T.teal,fontWeight:700,direction:"ltr",textAlign:"left"}}>{t.en}</td>
-                <td style={{padding:"7px 10px",borderBottom:`1px solid ${T.border}`,color:T.text,fontWeight:700}}>{t.ar}{t.alt?` (${t.alt})`:""}</td>
-                <td style={{padding:"7px 10px",borderBottom:`1px solid ${T.border}`,color:T.textS,fontSize:11.5}}>{t.note||"—"}</td>
-              </tr>
-            ))}</tbody>
-          </table></div>
-          <div style={{fontSize:10.5,color:T.textDim,marginTop:6}}>راجع مقابلات تخصصك الدقيق — المعاجم تتفاوت بين المجالات.</div>
-        </Card>}
-      </>}
-    </div>
-  );
-}
-
-
-// ── دورة حياة البحث الذكية (نموذج المنظومة) ────────────────────
-function ResearchLifecycleSystem({ T }) {
-  const [tab, setTab] = useState("roles");
-  const TABS = [["roles","👥 الأدوار الـ14"],["flow","🔄 سير العمل"],["live","⚡ التجربة الحية"]];
-  const [openRole, setOpenRole] = useState(-1);
-
-  const ROLES = [
-    {icon:"🔬", name:"الباحث", tasks:"إنشاء المشروع، رفع المقترح والفصول، الرد على الملاحظات، طلب المناقشة", ai:"قوالب تلقائية، 20 عنواناً مقيّم الأصالة، صياغة المشكلة، توثيق تلقائي، تحويل الملاحظات لمهام"},
-    {icon:"🧑‍🏫", name:"المشرف الرئيسي", tasks:"اعتماد الخطة، مراجعة الفصول، التعليقات، الموافقة على المناقشة", ai:"تلخيص الفصل بصفحة، كشف التناقضات وضعف المنهجية، تقييم /100، تحويل الملاحظات لمهام"},
-    {icon:"🤝", name:"المشرف المساعد", tasks:"مراجعة جزء محدد، تعليقات، متابعة وتقييم الإنجاز", ai:"مقارنة ملاحظاته مع الرئيسي: يكشف التكرار والتعارض ويولّد توصية موحدة"},
-    {icon:"🌐", name:"المشرف الخارجي", tasks:"دخول برابط آمن، رفع الملاحظات، اجتماعات إلكترونية، توقيع إلكتروني", ai:"تلخيص الرسالة، نقاط القوة والضعف، تقرير مراجعة أولي"},
-    {icon:"🔎", name:"المناقش الداخلي", tasks:"لوحة: الرسالة والمراجع وسجل التعديلات وتقارير المشرف", ai:"بنك 100 سؤال مناقشة: متوقعة، إحصائية، منهجية، نتائج"},
-    {icon:"🌍", name:"المناقش الخارجي", tasks:"استلام الرسالة، التقرير، القرار، التوقيع الإلكتروني", ai:"Checklist كاملة، تقرير جاهز، درجات الجودة والأصالة والمنهجية"},
-    {icon:"⚖️", name:"المحكم العلمي", tasks:"قبول/رفض التحكيم، طلب تمديد، كتابة ورفع التقرير", ai:"فحص 8 محاور وتقرير درجات: Originality, Methodology, Statistics, Language, References, Overall"},
-    {icon:"🏛️", name:"رئيس القسم", tasks:"مراقبة الرسائل والمشرفين ونسب الإنجاز والمناقشات", ai:"لوحات KPI لحظية، التنبؤ بالتأخير والتخرج"},
-    {icon:"🎓", name:"عمادة الدراسات العليا", tasks:"اعتماد المشرفين واللجان والمناقشات والنسخ النهائية، إصدار الشهادات", ai:"كشف التأخير والازدواجية وضعف الإنتاج ومؤشرات الجودة تلقائياً"},
-    {icon:"🧪", name:"لجنة البحث العلمي", tasks:"المشاريع، التمويل، براءات الاختراع، النشر", ai:"تصنيف المشاريع، ترتيب الأولويات، اقتراح التمويل، تحليل الأثر"},
-    {icon:"📰", name:"مدير المجلة العلمية", tasks:"استلام البحوث، اختيار المحكمين، إدارة المراجعات، القرارات، النشر", ai:"اقتراح أفضل المحكمين، كشف تضارب المصالح، توقع احتمالية القبول"},
-    {icon:"📝", name:"المدقق اللغوي", tasks:"استلام المهمة إلكترونياً، التصويب، اعتماد النسخة", ai:"تصحيح اللغة والأسلوب الأكاديمي والترجمة والتنسيق"},
-    {icon:"📊", name:"المدقق الإحصائي", tasks:"مراجعة الفرضيات والاختبارات والتحليل والنتائج", ai:"اقتراح الاختبار + SPSS Syntax وPython وR وSmartPLS وتفسير تلقائي"},
-    {icon:"🖥️", name:"مدير المنصة", tasks:"المستخدمون، الاشتراكات، المدفوعات، التذاكر، النسخ الاحتياطي", ai:"تقارير تشغيل لحظية وتنبيهات"},
-  ];
-
-  const FLOW = ["إنشاء المشروع","فحص AI للمقترح","المشرف الرئيسي","المشرف المساعد","اعتماد الخطة","رفع الفصول","مراجعة AI","المشرف","طلب المناقشة","المناقش الداخلي","المناقش الخارجي","الفحص النهائي AI","النسخة النهائية","الأرشفة + DOI + المستودع"];
-
-  // ===== التجربة الحية =====
-  const [demo, setDemo] = useState("supervisor");
-  const DEMOS = [
-    ["supervisor","🧑‍🏫 المشرف"],["examiner","🔎 المناقش"],["reviewer","⚖️ المحكم"],["researcher","🔬 الباحث"],
-  ];
-  const [dIn, setDIn] = useState("");
-  const [dIn2, setDIn2] = useState("");
-  const [dBusy, setDBusy] = useState(false);
-  const [dOut, setDOut] = useState("");
-  const [dScores, setDScores] = useState(null);
-  const ta = {width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",outline:"none",resize:"vertical"};
-
-  async function runDemo(){
-    setDBusy(true); setDOut(""); setDScores(null);
-    try {
-      if (demo==="supervisor") {
-        const out = await callAI(
-          "أنت مشرف أكاديمي خبير في منظومة إدارة بحثية ذكية.",
-          `هذا فصل من رسالة طالبك:\n"""${dIn.slice(0,6000)}"""\n\nأنتج تقرير المشرف الذكي: 1) ملخص الفصل في فقرة. 2) التناقضات أو ضعف المنهجية إن وجدت (بالاقتباس). 3) تقييم الجودة من 100 ببنود (المحتوى، المنهجية، اللغة، التوثيق). 4) الملاحظات محوّلة لقائمة مهام مرقمة للطالب.`, 1800);
-        setDOut(out);
-      } else if (demo==="examiner") {
-        const out = await callAI(
-          "أنت مناقش داخلي خبير تجهّز بنك أسئلة المناقشة.",
-          `موضوع الرسالة: ${dIn.slice(0,400)}\nالتخصص: ${dIn2||"عام"}\n\nولّد عينة من بنك أسئلة المناقشة (20 سؤالاً من أصل 100): 5 متوقعة عامة، 5 منهجية، 5 إحصائية/نتائج، 5 عميقة نقدية — مرقمة ومصنفة. (البنك الكامل 100 سؤال في النسخة المؤسسية)`, 1700);
-        setDOut(out);
-      } else if (demo==="reviewer") {
-        const d = await callAIJson(
-          "أنت محكم علمي يصدر تقرير درجات بنمط المنصات العالمية. JSON فقط.",
-          `حكّم هذا العمل:\n"""${dIn.slice(0,6000)}"""\n\nJSON: {"scores":{"Originality":n,"Methodology":n,"Statistics":n,"Language":n,"References":n,"Overall":n} كل قيمة من 100,"verdict":"قبول|قبول بتعديلات طفيفة|تعديلات جوهرية|رفض","top_notes":["أهم 4 ملاحظات"],"strengths":["أهم نقطتي قوة"]}`, 1400);
-        setDScores(d);
-      } else {
-        const out = await callAI(
-          "أنت مساعد الباحث الذكي تحوّل ملاحظات المشرف لخطة عمل.",
-          `ملاحظات المشرف:\n"""${dIn.slice(0,4000)}"""\n\nحوّلها إلى: قائمة مهام مرقمة (المهمة، الأولوية 🔴🟡🟢، الوقت المقدر، الفصل/الموضع) ثم خطة تنفيذ أسبوعية مقترحة.`, 1400);
-        setDOut(out);
-      }
-    } catch(e){ setDOut("تعذّر — أعد المحاولة."); }
-    setDBusy(false);
-  }
-  const SCORE_COLORS = v => v>=90?T.emerald : v>=75?T.teal : v>=60?T.amber : T.rose;
-
-  return (
-    <div style={{maxWidth:880,margin:"0 auto"}}>
-      <Card T={T}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:27}}>🔄</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:17,color:T.text}}>دورة حياة البحث الذكية</div>
-            <div style={{fontSize:12,color:T.textS}}>منظومة إدارة دورة حياة البحث بالكامل: 14 دوراً، سير عمل موحّد، والإنسان يعتمد القرار النهائي</div>
-          </div>
-        </div>
-        <div style={{marginTop:10,padding:"8px 12px",borderRadius:9,background:T.amber+"12",border:`1px solid ${T.amber}30`,fontSize:11,color:T.textS,lineHeight:1.8}}>
-          ⚖️ هذا نموذج المنظومة وتجربتها الحية. النظام الكامل متعدد المستخدمين (حسابات، صلاحيات، توقيعات إلكترونية، اعتمادات، Audit Trail) يتطلب الخادم المركزي — وهو مواصفات النسخة المؤسسية قيد البناء.
-        </div>
-      </Card>
-      <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
-        {TABS.map(([k,l])=>(
-          <button key={k} onClick={()=>setTab(k)}
-            style={{flex:"1 1 auto",padding:"9px 8px",borderRadius:10,border:`1.5px solid ${tab===k?T.gold:T.border}`,
-              background:tab===k?T.gold+"18":T.card,color:tab===k?T.gold:T.text,fontWeight:tab===k?700:500,fontSize:12.5,fontFamily:"inherit",cursor:"pointer"}}>{l}</button>
-        ))}
-      </div>
-
-      {tab==="roles" && <div style={{marginTop:12}}>
-        {ROLES.map((r,i)=>(
-          <div key={i} style={{marginBottom:8}}>
-            <button onClick={()=>setOpenRole(openRole===i?-1:i)}
-              style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"12px 14px",borderRadius:12,cursor:"pointer",fontFamily:"inherit",
-                border:`1.5px solid ${openRole===i?T.gold:T.border}`,background:openRole===i?T.gold+"0d":T.card}}>
-              <span style={{fontSize:21}}><EmIcon e={r.icon}/></span>
-              <span style={{fontSize:14,fontWeight:800,color:T.text,flex:1,textAlign:"right"}}>{r.name}</span>
-              <span style={{color:T.textS,fontSize:13}}>{openRole===i?"▲":"▼"}</span>
-            </button>
-            {openRole===i && (
-              <div style={{padding:"12px 16px",border:`1.5px solid ${T.border}`,borderTop:"none",borderRadius:"0 0 12px 12px",background:T.card}}>
-                <div style={{fontSize:12.5,lineHeight:1.9,color:T.text,marginBottom:8}}><b style={{color:T.teal}}>📋 المهام:</b> {r.tasks}</div>
-                <div style={{fontSize:12.5,lineHeight:1.9,color:T.text,padding:"9px 12px",borderRadius:9,background:T.gold+"0c",border:`1px solid ${T.gold}25`}}>
-                  <b style={{color:T.gold}}>🤖 الذكاء الاصطناعي:</b> {r.ai}
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>}
-
-      {tab==="flow" && <Card T={T} style={{marginTop:12}}>
-        <div style={{fontWeight:800,fontSize:14,color:T.text,marginBottom:14}}>🔄 سير العمل الموحّد — من الفكرة إلى DOI</div>
-        {FLOW.map((s,i)=>{
-          const isAI = s.includes("AI");
-          return (
-            <div key={i} style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
-              <div style={{width:34,height:34,borderRadius:"50%",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",
-                fontWeight:800,fontSize:12.5,background:isAI?T.violet+"18":T.gold+"15",color:isAI?T.violet:T.gold,
-                border:`1.5px solid ${isAI?T.violet:T.gold}45`}}>{i+1}</div>
-              <div style={{flex:1,padding:"9px 14px",borderRadius:10,fontSize:13,fontWeight:700,
-                background:isAI?T.violet+"0a":T.bgS,color:T.text,border:`1px solid ${isAI?T.violet+"30":T.border}`}}>
-                {isAI?"🤖 ":""}{s}
-              </div>
-            </div>
-          );
-        }).reduce((acc,el,i)=>acc.concat(i?[<div key={"a"+i} style={{margin:"0 0 4px 0",paddingRight:14,color:T.textDim,fontSize:11}}>│</div>,el]:[el]),[])}
-        <div style={{fontSize:11,color:T.textDim,marginTop:10}}>🟣 المراحل البنفسجية ينفذها الذكاء الاصطناعي تلقائياً · 🟡 الذهبية بقرار بشري معتمد</div>
-      </Card>}
-
-      {tab==="live" && <>
-        <Card T={T} style={{marginTop:12}}>
-          <div style={{fontSize:12.5,fontWeight:800,color:T.text,marginBottom:8}}>اختر الدور وجرّب مهمته الذكية فعلياً:</div>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
-            {DEMOS.map(([k,l])=>(
-              <button key={k} onClick={()=>{setDemo(k);setDOut("");setDScores(null);}}
-                style={{padding:"9px 16px",borderRadius:18,border:`1.5px solid ${demo===k?T.gold:T.border}`,
-                  background:demo===k?T.gold+"15":T.card,color:demo===k?T.gold:T.text,fontSize:12.5,fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>{l}</button>
-            ))}
-          </div>
-          {demo==="supervisor" && <textarea rows={6} value={dIn} onChange={e=>setDIn(e.target.value)} style={ta} placeholder="الصق فصلاً من رسالة الطالب — سيلخّصه المشرف الذكي ويقيّمه /100 ويحوّل ملاحظاته لمهام..."/>}
-          {demo==="examiner" && <>
-            <input value={dIn} onChange={e=>setDIn(e.target.value)} style={{...ta,resize:"none"}} placeholder="موضوع الرسالة..."/>
-            <input value={dIn2} onChange={e=>setDIn2(e.target.value)} style={{...ta,resize:"none",marginTop:8}} placeholder="التخصص..."/>
-          </>}
-          {demo==="reviewer" && <textarea rows={6} value={dIn} onChange={e=>setDIn(e.target.value)} style={ta} placeholder="الصق البحث — سيصدر المحكم تقرير الدرجات الثماني (Originality, Methodology...)..."/>}
-          {demo==="researcher" && <textarea rows={5} value={dIn} onChange={e=>setDIn(e.target.value)} style={ta} placeholder="الصق ملاحظات مشرفك — ستتحول لقائمة مهام بأولويات وخطة أسبوعية..."/>}
-          <div style={{display:"flex",justifyContent:"flex-end",marginTop:10}}>
-            <Btn ch={dBusy?<><Spin/> جارٍ التنفيذ…</>:"⚡ نفّذ المهمة الذكية"} v="gold" T={T} onClick={runDemo} disabled={dBusy||!dIn.trim()}/>
-          </div>
-        </Card>
-        {dScores && dScores.scores && (
-          <Card T={T} style={{marginTop:12}}>
-            <div style={{fontWeight:800,fontSize:14,color:T.gold,marginBottom:12}}>⚖️ تقرير المحكم — الدرجات</div>
-            {Object.entries(dScores.scores).map(([k,v])=>(
-              <div key={k} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-                <span style={{width:110,fontSize:12,fontWeight:700,color:k==="Overall"?T.gold:T.textS,direction:"ltr",textAlign:"left"}}>{k}</span>
-                <div style={{flex:1,height:k==="Overall"?14:10,background:T.bgS,borderRadius:7,overflow:"hidden"}}>
-                  <div style={{height:"100%",width:`${v}%`,background:SCORE_COLORS(v),borderRadius:7,transition:"width .6s"}}/>
-                </div>
-                <span style={{width:42,fontSize:13,fontWeight:800,color:SCORE_COLORS(v)}}>{v}%</span>
-              </div>
-            ))}
-            <div style={{marginTop:12,padding:"10px 13px",borderRadius:10,background:T.gold+"10",border:`1px solid ${T.gold}30`,fontWeight:800,fontSize:13.5,color:T.gold}}>
-              القرار: {dScores.verdict}
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:10,marginTop:10}}>
-              <div>
-                <div style={{fontSize:12,fontWeight:800,color:T.rose,marginBottom:5}}>أهم الملاحظات:</div>
-                {(dScores.top_notes||[]).map((x,i)=><div key={i} style={{fontSize:12,lineHeight:1.8,color:T.text}}>• {x}</div>)}
-              </div>
-              <div>
-                <div style={{fontSize:12,fontWeight:800,color:T.emerald,marginBottom:5}}>نقاط القوة:</div>
-                {(dScores.strengths||[]).map((x,i)=><div key={i} style={{fontSize:12,lineHeight:1.8,color:T.text}}>• {x}</div>)}
-              </div>
-            </div>
-          </Card>
-        )}
-        {dOut && (
-          <Card T={T} style={{marginTop:12}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-              <div style={{fontWeight:800,fontSize:14,color:T.gold}}>⚡ المخرج</div>
-              <Btn ch="📋 نسخ" v="ghost" T={T} onClick={()=>navigator.clipboard?.writeText(dOut)}/> <ReportBtn T={T} title="مخرج المهمة الذكية" body={dOut} opts={{icon:"⚡",subtitle:"دورة حياة البحث"}}/>
-            </div>
-            <div style={{whiteSpace:"pre-wrap",lineHeight:1.95,fontSize:13.5,color:T.text}}>{dOut}</div>
-          </Card>
-        )}
-      </>}
-    </div>
-  );
-}
-
-
-// ── منظومة النشر الذكية (AI Publishing Studio) ─────────────────
-function PublishingStudioSystem({ T }) {
-  const [tab, setTab] = useState("finder");
-  const TABS = [["finder","🎯 موجّه المجلات"],["format","📐 قالب الناشر"],["sim","🤖 محاكي المحكمين"],["pack","✉️ حزمة التقديم"]];
-  const ta = {width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",outline:"none",resize:"vertical"};
-  const lbl = {display:"block",fontSize:12,fontWeight:700,color:T.textS,marginBottom:5};
-  const e = encodeURIComponent;
-  const [files, setFiles] = useState([]);
-  async function getSrc(txt){ let t=txt.trim(); if(!t&&files.length){try{t=await readFile(files[0]);}catch(x){}} return t; }
-  const barColor = v => v>=90?T.emerald : v>=75?T.teal : v>=60?T.amber : T.rose;
-  function Bars({scores, big}){
-    return <>{Object.entries(scores).map(([k,v])=>(
-      <div key={k} style={{display:"flex",alignItems:"center",gap:10,marginBottom:7}}>
-        <span style={{width:120,fontSize:11.5,fontWeight:700,color:k==="Overall"?T.gold:T.textS,direction:"ltr",textAlign:"left"}}>{k}</span>
-        <div style={{flex:1,height:k==="Overall"?13:9,background:T.bgS,borderRadius:7,overflow:"hidden"}}>
-          <div style={{height:"100%",width:`${v}%`,background:barColor(v),borderRadius:7,transition:"width .5s"}}/>
-        </div>
-        <span style={{width:40,fontSize:12.5,fontWeight:800,color:barColor(v)}}>{v}%</span>
-      </div>
-    ))}</>;
-  }
-
-  // ===== 1) موجّه المجلات =====
-  const [fTitle,setFTitle]=useState(""); const [fAbs,setFAbs]=useState(""); const [fField,setFField]=useState("");
-  const [fQ,setFQ]=useState("أي تصنيف"); const [fApc,setFApc]=useState("لا يهم");
-  const [fBusy,setFBusy]=useState(false); const [fr,setFr]=useState(null);
-  async function runFinder(){
-    if(!fTitle.trim()&&!fAbs.trim()) return;
-    setFBusy(true); setFr(null);
-    try {
-      const d = await callAIJson(
-        "أنت خبير نشر علمي يعرف المجلات الكبرى في كل تخصص. ترشّح مجلات حقيقية معروفة فقط، وتذكر بصراحة أن التصنيفات والرسوم تتغير ويجب التحقق من المصادر الرسمية. JSON فقط.",
-        `الورقة: "${fTitle}"\nالمجال: ${fField||"عام"}\nتفضيل التصنيف: ${fQ} · تفضيل الرسوم: ${fApc}\nالملخص:\n"""${fAbs.slice(0,2500)}"""\n\nJSON: {"match":{"Topic":n,"Keywords":n,"Methodology":n,"Novelty":n} من 100 لجاهزية الورقة للمطابقة,"journals":[5-6 مجلات حقيقية معروفة: {"name":"الاسم الرسمي","publisher":"الناشر","fit":n من 100,"quartile":"تقدير Q1-Q4 أو Scopus/ESCI","apc":"ملاحظة الرسوم التقريبية أو مفتوح/اشتراك","why":"سبب الملاءمة بإيجاز","speed":"تقدير سرعة المراجعة"}],"strategy":"نصيحة ترتيب التقديم (الطموحة أولاً أم الآمنة)"}`, 2300);
-      setFr(d && d.journals ? d : {error:"تعذّر — أعد المحاولة."});
-    } catch(x){ setFr({error:"تعذّر — أعد المحاولة."}); }
-    setFBusy(false);
-  }
-
-  // ===== 2) قالب الناشر =====
-  const [pubIn,setPubIn]=useState(""); const [pub,setPub]=useState("Elsevier");
-  const PUBS=["Elsevier","Springer","Nature Portfolio","IEEE","MDPI","Wiley","Taylor & Francis","SAGE","Frontiers"];
-  const [pBusy,setPBusy]=useState(false); const [pOut,setPOut]=useState("");
-  async function runFormat(){
-    const src = await getSrc(pubIn); if(!src) return;
-    setPBusy(true); setPOut("");
-    try {
-      const out = await callAI(
-        `أنت خبير تهيئة الأوراق لقوالب الناشرين العالميين. تعرف متطلبات ${pub} القياسية.`,
-        `هيّئ هذه الورقة لمتطلبات ${pub}:\n"""${src.slice(0,7000)}"""\n\nأخرج: 1) صفحة العنوان كاملة بعناصر ${pub} (Title, Running Title, Authors+Affiliations+ORCID placeholders, Corresponding Author). 2) ترتيب الأقسام الصحيح للناشر مع نقل أي قسم في غير موضعه. 3) Declarations جاهزة: Conflict of Interest, Funding, Data Availability, Ethics, Author Contributions (CRediT), Acknowledgments — بصيغ ${pub} المعيارية كعناصر نائبة قابلة للتعبئة. 4) تحويل أول 5 مراجع لنمط ${pub} كمثال. 5) قائمة فحص يدوية (الخط، الهوامش، دقة الأشكال DPI، حدود الكلمات) لإكمالها في Word.`, 2600);
-      setPOut(out);
-    } catch(x){ setPOut("تعذّر — أعد المحاولة."); }
-    setPBusy(false);
-  }
-
-  // ===== 3) محاكي المحكمين + متنبئ القبول =====
-  const [sIn,setSIn]=useState(""); const [sBusy,setSBusy]=useState(false); const [sr,setSr]=useState(null);
-  const [openRev,setOpenRev]=useState(0);
-  async function runSim(){
-    const src = await getSrc(sIn); if(!src) return;
-    setSBusy(true); setSr(null);
-    try {
-      const d = await callAIJson(
-        "أنت تحاكي لجنة ثلاثة محكمين حقيقيين بأمزجة مختلفة وتتنبأ بالقبول. JSON فقط.",
-        `الورقة:\n"""${src.slice(0,7000)}"""\n\nJSON: {"reviewers":[{"name":"Reviewer 1 — المنهجية (صارم)","notes":["8-12 ملاحظة بمواضعها"]},{"name":"Reviewer 2 — الإحصاء والنتائج","notes":[...]},{"name":"Reviewer 3 — اللغة والعرض","notes":[...]}],"scores":{"Originality":n,"Language":n,"Methodology":n,"Statistics":n,"References":n,"Formatting":n,"Overall":n},"acceptance":n احتمالية القبول من 100,"fix_first":["أخطر 3 إصلاحات قبل التقديم"]}`, 2800);
-      setSr(d && d.scores ? d : {error:"تعذّر — أعد المحاولة."});
-    } catch(x){ setSr({error:"تعذّر — أعد المحاولة."}); }
-    setSBusy(false);
-  }
-
-  // ===== 4) حزمة التقديم =====
-  const [kIn,setKIn]=useState(""); const [kJournal,setKJournal]=useState("");
-  const [kBusy,setKBusy]=useState(false); const [kOut,setKOut]=useState("");
-  async function runPack(){
-    const src = await getSrc(kIn); if(!src) return;
-    setKBusy(true); setKOut("");
-    try {
-      const out = await callAI(
-        "أنت خبير حزم التقديم للمجلات العالمية. تكتب بالإنجليزية الأكاديمية للمراسلات وبالعربية للشرح.",
-        `الورقة:\n"""${src.slice(0,6000)}"""\nالمجلة المستهدفة: ${kJournal||"(عامة — استخدم [Journal Name])"}\n\nولّد حزمة التقديم الكاملة:\n1) Cover Letter احترافي بالإنجليزية (محكم البنية: الأهمية، الملاءمة للمجلة، عدم التقديم المزدوج).\n2) Conflict of Interest Statement.\n3) Funding Statement (بعنصر نائب).\n4) Author Contributions بنظام CRediT.\n5) Ethics Statement.\n6) Data Availability Statement.\n7) Acknowledgments (عنصر نائب).\n8) Highlights (3-5 نقاط).\nكل عنصر بعنوان واضح قابل للنسخ المستقل.`, 2600);
-      setKOut(out);
-    } catch(x){ setKOut("تعذّر — أعد المحاولة."); }
-    setKBusy(false);
-  }
-
-  return (
-    <div style={{maxWidth:860,margin:"0 auto"}}>
-      <Card T={T}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:27}}>🚀</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:17,color:T.text}}>منظومة النشر الذكية</div>
-            <div style={{fontSize:12,color:T.textS}}>من الورقة إلى التقديم: موجّه المجلات · قالب الناشر · محاكي المحكمين ومتنبئ القبول · حزمة التقديم</div>
-          </div>
-        </div>
-      </Card>
-      <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
-        {TABS.map(([k,l])=>(
-          <button key={k} onClick={()=>setTab(k)}
-            style={{flex:"1 1 auto",padding:"9px 8px",borderRadius:10,border:`1.5px solid ${tab===k?T.gold:T.border}`,
-              background:tab===k?T.gold+"18":T.card,color:tab===k?T.gold:T.text,fontWeight:tab===k?700:500,fontSize:12.5,fontFamily:"inherit",cursor:"pointer"}}>{l}</button>
-        ))}
-      </div>
-
-      {tab==="finder" && <>
-        <Card T={T} style={{marginTop:12}}>
-          <label style={lbl}>عنوان الورقة *</label>
-          <input style={{...ta,resize:"none"}} value={fTitle} onChange={x=>setFTitle(x.target.value)}/>
-          <label style={{...lbl,marginTop:10}}>الملخص</label>
-          <textarea rows={4} value={fAbs} onChange={x=>setFAbs(x.target.value)} style={ta}/>
-          <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap",alignItems:"center"}}>
-            <input style={{...ta,resize:"none",flex:"1 1 150px",width:"auto"}} value={fField} onChange={x=>setFField(x.target.value)} placeholder="المجال"/>
-            <Dropdown T={T} value={fQ} onChange={setFQ} options={["أي تصنيف","Q1","Q2","Q1-Q2","Scopus","ESCI"]}/>
-            <Dropdown T={T} value={fApc} onChange={setFApc} options={["لا يهم","مجاني/اشتراك","أقل من 500$","500-1500$"]}/>
-            <Btn ch={fBusy?<><Spin/> جارٍ الترشيح…</>:"🎯 رشّح المجلات"} v="gold" T={T} onClick={runFinder} disabled={fBusy||(!fTitle.trim()&&!fAbs.trim())}/>
-          </div>
-        </Card>
-        {fr && fr.error && <Card T={T} style={{marginTop:12}}><div style={{color:T.rose,fontSize:13}}>{fr.error}</div></Card>}
-        {fr && !fr.error && <>
-          <Card T={T} style={{marginTop:12}}>
-            <div style={{fontWeight:800,fontSize:13.5,color:T.text,marginBottom:10}}>📊 جاهزية المطابقة</div>
-            <Bars scores={fr.match}/>
-          </Card>
-          <Card T={T} style={{marginTop:12}}>
-            <div style={{fontWeight:800,fontSize:13.5,color:T.gold,marginBottom:10}}>🎯 المجلات المرشّحة</div>
-            {(fr.journals||[]).map((j,i)=>(
-              <div key={i} style={{padding:"12px 14px",borderRadius:11,background:T.bgS,border:`1px solid ${T.border}`,marginBottom:9}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                  <span style={{fontWeight:800,fontSize:13.5,color:T.text,flex:1}}>{j.name}</span>
-                  <span style={{fontSize:14,fontWeight:800,color:barColor(j.fit)}}>{j.fit}%</span>
-                </div>
-                <div style={{fontSize:11.5,color:T.textS,margin:"4px 0"}}>{j.publisher} · {j.quartile} · {j.apc} · ⏱ {j.speed}</div>
-                <div style={{fontSize:12,color:T.text,lineHeight:1.8}}>{j.why}</div>
-                <div style={{display:"flex",gap:7,flexWrap:"wrap",marginTop:7}}>
-                  <a href={"https://www.scimagojr.com/journalsearch.php?q="+e(j.name)} target="_blank" rel="noreferrer"
-                    style={{fontSize:10.5,padding:"4px 11px",borderRadius:14,background:T.blue+"15",color:T.blue,border:`1px solid ${T.blue}35`,textDecoration:"none",fontWeight:700}}>Scimago تحقق</a>
-                  <a href={"https://mjl.clarivate.com/search-results?issn=&hide_exact_match_fl=true&utm_source=mjl&search="+e(j.name)} target="_blank" rel="noreferrer"
-                    style={{fontSize:10.5,padding:"4px 11px",borderRadius:14,background:T.violet+"15",color:T.violet,border:`1px solid ${T.violet}35`,textDecoration:"none",fontWeight:700}}>Clarivate MJL</a>
-                  <a href={"https://doaj.org/search/journals?source=%7B%22query%22%3A%7B%22query_string%22%3A%7B%22query%22%3A%22"+e(j.name)+"%22%7D%7D%7D"} target="_blank" rel="noreferrer"
-                    style={{fontSize:10.5,padding:"4px 11px",borderRadius:14,background:T.teal+"15",color:T.teal,border:`1px solid ${T.teal}35`,textDecoration:"none",fontWeight:700}}>DOAJ</a>
-                </div>
-              </div>
-            ))}
-            <div style={{fontSize:12.5,color:T.teal,fontWeight:700,marginTop:6}}>💡 الاستراتيجية: {fr.strategy}</div>
-            <div style={{fontSize:10.5,color:T.textDim,marginTop:6}}>⚖️ النسب تقديرية من معرفة النموذج — تحقق من التصنيف والرسوم الحالية عبر الروابط (تتغير سنوياً). المطابقة الحيّة بقواعد Scopus/JCR ضمن النسخة المؤسسية.</div>
-          </Card>
-        </>}
-      </>}
-
-      {(tab==="format"||tab==="sim"||tab==="pack") && (
-        <Card T={T} style={{marginTop:12}}>
-          <FileZone files={files} setFiles={setFiles} T={T}/>
-          <div style={{fontSize:11,color:T.textDim,margin:"6px 0 10px"}}>ارفع الورقة أو الصقها في الخانة:</div>
-          {tab==="format" && <>
-            <textarea rows={5} value={pubIn} onChange={x=>setPubIn(x.target.value)} style={ta} placeholder="الصق الورقة..."/>
-            <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap",alignItems:"center"}}>
-              <Dropdown T={T} value={pub} onChange={setPub} options={PUBS}/>
-              <div style={{flex:1}}/>
-              <Btn ch={pBusy?<><Spin/> جارٍ التهيئة…</>:"📐 هيّئ لقالب "+pub} v="gold" T={T} onClick={runFormat} disabled={pBusy||(!pubIn.trim()&&!files.length)}/>
-            </div>
-          </>}
-          {tab==="sim" && <>
-            <textarea rows={5} value={sIn} onChange={x=>setSIn(x.target.value)} style={ta} placeholder="الصق الورقة — سيحاكمها 3 محكمون ويتنبأ النظام بالقبول..."/>
-            <div style={{display:"flex",justifyContent:"flex-end",marginTop:10}}>
-              <Btn ch={sBusy?<><Spin/> اللجنة تعمل…</>:"🤖 شغّل المحاكاة والتنبؤ"} v="gold" T={T} onClick={runSim} disabled={sBusy||(!sIn.trim()&&!files.length)}/>
-            </div>
-          </>}
-          {tab==="pack" && <>
-            <textarea rows={5} value={kIn} onChange={x=>setKIn(x.target.value)} style={ta} placeholder="الصق الورقة..."/>
-            <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap",alignItems:"center"}}>
-              <input style={{...ta,resize:"none",flex:"1 1 180px",width:"auto"}} value={kJournal} onChange={x=>setKJournal(x.target.value)} placeholder="اسم المجلة المستهدفة (اختياري)"/>
-              <Btn ch={kBusy?<><Spin/> جارٍ التوليد…</>:"✉️ ولّد حزمة التقديم"} v="gold" T={T} onClick={runPack} disabled={kBusy||(!kIn.trim()&&!files.length)}/>
-            </div>
-          </>}
-        </Card>
-      )}
-
-      {tab==="format" && pOut && <Card T={T} style={{marginTop:12}}>
-        <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-          <div style={{fontWeight:800,fontSize:14,color:T.gold}}>📐 الورقة بقالب {pub}</div>
-          <Btn ch="📋 نسخ" v="ghost" T={T} onClick={()=>navigator.clipboard?.writeText(pOut)}/> <ReportBtn T={T} title="الورقة بقالب الناشر" body={pOut} opts={{icon:"📐",subtitle:"منظومة النشر الذكية"}}/>
-        </div>
-        <div style={{whiteSpace:"pre-wrap",lineHeight:1.95,fontSize:13,color:T.text}}>{pOut}</div>
-      </Card>}
-
-      {tab==="sim" && sr && sr.error && <Card T={T} style={{marginTop:12}}><div style={{color:T.rose,fontSize:13}}>{sr.error}</div></Card>}
-      {tab==="sim" && sr && !sr.error && <>
-        <Card T={T} style={{marginTop:12}}>
-          <div style={{fontWeight:800,fontSize:14,color:T.gold,marginBottom:10}}>📊 درجات التقييم</div>
-          <Bars scores={sr.scores}/>
-          <div style={{marginTop:12,padding:"13px 16px",borderRadius:12,background:barColor(sr.acceptance)+"12",border:`1.5px solid ${barColor(sr.acceptance)}40`,
-            display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-            <span style={{fontWeight:800,fontSize:14,color:T.text}}>Expected Acceptance Probability</span>
-            <span style={{fontWeight:800,fontSize:22,color:barColor(sr.acceptance)}}>{sr.acceptance}%</span>
-          </div>
-          <div style={{marginTop:10}}>
-            <div style={{fontSize:12.5,fontWeight:800,color:T.rose,marginBottom:5}}>🔧 أصلح أولاً:</div>
-            {(sr.fix_first||[]).map((x,i)=><div key={i} style={{fontSize:12.5,lineHeight:1.9,color:T.text}}>• {x}</div>)}
-          </div>
-        </Card>
-        <Card T={T} style={{marginTop:12}}>
-          <div style={{fontWeight:800,fontSize:13.5,color:T.text,marginBottom:10}}>🤖 ملاحظات المحكمين الثلاثة</div>
-          {(sr.reviewers||[]).map((r,i)=>(
-            <div key={i} style={{marginBottom:8}}>
-              <button onClick={()=>setOpenRev(openRev===i?-1:i)}
-                style={{width:"100%",display:"flex",justifyContent:"space-between",padding:"10px 13px",borderRadius:10,
-                  border:`1.5px solid ${T.border}`,background:openRev===i?T.bgS:T.card,color:T.text,fontFamily:"inherit",fontSize:13,fontWeight:700,cursor:"pointer"}}>
-                <span style={{color:T.textS}}>{openRev===i?"▲":"▼"} {(r.notes||[]).length} ملاحظة</span><span>{r.name}</span>
-              </button>
-              {openRev===i && <div style={{padding:"12px 14px",border:`1.5px solid ${T.border}`,borderTop:"none",borderRadius:"0 0 10px 10px",background:T.card}}>
-                {(r.notes||[]).map((n,j)=><div key={j} style={{fontSize:12.5,lineHeight:1.9,color:T.text,marginBottom:5}}>{j+1}. {n}</div>)}
-              </div>}
-            </div>
-          ))}
-        </Card>
-      </>}
-
-      {tab==="pack" && kOut && <Card T={T} style={{marginTop:12}}>
-        <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-          <div style={{fontWeight:800,fontSize:14,color:T.gold}}>✉️ حزمة التقديم الكاملة</div>
-          <Btn ch="📋 نسخ الكل" v="ghost" T={T} onClick={()=>navigator.clipboard?.writeText(kOut)}/> <ReportBtn T={T} title="حزمة التقديم للمجلة" body={kOut} opts={{icon:"✉️",subtitle:"منظومة النشر الذكية"}}/>
-        </div>
-        <div style={{whiteSpace:"pre-wrap",lineHeight:1.95,fontSize:13,color:T.text}}>{kOut}</div>
-      </Card>}
-    </div>
-  );
-}
-
-
-// ── قارئ الجداول من الملفات (CSV/Excel/PDF/Word) ───────────────
-async function extractTabularFile(f){
-  const name = (f.name||"").toLowerCase();
-  if(/\.xlsx?$/.test(name)){
-    const XLSX = await import("xlsx");
-    const wb = XLSX.read(await f.arrayBuffer());
-    return XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]);
-  }
-  if(/\.pdf$/.test(name)) return await readPdfText(f, 60000);
-  if(/\.docx?$/.test(name)) return await readFile(f);
-  return await f.text();
-}
-function tableizeText(t){
-  const lines = t.replace(/\r/g,"").split("\n").map(l=>l.trim()).filter(Boolean);
-  const fns = [l=>l.split("\t"), l=>l.split(";"), l=>l.split(","), l=>l.split(/\s{2,}/)];
-  let best = null;
-  for(const fn of fns){
-    const tab = lines.map(l=>fn(l).map(x=>x.trim())).filter(r=>r.length>=2);
-    if(tab.length >= 3){
-      const c0 = tab[0].length;
-      const rows = tab.filter(r=>Math.abs(r.length-c0)<=1).map(r=>{ const q=[...r]; while(q.length<c0) q.push(""); return q.slice(0,c0); });
-      const score = rows.length * c0;
-      if(rows.length>=3 && (!best || score>best.score)) best = {score, rows};
-    }
-  }
-  return best ? best.rows : null;
-}
-
-
-// ── استوديو النماذج الإلكترونية الذكية ─────────────────────────
-function FormsStudioSystem({ T }) {
-  const FORMS = [
-    {key:"assign", icon:"🧑‍🏫", name:"خطاب تكليف مشرف", signers:["عميد الكلية","رئيس القسم"],
-      fields:[["student","اسم الطالب/ة"],["thesis","عنوان الرسالة"],["supervisor","اسم المشرف ورتبته"],["dept","القسم/الكلية"],["degree","الدرجة (ماجستير/دكتوراه)"]],
-      hint:"خطاب تكليف رسمي بالإشراف: تمهيد نظامي، بيانات التكليف، مهام المشرف باختصار، مدة الإشراف، التحية الختامية."},
-    {key:"committee", icon:"👥", name:"قرار تشكيل لجنة مناقشة", signers:["عميد الدراسات العليا"],
-      fields:[["student","اسم الطالب/ة"],["thesis","عنوان الرسالة"],["chair","رئيس اللجنة (المشرف)"],["internal","المناقش الداخلي"],["external","المناقش الخارجي وجهته"],["date","موعد المناقشة المقترح:date"]],
-      hint:"قرار إداري مرقم: الاستناد النظامي، تشكيل اللجنة بجدول الأدوار، الموعد والمكان، التعميم على الجهات."},
-    {key:"minutes", icon:"📝", name:"محضر اجتماع لجنة الإشراف", signers:["المشرف الرئيسي","الطالب/ة"],
-      fields:[["student","اسم الطالب/ة"],["thesis","عنوان الرسالة"],["date","تاريخ الاجتماع:date"],["attendees","الحاضرون"],["topics","أبرز ما نوقش:area"],["decisions","التوصيات والقرارات:area"]],
-      hint:"محضر رسمي: بيانات الجلسة، الحضور، جدول الأعمال، المناقشات ملخصة، القرارات مرقمة بمسؤول وموعد، التوقيعات."},
-    {key:"progress", icon:"📈", name:"تقرير المشرف الدوري", signers:["المشرف الرئيسي","رئيس القسم"],
-      fields:[["student","اسم الطالب/ة"],["thesis","عنوان الرسالة"],["period","الفترة (الفصل الدراسي)"],["done","ما أُنجز:area"],["rating","تقدير الأداء (ممتاز/جيد جداً/جيد/ضعيف)"],["next","خطة المرحلة القادمة:area"]],
-      hint:"تقرير دوري نظامي: نسبة الإنجاز، الالتزام بالخطة الزمنية، الملاحظات، التقدير، التوصية بالاستمرار."},
-    {key:"defense_req", icon:"🎓", name:"طلب مناقشة", signers:["الطالب/ة","المشرف الرئيسي"],
-      fields:[["student","اسم الطالب/ة والرقم الجامعي"],["thesis","عنوان الرسالة"],["dept","القسم/التخصص"],["readiness","مبررات الجاهزية:area"]],
-      hint:"طلب رسمي من الطالب بتأييد المشرف: استيفاء المتطلبات، اكتمال الفصول، اجتياز فحص الاستلال، طلب تحديد الموعد."},
-    {key:"examiner", icon:"⚖️", name:"تقرير مناقش (صحيفة الحكم)", signers:["المناقش"],
-      fields:[["examiner","اسم المناقش وصفته"],["student","اسم الطالب/ة"],["thesis","عنوان الرسالة"],["strengths","نقاط القوة:area"],["notes","الملاحظات الجوهرية:area"],["verdict","التوصية (إجازة/إجازة بتعديلات/إعادة)"]],
-      hint:"صحيفة حكم رسمية: تقييم محاور (المشكلة، المنهجية، النتائج، اللغة، التوثيق) بدرجات، الملاحظات، التوصية النهائية الصريحة."},
-    {key:"final_ok", icon:"✅", name:"خطاب اعتماد النسخة النهائية", signers:["المشرف الرئيسي","عميد الدراسات العليا"],
-      fields:[["student","اسم الطالب/ة"],["thesis","عنوان الرسالة"],["fixes","إفادة إتمام التعديلات:area"]],
-      hint:"اعتماد رسمي: الإشارة لقرار اللجنة، إفادة إتمام التعديلات ومطابقتها، اعتماد النسخة للإيداع والأرشفة."},
-    {key:"cert", icon:"🏅", name:"شهادة إتمام المناقشة", signers:["عميد الدراسات العليا"],
-      fields:[["student","اسم الطالب/ة"],["thesis","عنوان الرسالة"],["degree","الدرجة"],["grade","التقدير"],["date","تاريخ المناقشة:date"]],
-      hint:"شهادة رسمية موجزة فاخرة الصياغة: تشهد الجهة بمناقشة وإجازة الرسالة بالتقدير المذكور."},
-    {key:"extend", icon:"⏳", name:"طلب تمديد/تأجيل", signers:["الطالب/ة","المشرف الرئيسي"],
-      fields:[["student","اسم الطالب/ة والرقم"],["thesis","عنوان الرسالة"],["period","مدة التمديد المطلوبة"],["reasons","المبررات:area"]],
-      hint:"طلب نظامي مهذب: المبررات بموضوعية، ما أُنجز فعلاً، الخطة الزمنية البديلة الملزمة، التعهد بالالتزام."},
-    {key:"pledge", icon:"🤝", name:"تعهد الأمانة العلمية", signers:["الطالب/ة"],
-      fields:[["student","اسم الطالب/ة والرقم"],["thesis","عنوان الرسالة"]],
-      hint:"تعهد رسمي: أصالة العمل، التوثيق الأمين، عدم الاستلال، تحمل المسؤولية النظامية، بصيغة قانونية رصينة موجزة."},
-  ];
-  const [sel, setSel] = useState(null);
-  const [vals, setVals] = useState({});
-  const [busy, setBusy] = useState(false);
-  const [doc, setDoc] = useState("");
-  const refNo = useRef("MHK-"+Date.now().toString(36).toUpperCase().slice(-6)).current;
-  const ta = {width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",outline:"none"};
-
-  function dualDate(d){
-    try {
-      const dt = d ? new Date(d+"T12:00:00") : new Date();
-      const f = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura",{day:"numeric",month:"numeric",year:"numeric"});
-      const p = Object.fromEntries(f.formatToParts(dt).filter(x=>x.type!=="literal").map(x=>[x.type,parseInt(x.value)]));
-      return `${p.day}/${p.month}/${p.year}هـ الموافق ${dt.toLocaleDateString("ar-SA-u-ca-gregory")}م`;
-    } catch(e){ return new Date().toLocaleDateString("ar-SA"); }
-  }
-
-  async function generate(){
-    const f = FORMS.find(x=>x.key===sel); if(!f) return;
-    setBusy(true); setDoc("");
-    const data = f.fields.map(([id,label])=>`${label.split(":")[0]}: ${vals[id]||"—"}`).join("\n");
-    try {
-      const out = await callAI(
-        "أنت أمين سر أكاديمي خبير بالمراسلات الرسمية الجامعية السعودية. تكتب وثائق رسمية رصينة كاملة الأركان دون ترويسة أو تاريخ أو توقيعات (تُضاف آلياً) — ابدأ من التحية/الموضوع مباشرة.",
-        `اكتب «${f.name}» رسمياً.\n${f.hint}\n\nالبيانات:\n${data}\n\nالوثيقة كاملة بصياغة نظامية، فقرات واضحة، دون عناصر نائبة فارغة قدر الإمكان.`, 1400);
-      setDoc(out);
-    } catch(e){ setDoc("تعذّر التوليد — أعد المحاولة."); }
-    setBusy(false);
-  }
-
-  function printDoc(){
-    const f = FORMS.find(x=>x.key===sel); if(!f||!doc) return;
-    const dateField = f.fields.find(x=>x[1].includes(":date"));
-    const dd = dualDate(dateField?vals[dateField[0]]:null);
-    const html = `<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>${f.name}</title><style>
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap');
-body{font-family:'Tajawal',sans-serif;margin:0;background:#eee}
-.page{width:210mm;min-height:280mm;margin:10px auto;background:#fff;padding:18mm 20mm;box-sizing:border-box;box-shadow:0 4px 20px #0002}
-.head{display:flex;justify-content:space-between;align-items:center;border-bottom:2.5px solid #1F3864;padding-bottom:10px}
-.logo{width:64px;height:64px;border:1.5px dashed #aaa;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#999}
-.org{text-align:center}.org b{color:#1F3864;font-size:16px}.org div{font-size:11px;color:#666}
-.meta{display:flex;justify-content:space-between;font-size:11.5px;color:#444;margin:12px 0}
-h1{text-align:center;font-size:19px;color:#1F3864;margin:14px 0;text-decoration:underline}
-.body{font-size:14px;line-height:2.15;color:#222;white-space:pre-wrap;text-align:justify}
-.signs{display:flex;justify-content:space-around;margin-top:46px;flex-wrap:wrap;gap:20px}
-.sign{text-align:center;font-size:12.5px}.sign .line{width:160px;border-top:1.5px solid #333;margin:36px auto 6px}
-.foot{margin-top:30px;border-top:1px dashed #ccc;padding-top:8px;font-size:9.5px;color:#999;text-align:center}
-@media print{body{background:#fff}.page{box-shadow:none;margin:0}}
-</style></head><body><div class="page">
-<div class="head"><div class="logo">شعار<br>الجهة</div>
-<div class="org"><b>المملكة العربية السعودية</b><div>اسم الجامعة / الكلية — عمادة الدراسات العليا</div></div>
-<div class="logo">شعار<br>الجامعة</div></div>
-<div class="meta"><span>الرقم: ${refNo}</span><span>التاريخ: ${dd}</span><span>المرفقات: —</span></div>
-<h1>${f.name}</h1>
-<div class="body">${doc.replace(/</g,"&lt;")}</div>
-<div class="signs">${f.signers.map(s=>`<div class="sign"><div class="line"></div><b>${s}</b><div>الاسم: ........................</div><div>التوقيع الإلكتروني</div></div>`).join("")}</div>
-<div class="foot">وثيقة مولّدة إلكترونياً عبر منصة محكّم برو · رقم التحقق ${refNo} · تُعتمد بالتوقيع البشري وفق أنظمة الجهة</div>
-</div><script>setTimeout(()=>print(),400)</script></body></html>`;
-    const w = window.open("","_blank"); if(w){ w.document.write(html); w.document.close(); }
-  }
-
-  const cur = FORMS.find(x=>x.key===sel);
-
-  return (
-    <div style={{maxWidth:860,margin:"0 auto"}}>
-      <Card T={T}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:27}}>🗂️</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:17,color:T.text}}>استوديو النماذج الإلكترونية الذكية</div>
-            <div style={{fontSize:12,color:T.textS}}>كل نماذج دورة الحياة: حقول إلكترونية ← وثيقة رسمية بالذكاء الاصطناعي ← طباعة A4 بترويسة وتاريخ مزدوج وتوقيعات</div>
-          </div>
-        </div>
-      </Card>
-
-      <Card T={T} style={{marginTop:12}}>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:8}}>
-          {FORMS.map(f=>{
-            const on = sel===f.key;
-            return (
-              <button key={f.key} onClick={()=>{setSel(f.key);setDoc("");}}
-                style={{padding:"12px 8px",borderRadius:12,cursor:"pointer",fontFamily:"inherit",textAlign:"center",
-                  border:`1.5px solid ${on?T.gold:T.border}`,background:on?T.gold+"15":T.card}}>
-                <div style={{fontSize:22,marginBottom:5}}><EmIcon e={f.icon}/></div>
-                <div style={{fontSize:12,fontWeight:on?800:700,color:on?T.gold:T.text,lineHeight:1.6}}>{f.name}</div>
-              </button>
-            );
-          })}
-        </div>
-      </Card>
-
-      {cur && (
-        <Card T={T} style={{marginTop:12}}>
-          <div style={{fontWeight:800,fontSize:14,color:T.gold,marginBottom:12}}><EmIcon e={cur.icon}/> {cur.name} — عبّئ الحقول الإلكترونية</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(250px,1fr))",gap:10}}>
-            {cur.fields.map(([id,label])=>{
-              const [name, kind] = label.split(":");
-              return (
-                <div key={id} style={kind==="area"?{gridColumn:"1/-1"}:{}}>
-                  <label style={{display:"block",fontSize:11.5,fontWeight:700,color:T.textS,marginBottom:4}}>{name}</label>
-                  {kind==="area"
-                    ? <textarea rows={3} value={vals[id]||""} onChange={x=>setVals({...vals,[id]:x.target.value})} style={{...ta,resize:"vertical"}}/>
-                    : kind==="date"
-                    ? <input type="date" value={vals[id]||""} onChange={x=>setVals({...vals,[id]:x.target.value})} style={ta}/>
-                    : <input value={vals[id]||""} onChange={x=>setVals({...vals,[id]:x.target.value})} style={ta}/>}
-                </div>
-              );
-            })}
-          </div>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:12,gap:8,flexWrap:"wrap"}}>
-            <div style={{fontSize:11,color:T.textDim}}>الرقم: <b style={{fontFamily:"monospace"}}>{refNo}</b> · التاريخ المزدوج يُحتسب تلقائياً (أم القرى) · التوقيعات: {cur.signers.join("، ")}</div>
-            <Btn ch={busy?<><Spin/> جارٍ الصياغة…</>:"⚡ ولّد الوثيقة الرسمية"} v="gold" T={T} onClick={generate} disabled={busy}/>
-          </div>
-        </Card>
-      )}
-
-      {doc && cur && (
-        <Card T={T} style={{marginTop:12}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:8}}>
-            <div style={{fontWeight:800,fontSize:14,color:T.emerald}}>📄 الوثيقة جاهزة</div>
-            <div style={{display:"flex",gap:6}}>
-              <Btn ch="📋 نسخ النص" v="ghost" T={T} onClick={()=>navigator.clipboard?.writeText(doc)}/> <ReportBtn T={T} title="تقرير الأداة — محكّم برو" body={doc} opts={{icon:"📋"}}/>
-              <Btn ch="🖨️ طباعة A4 رسمية" v="gold" T={T} onClick={printDoc}/>
-            </div>
-          </div>
-          <div style={{padding:"16px 18px",borderRadius:12,background:T.bgS,border:`1.5px solid ${T.border}`,
-            whiteSpace:"pre-wrap",lineHeight:2.1,fontSize:13.5,color:T.text}}>
-            <div style={{textAlign:"center",fontWeight:800,color:T.gold,marginBottom:8,fontSize:15}}>{cur.name}</div>
-            <div style={{fontSize:11,color:T.textDim,display:"flex",justifyContent:"space-between",marginBottom:10}}>
-              <span>الرقم: {refNo}</span><span>{dualDate(null)}</span>
-            </div>
-            {doc}
-          </div>
-          <div style={{fontSize:10.5,color:T.textDim,marginTop:8}}>⚖️ الوثيقة مولّدة للمساعدة — تُعتمد بالتوقيع البشري وفق أنظمة جهتك. الطباعة تتضمن الترويسة وخانات التوقيع الإلكتروني.</div>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-
-// ── مستخرج PDF الحقيقي (PDF.js) مع حارس حجم وبديل آمن ──────────
-async function readPdfText(file, cap = 16000) {
-  if (file.size > 25*1024*1024)
-    return "[الملف كبير جداً (" + Math.round(file.size/1048576) + "MB) — قصّ الصفحات المطلوبة أو صدّر CSV/Excel]";
-  const buf = await file.arrayBuffer();
-  try {
-    const pdfjs = await import("pdfjs-dist/build/pdf.min.mjs");
-    pdfjs.GlobalWorkerOptions.workerSrc = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
-    const doc = await pdfjs.getDocument({ data: buf }).promise;
-    const maxPages = Math.min(doc.numPages, 80);
-    let out = "";
-    for (let p = 1; p <= maxPages && out.length < cap*1.2; p++) {
-      const page = await doc.getPage(p);
-      const tc = await page.getTextContent();
-      let lastY = null, line = []; const lines = [];
-      for (const it of tc.items) {
-        const y = Math.round((it.transform||[0,0,0,0,0,0])[5]);
-        if (lastY !== null && Math.abs(y - lastY) > 2) { lines.push(line.join(" ")); line = []; }
-        if (it.str) line.push(it.str);
-        lastY = y;
-      }
-      if (line.length) lines.push(line.join(" "));
-      out += lines.join("\n") + "\n\n";
-    }
-    out = out.trim();
-    if (out) return out.slice(0, cap) + (doc.numPages > maxPages ? "\n[استُخرجت أول " + maxPages + " صفحة من " + doc.numPages + "]" : "");
-    return "[هذا الـPDF بلا نص قابل للاستخراج — غالباً ممسوح ضوئياً (صور). يلزم OCR (ضمن النسخة المؤسسية) أو استخدم CSV/Excel]";
-  } catch (e) {
-    try {
-      const bytes = new Uint8Array(buf.slice(0, 2*1024*1024));
-      let text = "";
-      for (let i = 0; i < bytes.length; i++) {
-        const b = bytes[i];
-        if (b >= 32 && b < 127) text += String.fromCharCode(b);
-        else if (b === 10 || b === 13) text += " ";
-      }
-      const m = text.match(/BT[\s\S]*?ET/g) || [];
-      const ex = m.map(x => x.replace(/BT|ET|\d+\.\d+|\d+ \d+ \d+|\//g, " ").replace(/\s+/g, " ").trim()).join(" ").trim();
-      if (ex) return ex.slice(0, cap);
-    } catch (e2) {}
-    return "[تعذّر استخراج نص من هذا الـPDF في المتصفح — استخدم CSV أو Excel أو Word]";
-  }
-}
-
-
-// ── زر رفع ملفات أنيق وموثوق (بديل input الخام) ────────────────
-function FilePick({ T, accept, file, onPick, hint }) {
-  const [warn, setWarn] = useState("");
-  const exts = (accept||"").split(",").map(x=>x.trim().replace(".","").toLowerCase()).filter(Boolean);
-  function handle(e){
-    const f = e.target.files && e.target.files[0];
-    try { e.target.value=""; } catch(x){}
-    if(!f) return;
-    const ext = (f.name.split(".").pop()||"").toLowerCase();
-    if(exts.length && !exts.includes(ext)){ setWarn("صيغة غير مدعومة: ."+ext+" — المدعوم: "+hint); return; }
-    setWarn(""); onPick(f);
-  }
-  return (
-    <div style={{marginBottom:8}}>
-      <label style={{display:"block",position:"relative",width:"100%",boxSizing:"border-box",padding:"15px 12px",
-        borderRadius:12,cursor:"pointer",textAlign:"center",
-        border:`1.5px dashed ${file?T.emerald:T.gold}66`,background:(file?T.emerald:T.gold)+"0a",
-        color:T.text,fontSize:13,fontWeight:600,lineHeight:1.8}}>
-        <input type="file" onChange={handle}
-          style={{position:"absolute",inset:0,opacity:0,width:"100%",height:"100%",cursor:"pointer"}}/>
-        {file
-          ? <>✅ <b>{file.name}</b> <span style={{color:T.textS,fontSize:11.5}}>({(file.size/1024).toFixed(0)} KB)</span> — اضغط للتغيير</>
-          : <>📤 اضغط هنا لاختيار ملف <span style={{color:T.textS,fontSize:11.5}}>({hint})</span></>}
-      </label>
-      {warn && <div style={{fontSize:11,color:T.rose,marginTop:4}}>{warn}</div>}
-      <div style={{fontSize:10,color:T.textDim,marginTop:4,lineHeight:1.7}}>داخل معاينة Claude قد تُحجب نافذة الاختيار (قيد أمني للمعاينة) — جرّب على الموقع المنشور. بديل فوري يعمل في أي مكان: من Excel انسخ الخلايا والصقها في الخانة (يدعم الفصل بالتبويب)، ومن PDF انسخ نص الجدول والصقه.</div>
-    </div>
-  );
-}
-
-
-// ── بطاقة الأداة التعريفية (كتالوج احترافي موحّد) ──────────────
-function ToolCatalogCard({ T, t, gc, guide, onOpen, labels }) {
-  const G = guide || {};
-  const clamp = n => ({display:"-webkit-box",WebkitLineClamp:n,WebkitBoxOrient:"vertical",overflow:"hidden"});
-  return (
-    <button onClick={onOpen}
-      style={{background:T.card,border:`1.5px solid ${T.border}`,borderRadius:15,padding:0,cursor:"pointer",fontFamily:"inherit",textAlign:"start",transition:"all .18s",display:"flex",flexDirection:"column",overflow:"hidden"}}
-      onMouseEnter={e=>{e.currentTarget.style.borderColor=gc;e.currentTarget.style.boxShadow=T.shadowH;e.currentTarget.style.transform="translateY(-2px)";}}
-      onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="none";}}>
-      <div style={{padding:"14px 15px 10px",display:"flex",alignItems:"center",gap:11,width:"100%",boxSizing:"border-box"}}>
-        <div style={{width:42,height:42,borderRadius:11,background:gc+"1a",border:`1px solid ${gc}35`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}><EmIcon e={t.icon}/></div>
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{color:T.text,fontWeight:800,fontSize:13.5,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-            {labels.name}
-            {t.badge&&<span style={{background:labels.badgeColor(t.badge)+"20",color:labels.badgeColor(t.badge),border:`1px solid ${labels.badgeColor(t.badge)}30`,borderRadius:6,padding:"0 5px",fontSize:9,fontWeight:700}}>{t.badge}</span>}
-          </div>
-          <div style={{color:T.textDim,fontSize:10}}>{labels.sub}</div>
-        </div>
-      </div>
-      {G.what&&<div style={{padding:"0 15px",fontSize:11,color:T.textS,lineHeight:1.75,...clamp(3)}}>{G.what}</div>}
-      <div style={{padding:"10px 15px 0",width:"100%",boxSizing:"border-box"}}>
-        {G.out&&<div style={{fontSize:10.2,lineHeight:1.7,marginBottom:6,...clamp(2)}}><span style={{color:T.emerald,fontWeight:800}}>{labels.output}</span><span style={{color:T.textS}}>{G.out}</span></div>}
-        {G.need&&<div style={{fontSize:10.2,lineHeight:1.7,...clamp(2)}}><span style={{color:gc,fontWeight:800}}>{labels.bestFor}</span><span style={{color:T.textS}}>{G.need}</span></div>}
-      </div>
-      <div style={{marginTop:"auto",width:"100%",boxSizing:"border-box",padding:"10px 15px",display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:`1px solid ${T.border}`,marginBlockStart:12,background:gc+"08"}}>
-        <span style={{fontSize:11.5,fontWeight:800,color:gc}}>{labels.openTool}</span>
-        <span style={{fontSize:9.5,color:T.textDim}}>{labels.guideIn}</span>
-      </div>
-    </button>
-  );
-}
-
-
-// ── مولّد التقرير الأكاديمي الاحترافي الموحّد (نمط الجامعات العالمية) ──
-function printAcademicReport(title, body, opts){
-  opts = opts || {};
-  const ref = "MHK-" + Date.now().toString(36).toUpperCase().slice(-7);
-  let dual;
-  try {
-    const dt = new Date();
-    const f = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura",{day:"numeric",month:"numeric",year:"numeric"});
-    const p = Object.fromEntries(f.formatToParts(dt).filter(x=>x.type!=="literal").map(x=>[x.type,parseInt(x.value)]));
-    dual = `${p.day}/${p.month}/${p.year}هـ — ${dt.toLocaleDateString("ar-SA-u-ca-gregory")}م`;
-  } catch(e){ dual = new Date().toLocaleDateString("ar-SA"); }
-  const esc = s => String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-  // تحويل النص إلى أقسام: أسطر تنتهي بنقطتين أو ترويسات قصيرة تصبح عناوين
-  const lines = String(body||"").replace(/\r/g,"").split("\n");
-  let html = "", inList = false;
-  const closeList = ()=>{ if(inList){ html+="</ul>"; inList=false; } };
-  lines.forEach(ln=>{
-    const t = ln.trim();
-    if(!t){ closeList(); html+="<div style='height:6px'></div>"; return; }
-    if(/^#{1,3}\s/.test(t)){ closeList(); html+=`<h2>${esc(t.replace(/^#+\s/,""))}</h2>`; return; }
-    if(/^([٠-٩0-9]+[\).\-]|[•\-\*])\s/.test(t)){ if(!inList){html+="<ul>";inList=true;} html+=`<li>${esc(t.replace(/^([٠-٩0-9]+[\).\-]|[•\-\*])\s/,""))}</li>`; return; }
-    if(t.length<60 && /[:：]$/.test(t)){ closeList(); html+=`<h3>${esc(t)}</h3>`; return; }
-    closeList(); html+=`<p>${esc(t)}</p>`;
-  });
-  closeList();
-  const accent = opts.color || "#1F3864";
-  const meta = opts.meta || [];
-  const doc = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${esc(title)} — محكّم</title>
-<style>
-@page{size:A4;margin:18mm 16mm 20mm}
-*{box-sizing:border-box}
-body{font-family:Arial,'Segoe UI',Tahoma,sans-serif;color:#1a2433;margin:0;line-height:1.95;font-size:13.5px}
-.head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid ${accent};padding-bottom:12px;margin-bottom:6px}
-.brand{font-size:23px;font-weight:800;color:${accent}}
-.brand span{font-size:12px;background:${accent}18;color:${accent};border:1px solid ${accent}44;border-radius:6px;padding:1px 7px;margin-right:5px;vertical-align:middle}
-.brand .tag{display:block;font-size:11px;font-weight:600;color:#667;margin-top:3px}
-.seal{width:62px;height:62px;border:2px solid ${accent}55;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;color:${accent}}
-.meta{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:11px;color:#556;margin:10px 0 4px}
-.meta b{color:#334}
-h1.docttl{text-align:center;font-size:20px;color:${accent};margin:18px 0 6px}
-.rule{height:2px;background:linear-gradient(90deg,${accent},${accent}22);border-radius:2px;margin:0 0 16px}
-h2{font-size:15.5px;color:${accent};border-right:4px solid ${accent};padding:2px 10px 2px 0;margin:18px 0 8px;background:${accent}08}
-h3{font-size:13.5px;color:#2a3a52;margin:14px 0 6px;font-weight:800}
-p{margin:5px 0;text-align:justify}
-ul{margin:5px 22px 5px 0;padding:0}
-li{margin:4px 0}
-.foot{margin-top:30px;border-top:1px solid #d8dee9;padding-top:9px;font-size:9.5px;color:#8893a6;text-align:center;line-height:1.7}
-.sign{display:flex;justify-content:flex-start;gap:60px;margin-top:40px}
-.sign .b{text-align:center;font-size:11.5px}
-.sign .line{width:150px;border-top:1.4px solid #445;margin:34px auto 5px}
-@media print{.noprint{display:none}}
-</style></head><body>
-<div class="head">
-  <div class="brand">⚖️ محكّم <span>Pro</span><span class="tag">${esc(opts.subtitle||"منصة المراجعة والتحكيم والتحليل الأكاديمي الذكي")}</span></div>
-  <div class="seal">${opts.icon||"📋"}</div>
-</div>
-<div class="meta"><span>الرقم المرجعي: <b>${ref}</b></span><span>التاريخ: <b>${dual}</b></span>${meta.map(m=>`<span>${esc(m.k)}: <b>${esc(m.v)}</b></span>`).join("")}</div>
-<h1 class="docttl">${esc(title)}</h1><div class="rule"></div>
-${html}
-${opts.signers?`<div class="sign">${opts.signers.map(s=>`<div class="b"><div class="line"></div><b>${esc(s)}</b><div style="color:#778;font-size:10px">التوقيع المعتمد</div></div>`).join("")}</div>`:""}
-<div class="foot">وثيقة مولّدة إلكترونياً عبر منصة محكّم برو · رقم التحقق ${ref} · ${esc(opts.footer||"تقرير استرشادي يُعتمد بالمراجعة البشرية وفق أنظمة الجهة")}<br>muhakkim.com</div>
-<script>setTimeout(function(){try{print()}catch(e){}},450)</script>
-</body></html>`;
-  const w = window.open("","_blank");
-  if(w){ w.document.write(doc); w.document.close(); }
-  else { try{ navigator.clipboard.writeText(body); }catch(e){} alert("للطباعة: فعّل النوافذ المنبثقة. نُسخ النص للحافظة."); }
-}
-
-// زر التقرير الاحترافي الموحّد — يُستخدم في أي أداة
-function ReportBtn({ T, title, body, opts, label }) {
-  if(!body || !String(body).trim()) return null;
-  return <Btn ch={label||"🖨️ تقرير احترافي"} v="gold" T={T} onClick={()=>printAcademicReport(title, body, opts)}/>;
-}
-
-
-// ── النظام البحثي الذكي المتكامل (نمط مراكز التحليل العالمية) ──
-function ResearchBrainSystem({ T }) {
-  const [tab, setTab] = useState("design");
-  const TABS = [["design","🎯 التصميم والفرضيات"],["engine","⚙️ محرّك الاختبار المناسب"],["synth","🔗 التحليل والتركيب الكلي"]];
-  const ta = {width:"100%",padding:"10px 12px",borderRadius:9,border:`1.5px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",outline:"none",resize:"vertical"};
-  const lbl = {display:"block",fontSize:12,fontWeight:700,color:T.textS,marginBottom:5};
-  const nd = s => String(s).replace(/[٠-٩]/g, d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[۰-۹]/g, d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d));
-
-  // مدخلات مشتركة
-  const [obj, setObj] = useState("");
-  const [hyp, setHyp] = useState("");
-  const [field, setField] = useState("");
-  const [design, setDesign] = useState("");
-  const [vars, setVars] = useState("");
-  const [files, setFiles] = useState([]);
-  const [dataTxt, setDataTxt] = useState("");
-
-  // ===== 1) التصميم والفرضيات =====
-  const [dBusy, setDBusy] = useState(false);
-  const [dRes, setDRes] = useState(null);
-  async function runDesign(){
-    if(!obj.trim() && !hyp.trim()) return;
-    setDBusy(true); setDRes(null);
-    try {
-      const d = await callAIJson(
-        "أنت مستشار منهجية بحث بمستوى مراكز التحليل العالمية. تصوغ الفرضيات بدقة إحصائية وتربطها بالأهداف وتكشف ثغرات التصميم. JSON فقط.",
-        `الأهداف:\n${obj}\nالفرضيات المبدئية:\n${hyp||"غير محددة — اقترحها"}\nالمجال: ${field||"عام"} · التصميم: ${design||"غير محدد"}\nالمتغيرات: ${vars||"غير محددة"}\n\nJSON: {"objectives":[{"text":"الهدف معاد صياغته بدقة","measurable":"كيف يُقاس"}],"hypotheses":[{"h0":"الفرضية الصفرية","h1":"البديلة","type":"فرقية/علاقية/تأثير","vars":"المتغيرات المعنية ونوعها (مستقل/تابع/مقياس)"}],"design_check":{"type":"نوع التصميم المناسب","strengths":["نقطتا قوة"],"gaps":["ثغرات أو مخاطر التصميم وكيف تعالَج"]},"sample":"توجيه حجم العينة المناسب ومبرره"}`, 2600);
-      setDRes(d && d.hypotheses ? d : {error:"تعذّر — أعد المحاولة."});
-    } catch(e){ setDRes({error:"تعذّر — أعد المحاولة."}); }
-    setDBusy(false);
-  }
-
-  // ===== 2) محرّك الاختبار المناسب =====
-  const [eBusy, setEBusy] = useState(false);
-  const [eRes, setERes] = useState(null);
-  async function runEngine(){
-    if(!hyp.trim() && !obj.trim()) return;
-    setEBusy(true); setERes(null);
-    try {
-      const d = await callAIJson(
-        "أنت خبير اختيار الأساليب الإحصائية بمنطق شجرة القرار (نوع المتغيرات، عدد المجموعات، الاقتران، التوزيع). تعطي الاختبار الأنسب وبدائله ولغة التنفيذ. JSON فقط.",
-        `الأهداف: ${obj}\nالفرضيات: ${hyp}\nالمتغيرات: ${vars||"استنتجها من الفرضيات"}\nالمجال: ${field||"عام"}\n\nJSON: {"recommendations":[{"hypothesis":"الفرضية المعنية","primary":"الاختبار الأنسب","why":"لماذا (نوع المتغيرات/المجموعات/الافتراضات)","assumptions":["افتراضات يجب فحصها"],"alternatives":["بديل لاباراميتري أو عند خرق الافتراضات"],"effect_size":"مقياس حجم الأثر المناسب","spss":"خطوات SPSS موجزة","python":"سطر/دالة Python (scipy/statsmodels)","R":"دالة R"}],"advanced":["أساليب حديثة مناسبة: SEM/PLS، الانحدار متعدد المستويات، Bootstrap، البايزي... مع متى تُستخدم هنا"]}`, 3000);
-      setERes(d && d.recommendations ? d : {error:"تعذّر — أعد المحاولة."});
-    } catch(e){ setERes({error:"تعذّر — أعد المحاولة."}); }
-    setEBusy(false);
-  }
-
-  // ===== 3) التحليل والتركيب الكلي =====
-  async function readData(){
-    let t = dataTxt.trim();
-    if(!t && files.length){ try{ t = await extractTabularFile(files[0]); }catch(e){} }
-    return t ? nd(t) : "";
-  }
-  // حساب وصفي حقيقي سريع للبيانات (يُمرَّر للذكاء كسياق محسوب)
-  function quickProfile(t){
-    if(!t) return "";
-    const lines=t.replace(/\r/g,"").split("\n").filter(l=>l.trim());
-    if(lines.length<2) return "";
-    const dl=[",",";","\t"].map(d=>lines[0].split(d).length).reduce((bi,v,i,a)=>v>a[bi]?i:bi,0);
-    const D=[",",";","\t"][dl];
-    const head=lines[0].split(D).map(x=>x.trim());
-    const rows=lines.slice(1).map(l=>l.split(D));
-    const prof=head.map((h,i)=>{
-      const vals=rows.map(r=>parseFloat((r[i]||"").replace(",","."))).filter(v=>!isNaN(v));
-      if(vals.length>=rows.length*0.6 && vals.length>2){
-        const n=vals.length,m=vals.reduce((a,b)=>a+b,0)/n;
-        const sd=Math.sqrt(vals.reduce((a,b)=>a+(b-m)**2,0)/Math.max(n-1,1));
-        return `${h}: رقمي M=${m.toFixed(2)} SD=${sd.toFixed(2)} n=${n}`;
-      }
-      const distinct=new Set(rows.map(r=>(r[i]||"").trim()).filter(Boolean));
-      return `${h}: فئوي فئات=${distinct.size}`;
-    });
-    return `صفوف=${rows.length} متغيرات=${head.length}\n`+prof.join("\n");
-  }
-  const [sBusy, setSBusy] = useState(false);
-  const [sRes, setSRes] = useState(null);
-  const [sOpen, setSOpen] = useState("interpret");
-  async function runSynth(){
-    setSBusy(true); setSRes(null);
-    const t = await readData();
-    const profile = quickProfile(t);
-    try {
-      const d = await callAIJson(
-        "أنت كبير محللين بحثيين بمستوى مراكز التحليل العالمية. تربط الأهداف بالفرضيات بالنتائج بالتوصيات بالمستخلص في سردية متماسكة. تستند للملف التعريفي المحسوب فعلياً ولا تختلق أرقاماً. JSON فقط.",
-        `الأهداف: ${obj}\nالفرضيات: ${hyp}\nالمجال: ${field||"عام"}\nالملف التعريفي المحسوب من بيانات المستخدم:\n${profile||"(لم تُرفع بيانات — قدّم الإطار وكيف يُملأ)"}\nنتائج/مخرجات إضافية لصقها المستخدم:\n${t && !profile ? t.slice(0,3000) : (t? "(جدول أعلاه)" : "لا توجد")}\n\nJSON: {"interpret":[{"hypothesis":"الفرضية","decision":"تُقبَل/تُرفَض/تحتاج بيانات أوضح","reading":"قراءة النتيجة وربطها بالهدف وبالأدبيات عموماً","caution":"تحفّظ منهجي"}],"recommendations":[{"text":"توصية مرتبطة بنتيجة محددة","for":"الجهة المستفيدة","priority":"عالية/متوسطة"}],"limitations":["حدود الدراسة بصدق"],"future":["آفاق بحثية"],"abstract":"مستخلص أكاديمي كامل (180-230 كلمة): الخلفية، الهدف، المنهج، أبرز النتائج، الخلاصة","keywords":["5-6 كلمات مفتاحية"],"narrative":"فقرة الربط الكلي: كيف تتسق الأهداف والفرضيات والنتائج والتوصيات في سردية واحدة"}`, 3600);
-      setSRes(d && d.abstract ? d : {error:"تعذّر — أعد المحاولة."});
-    } catch(e){ setSRes({error:"تعذّر — أعد المحاولة."}); }
-    setSBusy(false);
-  }
-
-  const decColor = d => /تُقبَل|مدعومة|قبول/.test(d)?T.emerald : /تُرفَض|رفض/.test(d)?T.rose : T.amber;
-  const sharedInputs = (
-    <Card T={T} style={{marginTop:12}}>
-      <div style={{fontWeight:800,fontSize:13,color:T.text,marginBottom:8}}>📋 إطار البحث (مشترك بين الأقسام)</div>
-      <label style={lbl}>الأهداف *</label>
-      <textarea rows={2} value={obj} onChange={e=>setObj(e.target.value)} style={ta} placeholder="مثال: قياس أثر التعلّم النشط على التحصيل..."/>
-      <label style={{...lbl,marginTop:10}}>الفرضيات</label>
-      <textarea rows={2} value={hyp} onChange={e=>setHyp(e.target.value)} style={ta} placeholder="مثال: توجد فروق دالة في التحصيل تُعزى لطريقة التدريس..."/>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:8,marginTop:10}}>
-        <input value={field} onChange={e=>setField(e.target.value)} style={{...ta,resize:"none"}} placeholder="المجال"/>
-        <input value={design} onChange={e=>setDesign(e.target.value)} style={{...ta,resize:"none"}} placeholder="التصميم (تجريبي/مسحي...)"/>
-        <input value={vars} onChange={e=>setVars(e.target.value)} style={{...ta,resize:"none"}} placeholder="المتغيرات"/>
-      </div>
-    </Card>
-  );
-
-  return (
-    <div style={{maxWidth:880,margin:"0 auto"}}>
-      <Card T={T}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:27}}>🔬</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:17,color:T.text}}>النظام البحثي الذكي المتكامل</div>
-            <div style={{fontSize:12,color:T.textS}}>يفهم الأهداف والفرضيات · يختار الاختبار المناسب · يحلل ويفسّر · يربط البحث كله في مستخلص وسردية واحدة</div>
-          </div>
-        </div>
-      </Card>
-      <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
-        {TABS.map(([k,l])=>(
-          <button key={k} onClick={()=>setTab(k)}
-            style={{flex:"1 1 auto",padding:"9px 8px",borderRadius:10,border:`1.5px solid ${tab===k?T.gold:T.border}`,
-              background:tab===k?T.gold+"18":T.card,color:tab===k?T.gold:T.text,fontWeight:tab===k?700:500,fontSize:12.5,fontFamily:"inherit",cursor:"pointer"}}>{l}</button>
-        ))}
-      </div>
-      {sharedInputs}
-
-      {tab==="design" && <>
-        <div style={{display:"flex",justifyContent:"flex-end",marginTop:12}}>
-          <Btn ch={dBusy?<><Spin/> جارٍ التصميم…</>:"🎯 صُغ الفرضيات وافحص التصميم"} v="gold" T={T} onClick={runDesign} disabled={dBusy||(!obj.trim()&&!hyp.trim())}/>
-        </div>
-        {dRes && dRes.error && <Card T={T} style={{marginTop:12}}><div style={{color:T.rose,fontSize:13}}>{dRes.error}</div></Card>}
-        {dRes && !dRes.error && <>
-          <Card T={T} style={{marginTop:12}}>
-            <div style={{fontWeight:800,fontSize:13.5,color:T.teal,marginBottom:8}}>🎯 الأهداف القابلة للقياس</div>
-            {(dRes.objectives||[]).map((o,i)=>(
-              <div key={i} style={{fontSize:12.5,lineHeight:1.9,marginBottom:6,color:T.text}}>• {o.text} <span style={{color:T.textS}}>— يُقاس بـ: {o.measurable}</span></div>
-            ))}
-          </Card>
-          <Card T={T} style={{marginTop:12}}>
-            <div style={{fontWeight:800,fontSize:13.5,color:T.gold,marginBottom:8}}>🧪 الفرضيات المصاغة إحصائياً</div>
-            {(dRes.hypotheses||[]).map((h,i)=>(
-              <div key={i} style={{padding:"11px 13px",borderRadius:10,background:T.bgS,border:`1px solid ${T.border}`,marginBottom:8}}>
-                <div style={{fontSize:12.5,color:T.text,lineHeight:1.85}}><b style={{color:T.rose}}>H₀:</b> {h.h0}</div>
-                <div style={{fontSize:12.5,color:T.text,lineHeight:1.85}}><b style={{color:T.emerald}}>H₁:</b> {h.h1}</div>
-                <div style={{fontSize:11,color:T.textS,marginTop:4}}>النوع: {h.type} · {h.vars}</div>
-              </div>
-            ))}
-          </Card>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(250px,1fr))",gap:12,marginTop:12}}>
-            <Card T={T}>
-              <div style={{fontWeight:800,fontSize:13,color:T.blue,marginBottom:6}}>🏗️ فحص التصميم: {dRes.design_check?.type}</div>
-              {(dRes.design_check?.strengths||[]).map((x,i)=><div key={i} style={{fontSize:12,color:T.emerald,lineHeight:1.8}}>✓ {x}</div>)}
-              {(dRes.design_check?.gaps||[]).map((x,i)=><div key={i} style={{fontSize:12,color:T.amber,lineHeight:1.8}}>⚠ {x}</div>)}
-            </Card>
-            <Card T={T}>
-              <div style={{fontWeight:800,fontSize:13,color:T.violet,marginBottom:6}}>👥 حجم العينة</div>
-              <div style={{fontSize:12.5,color:T.text,lineHeight:1.9}}>{dRes.sample}</div>
-            </Card>
-          </div>
-        </>}
-      </>}
-
-      {tab==="engine" && <>
-        <div style={{display:"flex",justifyContent:"flex-end",marginTop:12}}>
-          <Btn ch={eBusy?<><Spin/> يحلّل القرار…</>:"⚙️ أوصِ بالاختبار المناسب"} v="gold" T={T} onClick={runEngine} disabled={eBusy||(!hyp.trim()&&!obj.trim())}/>
-        </div>
-        {eRes && eRes.error && <Card T={T} style={{marginTop:12}}><div style={{color:T.rose,fontSize:13}}>{eRes.error}</div></Card>}
-        {eRes && !eRes.error && <>
-          {(eRes.recommendations||[]).map((r,i)=>(
-            <Card T={T} key={i} style={{marginTop:12}}>
-              <div style={{fontSize:11.5,color:T.textS,marginBottom:4}}>للفرضية: {r.hypothesis}</div>
-              <div style={{fontWeight:800,fontSize:15,color:T.gold,marginBottom:6}}>⚙️ {r.primary}</div>
-              <div style={{fontSize:12.5,color:T.text,lineHeight:1.85,marginBottom:8}}>{r.why}</div>
-              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
-                <span style={{fontSize:10.5,padding:"3px 9px",borderRadius:14,background:T.violet+"15",color:T.violet,border:`1px solid ${T.violet}30`}}>حجم الأثر: {r.effect_size}</span>
-                {(r.assumptions||[]).map((a,j)=><span key={j} style={{fontSize:10.5,padding:"3px 9px",borderRadius:14,background:T.amber+"15",color:T.amber,border:`1px solid ${T.amber}30`}}>افتراض: {a}</span>)}
-              </div>
-              {(r.alternatives||[]).length>0 && <div style={{fontSize:11.5,color:T.teal,marginBottom:8}}>↔ بدائل: {(r.alternatives||[]).join(" · ")}</div>}
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:6}}>
-                {[["SPSS",r.spss,T.blue],["Python",r.python,T.emerald],["R",r.R,T.violet]].map(([k,v,col])=>(
-                  <div key={k} style={{padding:"8px 10px",borderRadius:9,background:T.bgS,border:`1px solid ${col}30`}}>
-                    <div style={{fontSize:10.5,fontWeight:800,color:col,marginBottom:3}}>{k}</div>
-                    <div style={{fontSize:10.5,color:T.text,fontFamily:"monospace",lineHeight:1.6,direction:"ltr",textAlign:"left",wordBreak:"break-word"}}>{v}</div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          ))}
-          {(eRes.advanced||[]).length>0 && <Card T={T} style={{marginTop:12}}>
-            <div style={{fontWeight:800,fontSize:13,color:T.teal,marginBottom:8}}>🚀 أساليب حديثة مناسبة</div>
-            {(eRes.advanced||[]).map((x,i)=><div key={i} style={{fontSize:12.5,lineHeight:1.9,color:T.text,marginBottom:5}}>• {x}</div>)}
-          </Card>}
-        </>}
-      </>}
-
-      {tab==="synth" && <>
-        <Card T={T} style={{marginTop:12}}>
-          <div style={{fontWeight:800,fontSize:13,color:T.text,marginBottom:8}}>📥 بيانات/نتائج البحث (يُحسب ملفها التعريفي فعلياً)</div>
-          <FileZone files={files} setFiles={setFiles} T={T}/>
-          <textarea rows={4} value={dataTxt} onChange={e=>setDataTxt(e.target.value)} style={{...ta,marginTop:8}} placeholder="الصق بياناتك (CSV) أو مخرجات تحليلك (متوسطات، قيم p، معاملات...)"/>
-          <div style={{display:"flex",justifyContent:"flex-end",marginTop:10}}>
-            <Btn ch={sBusy?<><Spin/> يربط البحث…</>:"🔗 حلّل وفسّر واربط البحث كله"} v="gold" T={T} onClick={runSynth} disabled={sBusy}/>
-          </div>
-        </Card>
-        {sRes && sRes.error && <Card T={T} style={{marginTop:12}}><div style={{color:T.rose,fontSize:13}}>{sRes.error}</div></Card>}
-        {sRes && !sRes.error && <>
-          <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
-            {[["interpret","📊 تفسير النتائج"],["recommendations","💡 التوصيات"],["abstract","📄 المستخلص"],["narrative","🔗 الربط الكلي"]].map(([k,l])=>(
-              <button key={k} onClick={()=>setSOpen(k)} style={{flex:"1 1 auto",padding:"8px",borderRadius:9,border:`1.5px solid ${sOpen===k?T.gold:T.border}`,background:sOpen===k?T.gold+"15":T.card,color:sOpen===k?T.gold:T.text,fontWeight:sOpen===k?700:500,fontSize:11.5,fontFamily:"inherit",cursor:"pointer"}}>{l}</button>
-            ))}
-          </div>
-          {sOpen==="interpret" && <Card T={T} style={{marginTop:12}}>
-            {(sRes.interpret||[]).map((it,i)=>(
-              <div key={i} style={{padding:"11px 13px",borderRadius:10,background:T.bgS,border:`1px solid ${decColor(it.decision)}40`,marginBottom:8}}>
-                <div style={{display:"flex",justifyContent:"space-between",gap:8,flexWrap:"wrap",marginBottom:4}}>
-                  <span style={{fontSize:12.5,fontWeight:700,color:T.text,flex:1}}>{it.hypothesis}</span>
-                  <span style={{fontSize:11,fontWeight:800,color:decColor(it.decision)}}>{it.decision}</span>
-                </div>
-                <div style={{fontSize:12,color:T.text,lineHeight:1.85}}>{it.reading}</div>
-                {it.caution && <div style={{fontSize:11,color:T.amber,marginTop:4}}>⚠ {it.caution}</div>}
-              </div>
-            ))}
-            {(sRes.limitations||[]).length>0 && <div style={{marginTop:8}}><div style={{fontWeight:800,fontSize:12,color:T.rose,marginBottom:4}}>حدود الدراسة:</div>{(sRes.limitations||[]).map((x,i)=><div key={i} style={{fontSize:12,color:T.textS,lineHeight:1.8}}>• {x}</div>)}</div>}
-          </Card>}
-          {sOpen==="recommendations" && <Card T={T} style={{marginTop:12}}>
-            {(sRes.recommendations||[]).map((r,i)=>(
-              <div key={i} style={{padding:"10px 13px",borderRadius:10,background:T.bgS,border:`1px solid ${T.border}`,marginBottom:8}}>
-                <div style={{fontSize:12.5,color:T.text,lineHeight:1.85}}>{r.text}</div>
-                <div style={{fontSize:11,color:T.textS,marginTop:3}}>للجهة: {r.for} · أولوية: <span style={{color:r.priority==="عالية"?T.rose:T.amber,fontWeight:700}}>{r.priority}</span></div>
-              </div>
-            ))}
-            {(sRes.future||[]).length>0 && <div style={{marginTop:8}}><div style={{fontWeight:800,fontSize:12,color:T.teal,marginBottom:4}}>آفاق بحثية:</div>{(sRes.future||[]).map((x,i)=><div key={i} style={{fontSize:12,color:T.textS,lineHeight:1.8}}>→ {x}</div>)}</div>}
-          </Card>}
-          {sOpen==="abstract" && <Card T={T} style={{marginTop:12}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-              <div style={{fontWeight:800,fontSize:13.5,color:T.gold}}>📄 المستخلص</div>
-              <div style={{display:"flex",gap:6}}>
-                <Btn ch="📋 نسخ" v="ghost" T={T} onClick={()=>navigator.clipboard?.writeText(sRes.abstract+"\n\nالكلمات المفتاحية: "+(sRes.keywords||[]).join("، "))}/>
-                <ReportBtn T={T} title="المستخلص والتحليل البحثي" body={sRes.abstract+"\n\nالكلمات المفتاحية: "+(sRes.keywords||[]).join("، ")+"\n\nالربط الكلي:\n"+(sRes.narrative||"")} opts={{icon:"🔬",subtitle:"النظام البحثي الذكي المتكامل"}}/>
-              </div>
-            </div>
-            <div style={{fontSize:13.5,lineHeight:2.05,color:T.text,whiteSpace:"pre-wrap"}}>{sRes.abstract}</div>
-            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:10}}>
-              {(sRes.keywords||[]).map((k,i)=><span key={i} style={{fontSize:11,padding:"3px 10px",borderRadius:14,background:T.gold+"15",color:T.gold,border:`1px solid ${T.gold}30`}}>{k}</span>)}
-            </div>
-          </Card>}
-          {sOpen==="narrative" && <Card T={T} style={{marginTop:12}}>
-            <div style={{fontWeight:800,fontSize:13.5,color:T.violet,marginBottom:8}}>🔗 الربط الكلي للبحث</div>
-            <div style={{fontSize:13.5,lineHeight:2.05,color:T.text,whiteSpace:"pre-wrap"}}>{sRes.narrative}</div>
-          </Card>}
-        </>}
-      </>}
-    </div>
-  );
-}
-
-
-// ═══ نظام البحث العلمي المتكامل (Research OS · بمعايير الجامعات العالمية ومجلات Q1) ═══
-function ResearchRunner({ T, services, sysTitle, sysSub, sysIcon }) {
-  const [sel, setSel] = useState(null);
-  const [vals, setVals] = useState({});
-  const [text, setText] = useState("");
-  const [files, setFiles] = useState([]);
-  const [busy, setBusy] = useState(false);
-  const [res, setRes] = useState(null);
-  const [err, setErr] = useState("");
-  const svc = services.find(s=>s.id===sel);
-  const soft = T.bgSec||T.bgS||T.inputBg||"#f0f3fa";
-  const green=T.emerald||T.green||"#1f8a5b", amber=T.amber||T.orange||"#c47a0e";
-  const td = T.textDim||T.textD||"#94a0b8", ts=T.textS||T.textSec||"#5b6b85";
-  const inp = {padding:"12px 15px",borderRadius:11,border:`1.5px solid ${T.border}`,background:T.inputBg||soft,color:T.text,fontSize:13.5,fontFamily:"inherit",boxSizing:"border-box",outline:"none",width:"100%"};
-
-  function quickStats(raw){
-    const flat=(raw.match(/-?\d+\.?\d*/g)||[]).map(Number).filter(x=>!isNaN(x));
-    if(flat.length<3) return null;
-    const a=[...flat].sort((x,y)=>x-y),n=a.length,mean=a.reduce((s,x)=>s+x,0)/n;
-    const sd=Math.sqrt(a.reduce((s,x)=>s+(x-mean)**2,0)/(n>1?n-1:1));
-    return {n,mean,sd,min:a[0],max:a[n-1],median:n%2?a[(n-1)/2]:(a[n/2-1]+a[n/2])/2};
-  }
-  async function run(){
-    setErr("");
-    const fc = await Promise.all(files.map(readFile));
-    const src = [text,...fc].join("\n").trim();
-    if(!src && !svc.allowEmpty){ setErr("ارفع ملفاً أو الصق النص أولاً"); return; }
-    setBusy(true); setRes(null);
-    const st = quickStats(src);
-    const meta = svc.fields.map(f=>f.ph+": "+(vals[f.k]||"—")).join(" · ");
-    try {
-      const data = await callAIJson(
-        svc.sys+"\nاستند للمحتوى الفعلي فقط ولا تخترع مراجع أو أرقاماً. أخرج JSON بهذا الشكل فقط:\n"+svc.schema,
-        meta+(st?"\nالإحصاء الوصفي المحسوب فعلياً: ن="+st.n+" متوسط="+st.mean.toFixed(2)+" انحراف="+st.sd.toFixed(2)+" مدى="+st.min+"–"+st.max:"")+"\n\nالمحتوى:\n"+(src?src.slice(0,13000):"(لا يوجد — قدّم الإطار الكامل)"), 3200);
-      setRes({data, st, title:vals.title||svc.title});
-    } catch(e){ setErr("تعذّر التحليل — أعد المحاولة."); }
-    setBusy(false);
-  }
-  const stColor = s => /ضعيف|عال|مرفوض|غير/.test(s||"")?T.rose : /متوسط|جزئي|مشروط/.test(s||"")?amber : green;
-
-  return <div style={{maxWidth:900,margin:"0 auto"}}>
-    <Card T={T}>
-      <div style={{display:"flex",alignItems:"center",gap:10}}>
-        <span style={{fontSize:27}}>{sysIcon}</span>
-        <div><div style={{fontWeight:800,fontSize:17,color:T.text}}>{sysTitle}</div>
-        <div style={{fontSize:12,color:ts}}>{sysSub}</div></div>
-      </div>
-    </Card>
-
-    {!svc && <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(255px,1fr))",gap:12,marginTop:14}}>
-      {services.map(x=>(
-        <button key={x.id} onClick={()=>{setSel(x.id);setRes(null);setErr("");setVals({});setText("");setFiles([]);}}
-          style={{background:T.card,border:`1.5px solid ${T.border}`,borderRadius:15,padding:"16px 15px",cursor:"pointer",fontFamily:"inherit",textAlign:"start",transition:"all .18s",display:"flex",flexDirection:"column",gap:8}}
-          onMouseEnter={e=>{e.currentTarget.style.borderColor=x.color;e.currentTarget.style.boxShadow=T.shadowH;e.currentTarget.style.transform="translateY(-2px)";}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="none";}}>
-          <div style={{width:46,height:46,borderRadius:13,background:x.color+"1a",border:`1px solid ${x.color}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:23}}>{x.icon}</div>
-          <div style={{fontWeight:800,fontSize:14,color:T.text}}>{x.title}</div>
-          <div style={{fontSize:11.5,color:ts,lineHeight:1.6}}>{x.sub}</div>
-        </button>
-      ))}
-    </div>}
-
-    {svc && !res && !busy && <div style={{marginTop:14}}>
-      <div style={{marginBottom:12}}><Btn ch="← كل الخدمات" v="ghost" T={T} onClick={()=>setSel(null)}/></div>
-      <Card T={T}>
-        <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:6}}><span style={{fontSize:22}}>{svc.icon}</span><span style={{fontWeight:800,fontSize:15,color:svc.color}}>{svc.title}</span></div>
-        <p style={{margin:"0 0 14px",fontSize:12.5,color:ts,lineHeight:1.7}}>{svc.long||svc.sub}</p>
-        <div style={{display:"grid",gridTemplateColumns:svc.fields.length>1?"1fr 1fr":"1fr",gap:12,marginBottom:14}}>
-          {svc.fields.map(f=><input key={f.k} value={vals[f.k]||""} onChange={e=>setVals({...vals,[f.k]:e.target.value})} placeholder={f.ph} style={inp}/>)}
-        </div>
-        <div style={{marginBottom:14}}><FileZone files={files} setFiles={setFiles} T={T}/></div>
-        <textarea value={text} onChange={e=>setText(e.target.value)} rows={7} placeholder={svc.placeholder||"أو الصق المحتوى / البيانات كاملاً هنا..."} style={{...inp,resize:"vertical",lineHeight:1.8,marginBottom:14}}/>
-        {err && <div style={{fontSize:12.5,color:T.rose,marginBottom:10}}>{err}</div>}
-        <Btn ch={<>{svc.icon} {svc.cta||"ولّد النتيجة"}</>} onClick={run} disabled={busy||(!text.trim()&&!files.length&&!svc.allowEmpty)} v="gold" T={T}/>
-      </Card>
-    </div>}
-
-    {busy && <Card T={T} style={{padding:48,textAlign:"center",marginTop:14}}><div style={{marginBottom:14}}><Spin/></div><div style={{fontSize:14,color:T.text,fontWeight:700}}>جارٍ المعالجة الذكية...</div><div style={{fontSize:12,color:ts,marginTop:6}}>{svc.title}</div></Card>}
-
-    {res && <div style={{marginTop:14}}>
-      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
-        <Btn ch="← جديد" v="ghost" T={T} onClick={()=>setRes(null)}/>
-        <Tag ch={svc.title} color={svc.color}/>
-        {res.title && <span style={{fontSize:13.5,fontWeight:800,color:T.text}}>{res.title}</span>}
-        <div style={{flex:1}}/>
-        <ReportBtn T={T} title={res.title} body={svc.report(res.data,res.st)} opts={{icon:svc.icon,subtitle:sysTitle+" — "+svc.title,color:svc.color}}/>
-        <Btn ch="📋 نسخ" v="ghost" T={T} onClick={()=>navigator.clipboard?.writeText(svc.report(res.data,res.st))}/>
-      </div>
-      {res.st && <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:10,marginBottom:14}}>
-        {[["المتوسط",res.st.mean.toFixed(2),T.blue],["الوسيط",res.st.median.toFixed(2),T.violet],["الانحراف",res.st.sd.toFixed(2),green],["عدد القيم",res.st.n,ts],["المدى",res.st.min+"–"+res.st.max,amber]].map((m,i)=>
-          <div key={i} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:12,textAlign:"center",boxShadow:T.shadow}}><div style={{fontSize:17,fontWeight:900,color:m[2]}}>{m[1]}</div><div style={{fontSize:10,color:td,marginTop:3}}>{m[0]}</div></div>)}
-      </div>}
-      {svc.view(res.data, {T,svc,soft,green,amber,td,ts,stColor})}
-    </div>}
-  </div>;
-}
-
-// مكوّنات عرض
-function RSec({T,t,c,children}){ return <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:13,padding:16,marginBottom:12,boxShadow:T.shadow}}><h4 style={{margin:"0 0 10px",fontSize:13.5,color:c}}>{t}</h4>{children}</div>; }
-function RList({T,items,pre}){ return (items||[]).map((x,i)=><p key={i} style={{margin:"5px 0",fontSize:12.5,color:T.text,lineHeight:1.7}}>{pre||"• "}{typeof x==="string"?x:JSON.stringify(x)}</p>); }
-function RTbl({T,head,rows}){ return <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}><thead><tr>{head.map(h=><th key={h} style={{padding:"7px",textAlign:"right",borderBottom:`2px solid ${T.border}`,color:T.textS||T.textSec}}>{h}</th>)}</tr></thead><tbody>{rows.map((r,i)=><tr key={i}>{r.map((v,j)=><td key={j} style={{padding:"6px 7px",borderBottom:`1px solid ${T.border}`,color:T.text}}>{v}</td>)}</tr>)}</tbody></table></div>; }
-
-const RESEARCH_SERVICES = [
-  // 1) مولّد الفكرة والعنوان والمشكلة
-  { id:"ideation", icon:"💡", color:"#B45309", title:"بلورة الفكرة والعنوان والمشكلة",
-    sub:"من فكرة خام إلى عنوان ومشكلة وأسئلة وفرضيات بمعايير Q1",
-    long:"حوّل فكرة بحثية خام أو مجالاً عاماً إلى عنوان احترافي، مشكلة بحثية محكمة، أسئلة وأهداف وفرضيات H₀/H₁ — بمعايير المجلات المصنّفة Q1.",
-    cta:"بلْور الفكرة", allowEmpty:true,
-    fields:[{k:"title",ph:"الفكرة/المجال البحثي"},{k:"extra",ph:"التخصص والمستوى"}],
-    sys:"أنت أستاذ بحث بجامعة من التصنيف الأول ومحرّر بمجلة Q1. حوّل الفكرة لإطار بحثي محكم.",
-    schema:`{"titles":["3 عناوين احترافية مقترحة"],"problem":"صياغة مشكلة الدراسة","gap":"الفجوة البحثية والإسهام","questions":["أسئلة البحث"],"objectives":["الأهداف"],"hypotheses":[{"h0":"الصفرية","h1":"البديلة"}],"significance":"الأهمية العلمية والتطبيقية","keywords":["كلمات مفتاحية"]}`,
-    report:D=>"العناوين المقترحة:\n"+(D.titles||[]).map((t,i)=>(i+1)+". "+t).join("\n")+"\n\nمشكلة الدراسة:\n"+(D.problem||"")+"\n\nالفجوة البحثية:\n"+(D.gap||"")+"\n\nالأسئلة:\n"+(D.questions||[]).map(q=>"• "+q).join("\n")+"\n\nالأهداف:\n"+(D.objectives||[]).map(o=>"• "+o).join("\n")+"\n\nالفرضيات:\n"+(D.hypotheses||[]).map(h=>"H₀: "+h.h0+" | H₁: "+h.h1).join("\n")+"\n\nالأهمية:\n"+(D.significance||"")+"\n\nالكلمات المفتاحية: "+(D.keywords||[]).join("، "),
-    view:(D,{T,svc,soft,ts})=><>
-      <RSec T={T} t="📌 العناوين المقترحة" c={svc.color}>{(D.titles||[]).map((t,i)=><div key={i} style={{padding:"8px 11px",background:soft,borderRadius:9,marginBottom:6,fontSize:13,color:T.text}}>{i+1}. {t}</div>)}</RSec>
-      <RSec T={T} t="🎯 مشكلة الدراسة والفجوة" c={svc.color}><p style={{margin:"0 0 8px",fontSize:12.5,color:T.text,lineHeight:1.8}}>{D.problem}</p><p style={{margin:0,fontSize:12,color:ts,lineHeight:1.7}}><b>الفجوة: </b>{D.gap}</p></RSec>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}><RSec T={T} t="❓ الأسئلة" c={svc.color}><RList T={T} items={D.questions}/></RSec><RSec T={T} t="🎯 الأهداف" c={T.teal}><RList T={T} items={D.objectives}/></RSec></div>
-      <RSec T={T} t="🧪 الفرضيات" c={svc.color}>{(D.hypotheses||[]).map((h,i)=><div key={i} style={{padding:"9px 12px",background:soft,borderRadius:9,marginBottom:6,fontSize:12.5}}><div style={{color:T.text}}><b style={{color:T.rose}}>H₀:</b> {h.h0}</div><div style={{color:T.text}}><b style={{color:T.emerald||T.green}}>H₁:</b> {h.h1}</div></div>)}</RSec>
-      <RSec T={T} t="⭐ الأهمية والكلمات المفتاحية" c={svc.color}><p style={{margin:"0 0 8px",fontSize:12.5,color:T.text,lineHeight:1.8}}>{D.significance}</p><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{(D.keywords||[]).map((k,i)=><Tag key={i} ch={k} color={svc.color}/>)}</div></RSec>
-    </> },
-  // 2) مراجعة الأدبيات والإطار النظري
-  { id:"litreview", icon:"📚", color:"#0E7490", title:"مراجعة الأدبيات والإطار النظري",
-    sub:"تلخيص ومقارنة الدراسات + بناء الإطار النظري + الفجوة",
-    long:"حلّل الدراسات السابقة المرفوعة لبناء مراجعة أدبيات منظّمة: التلخيص، المقارنة النقدية، النظريات الحاكمة، والفجوة البحثية — بأسلوب مجلات Q1.",
-    cta:"ابنِ المراجعة",
-    fields:[{k:"title",ph:"موضوع البحث"},{k:"extra",ph:"التخصص"}],
-    sys:"أنت باحث خبير بكتابة مراجعات الأدبيات لمجلات Q1. حلّل الدراسات المعطاة فعلياً دون اختلاق مراجع.",
-    schema:`{"themes":[{"theme":"محور/تيار بحثي","summary":"تلخيصه","studies":"إشارة للدراسات ضمنه"}],"theories":["النظريات الحاكمة المناسبة"],"comparison":"مقارنة نقدية بين الاتجاهات","gap":"الفجوة البحثية المستخلصة","framework":"مقترح الإطار النظري والمتغيرات"}`,
-    report:D=>"المحاور:\n"+(D.themes||[]).map(t=>"• "+t.theme+": "+t.summary+(t.studies?" ("+t.studies+")":"")).join("\n")+"\n\nالنظريات الحاكمة:\n"+(D.theories||[]).map(t=>"• "+t).join("\n")+"\n\nمقارنة نقدية:\n"+(D.comparison||"")+"\n\nالفجوة:\n"+(D.gap||"")+"\n\nالإطار النظري:\n"+(D.framework||""),
-    view:(D,{T,svc,soft})=><>
-      <RSec T={T} t="🗂️ محاور الأدبيات" c={svc.color}>{(D.themes||[]).map((t,i)=><div key={i} style={{padding:"9px 12px",background:soft,borderRadius:9,marginBottom:6}}><div style={{fontSize:12.5,fontWeight:700,color:T.text}}>{t.theme}</div><div style={{fontSize:11.5,color:T.textS||T.textSec,marginTop:2}}>{t.summary}</div></div>)}</RSec>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}><RSec T={T} t="🧭 النظريات الحاكمة" c={svc.color}><RList T={T} items={D.theories}/></RSec><RSec T={T} t="🔍 الفجوة البحثية" c={T.rose}><p style={{margin:0,fontSize:12.5,color:T.text,lineHeight:1.8}}>{D.gap}</p></RSec></div>
-      <RSec T={T} t="⚖️ مقارنة نقدية" c={svc.color}><p style={{margin:0,fontSize:12.5,color:T.text,lineHeight:1.8}}>{D.comparison}</p></RSec>
-      <RSec T={T} t="🏗️ الإطار النظري المقترح" c={svc.color}><p style={{margin:0,fontSize:12.5,color:T.text,lineHeight:1.8}}>{D.framework}</p></RSec>
-    </> },
-  // 3) مصمم المنهجية
-  { id:"methodology", icon:"🔬", color:"#6d28d9", title:"تصميم المنهجية والعينة",
-    sub:"المنهج + التصميم + العينة + الأدوات + الاختبار المناسب",
-    long:"يصمم منهجية البحث المتكاملة بمعايير عالمية: نوع المنهج والتصميم، مجتمع وعينة البحث وحجمها المبرّر، أدوات جمع البيانات، والأساليب الإحصائية المناسبة للفرضيات.",
-    cta:"صمّم المنهجية", allowEmpty:true,
-    fields:[{k:"title",ph:"موضوع/أسئلة البحث"},{k:"extra",ph:"التخصص ونوع البيانات"}],
-    sys:"أنت خبير مناهج بحث وإحصاء بمعايير الجامعات العالمية. صمّم منهجية دقيقة ومبرّرة.",
-    schema:`{"approach":"المنهج المناسب ومبرره","design":"التصميم البحثي","population":"مجتمع البحث","sample":"العينة وحجمها المبرّر إحصائياً","instruments":["أدوات جمع البيانات"],"validity":"الصدق والثبات المقترح","statTests":[{"purpose":"الغرض","test":"الاختبار المناسب","why":"لماذا"}],"limitations":["حدود منهجية متوقعة"]}`,
-    report:D=>"المنهج: "+(D.approach||"")+"\nالتصميم: "+(D.design||"")+"\nالمجتمع: "+(D.population||"")+"\nالعينة: "+(D.sample||"")+"\n\nالأدوات:\n"+(D.instruments||[]).map(i=>"• "+i).join("\n")+"\n\nالصدق والثبات: "+(D.validity||"")+"\n\nالأساليب الإحصائية:\n"+(D.statTests||[]).map(t=>"• "+t.purpose+" → "+t.test+" ("+t.why+")").join("\n")+"\n\nالحدود:\n"+(D.limitations||[]).map(l=>"• "+l).join("\n"),
-    view:(D,{T,svc,soft})=><>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
-        <RSec T={T} t="🧭 المنهج والتصميم" c={svc.color}><p style={{margin:"0 0 6px",fontSize:12.5,color:T.text,lineHeight:1.7}}><b>المنهج: </b>{D.approach}</p><p style={{margin:0,fontSize:12.5,color:T.text,lineHeight:1.7}}><b>التصميم: </b>{D.design}</p></RSec>
-        <RSec T={T} t="👥 المجتمع والعينة" c={T.teal}><p style={{margin:"0 0 6px",fontSize:12.5,color:T.text,lineHeight:1.7}}><b>المجتمع: </b>{D.population}</p><p style={{margin:0,fontSize:12.5,color:T.text,lineHeight:1.7}}><b>العينة: </b>{D.sample}</p></RSec>
-      </div>
-      <RSec T={T} t="🧰 أدوات جمع البيانات" c={svc.color}><RList T={T} items={D.instruments}/><p style={{margin:"8px 0 0",fontSize:11.5,color:T.textS||T.textSec}}><b>الصدق والثبات: </b>{D.validity}</p></RSec>
-      <RSec T={T} t="📊 الأساليب الإحصائية المناسبة" c={svc.color}><RTbl T={T} head={["الغرض","الاختبار","المبرر"]} rows={(D.statTests||[]).map(t=>[t.purpose,t.test,t.why])}/></RSec>
-      {(D.limitations||[]).length>0 && <RSec T={T} t="⚠️ حدود منهجية" c={T.amber||T.orange}><RList T={T} items={D.limitations}/></RSec>}
-    </> },
-  // 4) المراجعة الشاملة للورقة (Q1 reviewer)
-  { id:"paper_review", icon:"🛡️", color:"#B42318", title:"مراجعة الورقة بمعايير محكّم Q1",
-    sub:"تحكيم شامل بأبعاد المجلات المرموقة + قرار + ردّ المحكّم",
-    long:"يحاكي محكّم مجلة Q1: يقيّم الأصالة، المنهجية، النتائج، اللغة، والإسهام، ويصدر قراراً مع ملاحظات بالموضع ومسودة ردّ على المحكّمين.",
-    cta:"حكّم الورقة",
-    fields:[{k:"title",ph:"عنوان الورقة"},{k:"extra",ph:"المجلة المستهدفة (اختياري)"}],
-    sys:"أنت محكّم بمجلة Q1 (مفهرسة Scopus/WoS). حكّم الورقة المعطاة فعلياً بصرامة ومعايير دولية.",
-    schema:`{"overallScore":<0-100>,"recommendation":"<قبول|تعديلات طفيفة|تعديلات جوهرية|رفض>","criteria":[{"name":"المعيار","score":<0-100>,"note":"الملاحظة"}],"majorComments":["ملاحظات جوهرية للمحكّم"],"minorComments":["ملاحظات طفيفة"],"strengths":["نقاط القوة"],"reviewerResponse":"مسودة ردّ مقترح على المحكّمين"}`,
-    report:D=>"الدرجة: "+D.overallScore+"/100 — "+D.recommendation+"\n\nالمعايير:\n"+(D.criteria||[]).map(c=>"• "+c.name+": "+c.score+"/100 — "+c.note).join("\n")+"\n\nملاحظات جوهرية:\n"+(D.majorComments||[]).map(c=>"• "+c).join("\n")+"\n\nملاحظات طفيفة:\n"+(D.minorComments||[]).map(c=>"• "+c).join("\n")+"\n\nالقوة:\n"+(D.strengths||[]).map(s=>"• "+s).join("\n")+"\n\nمسودة الردّ:\n"+(D.reviewerResponse||""),
-    view:(D,{T,svc,soft,green,amber,stColor})=>{ const sc=D.overallScore>=80?green:D.overallScore>=60?amber:T.rose; return <>
-      <div style={{background:`linear-gradient(135deg,${sc}15,transparent)`,border:`2px solid ${sc}`,borderRadius:16,padding:22,textAlign:"center",marginBottom:14}}><div style={{fontSize:13,color:T.textDim||T.textD}}>تقييم المحكّم</div><div style={{fontSize:44,fontWeight:900,color:sc}}>{D.overallScore}<span style={{fontSize:20,color:T.textDim||T.textD}}>/100</span></div><div style={{marginTop:8}}><Tag ch={D.recommendation} color={sc}/></div></div>
-      <RSec T={T} t="📊 تقييم المعايير" c={svc.color}><RTbl T={T} head={["المعيار","الدرجة","الملاحظة"]} rows={(D.criteria||[]).map(c=>[c.name,c.score+"/100",c.note])}/></RSec>
-      <RSec T={T} t="🔴 ملاحظات جوهرية" c={T.rose}><RList T={T} items={D.majorComments}/></RSec>
-      <RSec T={T} t="🟡 ملاحظات طفيفة" c={amber}><RList T={T} items={D.minorComments}/></RSec>
-      <RSec T={T} t="✉️ مسودة الردّ على المحكّمين" c={svc.color}><pre style={{margin:0,fontSize:12.5,color:T.text,lineHeight:1.9,whiteSpace:"pre-wrap",fontFamily:"inherit"}}>{D.reviewerResponse}</pre></RSec>
-    </>; } },
-  // 5) موجّه النشر Q1
-  { id:"journal_match", icon:"🎯", color:"#0E7490", title:"موجّه النشر ومطابقة مجلات Q1",
-    sub:"أنسب المجلات + احتمالية القبول + خطة النشر",
-    long:"يحلّل ورقتك ويقترح أنسب المجلات المصنّفة Q1/Q2 بمعايير المطابقة (النطاق، التصنيف، معامل التأثير)، مع تقدير احتمالية القبول وخطة التقديم.",
-    cta:"طابِق المجلات",
-    fields:[{k:"title",ph:"عنوان/مجال الورقة"},{k:"extra",ph:"التخصص الدقيق"}],
-    sys:"أنت خبير نشر علمي بمعايير Scopus/Web of Science. اقترح مجلات حقيقية واقعية بمجال البحث دون اختلاق أرقام دقيقة، ونبّه أن التحقق النهائي من الموقع الرسمي للمجلة.",
-    schema:`{"journals":[{"name":"اسم المجلة","quartile":"Q1|Q2","scope":"مدى المطابقة","fit":"عالٍ|متوسط","note":"ملاحظة"}],"acceptanceTips":["عوامل ترفع احتمالية القبول"],"submissionPlan":["خطوات خطة التقديم"],"caution":"تنبيه التحقق من البيانات الرسمية للمجلة"}`,
-    report:D=>"المجلات المقترحة:\n"+(D.journals||[]).map(j=>"• "+j.name+" ["+j.quartile+" · ملاءمة "+j.fit+"]: "+j.scope+(j.note?" ("+j.note+")":"")).join("\n")+"\n\nعوامل رفع القبول:\n"+(D.acceptanceTips||[]).map(t=>"• "+t).join("\n")+"\n\nخطة التقديم:\n"+(D.submissionPlan||[]).map(s=>"← "+s).join("\n")+"\n\nتنبيه: "+(D.caution||""),
-    view:(D,{T,svc,soft,green,amber})=><>
-      <RSec T={T} t="📰 المجلات المقترحة" c={svc.color}>{(D.journals||[]).map((j,i)=><div key={i} style={{padding:"10px 12px",background:soft,borderRadius:10,marginBottom:7}}><div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap",marginBottom:3}}><span style={{fontSize:13,fontWeight:700,color:T.text}}>{j.name}</span><Tag ch={j.quartile} color={j.quartile==="Q1"?green:amber}/><Tag ch={"ملاءمة "+j.fit} color={svc.color}/></div><div style={{fontSize:11.5,color:T.textS||T.textSec}}>{j.scope}{j.note?" · "+j.note:""}</div></div>)}</RSec>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}><RSec T={T} t="📈 عوامل رفع القبول" c={green}><RList T={T} items={D.acceptanceTips}/></RSec><RSec T={T} t="🗺️ خطة التقديم" c={svc.color}><RList T={T} items={D.submissionPlan} pre="← "/></RSec></div>
-      {D.caution && <div style={{background:(T.amber||T.orange)+"12",border:`1px solid ${(T.amber||T.orange)}40`,borderRadius:12,padding:13,fontSize:11.5,color:T.text,lineHeight:1.7}}>⚠️ {D.caution}</div>}
-    </> },
-  // 6) محرر اللغة الأكاديمية Q1
-  { id:"language_edit", icon:"✍️", color:"#6d28d9", title:"التحرير اللغوي الأكاديمي (Q1)",
-    sub:"رفع اللغة لمستوى المجلات المرموقة + تقرير التحسين",
-    long:"يحسّن لغة الورقة لمستوى المجلات الدولية: الأسلوب الأكاديمي، الوضوح، الترابط، والدقة المصطلحية — مع تقرير بأبرز التحسينات (لا يخترع محتوى).",
-    cta:"حسّن اللغة",
-    fields:[{k:"title",ph:"عنوان القسم/الورقة"},{k:"extra",ph:"اللغة المستهدفة (عربي/إنجليزي)"}],
-    sys:"أنت محرّر لغوي أكاديمي لمجلات Q1. حسّن النص المعطى دون تغيير معناه أو اختلاق محتوى.",
-    schema:`{"improvedText":"النص المحسّن كاملاً","changes":[{"type":"نوع التحسين","example":"مثال قبل/بعد"}],"styleNotes":["ملاحظات أسلوبية عامة"],"readability":"تقييم الوضوح والمستوى الأكاديمي"}`,
-    report:D=>"النص المحسّن:\n"+(D.improvedText||"")+"\n\nأبرز التحسينات:\n"+(D.changes||[]).map(c=>"• "+c.type+": "+c.example).join("\n")+"\n\nملاحظات أسلوبية:\n"+(D.styleNotes||[]).map(s=>"• "+s).join("\n")+"\n\nالوضوح: "+(D.readability||""),
-    view:(D,{T,svc,soft})=><>
-      <RSec T={T} t="✨ النص المحسّن" c={svc.color}><div style={{fontSize:13,color:T.text,lineHeight:2,whiteSpace:"pre-wrap"}}>{D.improvedText}</div></RSec>
-      <RSec T={T} t="🔧 أبرز التحسينات" c={svc.color}>{(D.changes||[]).map((c,i)=><div key={i} style={{padding:"8px 11px",background:soft,borderRadius:9,marginBottom:6,fontSize:12,color:T.text}}><b>{c.type}: </b>{c.example}</div>)}</RSec>
-      {(D.styleNotes||[]).length>0 && <RSec T={T} t="📝 ملاحظات أسلوبية" c={T.teal}><RList T={T} items={D.styleNotes}/></RSec>}
-    </> },
-  // 7) المستشار البحثي الذكي
-  { id:"advisor", icon:"🧠", color:"#B45309", title:"المستشار البحثي الذكي",
-    sub:"اسأل أي سؤال بحثي/إحصائي واحصل على إجابة بالتوصيات",
-    long:"اطرح أي سؤال بحثي أو إحصائي (ما أفضل نموذج؟ ما حجم العينة؟ كيف أفسّر النتيجة؟ ما أفضل مجلة؟) واحصل على إجابة عملية بالتوصيات والخطوات.",
-    cta:"اسأل المستشار", allowEmpty:true,
-    placeholder:"اكتب سؤالك البحثي أو الإحصائي هنا...",
-    fields:[{k:"title",ph:"موضوع الاستشارة"}],
-    sys:"أنت مستشار بحثي وإحصائي خبير بمعايير عالمية. أجب على السؤال المعطى فعلياً بدقة وعملية.",
-    schema:`{"answer":"الإجابة المباشرة","reasoning":"التبرير العلمي","steps":["خطوات عملية"],"recommendations":["توصيات"],"caveats":["تحفظات/شروط"]}`,
-    report:D=>"الإجابة:\n"+(D.answer||"")+"\n\nالتبرير:\n"+(D.reasoning||"")+"\n\nخطوات عملية:\n"+(D.steps||[]).map(s=>"← "+s).join("\n")+"\n\nتوصيات:\n"+(D.recommendations||[]).map(r=>"• "+r).join("\n")+"\n\nتحفظات:\n"+(D.caveats||[]).map(c=>"• "+c).join("\n"),
-    view:(D,{T,svc,soft})=><>
-      <RSec T={T} t="💬 الإجابة" c={svc.color}><p style={{margin:0,fontSize:13.5,color:T.text,lineHeight:1.9}}>{D.answer}</p></RSec>
-      <RSec T={T} t="🧩 التبرير العلمي" c={svc.color}><p style={{margin:0,fontSize:12.5,color:T.text,lineHeight:1.8}}>{D.reasoning}</p></RSec>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}><RSec T={T} t="🪜 خطوات عملية" c={T.teal}><RList T={T} items={D.steps} pre="← "/></RSec><RSec T={T} t="💡 توصيات" c={svc.color}><RList T={T} items={D.recommendations}/></RSec></div>
-      {(D.caveats||[]).length>0 && <RSec T={T} t="⚠️ تحفظات" c={T.amber||T.orange}><RList T={T} items={D.caveats}/></RSec>}
-    </> },
-  // 8) المقترح البحثي / منحة
-  { id:"proposal", icon:"📑", color:"#0E7490", title:"المقترح البحثي وخطة المنحة",
-    sub:"مقترح متكامل جاهز للجان والمنح بمعايير دولية",
-    long:"يبني مقترحاً بحثياً متكاملاً (Research Proposal / Grant) بمعايير لجان المنح الدولية: الملخص، المشكلة، الأهداف، المنهجية، الخطة الزمنية، الميزانية، والأثر المتوقع.",
-    cta:"ابنِ المقترح", allowEmpty:true,
-    fields:[{k:"title",ph:"عنوان المشروع البحثي"},{k:"extra",ph:"الجهة الممولة/التخصص"}],
-    sys:"أنت خبير كتابة مقترحات بحثية ومنح بمعايير دولية (مثل Horizon/RDIA). ابنِ مقترحاً مقنعاً.",
-    schema:`{"abstract":"ملخص تنفيذي","problem":"المشكلة والمبرر","objectives":["الأهداف"],"methodology":"ملخص المنهجية","timeline":[{"phase":"المرحلة","duration":"المدة","output":"المخرج"}],"budget":["بنود الميزانية الرئيسية"],"impact":"الأثر العلمي والمجتمعي المتوقع"}`,
-    report:D=>"الملخص:\n"+(D.abstract||"")+"\n\nالمشكلة:\n"+(D.problem||"")+"\n\nالأهداف:\n"+(D.objectives||[]).map(o=>"• "+o).join("\n")+"\n\nالمنهجية:\n"+(D.methodology||"")+"\n\nالخطة الزمنية:\n"+(D.timeline||[]).map(t=>"• "+t.phase+" ("+t.duration+"): "+t.output).join("\n")+"\n\nالميزانية:\n"+(D.budget||[]).map(b=>"• "+b).join("\n")+"\n\nالأثر:\n"+(D.impact||""),
-    view:(D,{T,svc,soft})=><>
-      <RSec T={T} t="📄 الملخص التنفيذي" c={svc.color}><p style={{margin:0,fontSize:13,color:T.text,lineHeight:1.9}}>{D.abstract}</p></RSec>
-      <RSec T={T} t="🎯 المشكلة والأهداف" c={svc.color}><p style={{margin:"0 0 8px",fontSize:12.5,color:T.text,lineHeight:1.8}}>{D.problem}</p><RList T={T} items={D.objectives}/></RSec>
-      <RSec T={T} t="🗓️ الخطة الزمنية" c={svc.color}><RTbl T={T} head={["المرحلة","المدة","المخرج"]} rows={(D.timeline||[]).map(t=>[t.phase,t.duration,t.output])}/></RSec>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}><RSec T={T} t="💰 الميزانية" c={T.teal}><RList T={T} items={D.budget}/></RSec><RSec T={T} t="🌍 الأثر المتوقع" c={svc.color}><p style={{margin:0,fontSize:12.5,color:T.text,lineHeight:1.8}}>{D.impact}</p></RSec></div>
-    </> },
-];
-
-function ResearchOSSystem({ T }){ return <ResearchRunner T={T} services={RESEARCH_SERVICES} sysIcon="🔬" sysTitle="نظام البحث العلمي المتكامل" sysSub="دورة البحث كاملة بمعايير الجامعات العالمية ومجلات Q1: الفكرة · الأدبيات · المنهجية · التحكيم · النشر · التحرير · الاستشارة · المنحة"/>; }
-
-// ═══ التحقق المجاني عبر Crossref · مطابقة محلية · تقدير التكلفة ═══
-async function crossrefVerifyDOI(doi){
-  try{
-    const res = await fetch("https://api.crossref.org/works/"+encodeURIComponent(doi));
-    if(!res.ok) return {doi, valid:false, reason:"غير موجود في Crossref ("+res.status+")"};
-    const w = (await res.json()).message || {};
-    const dp = (w.published&&w.published["date-parts"]&&w.published["date-parts"][0]) || (w["published-print"]&&w["published-print"]["date-parts"]&&w["published-print"]["date-parts"][0]) || (w.issued&&w.issued["date-parts"]&&w.issued["date-parts"][0]);
-    return {doi, valid:true, title:(w.title&&w.title[0])||"—", year:(dp&&dp[0])||null, authors:(w.author||[]).map(a=>a.family||"").filter(Boolean).slice(0,3).join("، "), journal:(w["container-title"]&&w["container-title"][0])||""};
-  }catch(e){ return {doi, valid:false, reason:"تعذّر الاتصال بـ Crossref"}; }
-}
-function extractDOIs(text){
-  const m = ((text||"").match(/10\.\d{4,9}\/[-._;()/:A-Za-z0-9]+/g)||[]).map(s=>s.replace(/[.,;)\]]+$/,""));
-  return [...new Set(m)];
-}
-function ngramSet(text,n=5){
-  const w=(text||"").toLowerCase().replace(/[^\u0600-\u06FF\w\s]/g," ").split(/\s+/).filter(Boolean);
-  const g=new Set(); for(let i=0;i<=w.length-n;i++) g.add(w.slice(i,i+n).join(" ")); return g;
-}
-function localSimilarity(a,b){
-  const A=ngramSet(a),B=ngramSet(b); if(!A.size||!B.size) return {score:0,shared:[]};
-  let inter=0; const shared=[]; for(const x of A){ if(B.has(x)){ inter++; if(shared.length<8) shared.push(x); } }
-  return {score:inter/Math.min(A.size,B.size), shared};
-}
-const FV_TIERS = {
-  fast: {label:"سريع (Haiku)",   inUSD:0.80, outUSD:4.00},
-  std:  {label:"قياسي (Sonnet)", inUSD:3.00, outUSD:15.00},
-  deep: {label:"متعمّق (Opus)",  inUSD:15.00, outUSD:75.00},
-};
-function FreeVerifyCostSystem({ T }){
-  const [text,setText]=useState(""); const [files,setFiles]=useState([]); const [fileText,setFileText]=useState("");
-  const [refRes,setRefRes]=useState(null); const [refBusy,setRefBusy]=useState(false);
-  const [src,setSrc]=useState(""); const [simRes,setSimRes]=useState(null);
-  const [tier,setTier]=useState("std"); const [nSvc,setNSvc]=useState(6);
-  const ts=T.textS||T.textSec||"#5b6b85"; const green=T.emerald||T.green||"#1f8a5b"; const amber=T.amber||T.orange||"#c47a0e";
-  const soft=T.bgSec||T.bgS||T.inputBg||"#f0f3fa";
-  const inp={padding:"12px 15px",borderRadius:11,border:`1.5px solid ${T.border}`,background:T.inputBg||soft,color:T.text,fontSize:13.5,fontFamily:"inherit",boxSizing:"border-box",width:"100%",outline:"none"};
-
-  useEffect(()=>{ let ok=true; (async()=>{
-    if(!files.length){ if(ok) setFileText(""); return; }
-    try{ const fc=await Promise.all(files.map(readFile)); if(ok) setFileText(fc.join("\n")); }
-    catch(e){ if(ok) setFileText(""); }
-  })(); return ()=>{ ok=false; }; },[files]);
-  const fullText=(text+"\n"+fileText).trim();
-
-  async function runRefs(){
-    setRefBusy(true); setRefRes(null);
-    const dois=extractDOIs(fullText);
-    if(!dois.length){ setRefRes({results:[],valid:0,invalid:0,capped:false,total:0}); setRefBusy(false); return; }
-    const results=[];
-    for(const d of dois.slice(0,40)){ results.push(await crossrefVerifyDOI(d)); await new Promise(r=>setTimeout(r,150)); }
-    const valid=results.filter(r=>r.valid).length;
-    setRefRes({results,valid,invalid:results.length-valid,capped:dois.length>40,total:dois.length}); setRefBusy(false);
-  }
-  function runSim(){ setSimRes(localSimilarity(fullText,src)); }
-
-  const chars=fullText.length; const inTok=Math.ceil(chars/3.3)||0; const outTok=1500;
-  const tr=FV_TIERS[tier];
-  const usd = nSvc*((inTok/1e6)*tr.inUSD + (outTok/1e6)*tr.outUSD);
-  const sar = usd*3.75;
-  const simColor = s => s>0.3?T.rose : s>0.12?amber : green;
-  const refReport = refRes && refRes.results.length ? "التحقق من المراجع عبر Crossref\nإجمالي DOI: "+refRes.results.length+" — موثّق: "+refRes.valid+" — مشبوه: "+refRes.invalid+"\n\n"+refRes.results.map(r=>r.valid?"✓ "+(r.title||r.doi)+" ("+(r.year||"?")+(r.journal?" — "+r.journal:"")+") ["+r.doi+"]":"✗ "+r.doi+" — "+r.reason).join("\n") : "";
-
-  return <div style={{maxWidth:900,margin:"0 auto"}}>
-    <Card T={T}>
-      <div style={{display:"flex",alignItems:"center",gap:10}}>
-        <span style={{fontSize:27}}>🔖</span>
-        <div><div style={{fontWeight:800,fontSize:17,color:T.text}}>التحقق المجاني والتكلفة</div>
-        <div style={{fontSize:12,color:ts}}>تحقق حقيقي من المراجع عبر Crossref · مطابقة محلية · تقدير تكلفة الفحص الذكي — بلا تكلفة API</div></div>
-      </div>
-    </Card>
-
-    <Card T={T} style={{marginTop:14}}>
-      <div style={{fontWeight:800,fontSize:14,color:T.text,marginBottom:10}}>① مصدر البحث</div>
-      <div style={{marginBottom:12}}><FileZone files={files} setFiles={setFiles} T={T}/></div>
-      <textarea value={text} onChange={e=>setText(e.target.value)} rows={6} placeholder="الصق نص البحث الكامل مع قائمة المراجع…" style={{...inp,resize:"vertical",lineHeight:1.8}}/>
-    </Card>
-
-    <Card T={T} style={{marginTop:14}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8,marginBottom:8}}>
-        <div style={{fontWeight:800,fontSize:14,color:T.text,display:"flex",alignItems:"center",gap:8}}>② التحقق من المراجع <Tag ch="Crossref · مجاني" color={green}/></div>
-        <Btn ch={refBusy?<><Spin/> جارٍ التحقق…</>:<>🔎 تحقّق من المراجع</>} onClick={runRefs} disabled={refBusy} v="gold" T={T}/>
-      </div>
-      <p style={{margin:"0 0 4px",fontSize:11.5,color:ts,lineHeight:1.7}}>يستخرج معرّفات DOI من النص ويتحقق من وجودها فعلياً في قاعدة Crossref — يكشف المراجع المختلقة أو الوهمية.</p>
-      {refRes && (refRes.results.length===0
-        ? <div style={{fontSize:12.5,color:amber,marginTop:8}}>لم يُعثر على معرّفات DOI في النص. أضف قائمة المراجع المتضمّنة لمعرّفات DOI.</div>
-        : <>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:10,margin:"12px 0"}}>
-            {[["الإجمالي",refRes.results.length,ts],["موثّق",refRes.valid,green],["مشبوه",refRes.invalid,T.rose]].map((m,i)=>
-              <div key={i} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:12,textAlign:"center",boxShadow:T.shadow}}><div style={{fontSize:20,fontWeight:900,color:m[2]}}>{m[1]}</div><div style={{fontSize:10,color:ts,marginTop:3}}>{m[0]}</div></div>)}
-          </div>
-          {refRes.capped && <div style={{fontSize:11,color:amber,margin:"0 0 8px"}}>تم التحقق من أول 40 معرّفاً من أصل {refRes.total} لتفادي الضغط على الخدمة المجانية.</div>}
-          {refRes.results.map((r,i)=><div key={i} style={{padding:"9px 12px",background:soft,borderRadius:9,marginBottom:6,fontSize:12.5}}>
-            {r.valid
-              ? <div><span style={{color:green,fontWeight:800}}>✓ </span><span style={{color:T.text,fontWeight:700}}>{r.title}</span><div style={{fontSize:11,color:ts,marginTop:2}}>{r.authors}{r.authors?" · ":""}{r.year||""}{r.journal?" · "+r.journal:""} · {r.doi}</div></div>
-              : <div><span style={{color:T.rose,fontWeight:800}}>✗ </span><span style={{color:T.text}}>{r.doi}</span><span style={{fontSize:11,color:ts}}> — {r.reason}</span></div>}
-          </div>)}
-          <div style={{marginTop:10,display:"flex",gap:8,flexWrap:"wrap"}}><ReportBtn T={T} title="التحقق من المراجع (Crossref)" body={refReport} opts={{icon:"🔖",subtitle:"التحقق المجاني والتكلفة",color:green}}/><Btn ch="📋 نسخ" v="ghost" T={T} onClick={()=>navigator.clipboard&&navigator.clipboard.writeText(refReport)}/></div>
-        </>)}
-    </Card>
-
-    <Card T={T} style={{marginTop:14}}>
-      <div style={{fontWeight:800,fontSize:14,color:T.text,marginBottom:8,display:"flex",alignItems:"center",gap:8}}>③ المطابقة المحلية <Tag ch="مجاني" color={green}/></div>
-      <p style={{margin:"0 0 8px",fontSize:11.5,color:ts,lineHeight:1.7}}>قارن نص البحث أعلاه بنص مصدر مشتبه (الصقه هنا) لحساب نسبة التشابه محلياً دون أي تكلفة.</p>
-      <textarea value={src} onChange={e=>setSrc(e.target.value)} rows={4} placeholder="الصق النص المصدر المشتبه للمقارنة…" style={{...inp,resize:"vertical",lineHeight:1.8,marginBottom:10}}/>
-      <Btn ch={<>🧮 احسب التشابه</>} onClick={runSim} disabled={!fullText.trim()||!src.trim()} v="gold" T={T}/>
-      {simRes && <div style={{marginTop:12}}>
-        <div style={{textAlign:"center",padding:16,borderRadius:14,border:`2px solid ${simColor(simRes.score)}`,background:soft}}>
-          <div style={{fontSize:32,fontWeight:900,color:simColor(simRes.score)}}>{(simRes.score*100).toFixed(1)}%</div>
-          <div style={{fontSize:11,color:ts}}>أعلى تشابه محلي (مقاطع متطابقة من 5 كلمات)</div>
-        </div>
-        {simRes.shared.length>0 && <div style={{marginTop:10}}>{simRes.shared.map((s,i)=><div key={i} style={{padding:"6px 10px",background:T.card,border:`1px solid ${T.border}`,borderRadius:8,marginBottom:5,fontSize:12,color:T.text}}>… {s} …</div>)}</div>}
-      </div>}
-    </Card>
-
-    <Card T={T} style={{marginTop:14}}>
-      <div style={{fontWeight:800,fontSize:14,color:T.text,marginBottom:8}}>④ تقدير تكلفة الفحص الذكي</div>
-      <p style={{margin:"0 0 10px",fontSize:11.5,color:ts,lineHeight:1.7}}>تقدير تقريبي لتكلفة تشغيل الفحوص الذكية على هذا البحث قبل تنفيذها، حسب حجم النص ومستوى العمق وعدد الفحوص.</p>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
-        <div><label style={{fontSize:11,color:ts,display:"block",marginBottom:5}}>مستوى العمق</label>
-          <select value={tier} onChange={e=>setTier(e.target.value)} style={inp}>{Object.entries(FV_TIERS).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}</select></div>
-        <div><label style={{fontSize:11,color:ts,display:"block",marginBottom:5}}>عدد الفحوص</label>
-          <input type="number" min={1} max={20} value={nSvc} onChange={e=>setNSvc(Math.max(1,Math.min(20,+e.target.value||1)))} style={inp}/></div>
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10}}>
-        {[["حجم النص",chars.toLocaleString("en")+" حرف",ts],["الرموز التقديرية","~"+inTok.toLocaleString("en"),T.blue||"#2563eb"],["التكلفة (دولار)","$"+usd.toFixed(4),green],["التكلفة (ريال)","~"+sar.toFixed(2)+" ﷼",amber]].map((m,i)=>
-          <div key={i} style={{background:soft,borderRadius:12,padding:13,textAlign:"center"}}><div style={{fontSize:16,fontWeight:900,color:m[2]}}>{m[1]}</div><div style={{fontSize:10,color:ts,marginTop:3}}>{m[0]}</div></div>)}
-      </div>
-      <p style={{margin:"10px 0 0",fontSize:10.5,color:ts}}>* تقدير استرشادي بأسعار تقريبية؛ قد تختلف التكلفة الفعلية حسب طول المخرجات والنموذج المستخدم.</p>
-    </Card>
-  </div>;
-}
-
 // ── MAIN APP ──────────────────────────────────────────────────
-export default function MuhakkimV4() {
+const _mqGroupOf = key => key ? (GROUPS.find(g=>g.tools.some(t=>t.key===key))?.id ?? null) : null;
+
+export default function MuqyasEmbedded({ embed = false, initialTool = null, dark: darkProp } = {}) {
   const [T, dark, toggleTheme] = useTheme();
-  const [activeGroup, setActiveGroup] = useState(null);
+  const [activeGroup, setActiveGroup] = useState(embed ? _mqGroupOf(initialTool) : null);
   const [activeBatch, setActiveBatch] = useState(false);
   const [closedSecs, setClosedSecs] = useState({});
-  const [activeTool, setActiveTool] = useState(null);
+  const [activeTool, setActiveTool] = useState(embed ? initialTool : null);
   const [openDrop, setOpenDrop] = useState(null);
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
-  const [lang, setLang] = useState("ar");
-  const [homeOpen, setHomeOpen] = useState(null);
-  const en = lang==="en";
-  const L = (ar,enT) => en ? enT : ar;
-  const LO = o => en ? (o.en||o.ar) : o.ar; // label of {ar,en}
-  const UI = {
-    pro:        L("محكّم","Muhakkim"),
-    searchPh:   L("ابحث عن أداة...","Search tools..."),
-    noRes:      L("لا نتائج","No results"),
-    back:       L("← رجوع","Back →"),
-    home:       L("⚖️ محكّم","⚊ Muhakkim"),
-    lightMode:  L("وضع فاتح","Light"),
-    darkMode:   L("وضع داكن","Dark"),
-    toolsCount: n => en ? (n+" tools · interactive guide: each card shows the tool, its output, and how to get the best result")
-                        : (n+" أداة · دليل تعريفي تفاعلي: كل بطاقة تعرض تعريف الأداة ومخرجها وكيف تحصل على أفضل نتيجة"),
-    openTool:   L("افتح الأداة ←","Open tool →"),
-    guideIn:    L("دليل كامل داخل الأداة","Full guide inside"),
-    output:     L("🎯 المخرج: ","🎯 Output: "),
-    bestFor:    L("💡 لأفضل نتيجة: ","💡 Best result: "),
-    batchOn:    L("⚡ تشغيل جماعي","⚡ Batch run"),
-    batchOff:   L("🔧 الأدوات المنفردة","🔧 Single tools"),
-    newTag:     L("جديد","NEW"),
-    arNote:     L("","Tool interfaces are Arabic-first (academic Arabic). The platform shell is bilingual; full English tool UIs ship with the enterprise version."),
-  };
   const navRef = useRef();
 
   useEffect(()=>{
@@ -16712,6 +12761,16 @@ export default function MuhakkimV4() {
     document.addEventListener("mousedown",h);
     return ()=>document.removeEventListener("mousedown",h);
   },[]);
+
+  // Sync theme coming from the host (محكّم) when embedded
+  useEffect(()=>{
+    if(embed && typeof darkProp==="boolean" && darkProp!==dark) toggleTheme();
+  },[embed, darkProp, dark]);
+
+  // Follow the tool requested by the host when embedded
+  useEffect(()=>{
+    if(embed){ setActiveTool(initialTool); setActiveGroup(_mqGroupOf(initialTool)); }
+  },[embed, initialTool]);
 
   const findGroup = key => GROUPS.find(g=>g.tools.some(t=>t.key===key));
   const openTool = key => {
@@ -16732,24 +12791,6 @@ export default function MuhakkimV4() {
     if(activeTool){const g=findGroup(activeTool);if(g&&g.tools.length>1){setActiveTool(null);return;}}
     setActiveGroup(null);setActiveTool(null);window.scrollTo({top:0});
   };
-
-  // Device/browser back button → navigate within the app instead of leaving it
-  const navStateRef = useRef({});
-  navStateRef.current = { activeGroup, activeTool };
-  const skipPushRef = useRef(false);
-  useEffect(()=>{
-    const onPop = ()=>{
-      const { activeGroup:ag, activeTool:at } = navStateRef.current;
-      if(at){ const g=findGroup(at); if(g&&g.tools.length>1){ skipPushRef.current=true; setActiveTool(null); setOpenDrop(null); window.scrollTo({top:0}); return; } }
-      if(ag||at){ skipPushRef.current=true; setActiveGroup(null); setActiveTool(null); setOpenDrop(null); window.scrollTo({top:0}); return; }
-    };
-    window.addEventListener("popstate", onPop);
-    return ()=>window.removeEventListener("popstate", onPop);
-  }, []);
-  useEffect(()=>{
-    if(skipPushRef.current){ skipPushRef.current=false; return; }
-    if(activeGroup||activeTool){ window.history.pushState({muh:1}, ""); }
-  }, [activeGroup, activeTool]);
 
   const curGroup = activeGroup?GROUPS.find(g=>g.id===activeGroup):null;
   const curTool  = activeTool==="global_batch"?{key:"global_batch",icon:"🌐",ar:"التقرير الشامل لكل الأدوات",en:"Global Report",badge:"شامل"}:(activeTool?findGroup(activeTool)?.tools.find(t=>t.key===activeTool):null);
@@ -16786,33 +12827,6 @@ export default function MuhakkimV4() {
     if(key==="rev_internal") return <HumanReviewSystem T={T} role="internal"/>;
     if(key==="rev_external") return <HumanReviewSystem T={T} role="external"/>;
     if(key==="rev_self") return <HumanReviewSystem T={T} role="self"/>;
-    if(key==="human_review") return <HumanReviewSystem T={T}/>;
-    if(key==="review_suite") return <ReviewProSuiteSystem T={T}/>;
-    if(key==="forms_studio") return <FormsStudioSystem T={T}/>;
-    if(key==="publishing_studio") return <PublishingStudioSystem T={T}/>;
-    if(key==="lifecycle") return <ResearchLifecycleSystem T={T}/>;
-    if(key==="vision_align") return <VisionAlignSystem T={T}/>;
-    if(key==="arab_toolkit") return <ArabToolkitSystem T={T}/>;
-    if(key==="ds_lab") return <DataScienceLabSystem T={T}/>;
-    if(key==="arabic_finder") return <ArabicFinderSystem T={T}/>;
-    if(key==="islamic_center") return <IslamicArabicCenterSystem T={T}/>;
-    if(key==="research_os") return <ResearchOSSystem T={T}/>;
-    if(key==="smart_writing") return <SmartWritingSystem T={T}/>;
-    if(key==="research_brain") return <ResearchBrainSystem T={T}/>;
-    if(key==="smart_center") return <SmartAnalysisCenterSystem T={T}/>;
-    if(key==="ejournal_studio") return <EJournalStudioSystem T={T}/>;
-    if(key==="verify_lab") return <VerificationLabSystem T={T}/>;
-    if(key==="free_verify") return <FreeVerifyCostSystem T={T}/>;
-    if(key==="course_quality") return <CourseQualitySystem T={T}/>;
-    if(key==="rev_roles") return <ToolHub T={T} hubKey="rev_roles"/>;
-    if(key==="review_center") return <ToolHub T={T} hubKey="review_center"/>;
-    if(key==="committee_hub") return <ToolHub T={T} hubKey="committee_hub"/>;
-    if(key==="assess_hub") return <ToolHub T={T} hubKey="assess_hub"/>;
-    if(key==="text_hub") return <ToolHub T={T} hubKey="text_hub"/>;
-    if(key==="data_quality_hub") return <ToolHub T={T} hubKey="data_quality_hub"/>;
-    if(key==="research_hub") return <ToolHub T={T} hubKey="research_hub"/>;
-    if(key==="writing_suite") return <WritingProSuiteSystem T={T}/>;
-    if(key==="analysis_suite") return <AnalysisProSuiteSystem T={T}/>;
     if(key==="master_report") return <MasterReportSystem T={T}/>;
     if(key==="supervision") return <SupervisionCenterSystem T={T}/>;
     if(key==="grad_vision") return <GradStudiesVisionSystem T={T}/>;
@@ -16863,16 +12877,16 @@ export default function MuhakkimV4() {
   // Badge color
   const badgeColor = b => b==="NCAAA"?T.orange:b==="Pro"?T.violet:b==="جديد"?T.emerald:T.gold;
 
-  return <div dir={en?"ltr":"rtl"} lang={lang} style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'Tajawal','Inter','Segoe UI',sans-serif",transition:"background .3s,color .3s"}}>
+  return <div dir="rtl" style={embed ? {background:"transparent",color:T.text} : {minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'Segoe UI','Tajawal',sans-serif",transition:"background .3s,color .3s"}}>
 
     {/* NAVBAR */}
-    <header ref={navRef} style={{position:"sticky",top:0,zIndex:200,background:T.nav,backdropFilter:"blur(20px)",borderBottom:`1px solid ${T.border}`,boxShadow:T.shadow}}>
+    {!embed && <header ref={navRef} style={{position:"sticky",top:0,zIndex:200,background:T.nav,backdropFilter:"blur(20px)",borderBottom:`1px solid ${T.border}`,boxShadow:T.shadow}}>
       <nav style={{maxWidth:1280,margin:"0 auto",padding:"0 14px",display:"flex",alignItems:"center",height:52,gap:3}}>
 
         {/* Logo */}
         <button onClick={goHome} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",background:"none",border:"none",fontFamily:"inherit",padding:"3px 0",flexShrink:0,marginLeft:8}}>
-          <div style={{width:34,height:34,borderRadius:10,background:T.blueG,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,boxShadow:`0 3px 12px ${T.blue}55`}}>⚖️</div>
-          <span style={{fontWeight:900,fontSize:15,color:T.text}}>{UI.pro}<span style={{fontSize:10,background:T.gold+"22",color:T.gold,border:`1px solid ${T.gold}44`,borderRadius:5,padding:"1px 5px",fontWeight:700,marginRight:4}}>Pro</span></span>
+          <div style={{width:32,height:32,borderRadius:9,background:T.goldG,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,boxShadow:`0 2px 10px ${T.gold}44`}}>⚖️</div>
+          <span style={{fontWeight:900,fontSize:15,color:T.gold}}>مُقياس<span style={{fontSize:10,background:T.gold+"22",color:T.gold,border:`1px solid ${T.gold}44`,borderRadius:5,padding:"1px 5px",fontWeight:700,marginRight:4}}>Pro</span></span>
         </button>
 
         {/* Groups nav — scrollable */}
@@ -16881,29 +12895,29 @@ export default function MuhakkimV4() {
             <div key={g.id} style={{position:"relative",flexShrink:0}}>
               <button onClick={()=>setOpenDrop(openDrop===g.id?null:g.id)}
                 style={{display:"flex",alignItems:"center",gap:3,padding:"5px 7px",borderRadius:7,background:openDrop===g.id?(g.color||T.gold)+"18":"transparent",border:openDrop===g.id?`1px solid ${g.color||T.gold}44`:"1px solid transparent",color:openDrop===g.id?g.color||T.gold:T.textSec,fontWeight:600,fontSize:11,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",position:"relative",transition:"all .15s"}}>
-                <span style={{fontSize:14}}><EmIcon e={g.icon}/></span>
-                <span style={{maxWidth:140,overflow:"hidden",textOverflow:"ellipsis"}}>{LO(g)}</span>
+                <span style={{fontSize:14}}>{g.icon}</span>
+                <span style={{maxWidth:58,overflow:"hidden",textOverflow:"ellipsis"}}>{g.ar}</span>
                 {g.badge&&<span style={{background:T.emerald+"20",color:T.emerald,fontSize:8,padding:"1px 4px",borderRadius:4,fontWeight:700}}>●</span>}
                 <svg width="7" height="7" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 3l4 4 4-4"/></svg>
               </button>
 
               {openDrop===g.id&&<div style={{position:"absolute",top:"calc(100% + 5px)",right:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:14,boxShadow:T.shadowH,minWidth:235,zIndex:300,padding:"5px"}}>
                 <div style={{padding:"5px 10px 7px",borderBottom:`1px solid ${T.border}`,marginBottom:3}}>
-                  <span style={{fontSize:11,fontWeight:700,color:g.color||T.gold}}><EmIcon e={g.icon}/> {LO(g)}</span>
-                  {g.badge&&<Tag ch={UI.newTag} color={T.emerald}/>}
+                  <span style={{fontSize:11,fontWeight:700,color:g.color||T.gold}}>{g.icon} {g.ar}</span>
+                  {g.badge&&<Tag ch="جديد" color={T.emerald}/>}
                 </div>
                 {g.tools.map(t=>(
                   <button key={t.key} onClick={()=>openTool(t.key)}
                     style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"7px 9px",border:"none",background:"transparent",borderRadius:9,cursor:"pointer",fontFamily:"inherit",textAlign:"right",transition:"background .1s"}}
                     onMouseEnter={e=>e.currentTarget.style.background=T.bgSec}
                     onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                    <span style={{fontSize:16,width:28,height:28,background:(g.color||T.gold)+"18",border:`1px solid ${g.color||T.gold}30`,borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><EmIcon e={t.icon}/></span>
+                    <span style={{fontSize:16,width:28,height:28,background:(g.color||T.gold)+"18",border:`1px solid ${g.color||T.gold}30`,borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{t.icon}</span>
                     <div style={{flex:1}}>
                       <div style={{fontSize:12,fontWeight:700,color:T.text,display:"flex",alignItems:"center",gap:5}}>
-                        {LO(t)}
+                        {t.ar}
                         {t.badge&&<span style={{background:badgeColor(t.badge)+"20",color:badgeColor(t.badge),border:`1px solid ${badgeColor(t.badge)}30`,borderRadius:6,padding:"0 4px",fontSize:9,fontWeight:700}}>{t.badge}</span>}
                       </div>
-                      <div style={{fontSize:10,color:T.textDim}}>{en?t.ar:t.en}</div>
+                      <div style={{fontSize:10,color:T.textDim}}>{t.en}</div>
                     </div>
                   </button>
                 ))}
@@ -16918,179 +12932,145 @@ export default function MuhakkimV4() {
           <div style={{position:"relative"}}>
             <button onClick={()=>setShowSearch(!showSearch)} style={{background:T.bgSec,border:`1px solid ${T.border}`,borderRadius:8,color:T.textSec,padding:"5px 10px",fontSize:13,cursor:"pointer"}}>🔍</button>
             {showSearch&&<div style={{position:"absolute",top:"calc(100%+5px)",left:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:12,boxShadow:T.shadowH,width:280,zIndex:300,padding:8}}>
-              <input autoFocus value={search} onChange={e=>setSearch(e.target.value)} placeholder={UI.searchPh} style={{width:"100%",padding:"8px 11px",borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:12,fontFamily:"inherit",boxSizing:"border-box",outline:"none"}}/>
+              <input autoFocus value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث عن أداة..." style={{width:"100%",padding:"8px 11px",borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,color:T.text,fontSize:12,fontFamily:"inherit",boxSizing:"border-box",outline:"none"}}/>
               {searchRes.map(({t,g},i)=><button key={i} onClick={()=>openTool(t.key)} style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"7px 8px",border:"none",background:"transparent",borderRadius:8,cursor:"pointer",fontFamily:"inherit",textAlign:"right",marginTop:3}} onMouseEnter={e=>e.currentTarget.style.background=T.bgSec} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                <span style={{fontSize:15}}><EmIcon e={t.icon}/></span><div><div style={{fontSize:12,fontWeight:600,color:T.text}}>{LO(t)}</div><div style={{fontSize:10,color:T.textDim}}>{LO(g)}</div></div>
+                <span style={{fontSize:15}}>{t.icon}</span><div><div style={{fontSize:12,fontWeight:600,color:T.text}}>{t.ar}</div><div style={{fontSize:10,color:T.textDim}}>{g.ar}</div></div>
               </button>)}
-              {search&&searchRes.length===0&&<p style={{margin:"8px 4px",fontSize:12,color:T.textDim}}>{UI.noRes}</p>}
+              {search&&searchRes.length===0&&<p style={{margin:"8px 4px",fontSize:12,color:T.textDim}}>لا نتائج</p>}
             </div>}
           </div>
-          {(activeGroup||activeTool)&&<button onClick={goBack} style={{background:T.bgSec,border:`1px solid ${T.border}`,borderRadius:8,color:T.text,padding:"5px 11px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{UI.back}</button>}
-          <button onClick={()=>setLang(en?"ar":"en")} style={{background:T.bgSec,border:`1px solid ${T.border}`,borderRadius:8,color:T.textSec,padding:"5px 10px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}} title={en?"العربية":"English"}>{en?"ع":"EN"}</button>
-          <button onClick={toggleTheme} style={{background:T.bgSec,border:`1px solid ${T.border}`,borderRadius:8,color:T.textSec,padding:"5px 9px",fontSize:14,cursor:"pointer"}} title={dark?UI.lightMode:UI.darkMode}>{dark?"☀️":"🌙"}</button>
+          {(activeGroup||activeTool)&&<button onClick={goBack} style={{background:T.bgSec,border:`1px solid ${T.border}`,borderRadius:8,color:T.text,padding:"5px 11px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>← رجوع</button>}
+          <button onClick={toggleTheme} style={{background:T.bgSec,border:`1px solid ${T.border}`,borderRadius:8,color:T.textSec,padding:"5px 9px",fontSize:14,cursor:"pointer"}} title={dark?"وضع فاتح":"وضع داكن"}>{dark?"☀️":"🌙"}</button>
         </div>
       </nav>
 
       {/* Breadcrumb */}
       {(curGroup||curTool)&&<div style={{borderTop:`1px solid ${T.border}`,padding:"5px 20px"}}>
         <div style={{maxWidth:1280,margin:"0 auto",display:"flex",alignItems:"center",gap:5,fontSize:11,color:T.textDim}}>
-          <button onClick={goHome} style={{background:"none",border:"none",cursor:"pointer",color:T.gold,fontWeight:700,fontSize:11,fontFamily:"inherit"}}>{UI.home}</button>
-          {curGroup&&<><span>›</span><button onClick={()=>setActiveTool(null)} style={{background:"none",border:"none",cursor:"pointer",color:curGroup.color||T.gold,fontWeight:600,fontSize:11,fontFamily:"inherit"}}><EmIcon e={curGroup.icon}/> {LO(curGroup)}</button></>}
-          {curTool&&<><span>›</span><span style={{color:T.text,fontWeight:700}}>{LO(curTool)}</span></>}
+          <button onClick={goHome} style={{background:"none",border:"none",cursor:"pointer",color:T.gold,fontWeight:700,fontSize:11,fontFamily:"inherit"}}>⚖️ مُقياس</button>
+          {curGroup&&<><span>›</span><button onClick={()=>setActiveTool(null)} style={{background:"none",border:"none",cursor:"pointer",color:curGroup.color||T.gold,fontWeight:600,fontSize:11,fontFamily:"inherit"}}>{curGroup.icon} {curGroup.ar}</button></>}
+          {curTool&&<><span>›</span><span style={{color:T.text,fontWeight:700}}>{curTool.ar}</span></>}
         </div>
       </div>}
-    </header>
+    </header>}
 
     {/* MAIN */}
-    <main style={{maxWidth:1280,margin:"0 auto",padding:"0 14px"}}>
+    <main style={embed ? {} : {maxWidth:1280,margin:"0 auto",padding:"0 14px"}}>
 
       {/* HOME */}
       {!activeGroup&&!activeTool&&<div>
         {/* Hero */}
-        <div style={{padding:"56px 16px 36px",textAlign:"center",position:"relative",background:`radial-gradient(60% 70% at 28% -6%, ${T.blue}14, transparent 60%), radial-gradient(50% 60% at 82% 0%, ${T.gold}12, transparent 60%)`}}>
-          <div style={{display:"inline-flex",alignItems:"center",gap:10,padding:"6px 16px 6px 14px",background:T.card,border:`1px solid ${T.border}`,borderRadius:24,marginBottom:20,boxShadow:T.shadow}}>
-            <span style={{display:"inline-flex",alignItems:"center"}}>
-              <span style={{width:15,height:15,borderRadius:"50%",background:"#34d399",border:`2px solid ${T.card}`}}/>
-              <span style={{width:15,height:15,borderRadius:"50%",background:"#fbbf24",border:`2px solid ${T.card}`,marginInlineStart:-5}}/>
-              <span style={{width:15,height:15,borderRadius:"50%",background:"#60a5fa",border:`2px solid ${T.card}`,marginInlineStart:-5}}/>
-            </span>
-            <span style={{fontSize:12,color:T.textSec,fontWeight:700}}>{GROUPS.reduce((a,g)=>a+g.tools.length,0)}+ {L("أداة أكاديمية ذكية","smart academic tools")}</span>
+        <div style={{padding:"48px 16px 36px",textAlign:"center"}}>
+          <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"6px 16px",background:T.gold+"18",border:`1px solid ${T.gold}44`,borderRadius:24,marginBottom:20}}>
+            <span>🏆</span><span style={{fontSize:12,color:T.gold,fontWeight:700}}>المنصة الأكاديمية الشاملة · {newCount}+ أداة جديدة</span>
           </div>
-          <h1 style={{margin:"0 0 14px",fontSize:"clamp(30px,7vw,46px)",fontWeight:900,color:T.text,letterSpacing:"-1px",lineHeight:1.15}}>{L("منصة ","")}<span style={{backgroundImage:T.blueG,WebkitBackgroundClip:"text",backgroundClip:"text",color:"transparent",WebkitTextFillColor:"transparent"}}>{L("محكّم","Muhakkim")} Pro</span></h1>
-          <p style={{margin:"0 auto 26px",fontSize:16,color:T.textSec,maxWidth:620,lineHeight:1.65}}>
-            {L("النظام العربي الذكي لإدارة البحث والتحكيم والكتابة والتحليل والنشر","The smart platform for research, peer review, writing, analysis & publishing")}
+          <h1 style={{margin:"0 0 12px",fontSize:40,fontWeight:900,color:T.text,letterSpacing:"-1px"}}>منصة <span style={{color:T.gold}}>مُقياس</span> Pro</h1>
+          <p style={{margin:"0 auto 28px",fontSize:16,color:T.textSec,maxWidth:620,lineHeight:1.65}}>
+            تحكيم عربي حصري · تحليل بيانات ذكي · جودة NCAAA · إرشاد · تعليم إلكتروني · إدارة أكاديمية
           </p>
-          <div style={{maxWidth:560,margin:"0 auto 24px",position:"relative"}}>
-            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={L("🔍 ابحث عن أي أداة في المنصة...","🔍 Search any tool...")}
-              style={{width:"100%",padding:"14px 18px",borderRadius:14,border:`2px solid ${search?T.blue:T.border}`,background:T.card,color:T.text,fontSize:14,fontFamily:"inherit",boxSizing:"border-box",outline:"none",boxShadow:T.shadow,textAlign:"center"}}/>
+          <div style={{maxWidth:560,margin:"0 auto 22px",position:"relative"}}>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 ابحث عن أي أداة في المنصة... (85 أداة)"
+              style={{width:"100%",padding:"14px 18px",borderRadius:14,border:`2px solid ${search?T.gold:T.border}`,background:T.card,color:T.text,fontSize:14,fontFamily:"inherit",boxSizing:"border-box",outline:"none",boxShadow:T.shadow,textAlign:"center"}}/>
             {search&&searchRes.length>0&&<div style={{position:"absolute",top:"calc(100% + 6px)",left:0,right:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:14,boxShadow:T.shadowH,zIndex:300,padding:8,maxHeight:340,overflowY:"auto"}}>
               {searchRes.map(({t,g},i)=><button key={i} onClick={()=>openTool(t.key)} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"9px 11px",border:"none",background:"transparent",borderRadius:9,cursor:"pointer",fontFamily:"inherit",textAlign:"right",marginTop:2}} onMouseEnter={e=>e.currentTarget.style.background=T.bgSec} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                <span style={{fontSize:18}}><EmIcon e={t.icon}/></span>
-                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:T.text}}>{LO(t)}</div><div style={{fontSize:10,color:T.textDim}}>{LO(g)}</div></div>
-                <span style={{fontSize:13,color:T.blue}}>←</span>
+                <span style={{fontSize:18}}>{t.icon}</span>
+                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:T.text}}>{t.ar}</div><div style={{fontSize:10,color:T.textDim}}>{g.ar}</div></div>
+                <span style={{fontSize:13,color:T.gold}}>←</span>
               </button>)}
             </div>}
-            {search&&searchRes.length===0&&<div style={{position:"absolute",top:"calc(100% + 6px)",left:0,right:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:14,boxShadow:T.shadowH,zIndex:300,padding:16,textAlign:"center"}}><span style={{fontSize:12,color:T.textDim}}>{L("لا نتائج — جرّب كلمة أخرى","No results — try another term")}</span></div>}
+            {search&&searchRes.length===0&&<div style={{position:"absolute",top:"calc(100% + 6px)",left:0,right:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:14,boxShadow:T.shadowH,zIndex:300,padding:16,textAlign:"center"}}><span style={{fontSize:12,color:T.textDim}}>لا نتائج — جرّب كلمة أخرى</span></div>}
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,maxWidth:520,margin:"0 auto 20px"}}>
-            {[{n:GROUPS.reduce((a,g)=>a+g.tools.length,0)+"+",l:L("أداة متكاملة","Tools"),c:T.blue},{n:GROUPS.length+"",l:L("أقسام متخصصة","Categories"),c:T.gold},{n:"Claude",l:L("ذكاء اصطناعي","AI engine"),c:T.emerald}].map((s,i)=>(
-              <div key={i} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:16,padding:"14px 8px",boxShadow:T.shadow}}>
-                <div style={{fontSize:26,fontWeight:900,color:s.c,fontVariantNumeric:"tabular-nums"}}>{s.n}</div>
-                <div style={{fontSize:11,color:T.textSec,marginTop:2}}>{s.l}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{display:"flex",gap:22,justifyContent:"center",flexWrap:"wrap",fontSize:12,color:T.textSec,fontWeight:600}}>
-            <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span style={{color:T.emerald}}>✓</span>{L("واجهة عربية أصيلة (RTL)","Native Arabic interface (RTL)")}</span>
-            <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span>🤖</span>{L("مدعوم بـ Claude AI","Powered by Claude AI")}</span>
+          <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+            <Btn ch="🤖 المساعد الذكي الموحّد" onClick={()=>setActiveTool("smart_orch")} size="lg" T={T}/>
+            <Btn ch="⚡ المراجعة التلقائية الشاملة" onClick={()=>setActiveTool("auto_review")} v="blue" size="lg" T={T}/>
+            <Btn ch="🏆 الجودة والاعتماد" onClick={()=>openGroup("quality")} v="ghost" size="lg" T={T}/>
           </div>
         </div>
 
-        {/* Quick actions */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:12,marginBottom:8}}>
-          {[
-            {g:"linear-gradient(135deg,#f59e0b,#ea580c)",ic:"🤖",t:L("المساعد الذكي الموحّد","Unified AI Assistant"),s:L("يدعم 27 مهمة بحثية في مكان واحد","27 research tasks in one place"),on:()=>setActiveTool("smart_orch")},
-            {g:"linear-gradient(135deg,#2563eb,#4338ca)",ic:"⚡",t:L("المراجعة التلقائية الشاملة","Full Auto Review"),s:L("مراجعة علمية متكاملة بضغطة واحدة","Comprehensive review in one click"),on:()=>setActiveTool("auto_review")},
-            {g:"linear-gradient(135deg,#1e293b,#0f172a)",ic:"📊",t:L("تحليل البيانات","Data Analysis"),s:"SPSS · R · Python · Auto-EDA",on:()=>openGroup("analysis")},
-          ].map((a,i)=>(
-            <button key={i} onClick={a.on} style={{background:a.g,color:"#fff",border:"none",borderRadius:20,padding:"18px",display:"flex",alignItems:"center",gap:14,cursor:"pointer",fontFamily:"inherit",textAlign:"start",transition:"transform .15s, box-shadow .2s"}}
-              onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.boxShadow="0 18px 40px #00000033";}}
-              onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
-              <div style={{width:52,height:52,borderRadius:15,background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}}>{a.ic}</div>
-              <div style={{minWidth:0}}>
-                <div style={{fontWeight:800,fontSize:16,lineHeight:1.3}}>{a.t}</div>
-                <div style={{fontSize:12,opacity:.88,marginTop:3}}>{a.s}</div>
+        {/* Groups */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(215px,1fr))",gap:12,marginBottom:48}}>
+          {GROUPS.map(g=>(
+            <button key={g.id} onClick={()=>openGroup(g.id)}
+              style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:18,padding:"20px 18px",cursor:"pointer",fontFamily:"inherit",textAlign:"right",transition:"all .25s cubic-bezier(.4,0,.2,1)",display:"flex",flexDirection:"column",gap:12,position:"relative",overflow:"hidden"}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=g.color||T.gold;e.currentTarget.style.boxShadow=`0 12px 32px ${g.color||T.gold}28`;e.currentTarget.style.transform="translateY(-4px)";}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="none";}}>
+              <div style={{position:"absolute",top:-30,left:-30,width:90,height:90,borderRadius:"50%",background:`radial-gradient(circle,${(g.color||T.gold)}18,transparent 70%)`,pointerEvents:"none"}}/>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative"}}>
+                <div style={{width:52,height:52,borderRadius:15,background:`linear-gradient(135deg,${(g.color||T.gold)}28,${(g.color||T.gold)}10)`,border:`1.5px solid ${g.color||T.gold}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,boxShadow:`0 4px 12px ${g.color||T.gold}22`}}>{g.icon}</div>
+                {g.badge&&<Tag ch={g.badge} color={g.badge==="حصري"?T.gold:T.emerald}/>}
+              </div>
+              <div style={{position:"relative"}}>
+                <div style={{color:T.text,fontWeight:800,fontSize:15,marginBottom:5}}>{g.ar}</div>
+                {g.desc&&<div style={{color:T.textS,fontSize:11,lineHeight:1.5,marginBottom:8}}>{g.desc}</div>}
+                <div style={{display:"inline-flex",alignItems:"center",gap:5,padding:"3px 10px",background:(g.color||T.gold)+"15",borderRadius:20}}>
+                  <span style={{color:g.color||T.gold,fontSize:11,fontWeight:700}}>{g.tools.length} أداة</span>
+                  <span style={{color:g.color||T.gold,fontSize:13}}>←</span>
+                </div>
               </div>
             </button>
           ))}
-        </div>
-
-        {/* Section header */}
-        <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:12,margin:"30px 0 14px",flexWrap:"wrap"}}>
-          <div>
-            <h2 style={{margin:0,fontSize:"clamp(22px,4vw,30px)",fontWeight:900,color:T.text,letterSpacing:"-.5px"}}>{L("استكشف الأدوات المتكاملة","Explore the integrated tools")}</h2>
-            <p style={{margin:"4px 0 0",fontSize:13,color:T.textSec}}>{L("كل ما تحتاجه للبحث الأكاديمي الاحترافي في مكان واحد","Everything you need for professional academic research in one place")}</p>
-          </div>
-          <button onClick={()=>setHomeOpen("__none__")} style={{display:"inline-flex",alignItems:"center",gap:7,fontSize:12.5,padding:"9px 16px",borderRadius:24,border:`1px solid ${T.border}`,background:T.card,color:T.textSec,cursor:"pointer",fontFamily:"inherit",fontWeight:700}}>⊟ {L("طي الكل","Collapse all")}</button>
-        </div>
-
-        {/* Groups — accordion احترافي قابل للطي */}
-        <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:48}}>
-          {GROUPS.map((g,gi)=>{
-            const gc = g.color||T.gold;
-            const open = homeOpen===g.id || (homeOpen===null && gi===0);
-            return (
-              <div key={g.id} style={{background:T.card,border:`1.5px solid ${open?gc+"55":T.border}`,borderRadius:18,overflow:"hidden",transition:"border-color .2s",boxShadow:open?T.shadow:"none"}}>
-                <button onClick={()=>setHomeOpen(open?"__none__":g.id)}
-                  style={{width:"100%",display:"flex",alignItems:"center",gap:14,padding:"16px 18px",cursor:"pointer",fontFamily:"inherit",background:open?gc+"0c":"transparent",border:"none",textAlign:"start",transition:"background .2s"}}>
-                  <div style={{width:48,height:48,borderRadius:14,flexShrink:0,background:`linear-gradient(135deg,${gc}28,${gc}10)`,border:`1.5px solid ${gc}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}><EmIcon e={g.icon}/></div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                      <span style={{color:T.text,fontWeight:800,fontSize:16}}>{LO(g)}</span>
-                      {g.badge&&<Tag ch={g.badge} color={g.badge==="حصري"?T.gold:T.emerald}/>}
-                      <span style={{fontSize:10.5,fontWeight:700,color:gc,background:gc+"15",borderRadius:20,padding:"2px 9px"}}>{g.tools.length} {L("أداة","tools")}</span>
-                    </div>
-                    <div style={{color:T.textS,fontSize:11.5,lineHeight:1.5,marginTop:3,...( {display:"-webkit-box",WebkitLineClamp:1,WebkitBoxOrient:"vertical",overflow:"hidden"})}}>{en?(g.tools.length+" specialized tools"):(g.desc||"")}</div>
-                  </div>
-                  <div style={{width:30,height:30,borderRadius:9,flexShrink:0,background:open?gc+"18":T.bgSec,display:"flex",alignItems:"center",justifyContent:"center",transition:"transform .25s",transform:open?"rotate(180deg)":"rotate(0)"}}>
-                    <span style={{fontSize:13,color:open?gc:T.textDim,fontWeight:900}}>⌄</span>
-                  </div>
-                </button>
-                {open && <div style={{padding:"4px 16px 18px"}}>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))",gap:11,alignItems:"stretch"}}>
-                    {g.tools.map(t=>(
-                      <ToolCatalogCard key={t.key} T={T} t={t} gc={gc} guide={TOOL_GUIDE[t.key]}
-                        onOpen={()=>openTool(t.key)}
-                        labels={{name:LO(t),sub:en?t.ar:t.en,output:UI.output,bestFor:UI.bestFor,openTool:UI.openTool,guideIn:UI.guideIn,badgeColor}}/>
-                    ))}
-                  </div>
-                </div>}
-              </div>
-            );
-          })}
         </div>
       </div>}
 
       {/* GROUP VIEW */}
       {activeGroup&&!activeTool&&curGroup&&<div style={{padding:"22px 0 32px"}}>
         <div style={{display:"flex",alignItems:"center",gap:13,marginBottom:22}}>
-          <div style={{width:50,height:50,borderRadius:13,background:(curGroup.color||T.gold)+"1a",border:`1.5px solid ${curGroup.color||T.gold}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}><EmIcon e={curGroup.icon}/></div>
+          <div style={{width:50,height:50,borderRadius:13,background:(curGroup.color||T.gold)+"1a",border:`1.5px solid ${curGroup.color||T.gold}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>{curGroup.icon}</div>
           <div>
-            <h2 style={{margin:"0 0 4px",fontSize:20,fontWeight:900,color:T.text}}>{LO(curGroup)}</h2>
-            <p style={{margin:0,fontSize:11,color:T.textDim}}>{UI.toolsCount(curGroup.tools.length)}</p>
+            <h2 style={{margin:"0 0 4px",fontSize:20,fontWeight:900,color:T.text}}>{curGroup.ar}</h2>
+            <p style={{margin:0,fontSize:11,color:T.textDim}}>{curGroup.tools.length} أداة</p>
           </div>
           {curGroup.badge&&<Tag ch={curGroup.badge} color={T.emerald}/>}
           <div style={{flex:1}}/>
-          {!curGroup.ext && <Btn ch="🖨️ تقرير القسم" v="ghost" size="sm" T={T} onClick={()=>{
-            const body = curGroup.tools.map((t,i)=>{ const G=TOOL_GUIDE[t.key]||{};
-              return (i+1)+". "+t.icon+" "+t.ar+" ("+t.en+")"+(t.badge?" — "+t.badge:"")+":\n"+(G.what||"")+"\n🎯 المخرج المتوقع: "+(G.out||"")+"\n💡 لأفضل نتيجة: "+(G.need||"")+"\n⭐ الميزة: "+(G.diff||"");
-            }).join("\n\n");
-            printAcademicReport("الدليل التعريفي — "+curGroup.ar, body, {icon:curGroup.icon, subtitle:"دليل القسم: "+curGroup.tools.length+" أداة بأدلتها الكاملة", footer:"دليل تعريفي رسمي بأدوات القسم — منصة محكّم برو"});
-          }}/>}
-          {curGroup.tools.some(t=>TC[t.key])&&<Btn ch={activeBatch?UI.batchOff:UI.batchOn} onClick={()=>setActiveBatch(!activeBatch)} v={activeBatch?"ghost":"gold"} size="sm" T={T}/>}
+          {curGroup.tools.some(t=>TC[t.key])&&<Btn ch={activeBatch?"🔧 الأدوات المنفردة":"⚡ تشغيل جماعي"} onClick={()=>setActiveBatch(!activeBatch)} v={activeBatch?"ghost":"gold"} size="sm" T={T}/>}
         </div>
 
-        {en && UI.arNote && <div style={{marginBottom:14,padding:"9px 13px",borderRadius:10,background:T.gold+"12",border:`1px solid ${T.gold}30`,fontSize:11,color:T.textS,lineHeight:1.6}}>ℹ️ {UI.arNote}</div>}
         {activeBatch && <Card T={T} glow={curGroup.color||T.gold} style={{marginBottom:18}}><BatchCenter T={T} groupId={curGroup.id}/></Card>}
         {!activeBatch && (()=>{
-          const gc = curGroup.color||T.gold;
-          return <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(295px,1fr))",gap:12,alignItems:"stretch"}}>
-            {curGroup.tools.map(t=>(
-              <ToolCatalogCard key={t.key} T={T} t={t} gc={gc} guide={TOOL_GUIDE[t.key]}
-                onOpen={()=>openTool(t.key)}
-                labels={{name:LO(t),sub:en?t.ar:t.en,output:UI.output,bestFor:UI.bestFor,openTool:UI.openTool,guideIn:UI.guideIn,badgeColor}}/>
-            ))}
-          </div>;
+          const toolCard = t => (
+            <button key={t.key} onClick={()=>openTool(t.key)}
+              style={{background:T.card,border:`1.5px solid ${T.border}`,borderRadius:12,padding:"14px 15px",display:"flex",alignItems:"center",gap:12,cursor:"pointer",fontFamily:"inherit",textAlign:"right",transition:"all .18s"}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=curGroup.color||T.gold;e.currentTarget.style.boxShadow=T.shadowH;}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.boxShadow="none";}}>
+              <div style={{width:44,height:44,borderRadius:11,background:(curGroup.color||T.gold)+"1a",border:`1px solid ${curGroup.color||T.gold}35`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:21,flexShrink:0}}>{t.icon}</div>
+              <div style={{flex:1}}>
+                <div style={{color:T.text,fontWeight:700,fontSize:13,marginBottom:4,display:"flex",alignItems:"center",gap:6}}>
+                  {t.ar}
+                  {t.badge&&<span style={{background:badgeColor(t.badge)+"20",color:badgeColor(t.badge),border:`1px solid ${badgeColor(t.badge)}30`,borderRadius:6,padding:"0 5px",fontSize:9,fontWeight:700}}>{t.badge}</span>}
+                </div>
+                <div style={{color:T.textDim,fontSize:11}}>{t.en}</div>
+              </div>
+              <span style={{color:curGroup.color||T.gold,fontSize:16,opacity:.5}}>←</span>
+            </button>
+          );
+          const grid = list => <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))",gap:10}}>{list.map(toolCard)}</div>;
+          const secs=[]; const smap={};
+          curGroup.tools.forEach(t=>{ const s=t.sec||""; if(!(s in smap)){smap[s]=[];secs.push(s);} smap[s].push(t); });
+          if (secs.length<=1) return grid(curGroup.tools);
+          return <div>{secs.map(s=>{
+            const skey=curGroup.id+"|"+s;
+            const open=!closedSecs[skey];
+            return <div key={skey} style={{marginBottom:12}}>
+              <button onClick={()=>setClosedSecs({...closedSecs,[skey]:open})}
+                style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
+                  padding:"11px 14px",borderRadius:11,cursor:"pointer",fontFamily:"inherit",marginBottom:open?10:0,
+                  background:(curGroup.color||T.gold)+"10",border:`1.5px solid ${(curGroup.color||T.gold)}30`}}>
+                <span style={{color:T.textS,fontSize:13}}>{open?"▲":"▼"}</span>
+                <span style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontSize:13.5,fontWeight:800,color:curGroup.color||T.gold}}>{s||"أدوات أخرى"}</span>
+                  <span style={{fontSize:10.5,fontWeight:700,color:T.textS,background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:"1px 9px"}}>{smap[s].length}</span>
+                </span>
+              </button>
+              {open && grid(smap[s])}
+            </div>;
+          })}</div>;
         })()}
       </div>}
 
       {/* TOOL VIEW */}
       {activeTool&&curTool&&<div style={{padding:"20px 0 40px"}}>
-        {curGroup?.ext ? (
-          <MuqyasEmbedded embed initialTool={curTool.ek} dark={dark}/>
-        ) : <>
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:20}}>
-          <div style={{width:42,height:42,borderRadius:11,background:(curGroup?.color||T.gold)+"1a",border:`1px solid ${curGroup?.color||T.gold}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}><EmIcon e={curTool.icon}/></div>
+          <div style={{width:42,height:42,borderRadius:11,background:(curGroup?.color||T.gold)+"1a",border:`1px solid ${curGroup?.color||T.gold}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>{curTool.icon}</div>
           <div>
             <h2 style={{margin:"0 0 3px",fontSize:19,fontWeight:900,color:T.text}}>{curTool.ar}</h2>
             <p style={{margin:0,fontSize:11,color:T.textDim}}>{curGroup?.ar} · {curTool.en}</p>
@@ -17101,13 +13081,12 @@ export default function MuhakkimV4() {
         <Card T={T} glow={curGroup?.color||T.gold}>
           {renderTool(activeTool)}
         </Card>
-        </>}
       </div>}
     </main>
 
-    {!activeTool&&<footer style={{borderTop:`1px solid ${T.border}`,padding:"16px",textAlign:"center",background:T.card,marginTop:8}}>
+    {!embed&&!activeTool&&<footer style={{borderTop:`1px solid ${T.border}`,padding:"16px",textAlign:"center",background:T.card,marginTop:8}}>
       <p style={{color:T.textDim,fontSize:11,margin:0}}>
-        محكّم Pro v4.0 · {GROUPS.reduce((a,g)=>a+g.tools.length,0)} أداة · مدعوم بـ Claude AI · © 2025
+        مُقياس Pro v1.0 · {GROUPS.reduce((a,g)=>a+g.tools.length,0)} أداة · مدعوم بـ Claude AI · © 2025
         <button onClick={toggleTheme} style={{background:"none",border:"none",cursor:"pointer",color:T.textDim,fontSize:11,marginRight:12,fontFamily:"inherit"}}>{dark?"☀️ فاتح":"🌙 داكن"}</button>
       </p>
     </footer>}
@@ -17115,3 +13094,5 @@ export default function MuhakkimV4() {
     <style>{`*{box-sizing:border-box}@keyframes spin{to{transform:rotate(360deg)}}::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:${T.border};border-radius:3px}textarea,input{transition:border-color .15s}`}</style>
   </div>;
 }
+
+export { GROUPS as MUQYAS_GROUPS };
