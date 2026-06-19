@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محكم AI • منصة تجربة العميل الذكية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Noto+Sans+Arabic:wght@400;500;600&amp;display=swap');
+        
+        body {
+            font-family: 'Noto Sans Arabic', 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        
+        .font-display {
+            font-family: 'Noto Sans Arabic', 'Inter', system-ui, sans-serif;
+            font-weight: 700;
+        }
+
+        .glass {
+            background: rgba(255,255,255, 0.95);
+            backdrop-filter: blur(20px);
+        }
+
+        .metric-card {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .nav-item {
+            transition: all 0.2s ease;
+        }
+        
+        .nav-item.active {
+            background-color: #0f172a;
+            color: white;
+            border-radius: 12px;
+        }
+
+        .module-card {
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .module-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 25px 50px -12px rgb(15 23 42 / 0.15);
+        }
+
+        .kpi-value {
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "ss02";
+        }
+
+        .section-header {
+            font-size: 1.75rem;
+            line-height: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        .cx-gradient {
+            background: linear-gradient(135deg, #0f172a 0%, #1e2937 100%);
+        }
+
+        .stat-change {
+            font-size: 0.75rem;
+            padding: 1px 8px;
+            border-radius: 9999px;
+        }
+
+        .demo-container {
+            box-shadow: 0 10px 15px -3px rgb(15 23 42 / 0.1);
+        }
+
+        .journey-step {
+            transition: all 0.3s ease;
+        }
+
+        .journey-step.active {
+            border-color: #0ea5e9;
+            background-color: #f0f9ff;
+        }
+
+        .sentiment-positive { color: #10b981; }
+        .sentiment-neutral { color: #64748b; }
+        .sentiment-negative { color: #ef4444; }
+
+        .modal {
+            animation: modalEnter 0.2s ease forwards;
+        }
+
+        @keyframes modalEnter {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .ai-message {
+            animation: fadeInUp 0.3s ease;
+        }
+
+        .metric-number {
+            font-size: 2.25rem;
+            line-height: 2.5rem;
+            font-weight: 800;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200">
+    <!-- Top Navigation -->
+    <nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-screen-2xl mx-auto">
+            <div class="px-8 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-x-4">
+                    <!-- Logo -->
+                    <div class="flex items-center gap-x-3">
+                        <div class="w-11 h-11 bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-inner">
+                            <i class="fa-solid fa-brain text-white text-3xl"></i>
+                        </div>
+                        <div>
+                            <span class="font-display text-3xl font-bold tracking-tighter">محكم</span>
+                            <span class="font-display text-3xl font-bold tracking-tighter bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">AI</span>
+                            <span class="ml-2 text-xs font-bold px-2.5 py-1 bg-slate-800 text-slate-400 rounded-xl align-super">CX</span>
+                        </div>
+                    </div>
+                    <div class="hidden md:block px-3 py-1 bg-emerald-900/30 text-emerald-400 text-xs font-bold rounded-2xl border border-emerald-800">
+                        الإصدار 3.2.1 • Enterprise
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-x-4">
+                    <!-- Search -->
+                    <div class="hidden md:flex items-center bg-slate-900 border border-slate-700 rounded-2xl px-4 w-80">
+                        <i class="fa-solid fa-search text-slate-500"></i>
+                        <input type="text" placeholder="ابحث في المنصة أو اطلب من المساعد الذكي..." 
+                               class="flex-1 bg-transparent border-none outline-none px-3 py-2.5 text-sm placeholder:text-slate-500">
+                    </div>
+
+                    <!-- Language -->
+                    <div class="flex items-center bg-slate-900 border border-slate-700 rounded-2xl p-1 text-xs">
+                        <div class="px-3 py-1 bg-slate-800 rounded-xl font-semibold">عربي</div>
+                        <div class="px-3 py-1 text-slate-400 cursor-pointer hover:text-slate-200">EN</div>
+                    </div>
+
+                    <!-- User -->
+                    <div class="flex items-center gap-x-3">
+                        <div class="text-right hidden md:block">
+                            <div class="font-semibold text-sm">د. سارة العتيبي</div>
+                            <div class="text-xs text-emerald-400">مديرة تجربة العملاء • وزارة الصحة</div>
+                        </div>
+                        <div class="w-9 h-9 bg-slate-700 rounded-2xl overflow-hidden border border-slate-600">
+                            <img src="https://i.pravatar.cc/36?img=47" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-screen-2xl mx-auto flex">
+        
+        <!-- Sidebar -->
+        <div class="w-72 bg-slate-900 border-l border-slate-800 min-h-screen p-4 hidden lg:block">
+            <div class="px-3 mb-3 text-xs font-bold tracking-wider text-slate-400">الوحدات الرئيسية</div>
+            
+            <div onclick="showModule('dashboard')" class="nav-item flex items-center gap-x-3 px-4 py-3 mb-1 cursor-pointer active">
+                <i class="fa-solid fa-chart-line w-5 text-sky-400"></i>
+                <span class="font-semibold">لوحة التحكم التنفيذية</span>
+            </div>
+            
+            <div class="px-3 mb-2 text-xs font-bold tracking-wider text-slate-500 mt-4">الأنظمة الذكية</div>
+            
+            <div onclick="showModule('journey')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-route w-5 text-emerald-400"></i>
+                <span>إدارة رحلة العميل</span>
+            </div>
+            <div onclick="showModule('surveys')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-poll w-5 text-violet-400"></i>
+                <span>الاستبيانات الذكية</span>
+            </div>
+            <div onclick="showModule('sentiment')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-face-smile w-5 text-amber-400"></i>
+                <span>تحليل المشاعر</span>
+            </div>
+            <div onclick="showModule('assistant')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-robot w-5 text-sky-400"></i>
+                <span>المساعد الذكي (AI)</span>
+            </div>
+            <div onclick="showModule('complaints')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-exclamation-triangle w-5 text-red-400"></i>
+                <span>إدارة الشكاوى</span>
+            </div>
+            <div onclick="showModule('customer360')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-user-circle w-5 text-teal-400"></i>
+                <span>ملف العميل 360°</span>
+            </div>
+            <div onclick="showModule('prediction')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-crystal-ball w-5 text-purple-400"></i>
+                <span>التنبؤ الذكي</span>
+            </div>
+            <div onclick="showModule('recommendations')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-lightbulb w-5 text-yellow-400"></i>
+                <span>التوصيات الذكية</span>
+            </div>
+            
+            <div class="px-3 mb-2 text-xs font-bold tracking-wider text-slate-500 mt-4">أدوات متقدمة</div>
+            
+            <div onclick="showModule('reports')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-file-export w-5 text-blue-400"></i>
+                <span>التقارير الذكية</span>
+            </div>
+            <div onclick="showModule('voice')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-microphone w-5 text-pink-400"></i>
+                <span>صوت العميل (VOC)</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-8 max-w-[1480px]">
+            
+            <!-- DASHBOARD -->
+            <div id="module-dashboard">
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h1 class="font-display text-4xl tracking-tighter">لوحة التحكم التنفيذية</h1>
+                        <p class="text-slate-400 mt-1">نظرة شاملة على أداء تجربة العملاء • آخر تحديث: الآن</p>
+                    </div>
+                    <div class="flex gap-x-3">
+                        <button onclick="refreshDashboard()" class="flex items-center gap-x-2 px-5 h-11 bg-slate-800 hover:bg-slate-700 transition-colors rounded-2xl text-sm font-semibold">
+                            <i class="fa-solid fa-sync"></i>
+                            <span>تحديث البيانات</span>
+                        </button>
+                        <button onclick="exportExecutiveReport()" class="flex items-center gap-x-2 px-6 h-11 bg-white text-slate-900 hover:bg-amber-100 transition-colors rounded-2xl text-sm font-bold">
+                            <i class="fa-solid fa-download mr-2"></i>
+                            <span>تصدير التقرير التنفيذي</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 mb-8">
+                    <div class="metric-card bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="text-xs text-emerald-400 font-bold tracking-wider">CSAT</div>
+                                <div id="kpi-csat" class="metric-number text-emerald-400 kpi-value">87.4</div>
+                            </div>
+                            <i class="fa-solid fa-smile text-3xl text-emerald-500/70"></i>
+                        </div>
+                        <div class="flex items-center gap-x-2 mt-1">
+                            <span class="stat-change bg-emerald-900 text-emerald-400">+3.2</span>
+                            <span class="text-xs text-slate-400">من الشهر الماضي</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="text-xs text-sky-400 font-bold tracking-wider">NPS</div>
+                                <div id="kpi-nps" class="metric-number text-sky-400 kpi-value">72</div>
+                            </div>
+                            <i class="fa-solid fa-thumbs-up text-3xl text-sky-500/70"></i>
+                        </div>
+                        <div class="flex items-center gap-x-2 mt-1">
+                            <span class="stat-change bg-sky-900 text-sky-400">+8</span>
+                            <span class="text-xs text-slate-400">من الشهر الماضي</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="text-xs text-violet-400 font-bold tracking-wider">CES</div>
+                                <div id="kpi-ces" class="metric-number text-violet-400 kpi-value">2.1</div>
+                            </div>
+                            <i class="fa-solid fa-tachometer-alt text-3xl text-violet-500/70"></i>
+                        </div>
+                        <div class="flex items-center gap-x-2 mt-1">
+                            <span class="stat-change bg-emerald-900 text-emerald-400">-0.4</span>
+                            <span class="text-xs text-slate-400">تحسن (أقل = أفضل)</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="text-xs text-teal-400 font-bold tracking-wider">معدل الاحتفاظ</div>
+                                <div id="kpi-retention" class="metric-number text-teal-400 kpi-value">94.8%</div>
+                            </div>
+                            <i class="fa-solid fa-user-shield text-3xl text-teal-500/70"></i>
+                        </div>
+                        <div class="flex items-center gap-x-2 mt-1">
+                            <span class="stat-change bg-emerald-900 text-emerald-400">+1.7%</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="text-xs text-red-400 font-bold tracking-wider">معدل فقدان العملاء</div>
+                                <div id="kpi-churn" class="metric-number text-red-400 kpi-value">5.2%</div>
+                            </div>
+                            <i class="fa-solid fa-user-slash text-3xl text-red-500/70"></i>
+                        </div>
+                        <div class="flex items-center gap-x-2 mt-1">
+                            <span class="stat-change bg-emerald-900 text-emerald-400">-1.1%</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="text-xs text-amber-400 font-bold tracking-wider">تحليل المشاعر</div>
+                                <div class="flex items-baseline gap-x-2">
+                                    <div id="kpi-sentiment" class="metric-number text-emerald-400 kpi-value">81%</div>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-face-smile-beam text-3xl text-emerald-500/70"></i>
+                        </div>
+                        <div class="text-xs text-emerald-400 mt-1">إيجابي • 12% محايد • 7% سلبي</div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Trend Chart -->
+                    <div class="lg:col-span-7 bg-slate-900 border border-slate-700 rounded-3xl p-6">
+                        <div class="flex justify-between items-center mb-5">
+                            <div class="font-bold">اتجاه رضا العملاء (آخر 12 شهر)</div>
+                            <div class="text-xs px-3 py-1 bg-slate-800 rounded-2xl">CSAT • NPS</div>
+                        </div>
+                        <div class="h-72">
+                            <canvas id="trend-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Quick Insights -->
+                    <div class="lg:col-span-5 bg-slate-900 border border-slate-700 rounded-3xl p-6">
+                        <div class="font-bold mb-4">رؤى فورية من الذكاء الاصطناعي</div>
+                        
+                        <div class="space-y-3 text-sm">
+                            <div class="flex gap-x-3 p-3 bg-slate-800 rounded-2xl">
+                                <i class="fa-solid fa-arrow-trend-up text-emerald-400 mt-1"></i>
+                                <div class="flex-1">
+                                    <div class="font-medium">ارتفاع رضا العملاء في الفرع الشرقي بنسبة 14%</div>
+                                    <div class="text-xs text-emerald-400">بعد تطبيق نظام الحجز الجديد</div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-x-3 p-3 bg-slate-800 rounded-2xl">
+                                <i class="fa-solid fa-exclamation-triangle text-amber-400 mt-1"></i>
+                                <div class="flex-1">
+                                    <div class="font-medium">انخفاض NPS في خدمة الدعم الفني</div>
+                                    <div class="text-xs text-amber-400">السبب الرئيسي: زمن الاستجابة (متوسط 47 دقيقة)</div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-x-3 p-3 bg-slate-800 rounded-2xl">
+                                <i class="fa-solid fa-lightbulb text-sky-400 mt-1"></i>
+                                <div class="flex-1">
+                                    <div class="font-medium">فرصة تحسين: 68% من العملاء يفضلون القنوات الرقمية</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JOURNEY MODULE -->
+            <div id="module-journey" class="hidden">
+                <h2 class="section-header mb-2">إدارة رحلة العميل</h2>
+                <p class="text-slate-400 mb-6">تحليل وتحسين كل نقطة اتصال مع العميل</p>
+                
+                <div class="bg-slate-900 border border-slate-700 rounded-3xl p-8">
+                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4" id="journey-steps">
+                        <!-- Populated by JS -->
+                    </div>
+                    
+                    <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div>
+                            <div class="font-bold mb-3 flex items-center gap-x-2">
+                                <i class="fa-solid fa-check-circle text-emerald-400"></i>
+                                <span>نقاط القوة</span>
+                            </div>
+                            <div class="space-y-2 text-sm" id="journey-strengths">
+                                <!-- JS -->
+                            </div>
+                        </div>
+                        <div>
+                            <div class="font-bold mb-3 flex items-center gap-x-2">
+                                <i class="fa-solid fa-exclamation-circle text-red-400"></i>
+                                <span>نقاط التعثر (Pain Points)</span>
+                            </div>
+                            <div class="space-y-2 text-sm" id="journey-painpoints">
+                                <!-- JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SURVEYS MODULE -->
+            <div id="module-surveys" class="hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="section-header">الاستبيانات الذكية</h2>
+                        <p class="text-slate-400">إنشاء وتوزيع وتحليل الاستبيانات بالذكاء الاصطناعي</p>
+                    </div>
+                    <button onclick="generateAISurvey()" class="flex items-center gap-x-2 px-6 h-12 bg-gradient-to-r from-violet-600 to-indigo-600 hover:brightness-110 transition-all rounded-2xl font-bold">
+                        <i class="fa-solid fa-magic"></i>
+                        <span>إنشاء استبيان بالذكاء الاصطناعي</span>
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div onclick="createSurveyType('csat')" class="module-card cursor-pointer bg-slate-900 border border-slate-700 hover:border-emerald-500 p-5 rounded-3xl">
+                        <i class="fa-solid fa-smile text-3xl text-emerald-400 mb-4"></i>
+                        <div class="font-bold">استبيان رضا العملاء (CSAT)</div>
+                        <div class="text-xs text-slate-400 mt-1">12 سؤال • 4 دقائق</div>
+                    </div>
+                    <div onclick="createSurveyType('nps')" class="module-card cursor-pointer bg-slate-900 border border-slate-700 hover:border-sky-500 p-5 rounded-3xl">
+                        <i class="fa-solid fa-thumbs-up text-3xl text-sky-400 mb-4"></i>
+                        <div class="font-bold">استبيان صافي المروجين (NPS)</div>
+                        <div class="text-xs text-slate-400 mt-1">8 أسئلة • 3 دقائق</div>
+                    </div>
+                    <div onclick="createSurveyType('patient')" class="module-card cursor-pointer bg-slate-900 border border-slate-700 hover:border-teal-500 p-5 rounded-3xl">
+                        <i class="fa-solid fa-hospital text-3xl text-teal-400 mb-4"></i>
+                        <div class="font-bold">تجربة المريض</div>
+                        <div class="text-xs text-slate-400 mt-1">15 سؤال • 6 دقائق</div>
+                    </div>
+                    <div onclick="createSurveyType('employee')" class="module-card cursor-pointer bg-slate-900 border border-slate-700 hover:border-amber-500 p-5 rounded-3xl">
+                        <i class="fa-solid fa-users text-3xl text-amber-400 mb-4"></i>
+                        <div class="font-bold">رضا الموظفين</div>
+                        <div class="text-xs text-slate-400 mt-1">10 أسئلة • 5 دقائق</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SENTIMENT MODULE -->
+            <div id="module-sentiment" class="hidden">
+                <h2 class="section-header mb-2">تحليل المشاعر بالذكاء الاصطناعي</h2>
+                <p class="text-slate-400 mb-6">تحليل التعليقات والمحادثات والتقييمات وتصنيفها تلقائياً</p>
+                
+                <div class="bg-slate-900 border border-slate-700 rounded-3xl p-8">
+                    <div class="mb-4 font-semibold">أدخل نص لتحليله:</div>
+                    <textarea id="sentiment-input" rows="4" class="w-full bg-slate-800 border border-slate-600 rounded-2xl p-4 text-sm" placeholder="مثال: الخدمة كانت ممتازة والموظفين متعاونين جداً، لكن وقت الانتظار كان طويلاً..."></textarea>
+                    
+                    <button onclick="analyzeSentiment()" class="mt-4 px-8 h-12 bg-gradient-to-r from-amber-500 to-orange-500 hover:brightness-110 transition-all rounded-2xl font-bold flex items-center gap-x-2">
+                        <i class="fa-solid fa-magic"></i>
+                        <span>تحليل المشاعر بالذكاء الاصطناعي</span>
+                    </button>
+                    
+                    <div id="sentiment-result" class="hidden mt-6 p-5 bg-slate-800 rounded-2xl">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI ASSISTANT -->
+            <div id="module-assistant" class="hidden">
+                <div class="max-w-4xl">
+                    <h2 class="section-header mb-2">المساعد الذكي لتجربة العملاء</h2>
+                    <p class="text-slate-400 mb-6">اسأل أي سؤال عن بيانات العملاء وسيجيبك فوراً</p>
+                    
+                    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 h-[520px] flex flex-col">
+                        <div id="chat-messages" class="flex-1 overflow-auto space-y-4 mb-4 p-2 custom-scroll">
+                            <!-- Messages added by JS -->
+                        </div>
+                        
+                        <div class="flex gap-x-3">
+                            <input id="chat-input" type="text" placeholder="مثال: ما سبب انخفاض رضا العملاء هذا الشهر؟" 
+                                   class="flex-1 bg-slate-800 border border-slate-600 rounded-2xl px-5 py-3 text-sm outline-none" 
+                                   onkeypress="if(event.key === 'Enter') sendChatMessage()">
+                            <button onclick="sendChatMessage()" class="px-8 bg-sky-600 hover:bg-sky-500 transition-colors rounded-2xl font-bold">إرسال</button>
+                        </div>
+                    </div>
+                    
+                    <div class="text-xs text-slate-400 mt-3 px-2">جرب: "ما أكثر الشكاوى في الفرع الجنوبي؟" أو "كم عدد العملاء المعرضين للفقدان؟"</div>
+                </div>
+            </div>
+
+            <!-- COMPLAINTS -->
+            <div id="module-complaints" class="hidden">
+                <h2 class="section-header mb-6">إدارة الشكاوى الذكية</h2>
+                
+                <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6">
+                    <div class="flex justify-between mb-4">
+                        <div class="font-bold">الشكاوى النشطة (124)</div>
+                        <button onclick="addNewComplaint()" class="text-sm px-4 h-9 bg-red-600 hover:bg-red-500 rounded-2xl flex items-center gap-x-2">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>شكوى جديدة</span>
+                        </button>
+                    </div>
+                    
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-slate-400 border-b border-slate-700">
+                                <th class="text-right py-3 px-4">#</th>
+                                <th class="text-right py-3">العميل</th>
+                                <th class="text-right py-3">الموضوع</th>
+                                <th class="text-right py-3">الأولوية</th>
+                                <th class="text-right py-3">الحالة</th>
+                                <th class="text-right py-3">الإجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody id="complaints-table" class="divide-y divide-slate-700 text-sm">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- CUSTOMER 360 -->
+            <div id="module-customer360" class="hidden">
+                <h2 class="section-header mb-2">ملف العميل 360°</h2>
+                <p class="text-slate-400 mb-6">نظرة شاملة على كل عميل</p>
+                
+                <div class="bg-slate-900 border border-slate-700 rounded-3xl p-8 max-w-3xl">
+                    <div class="flex gap-x-4 items-center mb-6">
+                        <div class="w-16 h-16 bg-slate-700 rounded-2xl overflow-hidden">
+                            <img src="https://i.pravatar.cc/64?img=28" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <div class="font-bold text-xl">أحمد محمد العتيبي</div>
+                            <div class="text-emerald-400">عميل منذ 2019 • مستوى الولاء: ذهبي</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="bg-slate-800 p-4 rounded-2xl">
+                            <div class="text-xs text-slate-400">CSAT الشخصي</div>
+                            <div class="text-3xl font-bold text-emerald-400">94</div>
+                        </div>
+                        <div class="bg-slate-800 p-4 rounded-2xl">
+                            <div class="text-xs text-slate-400">NPS الشخصي</div>
+                            <div class="text-3xl font-bold text-sky-400">+82</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <div class="font-semibold mb-2">آخر التفاعلات</div>
+                        <div class="text-xs space-y-2 text-slate-300">
+                            <div class="flex justify-between"><span>تقييم الخدمة</span> <span class="text-emerald-400">5 نجوم • اليوم</span></div>
+                            <div class="flex justify-between"><span>شكوى سابقة</span> <span class="text-amber-400">تم الحل في 4 ساعات</span></div>
+                            <div class="flex justify-between"><span>استبيان NPS</span> <span>مروج قوي</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PREDICTION -->
+            <div id="module-prediction" class="hidden">
+                <h2 class="section-header mb-6">التنبؤ الذكي</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-slate-900 border border-slate-700 p-6 rounded-3xl">
+                        <div class="font-bold mb-4">احتمالية فقدان العميل</div>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-sm mb-1"><span>محمد خالد</span> <span class="font-mono text-red-400">87%</span></div>
+                                <div class="h-2 bg-slate-700 rounded"><div class="h-2 w-[87%] bg-red-500 rounded"></div></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1"><span>فاطمة السالم</span> <span class="font-mono text-amber-400">64%</span></div>
+                                <div class="h-2 bg-slate-700 rounded"><div class="h-2 w-[64%] bg-amber-500 rounded"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-900 border border-slate-700 p-6 rounded-3xl">
+                        <div class="font-bold mb-4">القيمة المستقبلية المتوقعة (CLV)</div>
+                        <div class="text-5xl font-bold text-emerald-400">٤٨٬٧٠٠ <span class="text-base font-normal">ريال</span></div>
+                        <div class="text-emerald-400 text-sm mt-1">+23% عن المتوقع سابقاً</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RECOMMENDATIONS -->
+            <div id="module-recommendations" class="hidden">
+                <h2 class="section-header mb-6">التوصيات الذكية</h2>
+                
+                <div class="space-y-4" id="recommendations-list">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- REPORTS -->
+            <div id="module-reports" class="hidden">
+                <h2 class="section-header mb-6">التقارير الذكية</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div onclick="generateReport('executive')" class="cursor-pointer bg-slate-900 border border-slate-700 p-6 rounded-3xl hover:border-sky-500 transition-colors">
+                        <i class="fa-solid fa-file-lines text-3xl text-sky-400 mb-4"></i>
+                        <div class="font-bold">التقرير التنفيذي</div>
+                        <div class="text-xs text-slate-400 mt-1">للإدارة العليا • صفحة واحدة</div>
+                    </div>
+                    <div onclick="generateReport('detailed')" class="cursor-pointer bg-slate-900 border border-slate-700 p-6 rounded-3xl hover:border-emerald-500 transition-colors">
+                        <i class="fa-solid fa-file-alt text-3xl text-emerald-400 mb-4"></i>
+                        <div class="font-bold">تقرير تفصيلي</div>
+                        <div class="text-xs text-slate-400 mt-1">للإدارات • 18 صفحة</div>
+                    </div>
+                    <div onclick="generateReport('ppt')" class="cursor-pointer bg-slate-900 border border-slate-700 p-6 rounded-3xl hover:border-violet-500 transition-colors">
+                        <i class="fa-solid fa-file-powerpoint text-3xl text-violet-400 mb-4"></i>
+                        <div class="font-bold">عرض تقديمي (PowerPoint)</div>
+                        <div class="text-xs text-slate-400 mt-1">جاهز للعرض التنفيذي</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Tailwind configuration
+        function initTailwind() {
+            document.documentElement.style.setProperty('--accent', '#0ea5e9');
+        }
+
+        let trendChart = null;
+
+        function createTrendChart() {
+            const ctx = document.getElementById('trend-chart');
+            if (!ctx) return;
+
+            if (trendChart) trendChart.destroy();
+
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'],
+                    datasets: [{
+                        label: 'CSAT',
+                        data: [78, 81, 79, 83, 85, 84, 86, 88, 87, 89, 87, 87.4],
+                        borderColor: '#10b981',
+                        tension: 0.4,
+                        borderWidth: 3
+                    }, {
+                        label: 'NPS',
+                        data: [58, 61, 64, 67, 69, 68, 71, 73, 72, 74, 71, 72],
+                        borderColor: '#38bdf8',
+                        tension: 0.4,
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', labels: { color: '#64748b' } } },
+                    scales: {
+                        y: { grid: { color: '#334155' }, ticks: { color: '#64748b' } },
+                        x: { grid: { color: '#334155' }, ticks: { color: '#64748b' } }
+                    }
+                }
+            });
+        }
+
+        function refreshDashboard() {
+            const csat = document.getElementById('kpi-csat');
+            const nps = document.getElementById('kpi-nps');
+            
+            csat.style.transition = 'all 0.4s';
+            csat.style.opacity = '0.3';
+            
+            setTimeout(() => {
+                csat.innerText = (87.4 + (Math.random() * 1.2 - 0.6)).toFixed(1);
+                nps.innerText = Math.floor(72 + (Math.random() * 3));
+                csat.style.opacity = '1';
+                
+                // Toast
+                showToast("تم تحديث البيانات بنجاح");
+            }, 380);
+        }
+
+        function showModule(module) {
+            // Hide all
+            document.querySelectorAll('[id^="module-"]').forEach(el => el.classList.add('hidden'));
+            
+            // Show selected
+            const target = document.getElementById('module-' + module);
+            if (target) target.classList.remove('hidden');
+            
+            // Update sidebar active state
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            // Find and activate corresponding nav item
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                if (item.getAttribute('onclick') && item.getAttribute('onclick').includes(module)) {
+                    item.classList.add('active');
+                }
+            });
+            
+            // Special initializations
+            if (module === 'journey' && document.getElementById('journey-steps').children.length === 0) {
+                initJourneyMap();
+            }
+            if (module === 'complaints' && document.getElementById('complaints-table').children.length === 0) {
+                initComplaintsTable();
+            }
+            if (module === 'recommendations' && document.getElementById('recommendations-list').children.length === 0) {
+                initRecommendations();
+            }
+            if (module === 'assistant' && document.getElementById('chat-messages').children.length === 0) {
+                initChat();
+            }
+        }
+
+        function initJourneyMap() {
+            const container = document.getElementById('journey-steps');
+            container.innerHTML = '';
+            
+            const steps = [
+                { name: "البحث عن الخدمة", status: "good" },
+                { name: "أول تواصل", status: "good" },
+                { name: "التسجيل / الحجز", status: "warning" },
+                { name: "الشراء / الاستخدام", status: "good" },
+                { name: "الدعم الفني", status: "bad" },
+                { name: "التقييم", status: "good" },
+                { name: "إعادة الشراء", status: "good" },
+                { name: "الولاء", status: "good" }
+            ];
+            
+            steps.forEach((step, i) => {
+                const div = document.createElement('div');
+                div.className = `journey-step border border-slate-600 rounded-2xl p-4 text-center cursor-pointer hover:border-sky-400 ${step.status === 'bad' ? 'border-red-500/60' : step.status === 'warning' ? 'border-amber-500/60' : ''}`;
+                
+                let icon = 'fa-check-circle text-emerald-400';
+                if (step.status === 'warning') icon = 'fa-exclamation-circle text-amber-400';
+                if (step.status === 'bad') icon = 'fa-times-circle text-red-400';
+                
+                div.innerHTML = `
+                    <i class="fa-solid ${icon} text-2xl mb-3"></i>
+                    <div class="font-semibold text-sm">${step.name}</div>
+                `;
+                
+                div.onclick = () => {
+                    alert(`تحليل مرحلة: ${step.name}\n\n(في النسخة الكاملة سيتم عرض تفاصيل النقاط والمقاييس والتوصيات)`);
+                };
+                
+                container.appendChild(div);
+            });
+            
+            // Strengths
+            document.getElementById('journey-strengths').innerHTML = `
+                <div class="flex gap-x-2 text-emerald-400"><i class="fa-solid fa-check mt-1"></i> <span>تجربة الحجز الإلكتروني ممتازة</span></div>
+                <div class="flex gap-x-2 text-emerald-400"><i class="fa-solid fa-check mt-1"></i> <span>فريق الاستقبال ودود جداً</span></div>
+            `;
+            
+            document.getElementById('journey-painpoints').innerHTML = `
+                <div class="flex gap-x-2 text-red-400"><i class="fa-solid fa-times mt-1"></i> <span>زمن انتظار الدعم الفني طويل</span></div>
+                <div class="flex gap-x-2 text-red-400"><i class="fa-solid fa-times mt-1"></i> <span>صعوبة في إلغاء المواعيد</span></div>
+            `;
+        }
+
+        function initComplaintsTable() {
+            const tbody = document.getElementById('complaints-table');
+            tbody.innerHTML = `
+                <tr>
+                    <td class="px-4 py-3 font-mono text-xs">#4821</td>
+                    <td class="px-4 py-3">خالد الشمري</td>
+                    <td class="px-4 py-3">تأخير في تسليم الطلب</td>
+                    <td class="px-4 py-3"><span class="px-3 py-px text-xs rounded-full bg-red-900 text-red-300">عالية</span></td>
+                    <td class="px-4 py-3"><span class="px-3 py-px text-xs rounded-full bg-amber-900 text-amber-300">قيد المعالجة</span></td>
+                    <td class="px-4 py-3"><button onclick="resolveComplaint(this)" class="text-xs px-3 py-1 bg-emerald-700 hover:bg-emerald-600 rounded-xl">حل</button></td>
+                </tr>
+                <tr>
+                    <td class="px-4 py-3 font-mono text-xs">#4819</td>
+                    <td class="px-4 py-3">نورة العتيبي</td>
+                    <td class="px-4 py-3">مشكلة في التطبيق</td>
+                    <td class="px-4 py-3"><span class="px-3 py-px text-xs rounded-full bg-amber-900 text-amber-300">متوسطة</span></td>
+                    <td class="px-4 py-3"><span class="px-3 py-px text-xs rounded-full bg-emerald-900 text-emerald-300">تم الحل</span></td>
+                    <td class="px-4 py-3 text-emerald-400 text-xs">تم التقييم</td>
+                </tr>
+            `;
+        }
+
+        function addNewComplaint() {
+            const name = prompt("اسم العميل:");
+            if (!name) return;
+            const subject = prompt("موضوع الشكوى:");
+            if (!subject) return;
+            
+            const tbody = document.getElementById('complaints-table');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="px-4 py-3 font-mono text-xs">#${Math.floor(Math.random()*9000)+1000}</td>
+                <td class="px-4 py-3">${name}</td>
+                <td class="px-4 py-3">${subject}</td>
+                <td class="px-4 py-3"><span class="px-3 py-px text-xs rounded-full bg-red-900 text-red-300">عالية</span></td>
+                <td class="px-4 py-3"><span class="px-3 py-px text-xs rounded-full bg-amber-900 text-amber-300">قيد المعالجة</span></td>
+                <td class="px-4 py-3"><button onclick="resolveComplaint(this)" class="text-xs px-3 py-1 bg-emerald-700 hover:bg-emerald-600 rounded-xl">حل</button></td>
+            `;
+            tbody.prepend(row);
+            showToast("تم تسجيل الشكوى وتصنيفها تلقائياً");
+        }
+
+        function resolveComplaint(btn) {
+            btn.outerHTML = `<span class="text-emerald-400 text-xs">تم الحل ✓</span>`;
+            showToast("تم حل الشكوى وإرسال تقييم للعميل");
+        }
+
+        function initRecommendations() {
+            const container = document.getElementById('recommendations-list');
+            container.innerHTML = `
+                <div class="bg-slate-900 border border-slate-700 p-5 rounded-3xl">
+                    <div class="flex justify-between">
+                        <div>
+                            <span class="px-3 py-1 text-xs bg-red-900 text-red-300 rounded-2xl">عاجل</span>
+                            <div class="font-bold mt-2">تقليل زمن الرد على الدعم الفني إلى أقل من 15 دقيقة</div>
+                        </div>
+                        <button onclick="implementRecommendation(this)" class="text-xs px-4 h-9 bg-red-600 hover:bg-red-500 rounded-2xl">تنفيذ</button>
+                    </div>
+                </div>
+                
+                <div class="bg-slate-900 border border-slate-700 p-5 rounded-3xl">
+                    <div class="flex justify-between">
+                        <div>
+                            <span class="px-3 py-1 text-xs bg-amber-900 text-amber-300 rounded-2xl">قصير المدى</span>
+                            <div class="font-bold mt-2">إضافة خيار "إلغاء الموعد" في التطبيق</div>
+                        </div>
+                        <button onclick="implementRecommendation(this)" class="text-xs px-4 h-9 bg-amber-600 hover:bg-amber-500 rounded-2xl">تنفيذ</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function implementRecommendation(btn) {
+            btn.outerHTML = `<span class="text-emerald-400 text-xs font-bold">جاري التنفيذ...</span>`;
+            setTimeout(() => {
+                showToast("تم تنفيذ التوصية بنجاح. سيتم قياس الأثر خلال 14 يوماً.");
+            }, 1200);
+        }
+
+        function initChat() {
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = `
+                <div class="ai-message flex gap-x-3">
+                    <div class="w-8 h-8 bg-sky-600 rounded-2xl flex-shrink-0 flex items-center justify-center"><i class="fa-solid fa-robot text-white"></i></div>
+                    <div class="bg-slate-800 px-4 py-3 rounded-2xl text-sm max-w-[80%]">مرحباً! أنا مساعدك الذكي في تجربة العملاء. كيف يمكنني مساعدتك اليوم؟</div>
+                </div>
+            `;
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const container = document.getElementById('chat-messages');
+            const value = input.value.trim();
+            if (!value) return;
+            
+            // User message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'flex justify-end';
+            userMsg.innerHTML = `<div class="bg-sky-600 px-4 py-3 rounded-2xl text-sm max-w-[75%]">${value}</div>`;
+            container.appendChild(userMsg);
+            
+            input.value = '';
+            container.scrollTop = container.scrollHeight;
+            
+            // AI Response
+            setTimeout(() => {
+                let reply = "شكراً لسؤالك. جاري تحليل البيانات...";
+                
+                if (value.includes("انخفاض") || value.includes("رضا")) {
+                    reply = "السبب الرئيسي لانخفاض الرضا هذا الشهر هو زيادة زمن الاستجابة في مركز الاتصال (+37%). كما أن هناك شكاوى متكررة حول تطبيق الهاتف في الفرع الجنوبي.";
+                } else if (value.includes("شكاوى")) {
+                    reply = "أكثر 3 شكاوى هذا الشهر: 1) تأخير التسليم 2) مشاكل في التطبيق 3) جودة الدعم الفني. هل تريد تفاصيل عن فرع معين؟";
+                } else if (value.includes("فقدان")) {
+                    reply = "حالياً هناك 187 عميل معرضين لخطر الفقدان بنسبة عالية. أبرزهم في قطاع الشركات. هل تريد قائمة بهم؟";
+                } else {
+                    reply = "بناءً على البيانات الحالية، أنصح بالتركيز على تحسين سرعة الدعم الفني وتطوير قناة الواتساب. هل تريد توصيات مفصلة؟";
+                }
+                
+                const aiMsg = document.createElement('div');
+                aiMsg.className = 'ai-message flex gap-x-3';
+                aiMsg.innerHTML = `
+                    <div class="w-8 h-8 bg-sky-600 rounded-2xl flex-shrink-0 flex items-center justify-center"><i class="fa-solid fa-robot text-white"></i></div>
+                    <div class="bg-slate-800 px-4 py-3 rounded-2xl text-sm max-w-[80%]">${reply}</div>
+                `;
+                container.appendChild(aiMsg);
+                container.scrollTop = container.scrollHeight;
+            }, 900);
+        }
+
+        function analyzeSentiment() {
+            const input = document.getElementById('sentiment-input').value.trim();
+            const resultBox = document.getElementById('sentiment-result');
+            
+            if (!input) {
+                alert("الرجاء إدخال نص للتحليل");
+                return;
+            }
+            
+            resultBox.classList.remove('hidden');
+            resultBox.innerHTML = `
+                <div class="flex items-center gap-x-3 mb-4">
+                    <div class="text-lg font-bold">نتيجة التحليل:</div>
+                    <div class="px-4 py-1 bg-emerald-900 text-emerald-300 rounded-2xl text-sm font-bold">إيجابي بنسبة 78%</div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-3 text-center text-sm">
+                    <div class="bg-emerald-900/40 p-3 rounded-2xl">
+                        <div class="font-bold text-emerald-400">إيجابي</div>
+                        <div class="text-2xl font-bold">78%</div>
+                    </div>
+                    <div class="bg-slate-700 p-3 rounded-2xl">
+                        <div class="font-bold text-slate-300">محايد</div>
+                        <div class="text-2xl font-bold">15%</div>
+                    </div>
+                    <div class="bg-red-900/40 p-3 rounded-2xl">
+                        <div class="font-bold text-red-400">سلبي</div>
+                        <div class="text-2xl font-bold">7%</div>
+                    </div>
+                </div>
+                
+                <div class="mt-5 text-sm">
+                    <div class="font-semibold mb-1">الكلمات المفتاحية الإيجابية:</div>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 bg-emerald-800 rounded-2xl text-xs">ممتازة</span>
+                        <span class="px-3 py-1 bg-emerald-800 rounded-2xl text-xs">متعاونين</span>
+                    </div>
+                    
+                    <div class="font-semibold mt-4 mb-1">نقاط التحسين المقترحة:</div>
+                    <div class="text-amber-400">• تقليل وقت الانتظار</div>
+                </div>
+            `;
+        }
+
+        function generateAISurvey() {
+            const type = prompt("ما نوع الاستبيان الذي تريده؟ (مثال: رضا المرضى، تجربة الطلاب، خدمة العملاء)");
+            if (!type) return;
+            
+            showToast("جاري إنشاء الاستبيان بالذكاء الاصطناعي...");
+            
+            setTimeout(() => {
+                alert(`تم إنشاء استبيان "${type}" بنجاح!\n\n- 12 سؤال ذكي\n- مقياس Likert + أسئلة مفتوحة\n- QR Code جاهز\n- رابط عام + توزيع عبر الواتساب والإيميل\n\n(في النسخة الكاملة سيتم فتح محرر الاستبيان)`);
+            }, 1600);
+        }
+
+        function createSurveyType(type) {
+            const names = {
+                'csat': 'رضا العملاء (CSAT)',
+                'nps': 'صافي المروجين (NPS)',
+                'patient': 'تجربة المريض',
+                'employee': 'رضا الموظفين'
+            };
+            
+            showToast(`جاري فتح استبيان ${names[type]}...`);
+            
+            setTimeout(() => {
+                alert(`تم فتح استبيان ${names[type]}.\n\nيمكنك الآن تعديل الأسئلة أو إنشاء QR Code أو توزيعه.`);
+            }, 700);
+        }
+
+        function generateReport(type) {
+            const messages = {
+                'executive': 'جاري إنشاء التقرير التنفيذي (صفحة واحدة)...',
+                'detailed': 'جاري إنشاء التقرير التفصيلي (18 صفحة)...',
+                'ppt': 'جاري إنشاء العرض التقديمي (PowerPoint)...'
+            };
+            
+            showToast(messages[type]);
+            
+            setTimeout(() => {
+                const fileName = type === 'ppt' ? 'تقرير_تجربة_العميل.pptx' : 'تقرير_تجربة_العميل.pdf';
+                alert(`تم إنشاء ${fileName} بنجاح!\n\nالتقرير يحتوي على:\n• ملخص تنفيذي\n• الرسوم البيانية التفاعلية\n• التوصيات الذكية\n• خطة التحسين`);
+            }, 1500);
+        }
+
+        function implementRecommendationFromDashboard() {
+            showToast("تم تنفيذ التوصية");
+        }
+
+        function exportExecutiveReport() {
+            showToast("جاري تصدير التقرير التنفيذي...");
+            setTimeout(() => {
+                alert("تم تصدير التقرير التنفيذي بنجاح (PDF + Excel + PowerPoint)");
+            }, 1200);
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 border border-slate-600 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-x-3 z-[999]`;
+            toast.innerHTML = `
+                <i class="fa-solid fa-check-circle text-emerald-400"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.transition = 'all 0.3s ease';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 200);
+            }, 2800);
+        }
+
+        function initializeEverything() {
+            initTailwind();
+            
+            // Show dashboard by default
+            document.getElementById('module-dashboard').classList.remove('hidden');
+            
+            // Initialize charts
+            setTimeout(() => {
+                createTrendChart();
+            }, 300);
+            
+            // Random slight KPI updates simulation (demo only)
+            setInterval(() => {
+                const csatEl = document.getElementById('kpi-csat');
+                if (csatEl && Math.random() > 0.92) {
+                    const current = parseFloat(csatEl.innerText);
+                    csatEl.innerText = (current + (Math.random() * 0.3)).toFixed(1);
+                }
+            }, 45000);
+            
+            // Welcome toast
+            setTimeout(() => {
+                // showToast("مرحباً بك في منصة محكم AI لتجربة العملاء");
+            }, 1800);
+            
+            console.log('%c[Mohakam AI CX] Platform initialized successfully.', 'color:#64748b');
+        }
+
+        window.onload = initializeEverything;
+    </script>
+</body>
+</html>

@@ -860,6 +860,7 @@ const GROUPS = [
     {key:"prof_writer", icon:"💼", ar:"الكتابة المهنية", en:"Professional Writer", badge:"جديد"},
     {key:"gov_platform", icon:"🏛️", ar:"منصة محكّم الحكومية الذكية", en:"Smart Government Platform", badge:"جديد"},
     {key:"dsp_surveys", icon:"📋", ar:"منصة الاستبيانات الذكية", en:"DSP Surveys", badge:"جديد"},
+    {key:"mohakam_cx", icon:"🤖", ar:"منصة تجربة العميل الذكية", en:"AI CX Platform", badge:"جديد"},
     {key:"qr", icon:"📷", ar:"مولّد QR", en:"QR Code"},
     {key:"about", icon:"👨‍🏫", ar:"عن المنصة", en:"About"},
     {key:"pricing", icon:"💎", ar:"الباقات والأسعار", en:"Pricing", badge:"جديد"},
@@ -917,6 +918,17 @@ function DspSurveys({ T }) {
     <iframe
       src={src}
       title="منصة الاستبيانات الذكية"
+      style={{ width: "100%", height: "calc(100vh - 200px)", minHeight: 680, border: "none", borderRadius: 12, background: T.bg, display: "block" }}
+    />
+  );
+}
+
+function MohakamCx({ T }) {
+  const src = (import.meta.env.BASE_URL || "/") + "mohakam-cx.html";
+  return (
+    <iframe
+      src={src}
+      title="منصة تجربة العميل الذكية"
       style={{ width: "100%", height: "calc(100vh - 200px)", minHeight: 680, border: "none", borderRadius: 12, background: T.bg, display: "block" }}
     />
   );
@@ -16830,6 +16842,7 @@ export default function MuhakkimV4() {
     if(key==="course_quality") return <CourseQualitySystem T={T}/>;
     if(key==="gov_platform") return <GovPlatform T={T}/>;
     if(key==="dsp_surveys") return <DspSurveys T={T}/>;
+    if(key==="mohakam_cx") return <MohakamCx T={T}/>;
     if(key==="rev_roles") return <ToolHub T={T} hubKey="rev_roles"/>;
     if(key==="review_center") return <ToolHub T={T} hubKey="review_center"/>;
     if(key==="committee_hub") return <ToolHub T={T} hubKey="committee_hub"/>;
