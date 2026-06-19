@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محكم AI • التخطيط الاستراتيجي الذكي</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Noto+Sans+Arabic:wght@400;500;600&amp;display=swap');
+        
+        body {
+            font-family: 'Noto Sans Arabic', 'Inter', system-ui, sans-serif;
+        }
+        
+        .font-display {
+            font-family: 'Noto Sans Arabic', 'Inter', system-ui, sans-serif;
+            font-weight: 700;
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+        }
+
+        .nav-item {
+            transition: all 0.2s ease;
+        }
+        
+        .nav-item.active {
+            background-color: #0f172a;
+            color: white;
+            border-radius: 12px;
+        }
+
+        .module-card {
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .module-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 25px 50px -12px rgb(15 23 42 / 0.25);
+        }
+
+        .kpi-value {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .section-header {
+            font-size: 1.85rem;
+            line-height: 2.1rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+        }
+
+        .strategic-gradient {
+            background: linear-gradient(135deg, #0f172a 0%, #1e2937 50%, #334155 100%);
+        }
+
+        .risk-matrix {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 4px;
+        }
+
+        .risk-cell {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .risk-cell:hover {
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        .ai-response {
+            animation: fadeInUp 0.4s ease forwards;
+        }
+
+        .metric-card {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .command-center-card {
+            transition: all 0.3s ease;
+        }
+
+        .agent-card {
+            transition: all 0.2s ease;
+        }
+        
+        .agent-card:hover {
+            transform: translateY(-4px);
+            border-color: #38bdf8;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200">
+    <!-- Top Navigation -->
+    <nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-screen-2xl mx-auto px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-x-4">
+                    <div class="flex items-center gap-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center">
+                            <i class="fa-solid fa-brain text-white text-2xl"></i>
+                        </div>
+                        <div>
+                            <span class="font-display text-3xl font-bold tracking-tighter">محكم</span>
+                            <span class="font-display text-3xl font-bold tracking-tighter bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">AI</span>
+                        </div>
+                    </div>
+                    <div class="px-4 py-1.5 bg-emerald-900/30 text-emerald-400 text-xs font-bold rounded-2xl border border-emerald-800">
+                        Strategic Intelligence v3.4
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-x-4">
+                    <div class="hidden md:flex items-center bg-slate-900 border border-slate-700 rounded-2xl px-4 w-96">
+                        <i class="fa-solid fa-search text-slate-500"></i>
+                        <input type="text" id="global-search" placeholder="اسأل المستشار الاستراتيجي أو ابحث في الخطة..." 
+                               class="flex-1 bg-transparent border-none outline-none px-3 py-2 text-sm" onkeypress="if(event.key === 'Enter') handleGlobalSearch()">
+                    </div>
+                    
+                    <div class="flex items-center gap-x-2 text-sm">
+                        <div class="px-3 py-1 bg-slate-800 rounded-2xl text-xs font-medium">وزارة الصحة</div>
+                        <div class="w-8 h-8 bg-slate-700 rounded-2xl overflow-hidden border border-slate-600">
+                            <img src="https://i.pravatar.cc/32?img=47" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-screen-2xl mx-auto flex">
+        
+        <!-- Sidebar -->
+        <div class="w-72 bg-slate-900 border-l border-slate-800 min-h-[calc(100vh-4rem)] p-3 hidden lg:block">
+            <div class="px-4 mb-2 text-xs font-bold tracking-[1px] text-slate-400">مركز القيادة الاستراتيجي</div>
+            
+            <div onclick="showModule('command-center')" class="nav-item flex items-center gap-x-3 px-4 py-3 mb-1 cursor-pointer active bg-slate-800 rounded-2xl">
+                <i class="fa-solid fa-tachometer-alt w-5 text-sky-400"></i>
+                <span class="font-semibold">Enterprise AI Command Center</span>
+            </div>
+            
+            <div class="px-4 mb-1 text-xs font-bold tracking-wider text-slate-500 mt-4">التخطيط الاستراتيجي</div>
+            
+            <div onclick="showModule('strategic-assistant')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-robot w-5 text-violet-400"></i>
+                <span>المستشار الاستراتيجي الذكي</span>
+            </div>
+            <div onclick="showModule('build-plan')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-magic w-5 text-emerald-400"></i>
+                <span>بناء الخطة الاستراتيجية</span>
+            </div>
+            <div onclick="showModule('initiatives')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-tasks w-5 text-amber-400"></i>
+                <span>إدارة المبادرات والمشاريع</span>
+            </div>
+            <div onclick="showModule('kpis')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-chart-bar w-5 text-teal-400"></i>
+                <span>إدارة مؤشرات الأداء (KPI/OKR)</span>
+            </div>
+            
+            <div class="px-4 mb-1 text-xs font-bold tracking-wider text-slate-500 mt-4">الذكاء والتحليل</div>
+            
+            <div onclick="showModule('risk')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-shield-alt w-5 text-red-400"></i>
+                <span>إدارة المخاطر الذكية</span>
+            </div>
+            <div onclick="showModule('scenarios')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-project-diagram w-5 text-purple-400"></i>
+                <span>إدارة السيناريوهات</span>
+            </div>
+            <div onclick="showModule('ai-agents')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-users-cog w-5 text-sky-400"></i>
+                <span>وكلاء الذكاء الاستراتيجي (20+)</span>
+            </div>
+            
+            <div class="px-4 mb-1 text-xs font-bold tracking-wider text-slate-500 mt-3">التقارير والحوكمة</div>
+            
+            <div onclick="showModule('reports')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-file-export w-5 text-blue-400"></i>
+                <span>التقارير الذكية</span>
+            </div>
+            <div onclick="showModule('governance')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-balance-scale w-5 text-indigo-400"></i>
+                <span>الحوكمة والامتثال</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-8">
+            
+            <!-- ENTERPRISE AI COMMAND CENTER -->
+            <div id="module-command-center">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h1 class="font-display text-4xl tracking-tighter">Enterprise AI Command Center</h1>
+                        <p class="text-slate-400">مركز القيادة المؤسسي الذكي • نظرة موحدة على الاستراتيجية والأداء والمخاطر</p>
+                    </div>
+                    <button onclick="runStrategicAnalysis()" class="flex items-center gap-x-2 px-6 h-11 bg-gradient-to-r from-sky-600 to-indigo-600 hover:brightness-110 transition-all rounded-2xl font-bold text-sm">
+                        <i class="fa-solid fa-brain"></i>
+                        <span>تشغيل التحليل الاستراتيجي الكامل</span>
+                    </button>
+                </div>
+
+                <!-- Unified Command Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <!-- Strategy -->
+                    <div class="command-center-card bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                        <div class="flex justify-between">
+                            <div>
+                                <div class="text-sky-400 text-xs font-bold tracking-wider">التخطيط الاستراتيجي</div>
+                                <div class="text-4xl font-extrabold mt-1">87%</div>
+                                <div class="text-emerald-400 text-sm">نسبة تنفيذ الخطة</div>
+                            </div>
+                            <i class="fa-solid fa-chess-rook text-4xl text-sky-500/60"></i>
+                        </div>
+                        <div class="mt-4 text-xs">12 هدف استراتيجي • 41 مبادرة</div>
+                    </div>
+
+                    <!-- Performance -->
+                    <div class="command-center-card bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                        <div class="flex justify-between">
+                            <div>
+                                <div class="text-emerald-400 text-xs font-bold tracking-wider">الأداء المؤسسي</div>
+                                <div class="text-4xl font-extrabold mt-1">91.4</div>
+                                <div class="text-emerald-400 text-sm">مؤشر الأداء العام (BSC)</div>
+                            </div>
+                            <i class="fa-solid fa-tachometer-alt text-4xl text-emerald-500/60"></i>
+                        </div>
+                        <div class="mt-4 flex gap-x-4 text-xs">
+                            <div>Financial: <span class="font-bold text-emerald-400">94</span></div>
+                            <div>Customer: <span class="font-bold text-sky-400">89</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Risk -->
+                    <div class="command-center-card bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                        <div class="flex justify-between">
+                            <div>
+                                <div class="text-red-400 text-xs font-bold tracking-wider">إدارة المخاطر</div>
+                                <div class="text-4xl font-extrabold mt-1">23</div>
+                                <div class="text-red-400 text-sm">مخاطر حرجة (High)</div>
+                            </div>
+                            <i class="fa-solid fa-shield-alt text-4xl text-red-500/60"></i>
+                        </div>
+                        <div class="mt-4 text-xs">مصفوفة المخاطر: 4 حرجة • 11 متوسطة</div>
+                    </div>
+
+                    <!-- CX Integration -->
+                    <div class="command-center-card bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                        <div class="flex justify-between">
+                            <div>
+                                <div class="text-violet-400 text-xs font-bold tracking-wider">تجربة العميل</div>
+                                <div class="text-4xl font-extrabold mt-1">87.4</div>
+                                <div class="text-violet-400 text-sm">CSAT • NPS: 72</div>
+                            </div>
+                            <i class="fa-solid fa-smile text-4xl text-violet-500/60"></i>
+                        </div>
+                        <div class="mt-4 text-xs">متصل بنظام تجربة العميل (CX)</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6">
+                    <div class="font-bold mb-4">إجراءات سريعة مدعومة بالذكاء الاصطناعي</div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <button onclick="showModule('strategic-assistant')" class="flex items-center justify-center gap-x-2 px-4 h-12 bg-slate-800 hover:bg-slate-700 rounded-2xl text-sm font-medium">
+                            <i class="fa-solid fa-robot"></i>
+                            <span>اسأل المستشار الاستراتيجي</span>
+                        </button>
+                        <button onclick="generateStrategicPlan()" class="flex items-center justify-center gap-x-2 px-4 h-12 bg-slate-800 hover:bg-slate-700 rounded-2xl text-sm font-medium">
+                            <i class="fa-solid fa-magic"></i>
+                            <span>إنشاء خطة استراتيجية جديدة</span>
+                        </button>
+                        <button onclick="showModule('risk')" class="flex items-center justify-center gap-x-2 px-4 h-12 bg-slate-800 hover:bg-slate-700 rounded-2xl text-sm font-medium">
+                            <i class="fa-solid fa-shield-alt"></i>
+                            <span>تحديث مصفوفة المخاطر</span>
+                        </button>
+                        <button onclick="runFullStrategicReview()" class="flex items-center justify-center gap-x-2 px-4 h-12 bg-emerald-700 hover:bg-emerald-600 rounded-2xl text-sm font-medium">
+                            <i class="fa-solid fa-sync"></i>
+                            <span>مراجعة استراتيجية شاملة</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STRATEGIC AI ASSISTANT -->
+            <div id="module-strategic-assistant" class="hidden">
+                <div class="max-w-5xl">
+                    <h2 class="section-header mb-2">المستشار الاستراتيجي الذكي</h2>
+                    <p class="text-slate-400 mb-6">اسأل أي سؤال استراتيجي وسيقوم الذكاء الاصطناعي بتحليل الوضع وتقديم توصيات مدعومة بالبيانات</p>
+                    
+                    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 h-[560px] flex flex-col">
+                        <div id="strategic-chat" class="flex-1 overflow-auto space-y-4 p-2 mb-4 custom-scroll">
+                            <!-- Messages populated by JS -->
+                        </div>
+                        
+                        <div class="flex gap-x-3">
+                            <input id="strategic-input" type="text" placeholder="مثال: ما هي أهم المخاطر التي تواجه الخطة الاستراتيجية حالياً؟" 
+                                   class="flex-1 bg-slate-800 border border-slate-600 rounded-2xl px-5 py-3 text-sm" onkeypress="if(event.key === 'Enter') sendStrategicMessage()">
+                            <button onclick="sendStrategicMessage()" class="px-8 bg-violet-600 hover:bg-violet-500 rounded-2xl font-bold">إرسال</button>
+                        </div>
+                        
+                        <!-- Quick Suggestions -->
+                        <div class="flex flex-wrap gap-2 mt-3 px-1">
+                            <button onclick="askQuickQuestion('ما أبرز المخاطر الحالية؟')" class="text-xs px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-2xl">أبرز المخاطر</button>
+                            <button onclick="askQuickQuestion('قم بتحليل SWOT كامل')" class="text-xs px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-2xl">تحليل SWOT</button>
+                            <button onclick="askQuickQuestion('لماذا انخفض رضا العملاء؟')" class="text-xs px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-2xl">تحليل رضا العملاء</button>
+                            <button onclick="askQuickQuestion('ما توقعات 2027؟')" class="text-xs px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-2xl">توقعات 2027</button>
+                            <button onclick="askQuickQuestion('ما المبادرات المتأخرة؟')" class="text-xs px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-2xl">المبادرات المتأخرة</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BUILD PLAN -->
+            <div id="module-build-plan" class="hidden">
+                <h2 class="section-header mb-6">بناء الخطة الاستراتيجية بالذكاء الاصطناعي</h2>
+                
+                <div class="bg-slate-900 border border-slate-700 rounded-3xl p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <div class="font-bold">الخطة الاستراتيجية 2026-2030</div>
+                            <div class="text-xs text-emerald-400">تم إنشاؤها بواسطة الذكاء الاصطناعي • آخر تحديث: اليوم</div>
+                        </div>
+                        <button onclick="generateStrategicPlan()" class="px-6 h-11 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-bold flex items-center gap-x-2">
+                            <i class="fa-solid fa-magic"></i>
+                            <span>إعادة توليد الخطة بالكامل</span>
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div class="bg-slate-800 p-5 rounded-2xl">
+                                <div class="text-xs text-sky-400 font-bold">الرؤية</div>
+                                <div class="mt-1 font-semibold">أن نكون الجهة الرائدة في تقديم خدمات صحية متكاملة ومبتكرة على المستوى الإقليمي بحلول 2030.</div>
+                            </div>
+                            <div class="bg-slate-800 p-5 rounded-2xl">
+                                <div class="text-xs text-sky-400 font-bold">الرسالة</div>
+                                <div class="mt-1 text-sm">تقديم خدمات صحية عالية الجودة لكل مواطن ومقيم من خلال كوادر مؤهلة وتقنيات متقدمة وشراكات استراتيجية.</div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="text-xs text-emerald-400 font-bold mb-2">الأهداف الاستراتيجية الرئيسية (12)</div>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex items-center gap-x-2 bg-slate-800 px-4 py-2 rounded-2xl">1. تحسين جودة الخدمات الصحية وتجربة المريض</div>
+                                <div class="flex items-center gap-x-2 bg-slate-800 px-4 py-2 rounded-2xl">2. تطوير الكوادر البشرية والقدرات المؤسسية</div>
+                                <div class="flex items-center gap-x-2 bg-slate-800 px-4 py-2 rounded-2xl">3. تعزيز التحول الرقمي والابتكار</div>
+                                <div class="flex items-center gap-x-2 bg-slate-800 px-4 py-2 rounded-2xl">4. تحقيق الاستدامة المالية والتشغيلية</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INITIATIVES -->
+            <div id="module-initiatives" class="hidden">
+                <h2 class="section-header mb-6">إدارة المبادرات والمشاريع الاستراتيجية</h2>
+                
+                <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6">
+                    <div class="flex justify-between mb-4">
+                        <div class="font-bold">المبادرات النشطة (41)</div>
+                        <button onclick="addNewInitiative()" class="px-5 h-9 bg-amber-600 hover:bg-amber-500 rounded-2xl text-sm font-bold flex items-center gap-x-2">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>مبادرة جديدة</span>
+                        </button>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-slate-400 border-b border-slate-700">
+                                    <th class="text-right py-3 px-4">المبادرة</th>
+                                    <th class="text-right py-3">المالك</th>
+                                    <th class="text-right py-3">نسبة الإنجاز</th>
+                                    <th class="text-right py-3">المخاطر</th>
+                                    <th class="text-right py-3">الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="initiatives-table" class="divide-y divide-slate-700">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPIs -->
+            <div id="module-kpis" class="hidden">
+                <h2 class="section-header mb-6">إدارة مؤشرات الأداء الاستراتيجية</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                        <div class="flex justify-between">
+                            <div>
+                                <div class="text-xs text-emerald-400">KPI</div>
+                                <div class="font-bold">نسبة رضا المرضى</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-3xl font-extrabold text-emerald-400">87.4</div>
+                                <div class="text-xs text-emerald-400">المستهدف: 90</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 h-2 bg-slate-700 rounded"><div class="h-2 w-[87%] bg-emerald-500 rounded"></div></div>
+                        <div class="text-xs text-amber-400 mt-1">انحراف -2.6% • يتطلب إجراء تصحيحي</div>
+                    </div>
+                    
+                    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                        <div class="flex justify-between">
+                            <div>
+                                <div class="text-xs text-sky-400">OKR</div>
+                                <div class="font-bold">تقليل زمن الانتظار</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-3xl font-extrabold text-sky-400">14.2</div>
+                                <div class="text-xs text-sky-400">دقيقة (المستهدف: 12)</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 h-2 bg-slate-700 rounded"><div class="h-2 w-[71%] bg-sky-500 rounded"></div></div>
+                        <div class="text-xs text-red-400 mt-1">انحراف كبير • إجراء فوري مطلوب</div>
+                    </div>
+                    
+                    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                        <div class="flex justify-between">
+                            <div>
+                                <div class="text-xs text-violet-400">BSC</div>
+                                <div class="font-bold">مؤشر الأداء المؤسسي</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-3xl font-extrabold text-violet-400">91.4</div>
+                                <div class="text-xs text-violet-400">ممتاز</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 text-xs">Financial 94 • Customer 89 • Internal 93 • Learning 88</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RISK -->
+            <div id="module-risk" class="hidden">
+                <h2 class="section-header mb-6">إدارة المخاطر الاستراتيجية</h2>
+                
+                <div class="bg-slate-900 border border-slate-700 rounded-3xl p-8">
+                    <div class="font-bold mb-4">مصفوفة المخاطر (5×5)</div>
+                    
+                    <div class="risk-matrix max-w-[520px] mx-auto text-xs text-center mb-6" id="risk-matrix">
+                        <!-- Generated by JS -->
+                    </div>
+                    
+                    <div class="text-xs text-slate-400">اضغط على أي خلية لإضافة أو تعديل خطر</div>
+                </div>
+            </div>
+
+            <!-- SCENARIOS -->
+            <div id="module-scenarios" class="hidden">
+                <h2 class="section-header mb-6">إدارة السيناريوهات الاستراتيجية</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-emerald-900/30 border border-emerald-700 p-5 rounded-3xl">
+                        <div class="font-bold text-emerald-400">السيناريو المتفائل</div>
+                        <div class="text-4xl font-extrabold mt-2">112%</div>
+                        <div class="text-xs mt-1">تحقيق الأهداف</div>
+                        <div class="text-emerald-300 text-xs mt-4">نمو قوي + دعم حكومي + ابتكار سريع</div>
+                    </div>
+                    <div class="bg-sky-900/30 border border-sky-700 p-5 rounded-3xl">
+                        <div class="font-bold text-sky-400">السيناريو الواقعي</div>
+                        <div class="text-4xl font-extrabold mt-2">87%</div>
+                        <div class="text-xs mt-1">تحقيق الأهداف</div>
+                        <div class="text-sky-300 text-xs mt-4">الوضع الحالي مع بعض التحديات</div>
+                    </div>
+                    <div class="bg-amber-900/30 border border-amber-700 p-5 rounded-3xl">
+                        <div class="font-bold text-amber-400">السيناريو المتحفظ</div>
+                        <div class="text-4xl font-extrabold mt-2">71%</div>
+                        <div class="text-xs mt-1">تحقيق الأهداف</div>
+                        <div class="text-amber-300 text-xs mt-4">ضغوط مالية + تأخير في التحول الرقمي</div>
+                    </div>
+                    <div class="bg-red-900/30 border border-red-700 p-5 rounded-3xl">
+                        <div class="font-bold text-red-400">عالي المخاطر</div>
+                        <div class="text-4xl font-extrabold mt-2">54%</div>
+                        <div class="text-xs mt-1">تحقيق الأهداف</div>
+                        <div class="text-red-300 text-xs mt-4">أزمة اقتصادية + تغييرات تنظيمية</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI AGENTS -->
+            <div id="module-ai-agents" class="hidden">
+                <h2 class="section-header mb-6">وكلاء الذكاء الاستراتيجي (20+ وكيل)</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="agents-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- REPORTS -->
+            <div id="module-reports" class="hidden">
+                <h2 class="section-header mb-6">التقارير الذكية</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div onclick="generateReport('executive-strategy')" class="cursor-pointer bg-slate-900 border border-slate-700 p-6 rounded-3xl hover:border-sky-500">
+                        <i class="fa-solid fa-file-lines text-3xl text-sky-400 mb-4"></i>
+                        <div class="font-bold">التقرير التنفيذي الاستراتيجي</div>
+                        <div class="text-xs text-slate-400 mt-1">للإدارة العليا ومجلس الإدارة</div>
+                    </div>
+                    <div onclick="generateReport('risk')" class="cursor-pointer bg-slate-900 border border-slate-700 p-6 rounded-3xl hover:border-red-500">
+                        <i class="fa-solid fa-shield-alt text-3xl text-red-400 mb-4"></i>
+                        <div class="font-bold">تقرير المخاطر والفرص</div>
+                        <div class="text-xs text-slate-400 mt-1">مصفوفة + خطط المعالجة</div>
+                    </div>
+                    <div onclick="generateReport('performance')" class="cursor-pointer bg-slate-900 border border-slate-700 p-6 rounded-3xl hover:border-emerald-500">
+                        <i class="fa-solid fa-chart-line text-3xl text-emerald-400 mb-4"></i>
+                        <div class="font-bold">تقرير الأداء الاستراتيجي</div>
+                        <div class="text-xs text-slate-400 mt-1">KPI + OKR + BSC</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function initTailwind() {
+            // Already handled via CDN
+        }
+
+        function showModule(module) {
+            document.querySelectorAll('[id^="module-"]').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById('module-' + module);
+            if (target) target.classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            // Activate matching nav
+            document.querySelectorAll('.nav-item').forEach(item => {
+                const onclick = item.getAttribute('onclick');
+                if (onclick && onclick.includes(module)) {
+                    item.classList.add('active');
+                }
+            });
+            
+            if (module === 'risk' && document.getElementById('risk-matrix').children.length === 0) {
+                initRiskMatrix();
+            }
+            if (module === 'ai-agents' && document.getElementById('agents-grid').children.length === 0) {
+                initAIAgents();
+            }
+            if (module === 'initiatives' && document.getElementById('initiatives-table').children.length === 0) {
+                initInitiativesTable();
+            }
+            if (module === 'strategic-assistant' && document.getElementById('strategic-chat').children.length === 0) {
+                initStrategicChat();
+            }
+        }
+
+        function initStrategicChat() {
+            const container = document.getElementById('strategic-chat');
+            container.innerHTML = `
+                <div class="flex gap-x-3">
+                    <div class="w-9 h-9 bg-violet-600 rounded-2xl flex-shrink-0 flex items-center justify-center"><i class="fa-solid fa-brain text-white"></i></div>
+                    <div class="bg-slate-800 px-4 py-3 rounded-2xl text-sm max-w-[82%]">مرحباً! أنا المستشار الاستراتيجي الذكي. يمكنني تحليل الخطة الاستراتيجية، تقييم المخاطر، اقتراح سيناريوهات، أو مراجعة الأداء. كيف يمكنني مساعدتك؟</div>
+                </div>
+            `;
+        }
+
+        function sendStrategicMessage() {
+            const input = document.getElementById('strategic-input');
+            const container = document.getElementById('strategic-chat');
+            const value = input.value.trim();
+            if (!value) return;
+            
+            const userDiv = document.createElement('div');
+            userDiv.className = 'flex justify-end';
+            userDiv.innerHTML = `<div class="bg-violet-600 px-4 py-3 rounded-2xl text-sm max-w-[75%]">${value}</div>`;
+            container.appendChild(userDiv);
+            
+            input.value = '';
+            container.scrollTop = container.scrollHeight;
+            
+            setTimeout(() => {
+                let reply = "جاري تحليل البيانات الاستراتيجية باستخدام الوكلاء المتخصصين...";
+                const lowerValue = value.toLowerCase();
+                
+                if (lowerValue.includes("مخاطر") || lowerValue.includes("خطر")) {
+                    reply = `بناءً على تحليل سجل المخاطر الحالي، أبرز 4 مخاطر استراتيجية:
+1. تأخر التحول الرقمي (احتمالية 78% - أثر عالي)
+2. نقص الكوادر المتخصصة في الذكاء الاصطناعي
+3. ضغوط الميزانية بسبب التضخم
+4. مقاومة التغيير في بعض الإدارات
+
+التوصية الفورية: تفعيل وكيل إدارة المخاطر + تخصيص ميزانية طوارئ 12%.`;
+                } 
+                else if (lowerValue.includes("رضا") || lowerValue.includes("عميل") || lowerValue.includes("مريض")) {
+                    reply = `انخفاض رضا العملاء (-4.2 نقطة) مرتبط مباشرة بـ:
+• تأخر المبادرة رقم 7 (تطوير التطبيق) بنسبة 41%
+• زيادة زمن الانتظار في الطوارئ (+37%)
+• ضعف التواصل في خدمة العملاء
+
+الحلول المقترحة:
+1. تسريع المبادرة 7 بـ 3 أشهر
+2. تفعيل وكيل تجربة العميل لتحليل نقاط الاحتكاك
+3. إطلاق برنامج "الاستماع النشط" للموظفين`;
+                } 
+                else if (lowerValue.includes("انحراف") || lowerValue.includes("تأخر") || lowerValue.includes("متأخر")) {
+                    reply = `يوجد حالياً 7 مبادرات متأخرة. أكثرها تأثيراً استراتيجياً:
+• مبادرة التحول الرقمي (تأخر 4.2 شهر)
+• برنامج تطوير الكوادر (تأخر 2.8 شهر)
+
+الأسباب الجذرية: نقص الموارد البشرية + تعقيد إجراءات الشراء.
+
+التوصية: إعادة تخصيص 18% من ميزانية المبادرات ذات الأولوية المنخفضة + تفعيل وكيل إدارة المشاريع.`;
+                } 
+                else if (lowerValue.includes("swot") || lowerValue.includes("تحليل")) {
+                    reply = `تحليل SWOT المحدث للخطة الاستراتيجية:
+
+**نقاط القوة:** جودة الخدمات الطبية، الدعم الحكومي القوي، البنية التحتية الرقمية المتقدمة.
+**نقاط الضعف:** بطء اتخاذ القرار، نقص الكفاءات في الذكاء الاصطناعي، مقاومة التغيير.
+**الفرص:** الشراكات الدولية، الذكاء الاصطناعي في التشخيص، التوسع في الرعاية المنزلية.
+**التهديدات:** التضخم، المنافسة من القطاع الخاص، تغييرات تنظيمية متسارعة.
+
+هل تريد خطة عمل مفصلة لاستغلال الفرص ومعالجة نقاط الضعف؟`;
+                } 
+                else if (lowerValue.includes("مستقبل") || lowerValue.includes("تنبؤ") || lowerValue.includes("2027")) {
+                    reply = `بناءً على النموذج التنبئي:
+- احتمال تحقيق 87% من الأهداف الاستراتيجية بنهاية 2026
+- احتمال تأخر 3 مبادرات رئيسية عن 2027
+- الحاجة المتوقعة: +240 موظف متخصص + 185 مليون ريال استثمارات رقمية
+
+التوصية: البدء فوراً في برنامج "الاستعداد لـ2030"`;
+                } 
+                else {
+                    reply = `بناءً على التحليل الشامل للبيانات الاستراتيجية، أنصح بالآتي:
+1. إعادة ترتيب أولويات المبادرات للربع القادم
+2. التركيز على المبادرات ذات التأثير العالي على رضا العملاء والاستدامة المالية
+3. تفعيل وكيل "المراجعة الاستراتيجية" لإجراء تقييم ربع سنوي
+
+هل تريد مني إعداد خطة عمل مفصلة أو تشغيل تحليل سيناريو معين؟`;
+                }
+                
+                const aiDiv = document.createElement('div');
+                aiDiv.className = 'flex gap-x-3 ai-response';
+                aiDiv.innerHTML = `
+                    <div class="w-9 h-9 bg-violet-600 rounded-2xl flex-shrink-0 flex items-center justify-center"><i class="fa-solid fa-brain text-white"></i></div>
+                    <div class="bg-slate-800 px-4 py-3 rounded-2xl text-sm max-w-[82%]">${reply}</div>
+                `;
+                container.appendChild(aiDiv);
+                container.scrollTop = container.scrollHeight;
+            }, 950);
+        }
+
+        function generateStrategicPlan() {
+            showToast("جاري توليد الخطة الاستراتيجية الكاملة بالذكاء الاصطناعي...");
+            
+            setTimeout(() => {
+                alert("تم إنشاء الخطة الاستراتيجية 2026-2030 بنجاح!\n\nالخطة تشمل:\n• رؤية واضحة وقابلة للقياس\n• 12 هدف استراتيجي\n• 41 مبادرة\n• 87 مؤشر أداء\n• مصفوفة مخاطر كاملة\n• خطة مالية متكاملة\n\nيمكنك الآن تعديل أي جزء أو طلب مراجعة من المستشار الذكي.");
+                
+                // Switch to build plan view
+                showModule('build-plan');
+            }, 1600);
+        }
+
+        function initInitiativesTable() {
+            const tbody = document.getElementById('initiatives-table');
+            tbody.innerHTML = `
+                <tr>
+                    <td class="px-4 py-3 font-medium">تطوير منصة الخدمات الرقمية</td>
+                    <td class="px-4 py-3 text-sm">د. خالد العتيبي</td>
+                    <td class="px-4 py-3"><div class="flex items-center gap-x-2"><div class="w-20 h-2 bg-slate-700 rounded"><div class="h-2 w-[78%] bg-emerald-500 rounded"></div></div><span class="text-xs">78%</span></div></td>
+                    <td class="px-4 py-3"><span class="px-2.5 py-px text-xs rounded bg-amber-900 text-amber-300">متوسطة</span></td>
+                    <td class="px-4 py-3"><span class="px-3 py-px text-xs rounded bg-emerald-900 text-emerald-300">على المسار</span></td>
+                </tr>
+                <tr>
+                    <td class="px-4 py-3 font-medium">برنامج تطوير الكوادر الصحية</td>
+                    <td class="px-4 py-3 text-sm">أ. سارة السالم</td>
+                    <td class="px-4 py-3"><div class="flex items-center gap-x-2"><div class="w-20 h-2 bg-slate-700 rounded"><div class="h-2 w-[41%] bg-red-500 rounded"></div></div><span class="text-xs">41%</span></div></td>
+                    <td class="px-4 py-3"><span class="px-2.5 py-px text-xs rounded bg-red-900 text-red-300">عالية</span></td>
+                    <td class="px-4 py-3"><span class="px-3 py-px text-xs rounded bg-red-900 text-red-300">متأخرة</span></td>
+                </tr>
+            `;
+        }
+
+        function addNewInitiative() {
+            const name = prompt("اسم المبادرة الجديدة:");
+            if (!name) return;
+            
+            const tbody = document.getElementById('initiatives-table');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="px-4 py-3 font-medium">${name}</td>
+                <td class="px-4 py-3 text-sm">غير محدد</td>
+                <td class="px-4 py-3"><div class="flex items-center gap-x-2"><div class="w-20 h-2 bg-slate-700 rounded"><div class="h-2 w-[15%] bg-amber-500 rounded"></div></div><span class="text-xs">15%</span></div></td>
+                <td class="px-4 py-3"><span class="px-2.5 py-px text-xs rounded bg-amber-900 text-amber-300">متوسطة</span></td>
+                <td class="px-4 py-3"><span class="px-3 py-px text-xs rounded bg-amber-900 text-amber-300">جديدة</span></td>
+            `;
+            tbody.prepend(row);
+            showToast("تمت إضافة المبادرة وتحليلها استراتيجياً");
+        }
+
+        function initRiskMatrix() {
+            const container = document.getElementById('risk-matrix');
+            container.innerHTML = '';
+            
+            const colors = ['#166534', '#4ade80', '#eab308', '#f97316', '#ef4444'];
+            
+            // Header row
+            const header = document.createElement('div');
+            header.className = 'contents text-[10px] text-slate-400';
+            header.innerHTML = `<div></div><div>منخفض</div><div>متوسط</div><div>عالي</div><div>عالي جداً</div><div>حرج</div>`;
+            container.appendChild(header);
+            
+            const impacts = ['حرج', 'عالي جداً', 'عالي', 'متوسط', 'منخفض'];
+            
+            impacts.forEach((impact, i) => {
+                const row = document.createElement('div');
+                row.className = 'contents';
+                
+                let html = `<div class="text-[10px] flex items-center justify-center text-slate-400">${impact}</div>`;
+                
+                for (let p = 0; p < 5; p++) {
+                    const probability = 5 - p;
+                    const riskLevel = i + probability;
+                    
+                    let colorClass = '';
+                    if (riskLevel >= 8) colorClass = 'bg-red-600';
+                    else if (riskLevel >= 6) colorClass = 'bg-orange-500';
+                    else if (riskLevel >= 4) colorClass = 'bg-yellow-500';
+                    else colorClass = 'bg-emerald-500';
+                    
+                    html += `<div onclick="addRiskToMatrix(this, ${probability}, ${i+1})" class="risk-cell aspect-square ${colorClass} rounded flex items-center justify-center text-[9px] font-bold text-white/90">${probability * (i+1)}</div>`;
+                }
+                
+                row.innerHTML = html;
+                container.appendChild(row);
+            });
+        }
+
+        function addRiskToMatrix(cell, probability, impact) {
+            const riskName = prompt("اسم الخطر:");
+            if (!riskName) return;
+            
+            cell.innerHTML = `<div class="text-[8px] text-center leading-none p-0.5">${riskName.substring(0,12)}</div>`;
+            cell.style.backgroundColor = '#7f1d1d';
+            showToast("تمت إضافة الخطر إلى مصفوفة المخاطر");
+        }
+
+        function initAIAgents() {
+            const container = document.getElementById('agents-grid');
+            container.innerHTML = '';
+            
+            const agents = [
+                { name: "وكيل التخطيط الاستراتيجي", icon: "fa-chess", color: "sky", action: "runSWOT" },
+                { name: "وكيل مؤشرات الأداء (KPI/OKR/BSC)", icon: "fa-chart-bar", color: "emerald", action: "analyzeKPIs" },
+                { name: "وكيل إدارة المخاطر الاستراتيجية", icon: "fa-shield-alt", color: "red", action: "analyzeRisks" },
+                { name: "وكيل تحليل السيناريوهات", icon: "fa-project-diagram", color: "purple", action: "runScenarios" },
+                { name: "وكيل الحوكمة والامتثال", icon: "fa-balance-scale", color: "indigo", action: "checkGovernance" },
+                { name: "وكيل المراجعة الاستراتيجية", icon: "fa-search", color: "amber", action: "strategicReview" },
+                { name: "وكيل التنبؤ والذكاء التنبئي", icon: "fa-crystal-ball", color: "violet", action: "runPrediction" },
+                { name: "وكيل إعداد التقارير التنفيذية", icon: "fa-file-export", color: "blue", action: "generateExecutiveReport" },
+                { name: "وكيل تحليل الفجوات الاستراتيجية", icon: "fa-chart-line", color: "teal", action: "gapAnalysis" },
+                { name: "وكيل إدارة المبادرات والمشاريع", icon: "fa-tasks", color: "orange", action: "analyzeInitiatives" }
+            ];
+            
+            agents.forEach(agent => {
+                const div = document.createElement('div');
+                div.className = `agent-card bg-slate-900 border border-slate-700 p-5 rounded-3xl cursor-pointer`;
+                div.innerHTML = `
+                    <div class="flex items-center gap-x-3">
+                        <div class="w-10 h-10 bg-${agent.color}-600/20 text-${agent.color}-400 rounded-2xl flex items-center justify-center">
+                            <i class="fa-solid ${agent.icon} text-xl"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-sm">${agent.name}</div>
+                        </div>
+                    </div>
+                    <button onclick="activateSpecialAgent('${agent.name}', '${agent.action}', this)" 
+                            class="mt-4 w-full h-9 text-xs bg-slate-800 hover:bg-slate-700 rounded-2xl font-medium">
+                        تفعيل الوكيل
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function activateSpecialAgent(name, action, btn) {
+            btn.outerHTML = `<div class="mt-4 text-emerald-400 text-xs font-bold flex items-center gap-x-2"><i class="fa-solid fa-check-double"></i> <span>الوكيل نشط...</span></div>`;
+            
+            setTimeout(() => {
+                if (action === "runSWOT") {
+                    showModule('strategic-assistant');
+                    setTimeout(() => {
+                        const chat = document.getElementById('strategic-chat');
+                        chat.innerHTML += `
+                            <div class="flex gap-x-3 mt-4">
+                                <div class="w-9 h-9 bg-violet-600 rounded-2xl flex-shrink-0 flex items-center justify-center"><i class="fa-solid fa-brain text-white"></i></div>
+                                <div class="bg-slate-800 px-4 py-3 rounded-2xl text-sm">تم تفعيل وكيل التخطيط الاستراتيجي. هل تريد تشغيل تحليل SWOT كامل الآن؟</div>
+                            </div>
+                        `;
+                    }, 300);
+                } 
+                else if (action === "analyzeRisks") {
+                    showModule('risk');
+                    showToast("وكيل إدارة المخاطر نشط. تم تحديث مصفوفة المخاطر.");
+                } 
+                else if (action === "analyzeKPIs") {
+                    showModule('kpis');
+                    showToast("وكيل مؤشرات الأداء نشط. جاري تحليل الانحرافات...");
+                } 
+                else if (action === "runScenarios") {
+                    showModule('scenarios');
+                } 
+                else if (action === "strategicReview") {
+                    showToast("جاري تشغيل المراجعة الاستراتيجية الشاملة بواسطة الوكيل...");
+                    setTimeout(() => {
+                        alert("تم إكمال المراجعة الاستراتيجية الربع سنوية.\n\nالنتائج الرئيسية:\n• 87% تقدم عام\n• 4 انحرافات حرجة\n• 3 فرص جديدة تم اكتشافها\n• توصية بتحديث 3 أهداف استراتيجية");
+                    }, 1400);
+                } 
+                else if (action === "runPrediction") {
+                    showModule('command-center');
+                    showToast("وكيل التنبؤ الذكي نشط. تم تحديث التوقعات حتى 2027.");
+                } 
+                else {
+                    showToast(`تم تفعيل ${name} بنجاح. يمكنك الآن استخدامه من خلال المستشار الاستراتيجي.`);
+                }
+            }, 900);
+        }
+
+        function runStrategicAnalysis() {
+            showToast("جاري تشغيل التحليل الاستراتيجي الكامل باستخدام 17 وكيلاً ذكياً...");
+            
+            setTimeout(() => {
+                alert("تم إكمال التحليل الاستراتيجي الشامل!\n\nالنتائج الرئيسية:\n• 87% نسبة تنفيذ الخطة\n• 4 مخاطر حرجة تتطلب تدخلاً فورياً\n• 3 فرص استراتيجية غير مستغلة\n• توصية بإعادة تخصيص 18% من الميزانية\n• مؤشر النضج الاستراتيجي: 81/100");
+            }, 2200);
+        }
+
+        function runFullStrategicReview() {
+            showToast("جاري إجراء المراجعة الاستراتيجية الشاملة...");
+            setTimeout(() => {
+                showToast("تم إنشاء تقرير المراجعة الاستراتيجية. يمكنك الاطلاع عليه من قسم التقارير.");
+            }, 1500);
+        }
+
+        function generateReport(type) {
+            const names = {
+                'executive-strategy': 'التقرير التنفيذي الاستراتيجي',
+                'risk': 'تقرير المخاطر والفرص',
+                'performance': 'تقرير الأداء الاستراتيجي'
+            };
+            
+            showToast(`جاري إنشاء ${names[type]}...`);
+            
+            setTimeout(() => {
+                alert(`تم إنشاء ${names[type]} بنجاح!\n\nالتقرير جاهز للتصدير بصيغ:\n• PDF\n• PowerPoint\n• Excel\n• Word`);
+            }, 1300);
+        }
+
+        function handleGlobalSearch() {
+            const value = document.getElementById('global-search').value.trim().toLowerCase();
+            if (!value) return;
+            
+            if (value.includes("مخاطر") || value.includes("خطر")) {
+                showModule('risk');
+            } else if (value.includes("مبادرة") || value.includes("مشروع")) {
+                showModule('initiatives');
+            } else if (value.includes("مؤشر") || value.includes("kpi")) {
+                showModule('kpis');
+            } else if (value.includes("سيناريو")) {
+                showModule('scenarios');
+            } else {
+                showModule('strategic-assistant');
+                setTimeout(() => {
+                    const input = document.getElementById('strategic-input');
+                    if (input) input.value = document.getElementById('global-search').value;
+                }, 300);
+            }
+        }
+
+        function askQuickQuestion(question) {
+            const input = document.getElementById('strategic-input');
+            const container = document.getElementById('strategic-chat');
+            
+            // Add user message
+            const userDiv = document.createElement('div');
+            userDiv.className = 'flex justify-end';
+            userDiv.innerHTML = `<div class="bg-violet-600 px-4 py-3 rounded-2xl text-sm max-w-[75%]">${question}</div>`;
+            container.appendChild(userDiv);
+            container.scrollTop = container.scrollHeight;
+            
+            // Simulate AI thinking and response
+            setTimeout(() => {
+                let reply = "";
+                
+                if (question.includes("مخاطر")) {
+                    reply = "أهم المخاطر الحالية: تأخر التحول الرقمي (78%)، نقص الكوادر المتخصصة، وضغوط الميزانية. يُنصح بتفعيل خطة الطوارئ فوراً.";
+                } else if (question.includes("SWOT")) {
+                    reply = "تم إجراء تحليل SWOT محدث. نقاط القوة قوية، لكن هناك ضعف في السرعة التنفيذية. هل تريد الخطة التفصيلية لمعالجة نقاط الضعف؟";
+                } else if (question.includes("رضا")) {
+                    reply = "الانخفاض مرتبط بتأخر المبادرة رقم 7 وزيادة زمن الانتظار. التوصية: تسريع المبادرة + تخصيص موارد إضافية.";
+                } else if (question.includes("2027")) {
+                    reply = "التوقعات لعام 2027: احتمال تحقيق 87% من الأهداف. الحاجة المتوقعة: +240 موظف + 185 مليون ريال استثمارات رقمية.";
+                } else {
+                    reply = "هناك 7 مبادرات متأخرة. أكثرها تأثيراً: التحول الرقمي. يُنصح بإعادة تخصيص الموارد.";
+                }
+                
+                const aiDiv = document.createElement('div');
+                aiDiv.className = 'flex gap-x-3 ai-response mt-2';
+                aiDiv.innerHTML = `
+                    <div class="w-9 h-9 bg-violet-600 rounded-2xl flex-shrink-0 flex items-center justify-center"><i class="fa-solid fa-brain text-white"></i></div>
+                    <div class="bg-slate-800 px-4 py-3 rounded-2xl text-sm max-w-[82%]">${reply}</div>
+                `;
+                container.appendChild(aiDiv);
+                container.scrollTop = container.scrollHeight;
+            }, 700);
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 border border-slate-600 px-6 py-3 rounded-2xl flex items-center gap-x-3 z-[999] shadow-2xl`;
+            toast.innerHTML = `
+                <i class="fa-solid fa-check-circle text-emerald-400"></i>
+                <span class="text-sm">${message}</span>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.transition = 'all 0.3s';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 200);
+            }, 2600);
+        }
+
+        function initializeEverything() {
+            initTailwind();
+            
+            // Show Command Center by default
+            document.getElementById('module-command-center').classList.remove('hidden');
+            
+            // Make first nav item active
+            const firstNav = document.querySelector('.nav-item');
+            if (firstNav) firstNav.classList.add('active');
+            
+            // Keyboard shortcut
+            document.addEventListener('keydown', function(e) {
+                if (e.metaKey && e.key === "/") {
+                    e.preventDefault();
+                    const search = document.getElementById('global-search');
+                    if (search) search.focus();
+                }
+            });
+            
+            console.log('%c[Mohakam AI Strategic] Platform initialized successfully.', 'color:#64748b');
+        }
+
+        window.onload = initializeEverything;
+    </script>
+</body>
+</html>
