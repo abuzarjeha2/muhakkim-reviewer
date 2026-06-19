@@ -16890,6 +16890,13 @@ export default function MuhakkimV4() {
 
         {/* Controls */}
         <div style={{display:"flex",gap:5,alignItems:"center",flexShrink:0,marginRight:4}}>
+          {/* مُقياس برو — منصة الجودة المؤسسية */}
+          <a href="/muqyas/" title={L("منصة الجودة المؤسسية — مُقياس برو","Institutional Quality Platform — Muqyas Pro")}
+            style={{display:"flex",alignItems:"center",gap:6,textDecoration:"none",background:T.goldG,color:"#fff",borderRadius:9,padding:"6px 11px",fontFamily:"inherit",fontWeight:800,fontSize:12,boxShadow:`0 3px 12px ${T.gold}55`,whiteSpace:"nowrap",flexShrink:0}}>
+            <span style={{fontSize:14}}>🏛️</span>
+            <span>{L("مُقياس برو","Muqyas Pro")}</span>
+            <span style={{fontSize:9,background:"#ffffff33",borderRadius:5,padding:"1px 6px",fontWeight:700}}>{L("الجودة المؤسسية","Institutional QA")}</span>
+          </a>
           {/* Search */}
           <div style={{position:"relative"}}>
             <button onClick={()=>setShowSearch(!showSearch)} style={{background:T.bgSec,border:`1px solid ${T.border}`,borderRadius:8,color:T.textSec,padding:"5px 10px",fontSize:13,cursor:"pointer"}}>🔍</button>
