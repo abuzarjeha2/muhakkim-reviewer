@@ -129,6 +129,8 @@
                         <button onclick="showModule('cx')" class="h-12 bg-slate-800 hover:bg-slate-700 rounded-2xl flex items-center justify-center gap-x-2">تحليل رضا العملاء</button>
                     </div>
                 </div>
+
+                <div id="command-result" class="hidden ai-response mt-6 bg-slate-900 border border-slate-700 rounded-3xl p-6 leading-8"></div>
             </div>
 
             <!-- DIGITAL TWIN -->
@@ -156,6 +158,7 @@
                     <div class="mt-4 text-sm">الرؤية: أن نكون الجهة الرائدة إقليمياً في تقديم خدمات صحية متكاملة ومبتكرة.</div>
                     <div class="mt-2">نسبة التنفيذ الحالية: <span class="font-bold text-emerald-400">87%</span></div>
                     <button onclick="generatePlan()" class="mt-4 px-6 h-11 bg-violet-600 hover:bg-violet-500 rounded-2xl font-bold">إعادة توليد الخطة بالكامل بالذكاء الاصطناعي</button>
+                    <div id="plan-result" class="hidden ai-response mt-6 p-5 bg-slate-800 rounded-2xl leading-8"></div>
                 </div>
             </div>
 
@@ -177,6 +180,7 @@
                     </div>
                 </div>
                 <button onclick="analyzeCX()" class="mt-6 px-6 h-11 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-bold">تشغيل تحليل تجربة العميل الكامل</button>
+                <div id="cx-result" class="hidden ai-response mt-6 p-5 bg-slate-800 rounded-2xl leading-8"></div>
             </div>
 
             <!-- AI AGENTS -->
@@ -187,6 +191,7 @@
                     <span>تشغيل الفريق الكامل على مشكلة استراتيجية</span>
                 </button>
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="agent-grid"></div>
+                <div id="agents-result" class="hidden ai-response mt-6 p-5 bg-slate-800 rounded-2xl leading-8"></div>
             </div>
 
             <!-- AI LAB -->
@@ -196,6 +201,7 @@
                     <div class="font-bold mb-3">أنشئ وكيلك الخاص</div>
                     <input id="lab-agent-name" type="text" placeholder="اسم الوكيل" class="w-full bg-slate-800 border border-slate-600 rounded-2xl px-4 py-3 mb-3">
                     <button onclick="createAgent()" class="w-full h-12 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-bold">إنشاء وتدريب الوكيل</button>
+                    <div id="lab-result" class="hidden ai-response mt-6 p-5 bg-slate-800 rounded-2xl leading-8"></div>
                 </div>
             </div>
 
@@ -203,6 +209,27 @@
     </div>
 
     <script>
+        /* ===== Real AI wiring ===== */
+        async function callAI(systemPrompt, userContent, maxTokens){
+          var body={model:"claude-sonnet-4-6",max_tokens:maxTokens||1500,system:systemPrompt,messages:[{role:"user",content:userContent}]};
+          var r;
+          try{ r=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); }
+          catch(e){ throw new Error("تعذّر الاتصال بالخادم."); }
+          if(!r.ok) throw new Error("تعذّر الاتصال بالذكاء الاصطناعي (رمز "+r.status+").");
+          return extractAIText(await r.json());
+        }
+        function extractAIText(d){ if(!d||!d.content) return ""; return d.content.map(function(b){return b.type==="text"?b.text:"";}).filter(Boolean).join("\n"); }
+        function aiMarkdown(t){
+          if(!t) return "";
+          var h=t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+          h=h.replace(/^#{2,3} (.*)$/gm,'<div style="font-weight:800;margin:.7em 0 .3em">$1</div>');
+          h=h.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+          h=h.replace(/^\s*[-*\u2022] (.*)$/gm,'<li>$1</li>');
+          h=h.replace(/(<li>[\s\S]*?<\/li>)/g,'<ul style="list-style:disc;padding-right:1.2em;margin:.3em 0">$1</ul>');
+          h=h.replace(/\n{2,}/g,'<br><br>').replace(/\n/g,'<br>');
+          return h;
+        }
+
         function showModule(module) {
             document.querySelectorAll('[id^="module-"]').forEach(el => el.classList.add('hidden'));
             document.getElementById('module-' + module).classList.remove('hidden');
@@ -217,38 +244,64 @@
             if (module === 'agents') initAgentGrid();
         }
 
-        function runUltimateAnalysis() {
-            showToast("جاري تشغيل التحليل الشامل باستخدام 20+ وكيل ذكي...");
-            setTimeout(() => {
-                alert("تم إكمال التحليل الشامل!\n\nالنتائج:\n• تجربة العميل: 87.4\n• تنفيذ الاستراتيجية: 87%\n• دقة التوأم الرقمي: 96.4%\n• 4 مخاطر حرجة\n• توصيات جاهزة للتنفيذ الفوري");
-            }, 2200);
-        }
-
-        function runWhatIf(type) {
-            const box = document.getElementById('twin-result');
+        function aiLoading(box, msg) {
             box.classList.remove('hidden');
-            
-            let html = "";
-            if (type === 'staff') {
-                html = `<strong>زيادة الموظفين 20%:</strong><br>رضا العملاء +7.4 | زمن الخدمة -22% | التكلفة +18%<br><span class="text-emerald-400">التوصية: تنفيذ مع تدريب مكثف لمدة 90 يوم.</span>`;
-            } else if (type === 'budget') {
-                html = `<strong>خفض الميزانية 15%:</strong><br>تحقيق الأهداف -18% | رضا الموظفين -11%<br><span class="text-red-400">تحذير: تجنب الخفض في بنود الجودة والتدريب.</span>`;
-            } else if (type === 'ai') {
-                html = `<strong>إطلاق مبادرة الذكاء الاصطناعي:</strong><br>دقة التشخيص +14% | زمن التشخيص -37% | التكلفة -19%<br><span class="text-emerald-400">فرصة استراتيجية ممتازة.</span>`;
-            } else {
-                html = `<strong>تسريع التحول الرقمي 40%:</strong><br>كفاءة العمليات +31% | رضا العملاء +9.2<br><span class="text-emerald-400">موصى به بشدة.</span>`;
-            }
-            box.innerHTML = html;
+            box.innerHTML = `<div class="flex items-center gap-x-3 text-slate-300"><i class="fa-solid fa-spinner fa-spin text-fuchsia-400"></i><span>${msg}</span></div>`;
+        }
+        function aiError(box, e) {
+            box.classList.remove('hidden');
+            box.innerHTML = `<div class="text-red-400">${(e && e.message) ? e.message : 'تعذّر إكمال الطلب.'}</div>`;
         }
 
-        function generatePlan() {
-            showToast("جاري توليد الخطة الاستراتيجية الكاملة...");
-            setTimeout(() => alert("تم إنشاء الخطة الاستراتيجية 2026-2030 بنجاح."), 1400);
+        async function runUltimateAnalysis() {
+            const box = document.getElementById('command-result');
+            aiLoading(box, "جارٍ تشغيل التحليل الشامل بالذكاء الاصطناعي…");
+            try {
+                const sys = "أنت رئيس مكتب تحليل مؤسسي ذكي في وزارة الصحة. تقدّم تحليلاً تنفيذياً شاملاً يدمج تجربة العميل والتخطيط الاستراتيجي وإدارة المخاطر والتوأم الرقمي. اكتب بالعربية الفصحى بأسلوب لوحة قيادة تنفيذية موجزة منظمة بعناوين ونقاط.";
+                const user = "أجرِ تحليلاً مؤسسياً شاملاً اعتماداً على المؤشرات الحالية: رضا العملاء (CSAT) 87.4، تنفيذ الاستراتيجية 87% (41 مبادرة، 12 هدفاً)، دقة التوأم الرقمي 96.4%، 4 مخاطر حرجة. قدّم: ملخصاً تنفيذياً، أبرز نقاط القوة، أهم المخاطر الحرجة، وتوصيات قابلة للتنفيذ الفوري عبر تجربة العميل والاستراتيجية والمخاطر والتوأم الرقمي.";
+                const out = await callAI(sys, user, 1800);
+                box.innerHTML = aiMarkdown(out);
+            } catch (e) { aiError(box, e); }
         }
 
-        function analyzeCX() {
-            showToast("جاري تحليل تجربة العملاء...");
-            setTimeout(() => alert("تحليل تجربة العملاء مكتمل.\n\nأبرز النتائج:\n• 3 نقاط احتكاك رئيسية\n• زمن الانتظار هو السبب الأول\n• توصية: تفعيل وكيل تجربة العميل"), 1500);
+        async function runWhatIf(type) {
+            const box = document.getElementById('twin-result');
+            const scenarios = {
+                staff: "زيادة عدد الموظفين بنسبة 20%",
+                budget: "خفض الميزانية بنسبة 15%",
+                ai: "إطلاق مبادرة الذكاء الاصطناعي",
+                digital: "تسريع التحول الرقمي بنسبة 40%"
+            };
+            const scenario = scenarios[type] || "تسريع التحول الرقمي بنسبة 40%";
+            aiLoading(box, "جارٍ محاكاة السيناريو بالتوأم الرقمي…");
+            try {
+                const sys = "أنت محرّك توأم رقمي لمؤسسة صحية حكومية. تُجري محاكاة \"ماذا لو؟\" وتقدّر تأثير السيناريو على: زمن الخدمة، التكلفة، رضا العملاء، ومستوى المخاطر، مع أرقام تقديرية معقولة (نسب مئوية) وتوصية نهائية واضحة. اكتب بالعربية الفصحى بإيجاز ونقاط.";
+                const user = `حلّل السيناريو التالي وأظهر تأثيره المتوقع على زمن الخدمة والتكلفة ورضا العملاء والمخاطر مع تقديرات رقمية وتوصية نهائية: «${scenario}». الوضع الحالي: رضا العملاء 87.4، تنفيذ الاستراتيجية 87%، دقة التوأم الرقمي 96.4%، 4 مخاطر حرجة.`;
+                const out = await callAI(sys, user, 1200);
+                box.innerHTML = `<div class="font-bold mb-2 text-fuchsia-300">${scenario}</div>` + aiMarkdown(out);
+            } catch (e) { aiError(box, e); }
+        }
+
+        async function generatePlan() {
+            const box = document.getElementById('plan-result');
+            aiLoading(box, "جارٍ توليد الخطة الاستراتيجية بالذكاء الاصطناعي…");
+            try {
+                const sys = "أنت مستشار تخطيط استراتيجي أول لوزارة الصحة. تصيغ خطة استراتيجية متكاملة للأعوام 2026–2030 تشمل الرؤية والأهداف الاستراتيجية والمبادرات ومؤشرات الأداء الرئيسية. اكتب بالعربية الفصحى بأسلوب رسمي منظم بعناوين ونقاط.";
+                const user = "أعد توليد الخطة الاستراتيجية الكاملة 2026–2030 لوزارة الصحة. الرؤية الحالية: أن نكون الجهة الرائدة إقليمياً في تقديم خدمات صحية متكاملة ومبتكرة. نسبة التنفيذ الحالية 87%. قدّم: الرؤية، الأهداف الاستراتيجية، المبادرات الرئيسية، ومؤشرات الأداء (KPIs) لكل هدف.";
+                const out = await callAI(sys, user, 1800);
+                box.innerHTML = aiMarkdown(out);
+            } catch (e) { aiError(box, e); }
+        }
+
+        async function analyzeCX() {
+            const box = document.getElementById('cx-result');
+            aiLoading(box, "جارٍ تحليل تجربة العميل بالذكاء الاصطناعي…");
+            try {
+                const sys = "أنت خبير تحليل تجربة العميل (CX) في وزارة الصحة. تقدّم تحليلاً معمّقاً لنقاط الاحتكاك ورحلة العميل وتوصيات تحسين. اكتب بالعربية الفصحى بأسلوب منظم بعناوين ونقاط.";
+                const user = "حلّل تجربة العميل الحالية اعتماداً على المؤشرات: CSAT 87.4، NPS 72، معدل الاحتفاظ 94.8%. قدّم: أبرز نقاط الاحتكاك، الأسباب الجذرية، الفرص، وتوصيات عملية لتحسين رضا العملاء.";
+                const out = await callAI(sys, user, 1500);
+                box.innerHTML = aiMarkdown(out);
+            } catch (e) { aiError(box, e); }
         }
 
         function initAgentGrid() {
@@ -257,27 +310,47 @@
             const agents = ["وكيل التخطيط", "وكيل المخاطر", "وكيل تجربة العميل", "وكيل التحليل المالي", "وكيل الجودة", "وكيل التنبؤ"];
             agents.forEach(a => {
                 const div = document.createElement('div');
-                div.className = `p-4 bg-slate-800 rounded-2xl text-sm flex items-center gap-x-2`;
+                div.className = `p-4 bg-slate-800 hover:bg-slate-700 rounded-2xl text-sm flex items-center gap-x-2 cursor-pointer transition`;
                 div.innerHTML = `<i class="fa-solid fa-robot text-violet-400"></i> <span>${a}</span>`;
+                div.onclick = () => runAgent(a);
                 container.appendChild(div);
             });
         }
 
-        function runAgentTeam() {
-            showToast("جاري تشغيل فريق الوكلاء المتعاونين...");
-            setTimeout(() => {
-                alert("تم تعاون 6 وكلاء ذكيين وإنتاج تقرير متكامل يحتوي على خطة + مبادرات + مخاطر + عرض تنفيذي.");
-            }, 1800);
+        async function runAgent(name) {
+            const box = document.getElementById('agents-result');
+            aiLoading(box, `جارٍ تشغيل «${name}»…`);
+            try {
+                const sys = `أنت «${name}»، وكيل ذكاء اصطناعي متخصص ضمن نظام تشغيل مؤسسي لوزارة الصحة. قدّم تحليل تخصصك ومخرجاتك العملية وفق دورك. اكتب بالعربية الفصحى بإيجاز ونقاط منظمة.`;
+                const user = `بصفتك «${name}»، نفّذ مهمتك التخصصية على الوضع المؤسسي الحالي: رضا العملاء 87.4، تنفيذ الاستراتيجية 87%، دقة التوأم الرقمي 96.4%، 4 مخاطر حرجة. قدّم تحليلك وتوصياتك القابلة للتنفيذ ضمن نطاق تخصصك.`;
+                const out = await callAI(sys, user, 1400);
+                box.innerHTML = `<div class="font-bold mb-2 text-violet-300"><i class="fa-solid fa-robot"></i> ${name}</div>` + aiMarkdown(out);
+            } catch (e) { aiError(box, e); }
         }
 
-        function createAgent() {
+        async function runAgentTeam() {
+            const box = document.getElementById('agents-result');
+            aiLoading(box, "جارٍ تشغيل فريق الوكلاء المتعاونين…");
+            try {
+                const sys = "أنت منسّق فريق من الوكلاء الذكيين المتخصصين (التخطيط، المخاطر، تجربة العميل، التحليل المالي، الجودة، التنبؤ) في وزارة الصحة. أدِر تعاونهم وأنتج تقريراً موحّداً متكاملاً. اكتب بالعربية الفصحى منظماً بعناوين تمثّل مساهمة كل وكيل ثم خلاصة تنفيذية.";
+                const user = "شغّل الفريق الكامل على مشكلة استراتيجية: تحسين الأداء المؤسسي لوزارة الصحة مع الوضع الحالي (رضا العملاء 87.4، تنفيذ الاستراتيجية 87%، دقة التوأم الرقمي 96.4%، 4 مخاطر حرجة). أنتج تقريراً موحّداً يتضمن مساهمة كل وكيل، خطة، مبادرات، مخاطر، وعرضاً تنفيذياً ختامياً.";
+                const out = await callAI(sys, user, 2000);
+                box.innerHTML = aiMarkdown(out);
+            } catch (e) { aiError(box, e); }
+        }
+
+        async function createAgent() {
             const name = document.getElementById('lab-agent-name').value.trim();
-            if (!name) return alert("الرجاء إدخال اسم الوكيل");
-            showToast(`جاري إنشاء وتدريب الوكيل "${name}"...`);
-            setTimeout(() => {
-                showToast(`تم إنشاء الوكيل "${name}" بنجاح!`);
+            const box = document.getElementById('lab-result');
+            if (!name) { aiError(box, { message: "الرجاء إدخال اسم الوكيل" }); return; }
+            aiLoading(box, `جارٍ إنشاء وتدريب الوكيل «${name}»…`);
+            try {
+                const sys = "أنت مهندس وكلاء ذكاء اصطناعي. تصمّم وتدرّب وكيلاً جديداً وتحدّد دوره وقدراته وأدواته وتقدّم مثالاً على مخرجاته. اكتب بالعربية الفصحى منظماً بعناوين ونقاط.";
+                const user = `صمّم ودرّب وكيلاً ذكياً باسم «${name}» لاستخدامه ضمن نظام تشغيل وزارة الصحة. حدّد: الدور والغرض، القدرات الأساسية، الأدوات والبيانات المطلوبة، ومثالاً مختصراً على مخرجاته العملية.`;
+                const out = await callAI(sys, user, 1500);
+                box.innerHTML = `<div class="font-bold mb-2 text-emerald-300"><i class="fa-solid fa-robot"></i> ${name}</div>` + aiMarkdown(out);
                 document.getElementById('lab-agent-name').value = '';
-            }, 1600);
+            } catch (e) { aiError(box, e); }
         }
 
         function showToast(msg) {

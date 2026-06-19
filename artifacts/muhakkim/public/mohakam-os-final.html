@@ -119,6 +119,8 @@
                         <div class="text-6xl font-extrabold mt-1">127</div>
                     </div>
                 </div>
+
+                <div id="fullsystem-result" class="hidden p-6 bg-slate-900 border border-slate-700 rounded-3xl text-sm leading-relaxed"></div>
             </div>
 
             <!-- DIGITAL TWIN -->
@@ -142,6 +144,7 @@
                 <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6">
                     <div class="font-bold">الخطة الاستراتيجية 2026-2030 — نسبة التنفيذ: 87%</div>
                     <button onclick="generateStrategicPlan()" class="mt-4 px-6 h-11 bg-violet-600 hover:bg-violet-500 rounded-2xl font-bold">إعادة توليد الخطة بالذكاء الاصطناعي</button>
+                    <div id="strategy-result" class="hidden mt-5 p-5 bg-slate-800 rounded-2xl text-sm leading-relaxed"></div>
                 </div>
             </div>
 
@@ -154,6 +157,7 @@
                     <div class="bg-slate-900 border border-slate-700 p-5 rounded-3xl"><div class="text-violet-400">معدل الاحتفاظ</div><div class="text-5xl font-extrabold">94.8%</div></div>
                 </div>
                 <button onclick="analyzeCX()" class="mt-6 px-6 h-11 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-bold">تشغيل تحليل تجربة العميل</button>
+                <div id="cx-result" class="hidden mt-6 p-5 bg-slate-900 border border-slate-700 rounded-3xl text-sm leading-relaxed"></div>
             </div>
 
             <!-- AGENTS (120+) -->
@@ -165,6 +169,7 @@
                         <i class="fa-solid fa-users"></i>
                         <span>تشغيل تعاون كامل بين الوكلاء</span>
                     </button>
+                    <div id="orchestration-result" class="hidden mt-5 p-5 bg-slate-800 rounded-2xl text-sm leading-relaxed"></div>
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3" id="agents-grid">
@@ -179,6 +184,7 @@
                     <div class="font-bold mb-3">أنشئ وكيلك الخاص</div>
                     <input id="lab-agent-name" type="text" placeholder="اسم الوكيل" class="w-full bg-slate-800 border border-slate-600 rounded-2xl px-4 py-3 mb-3">
                     <button onclick="createCustomAgent()" class="w-full h-12 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-bold">إنشاء وتدريب الوكيل</button>
+                    <div id="lab-result" class="hidden mt-4 p-5 bg-slate-800 rounded-2xl text-sm leading-relaxed"></div>
                 </div>
             </div>
 
@@ -186,6 +192,31 @@
     </div>
 
     <script>
+        /* ===== Real AI wiring ===== */
+        async function callAI(systemPrompt, userContent, maxTokens){
+          var body={model:"claude-sonnet-4-6",max_tokens:maxTokens||1500,system:systemPrompt,messages:[{role:"user",content:userContent}]};
+          var r;
+          try{ r=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); }
+          catch(e){ throw new Error("تعذّر الاتصال بالخادم."); }
+          if(!r.ok) throw new Error("تعذّر الاتصال بالذكاء الاصطناعي (رمز "+r.status+").");
+          return extractAIText(await r.json());
+        }
+        function extractAIText(d){ if(!d||!d.content) return ""; return d.content.map(function(b){return b.type==="text"?b.text:"";}).filter(Boolean).join("\n"); }
+        function aiMarkdown(t){
+          if(!t) return "";
+          var h=t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+          h=h.replace(/^#{2,3} (.*)$/gm,'<div style="font-weight:800;margin:.7em 0 .3em">$1</div>');
+          h=h.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+          h=h.replace(/^\s*[-*\u2022] (.*)$/gm,'<li>$1</li>');
+          h=h.replace(/(<li>[\s\S]*?<\/li>)/g,'<ul style="list-style:disc;padding-right:1.2em;margin:.3em 0">$1</ul>');
+          h=h.replace(/\n{2,}/g,'<br><br>').replace(/\n/g,'<br>');
+          return h;
+        }
+        function aiLangName(){ return currentLang === 'en' ? 'English' : 'Arabic'; }
+        function aiLangInstruction(){ return currentLang === 'en' ? 'Respond entirely in fluent professional English.' : 'أجب بالكامل باللغة العربية الفصحى الواضحة.'; }
+        function aiLoadingText(){ return currentLang === 'en' ? 'Running AI analysis…' : 'جارٍ التحليل بالذكاء الاصطناعي…'; }
+        function aiShowLoading(el){ el.classList.remove('hidden'); el.innerHTML = '<div class="flex items-center gap-x-3 text-slate-300"><span class="inline-block w-4 h-4 border-2 border-slate-500 border-t-violet-400 rounded-full animate-spin"></span><span>'+aiLoadingText()+'</span></div>'; }
+
         function showModule(module) {
             document.querySelectorAll('[id^="module-"]').forEach(el => el.classList.add('hidden'));
             document.getElementById('module-' + module).classList.remove('hidden');
@@ -200,34 +231,63 @@
             if (module === 'agents') initAgentsGrid();
         }
 
-        function runFullSystemAnalysis() {
-            showToast("جاري تشغيل التحليل الشامل باستخدام 127 وكيلاً...");
-            setTimeout(() => {
-                alert("تم إكمال التحليل الشامل!\n\nالنتائج الرئيسية:\n• تجربة العميل: 87.4\n• تنفيذ الاستراتيجية: 87%\n• دقة التوأم الرقمي: 96.4%\n• 127 وكيل نشط\n• 4 مخاطر حرجة\n• توصيات جاهزة للتنفيذ");
-            }, 2200);
+        async function runFullSystemAnalysis() {
+            const box = document.getElementById('fullsystem-result');
+            aiShowLoading(box);
+            try {
+                const sys = "أنت نظام تشغيل مؤسسي ذكي (محكم OS) لوزارة الصحة، تنسّق فريقاً من 127 وكيلاً ذكياً متخصصاً في تجربة العميل والتخطيط الاستراتيجي وإدارة المخاطر والتوأم الرقمي. " + aiLangInstruction() + " قدّم تقريراً تنفيذياً موجزاً ومنظّماً بعناوين ونقاط مناسباً للوحة قيادة تنفيذية.";
+                const user = "نفّذ تحليلاً مؤسسياً شاملاً يدمج المؤشرات الحالية:\n- تجربة العميل (CSAT): 87.4\n- تنفيذ الاستراتيجية: 87%\n- دقة التوأم الرقمي: 96.4%\n- الوكلاء النشطون: 127\n\nاعرض: ملخصاً تنفيذياً، أبرز الإنجازات، المخاطر الحرجة (مع تصنيف)، توصيات قابلة للتنفيذ مرتبة حسب الأولوية، والخطوات التالية. " + aiLangInstruction();
+                const out = await callAI(sys, user, 1800);
+                box.innerHTML = aiMarkdown(out);
+            } catch (e) {
+                box.innerHTML = '<span class="text-red-400">' + e.message + '</span>';
+            }
         }
 
-        function runWhatIf(type) {
+        async function runWhatIf(type) {
             const box = document.getElementById('twin-result');
-            box.classList.remove('hidden');
-            
-            let html = "";
-            if (type === 'staff') html = `<strong>زيادة الموظفين 20%:</strong><br>رضا العملاء +7.4 | زمن الخدمة -22%<br><span class="text-emerald-400">التوصية: تنفيذ مع تدريب مكثف.</span>`;
-            else if (type === 'budget') html = `<strong>خفض الميزانية 15%:</strong><br>تحقيق الأهداف -18%<br><span class="text-red-400">تحذير: تجنب الخفض في الجودة.</span>`;
-            else if (type === 'ai') html = `<strong>إطلاق مبادرة الذكاء الاصطناعي:</strong><br>دقة التشخيص +14% | زمن التشخيص -37%<br><span class="text-emerald-400">فرصة استراتيجية ممتازة.</span>`;
-            else html = `<strong>تسريع التحول الرقمي 40%:</strong><br>كفاءة العمليات +31%<br><span class="text-emerald-400">موصى به بشدة.</span>`;
-            
-            box.innerHTML = html;
+            const scenarios = {
+                staff: "زيادة عدد الموظفين بنسبة 20%",
+                budget: "خفض الميزانية بنسبة 15%",
+                ai: "إطلاق مبادرة الذكاء الاصطناعي",
+                digital: "تسريع التحول الرقمي بنسبة 40%"
+            };
+            const scenario = scenarios[type] || scenarios.digital;
+            aiShowLoading(box);
+            try {
+                const sys = "أنت محرك توأم رقمي لوزارة الصحة يجري محاكاة سيناريوهات \"ماذا لو؟\". " + aiLangInstruction() + " قدّم توقعاً كميّاً مختصراً ومنظّماً بنقاط واضحة.";
+                const user = "حلّل أثر السيناريو التالي على المؤسسة: \"" + scenario + "\".\nقدّر الأثر المتوقع على: زمن الخدمة، التكلفة التشغيلية، رضا العملاء (CSAT)، ومستوى المخاطر. اذكر نسباً تقديرية، ثم قدّم توصية نهائية واضحة (تنفيذ/حذر/تجنب) مع مبرر موجز. " + aiLangInstruction();
+                const out = await callAI(sys, user, 1200);
+                box.innerHTML = aiMarkdown(out);
+            } catch (e) {
+                box.innerHTML = '<span class="text-red-400">' + e.message + '</span>';
+            }
         }
 
-        function generateStrategicPlan() {
-            showToast("جاري توليد الخطة الاستراتيجية...");
-            setTimeout(() => alert("تم إنشاء الخطة الاستراتيجية 2026-2030 بنجاح."), 1400);
+        async function generateStrategicPlan() {
+            const box = document.getElementById('strategy-result');
+            aiShowLoading(box);
+            try {
+                const sys = "أنت مستشار تخطيط استراتيجي أول لوزارة الصحة. " + aiLangInstruction() + " صُغ خطة استراتيجية واضحة ومنظّمة بعناوين ونقاط مناسبة للقيادة التنفيذية.";
+                const user = "ولّد خطة استراتيجية متكاملة للفترة 2026-2030 لوزارة الصحة تتضمن: الرؤية، الرسالة، الأهداف الاستراتيجية، المبادرات الرئيسية لكل هدف، مؤشرات الأداء (KPIs) المقترحة، والجدول الزمني العام. نسبة التنفيذ الحالية للخطة القائمة 87%. " + aiLangInstruction();
+                const out = await callAI(sys, user, 2000);
+                box.innerHTML = aiMarkdown(out);
+            } catch (e) {
+                box.innerHTML = '<span class="text-red-400">' + e.message + '</span>';
+            }
         }
 
-        function analyzeCX() {
-            showToast("جاري تحليل تجربة العملاء...");
-            setTimeout(() => alert("تحليل تجربة العملاء مكتمل.\n\nأبرز النتائج:\n• 3 نقاط احتكاك رئيسية\n• زمن الانتظار هو السبب الأول"), 1500);
+        async function analyzeCX() {
+            const box = document.getElementById('cx-result');
+            aiShowLoading(box);
+            try {
+                const sys = "أنت محلل خبير في تجربة العميل (CX) لوزارة الصحة. " + aiLangInstruction() + " قدّم تحليلاً موجزاً ومنظّماً بعناوين ونقاط.";
+                const user = "حلّل تجربة العميل بناءً على المؤشرات الحالية:\n- CSAT: 87.4\n- NPS: 72\n- معدل الاحتفاظ: 94.8%\n\nحدّد: نقاط الاحتكاك الرئيسية في رحلة العميل، الأسباب الجذرية، الفرص المتاحة للتحسين، وتوصيات عملية مرتبة حسب الأولوية. " + aiLangInstruction();
+                const out = await callAI(sys, user, 1500);
+                box.innerHTML = aiMarkdown(out);
+            } catch (e) {
+                box.innerHTML = '<span class="text-red-400">' + e.message + '</span>';
+            }
         }
 
         function initAgentsGrid() {
@@ -253,13 +313,14 @@
 
         function showAgentModal(name) {
             const modal = document.createElement('div');
-            modal.className = `fixed inset-0 bg-black/70 z-[100] flex items-center justify-center`;
+            modal.className = `fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4`;
             modal.innerHTML = `
-                <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-md p-6">
+                <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-lg p-6 max-h-[85vh] overflow-y-auto">
                     <div class="font-bold text-xl mb-2">${name}</div>
                     <div class="text-emerald-400 text-sm mb-4">نشط • يعمل ضمن فريق M-CEO</div>
+                    <div id="agent-modal-result" class="hidden mb-4 p-4 bg-slate-800 rounded-2xl text-sm leading-relaxed"></div>
                     <div class="flex gap-x-3">
-                        <button onclick="activateAgent('${name}', this)" class="flex-1 h-11 bg-violet-600 hover:bg-violet-500 rounded-2xl font-bold">تفعيل الوكيل</button>
+                        <button onclick="activateAgent('${name.replace(/'/g, "\\'")}', this)" class="flex-1 h-11 bg-violet-600 hover:bg-violet-500 rounded-2xl font-bold">تفعيل الوكيل</button>
                         <button onclick="this.closest('.fixed').remove()" class="flex-1 h-11 bg-slate-700 hover:bg-slate-600 rounded-2xl font-bold">إغلاق</button>
                     </div>
                 </div>
@@ -267,29 +328,49 @@
             document.body.appendChild(modal);
         }
 
-        function activateAgent(name, btn) {
-            btn.outerHTML = `<div class="text-center py-2 text-emerald-400">تم تفعيل ${name}</div>`;
-            setTimeout(() => {
-                document.querySelector('.fixed').remove();
-                showToast(`الوكيل "${name}" نشط الآن`);
-            }, 1000);
+        async function activateAgent(name, btn) {
+            const box = document.getElementById('agent-modal-result');
+            btn.disabled = true;
+            if (box) aiShowLoading(box);
+            try {
+                const sys = "أنت وكيل ذكي متخصص باسم \"" + name + "\" ضمن منظومة محكم OS لوزارة الصحة، تعمل كجزء من فريق يقوده الرئيس التنفيذي الرقمي (M-CEO). " + aiLangInstruction() + " قدّم مخرجاً عملياً موجزاً ومنظّماً بنقاط.";
+                const user = "بصفتك الوكيل \"" + name + "\"، نفّذ مهمتك المتخصصة الآن. اشرح بإيجاز: نطاق عملك، التحليل الذي تقدّمه في مجالك، أبرز ملاحظاتك أو توصياتك العملية لوزارة الصحة بناءً على دورك. " + aiLangInstruction();
+                const out = await callAI(sys, user, 1300);
+                if (box) box.innerHTML = aiMarkdown(out);
+            } catch (e) {
+                if (box) box.innerHTML = '<span class="text-red-400">' + e.message + '</span>';
+            } finally {
+                btn.disabled = false;
+            }
         }
 
-        function runAgentOrchestration() {
-            showToast("جاري تشغيل التعاون بين الوكلاء...");
-            setTimeout(() => {
-                alert("تم تعاون 20 وكيلاً بنجاح وإنتاج تقرير متكامل.");
-            }, 1800);
+        async function runAgentOrchestration() {
+            const box = document.getElementById('orchestration-result');
+            aiShowLoading(box);
+            try {
+                const sys = "أنت الرئيس التنفيذي الرقمي (M-CEO) في منظومة محكم OS لوزارة الصحة، تنسّق تعاوناً بين فريق من الوكلاء المتخصصين (الاستراتيجية، تجربة العميل، إدارة المخاطر، التحليل المالي، الجودة، الأمن السيبراني). " + aiLangInstruction() + " اعرض تقريراً موحّداً منظّماً بعناوين ونقاط.";
+                const user = "شغّل تعاوناً كاملاً بين الوكلاء لإنتاج تقرير مؤسسي موحّد. لكل وكيل رئيسي اعرض إسهامه المختصر، ثم قدّم خلاصة متكاملة وتوصيات منسّقة ذات أولوية لوزارة الصحة. " + aiLangInstruction();
+                const out = await callAI(sys, user, 2000);
+                box.innerHTML = aiMarkdown(out);
+            } catch (e) {
+                box.innerHTML = '<span class="text-red-400">' + e.message + '</span>';
+            }
         }
 
-        function createCustomAgent() {
+        async function createCustomAgent() {
             const name = document.getElementById('lab-agent-name').value.trim();
-            if (!name) return alert("الرجاء إدخال اسم الوكيل");
-            showToast(`جاري إنشاء الوكيل "${name}"...`);
-            setTimeout(() => {
-                showToast(`تم إنشاء الوكيل "${name}" بنجاح!`);
+            const box = document.getElementById('lab-result');
+            if (!name) { aiShowLoading(box); box.innerHTML = '<span class="text-amber-400">الرجاء إدخال اسم الوكيل</span>'; return; }
+            aiShowLoading(box);
+            try {
+                const sys = "أنت مهندس وكلاء ذكاء اصطناعي في مختبر محكم OS لوزارة الصحة. " + aiLangInstruction() + " صمّم الوكيل بشكل منظّم بعناوين ونقاط.";
+                const user = "صمّم ودرّب وكيلاً ذكياً جديداً اسمه \"" + name + "\". اعرض: الدور والغرض، القدرات الأساسية، مصادر البيانات والأدوات التي يستخدمها، سيناريو استخدام نموذجي، ومثال على مخرج عملي للوكيل. " + aiLangInstruction();
+                const out = await callAI(sys, user, 1500);
+                box.innerHTML = aiMarkdown(out);
                 document.getElementById('lab-agent-name').value = '';
-            }, 1500);
+            } catch (e) {
+                box.innerHTML = '<span class="text-red-400">' + e.message + '</span>';
+            }
         }
 
         function showToast(msg) {

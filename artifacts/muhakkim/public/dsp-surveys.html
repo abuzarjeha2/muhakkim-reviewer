@@ -493,6 +493,15 @@
                     
                     <!-- TAB 0: BUILDER -->
                     <div id="demo-tab-content-0" class="p-6">
+                        <div class="mb-6 p-4 border border-blue-100 bg-gradient-to-r from-blue-600/5 to-violet-600/5 rounded-2xl">
+                            <div class="flex items-center gap-x-2 mb-2 font-bold text-sm"><i class="fa-solid fa-wand-magic-sparkles text-blue-600"></i> مولّد الاستبيانات بالذكاء الاصطناعي</div>
+                            <div class="flex flex-col md:flex-row gap-2">
+                                <input id="ai-survey-topic" type="text" placeholder="صف موضوع أو هدف الاستبيان (مثال: قياس رضا المرضى عن خدمات الطوارئ)" class="flex-1 border border-slate-300 focus:border-blue-500 outline-none px-4 py-2.5 rounded-2xl text-sm">
+                                <button onclick="generateSurveyFromAI()" class="flex items-center justify-center gap-x-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-violet-600 text-white font-semibold rounded-2xl text-sm whitespace-nowrap"><i class="fa-solid fa-magic"></i><span>توليد الاستبيان</span></button>
+                                <button onclick="translateSurvey()" class="flex items-center justify-center gap-x-2 px-5 py-2.5 border border-slate-300 hover:bg-slate-50 font-semibold rounded-2xl text-sm whitespace-nowrap"><i class="fa-solid fa-language"></i><span>ترجمة للإنجليزية</span></button>
+                            </div>
+                            <div id="ai-survey-result" class="hidden mt-3 text-sm bg-white border border-slate-200 rounded-2xl p-4 max-h-[260px] overflow-auto leading-relaxed"></div>
+                        </div>
                         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                             
                             <!-- Survey Info -->
@@ -690,6 +699,14 @@
                             </div>
                         </div>
                         
+                        <div class="mt-4 bg-white border border-slate-200 rounded-2xl p-5">
+                            <div class="font-bold mb-3 flex items-center justify-between">
+                                <span class="flex items-center gap-x-2"><i class="fa-solid fa-brain text-violet-600"></i> التحليل الذكي بالذكاء الاصطناعي</span>
+                                <button onclick="runSmartAnalysis()" class="text-xs px-3 py-1 bg-gradient-to-r from-blue-600 to-violet-600 text-white rounded-2xl whitespace-nowrap">تشغيل التحليل الذكي</button>
+                            </div>
+                            <div id="smart-analysis-result" class="text-sm text-slate-600 leading-relaxed">انقر على "تشغيل التحليل الذكي" للحصول على رؤى وارتباطات وتوصيات مدعومة بالذكاء الاصطناعي حول ردودك.</div>
+                        </div>
+
                         <div class="mt-4 p-3 bg-gradient-to-r from-blue-600/5 to-violet-600/5 border border-blue-100 rounded-2xl text-xs flex items-start gap-x-3">
                             <i class="fa-solid fa-info-circle text-blue-600 mt-0.5"></i>
                             <div>
@@ -949,7 +966,119 @@
         let questions = [];
         let responses = [];
         let currentChart = null;
-        
+
+        /* ===== Real AI wiring ===== */
+        async function callAI(systemPrompt, userContent, maxTokens){
+          var body={model:"claude-sonnet-4-6",max_tokens:maxTokens||1500,system:systemPrompt,messages:[{role:"user",content:userContent}]};
+          var r;
+          try{ r=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); }
+          catch(e){ throw new Error("تعذّر الاتصال بالخادم."); }
+          if(!r.ok) throw new Error("تعذّر الاتصال بالذكاء الاصطناعي (رمز "+r.status+").");
+          return extractAIText(await r.json());
+        }
+        function extractAIText(d){ if(!d||!d.content) return ""; return d.content.map(function(b){return b.type==="text"?b.text:"";}).filter(Boolean).join("\n"); }
+        function aiMarkdown(t){
+          if(!t) return "";
+          var h=t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+          h=h.replace(/^#{2,3} (.*)$/gm,'<div style="font-weight:800;margin:.7em 0 .3em">$1</div>');
+          h=h.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+          h=h.replace(/^\s*[-*\u2022] (.*)$/gm,'<li>$1</li>');
+          h=h.replace(/(<li>[\s\S]*?<\/li>)/g,'<ul style="list-style:disc;padding-right:1.2em;margin:.3em 0">$1</ul>');
+          h=h.replace(/\n{2,}/g,'<br><br>').replace(/\n/g,'<br>');
+          return h;
+        }
+        function parseAIJson(raw){
+          try{
+            var clean=String(raw).replace(/```json/gi,"").replace(/```/g,"").trim();
+            var s=clean.indexOf("{"),a=clean.indexOf("[");
+            var start=(a>=0&&(a<s||s<0))?a:s; if(start>=0) clean=clean.slice(start);
+            var endC=clean.lastIndexOf("}"),endB=clean.lastIndexOf("]"); var end=Math.max(endC,endB); if(end>=0) clean=clean.slice(0,end+1);
+            return JSON.parse(clean);
+          }catch(e){ return null; }
+        }
+
+        async function generateSurveyFromAI(){
+          var topic=(document.getElementById('ai-survey-topic').value||'').trim();
+          var box=document.getElementById('ai-survey-result');
+          box.classList.remove('hidden');
+          if(!topic){ box.innerHTML='<span class="text-red-600">يرجى إدخال موضوع أو هدف الاستبيان أولًا.</span>'; return; }
+          box.innerHTML='<span class="text-slate-500"><i class="fa-solid fa-spinner fa-spin"></i> جارٍ توليد الاستبيان بالذكاء الاصطناعي…</span>';
+          var sys='أنت خبير في تصميم الاستبيانات البحثية باللغة العربية الفصحى. صمّم استبيانات احترافية واضحة ومتوازنة. أعد النتيجة بصيغة JSON صالحة فقط دون أي نص إضافي أو Markdown، بالشكل التالي: {"title":"عنوان الاستبيان","description":"وصف موجز","questions":[{"text":"نص السؤال","type":"radio|checkbox|likert|text|textarea|number|dropdown|rating","required":true,"options":["خيار"]}]}. استخدم من 6 إلى 10 أسئلة متنوّعة الأنواع. ضع مصفوفة options للأنواع radio وcheckbox وdropdown وlikert فقط، واتركها فارغة لبقية الأنواع. اكتب كل النصوص بالعربية الفصحى.';
+          var usr='موضوع/هدف الاستبيان: '+topic;
+          try{
+            var raw=await callAI(sys,usr,2500);
+            var data=parseAIJson(raw);
+            if(data&&Array.isArray(data.questions)&&data.questions.length){
+              if(data.title) document.getElementById('survey-title').value=data.title;
+              if(data.description) document.getElementById('survey-desc').value=data.description;
+              var allowed=['text','textarea','radio','checkbox','likert','dropdown','number','rating'];
+              questions=data.questions.map(function(q,i){
+                var t=allowed.indexOf(q.type)>=0?q.type:'text';
+                return {id:Date.now()+i,text:q.text||('سؤال '+(i+1)),type:t,required:q.required!==false,options:Array.isArray(q.options)?q.options:[]};
+              });
+              renderQuestionsList();
+              updateQuestionCount();
+              box.innerHTML='<span class="text-emerald-600"><i class="fa-solid fa-check-circle"></i> تم توليد '+questions.length+' سؤالًا وإدراجها في المُنشئ أعلاه.</span>';
+            } else {
+              box.innerHTML=aiMarkdown(raw);
+            }
+          }catch(e){
+            box.innerHTML='<span class="text-red-600">'+(e.message||'تعذّر توليد الاستبيان.')+'</span>';
+          }
+        }
+
+        function summarizeResponsesForAI(){
+          var lines=['إجمالي الردود: '+responses.length];
+          questions.forEach(function(q){
+            var vals=responses.map(function(r){return r.answers[q.text];}).filter(function(v){return v!==undefined&&v!==null&&v!=='';});
+            if(!vals.length){ lines.push('• '+q.text+' ('+q.type+'): لا توجد إجابات'); return; }
+            if(q.type==='number'||q.type==='likert'||q.type==='rating'){
+              var nums=vals.map(parseFloat).filter(function(n){return !isNaN(n);});
+              if(nums.length){
+                var avg=nums.reduce(function(a,b){return a+b;},0)/nums.length;
+                lines.push('• '+q.text+' ('+q.type+'): المتوسط='+avg.toFixed(2)+'، عدد الإجابات='+nums.length);
+                return;
+              }
+            }
+            var counts={};
+            vals.forEach(function(v){ String(v).split(',').map(function(x){return x.trim();}).filter(Boolean).forEach(function(c){ counts[c]=(counts[c]||0)+1; }); });
+            var parts=Object.keys(counts).map(function(k){return k+'='+counts[k];});
+            lines.push('• '+q.text+' ('+q.type+'): '+parts.join('، '));
+          });
+          return lines.join('\n');
+        }
+
+        async function runSmartAnalysis(){
+          var box=document.getElementById('smart-analysis-result');
+          if(responses.length===0){ box.innerHTML='<span class="text-amber-600">لا توجد ردود لتحليلها. ولّد ردودًا تجريبية أو أرسل ردودًا أولًا.</span>'; return; }
+          box.innerHTML='<span class="text-slate-500"><i class="fa-solid fa-spinner fa-spin"></i> جارٍ التحليل الذكي بالذكاء الاصطناعي…</span>';
+          var summary=summarizeResponsesForAI();
+          var sys='أنت محلّل بيانات وإحصائي خبير. حلّل ملخّص ردود الاستبيان وقدّم رؤى واضحة، وأنماطًا بارزة، وارتباطات محتملة بين المتغيّرات، وتوصيات عملية. اكتب بالعربية الفصحى بصيغة منظّمة بعناوين ونقاط، وبإيجاز مناسب للوحة تنفيذية.';
+          var usr='عنوان الاستبيان: '+(document.getElementById('survey-title').value||'')+'\n\nملخّص البيانات:\n'+summary;
+          try{
+            var txt=await callAI(sys,usr,1800);
+            box.innerHTML=aiMarkdown(txt);
+          }catch(e){
+            box.innerHTML='<span class="text-red-600">'+(e.message||'تعذّر إجراء التحليل.')+'</span>';
+          }
+        }
+
+        async function translateSurvey(){
+          var box=document.getElementById('ai-survey-result');
+          box.classList.remove('hidden');
+          if(questions.length===0){ box.innerHTML='<span class="text-amber-600">لا توجد أسئلة لترجمتها. أضف أسئلة أو ولّد استبيانًا أولًا.</span>'; return; }
+          box.innerHTML='<span class="text-slate-500"><i class="fa-solid fa-spinner fa-spin"></i> جارٍ ترجمة الاستبيان إلى الإنجليزية…</span>';
+          var payload={title:document.getElementById('survey-title').value||'',description:document.getElementById('survey-desc').value||'',questions:questions.map(function(q){return {text:q.text,options:q.options||[]};})};
+          var sys='You are a professional research survey translator. Translate the given Arabic survey into clear, natural English while preserving research terminology and meaning. Keep it well structured.';
+          var usr='Translate the following survey to English and present it nicely (title, description, then a numbered list of questions, each with its translated options):\n\n'+JSON.stringify(payload,null,2);
+          try{
+            var txt=await callAI(sys,usr,2000);
+            box.innerHTML='<div dir="ltr" style="text-align:left">'+aiMarkdown(txt)+'</div>';
+          }catch(e){
+            box.innerHTML='<span class="text-red-600">'+(e.message||'تعذّر ترجمة الاستبيان.')+'</span>';
+          }
+        }
+
         function updateQuestionCount() {
             document.getElementById('question-count').innerText = questions.length;
         }

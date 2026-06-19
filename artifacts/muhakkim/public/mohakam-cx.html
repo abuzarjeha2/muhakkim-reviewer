@@ -439,6 +439,10 @@
                         <div class="text-xs text-slate-400 mt-1">10 أسئلة • 5 دقائق</div>
                     </div>
                 </div>
+
+                <div id="survey-result" class="hidden mt-6 p-6 bg-slate-900 border border-slate-700 rounded-3xl">
+                    <!-- Populated by JS -->
+                </div>
             </div>
 
             <!-- SENTIMENT MODULE -->
@@ -616,6 +620,27 @@
     </div>
 
     <script>
+        /* ===== Real AI wiring ===== */
+        async function callAI(systemPrompt, userContent, maxTokens){
+          var body={model:"claude-sonnet-4-6",max_tokens:maxTokens||1500,system:systemPrompt,messages:[{role:"user",content:userContent}]};
+          var r;
+          try{ r=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); }
+          catch(e){ throw new Error("تعذّر الاتصال بالخادم."); }
+          if(!r.ok) throw new Error("تعذّر الاتصال بالذكاء الاصطناعي (رمز "+r.status+").");
+          return extractAIText(await r.json());
+        }
+        function extractAIText(d){ if(!d||!d.content) return ""; return d.content.map(function(b){return b.type==="text"?b.text:"";}).filter(Boolean).join("\n"); }
+        function aiMarkdown(t){
+          if(!t) return "";
+          var h=t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+          h=h.replace(/^#{2,3} (.*)$/gm,'<div style="font-weight:800;margin:.7em 0 .3em">$1</div>');
+          h=h.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+          h=h.replace(/^\s*[-*\u2022] (.*)$/gm,'<li>$1</li>');
+          h=h.replace(/(<li>[\s\S]*?<\/li>)/g,'<ul style="list-style:disc;padding-right:1.2em;margin:.3em 0">$1</ul>');
+          h=h.replace(/\n{2,}/g,'<br><br>').replace(/\n/g,'<br>');
+          return h;
+        }
+
         // Tailwind configuration
         function initTailwind() {
             document.documentElement.style.setProperty('--accent', '#0ea5e9');
@@ -846,7 +871,19 @@
             `;
         }
 
-        function sendChatMessage() {
+        let cxChatHistory = [];
+
+        function cxKpiContext() {
+            function val(id){ const el = document.getElementById(id); return el ? el.innerText.trim() : '—'; }
+            return 'مؤشرات لوحة التحكم الحالية: CSAT=' + val('kpi-csat') +
+                   '، NPS=' + val('kpi-nps') +
+                   '، CES=' + val('kpi-ces') +
+                   '، معدل الاحتفاظ=' + val('kpi-retention') +
+                   '، معدل فقدان العملاء=' + val('kpi-churn') +
+                   '، تحليل المشاعر=' + val('kpi-sentiment') + ' إيجابي.';
+        }
+
+        async function sendChatMessage() {
             const input = document.getElementById('chat-input');
             const container = document.getElementById('chat-messages');
             const value = input.value.trim();
@@ -860,33 +897,35 @@
             
             input.value = '';
             container.scrollTop = container.scrollHeight;
-            
-            // AI Response
-            setTimeout(() => {
-                let reply = "شكراً لسؤالك. جاري تحليل البيانات...";
-                
-                if (value.includes("انخفاض") || value.includes("رضا")) {
-                    reply = "السبب الرئيسي لانخفاض الرضا هذا الشهر هو زيادة زمن الاستجابة في مركز الاتصال (+37%). كما أن هناك شكاوى متكررة حول تطبيق الهاتف في الفرع الجنوبي.";
-                } else if (value.includes("شكاوى")) {
-                    reply = "أكثر 3 شكاوى هذا الشهر: 1) تأخير التسليم 2) مشاكل في التطبيق 3) جودة الدعم الفني. هل تريد تفاصيل عن فرع معين؟";
-                } else if (value.includes("فقدان")) {
-                    reply = "حالياً هناك 187 عميل معرضين لخطر الفقدان بنسبة عالية. أبرزهم في قطاع الشركات. هل تريد قائمة بهم؟";
-                } else {
-                    reply = "بناءً على البيانات الحالية، أنصح بالتركيز على تحسين سرعة الدعم الفني وتطوير قناة الواتساب. هل تريد توصيات مفصلة؟";
-                }
-                
-                const aiMsg = document.createElement('div');
-                aiMsg.className = 'ai-message flex gap-x-3';
-                aiMsg.innerHTML = `
-                    <div class="w-8 h-8 bg-sky-600 rounded-2xl flex-shrink-0 flex items-center justify-center"><i class="fa-solid fa-robot text-white"></i></div>
-                    <div class="bg-slate-800 px-4 py-3 rounded-2xl text-sm max-w-[80%]">${reply}</div>
-                `;
-                container.appendChild(aiMsg);
-                container.scrollTop = container.scrollHeight;
-            }, 900);
+
+            // Loading state
+            const aiMsg = document.createElement('div');
+            aiMsg.className = 'ai-message flex gap-x-3';
+            aiMsg.innerHTML = `
+                <div class="w-8 h-8 bg-sky-600 rounded-2xl flex-shrink-0 flex items-center justify-center"><i class="fa-solid fa-robot text-white"></i></div>
+                <div class="bg-slate-800 px-4 py-3 rounded-2xl text-sm max-w-[80%]"><i class="fa-solid fa-spinner fa-spin"></i> جارٍ التحليل بالذكاء الاصطناعي…</div>
+            `;
+            container.appendChild(aiMsg);
+            const replyBox = aiMsg.querySelector('div:last-child');
+            container.scrollTop = container.scrollHeight;
+
+            const sys = "أنت محلل خبير في تجربة العملاء (CX) لدى وزارة الصحة. تجيب بالعربية الفصحى بإيجاز ووضوح، مع توصيات عملية قابلة للتنفيذ. استخدم نقاطاً مختصرة عند الحاجة.";
+            let convo = cxKpiContext() + "\n\n";
+            cxChatHistory.forEach(function(m){ convo += (m.role === 'user' ? 'المستخدم: ' : 'المساعد: ') + m.text + "\n"; });
+            convo += "المستخدم: " + value + "\nأجب على آخر رسالة من المستخدم مستعيناً بسياق المؤشرات أعلاه عند الحاجة.";
+
+            try {
+                const reply = await callAI(sys, convo, 1200);
+                replyBox.innerHTML = aiMarkdown(reply);
+                cxChatHistory.push({ role: 'user', text: value });
+                cxChatHistory.push({ role: 'assistant', text: reply });
+            } catch (e) {
+                replyBox.innerHTML = e.message;
+            }
+            container.scrollTop = container.scrollHeight;
         }
 
-        function analyzeSentiment() {
+        async function analyzeSentiment() {
             const input = document.getElementById('sentiment-input').value.trim();
             const resultBox = document.getElementById('sentiment-result');
             
@@ -896,64 +935,66 @@
             }
             
             resultBox.classList.remove('hidden');
-            resultBox.innerHTML = `
-                <div class="flex items-center gap-x-3 mb-4">
-                    <div class="text-lg font-bold">نتيجة التحليل:</div>
-                    <div class="px-4 py-1 bg-emerald-900 text-emerald-300 rounded-2xl text-sm font-bold">إيجابي بنسبة 78%</div>
-                </div>
-                
-                <div class="grid grid-cols-3 gap-3 text-center text-sm">
-                    <div class="bg-emerald-900/40 p-3 rounded-2xl">
-                        <div class="font-bold text-emerald-400">إيجابي</div>
-                        <div class="text-2xl font-bold">78%</div>
-                    </div>
-                    <div class="bg-slate-700 p-3 rounded-2xl">
-                        <div class="font-bold text-slate-300">محايد</div>
-                        <div class="text-2xl font-bold">15%</div>
-                    </div>
-                    <div class="bg-red-900/40 p-3 rounded-2xl">
-                        <div class="font-bold text-red-400">سلبي</div>
-                        <div class="text-2xl font-bold">7%</div>
-                    </div>
-                </div>
-                
-                <div class="mt-5 text-sm">
-                    <div class="font-semibold mb-1">الكلمات المفتاحية الإيجابية:</div>
-                    <div class="flex flex-wrap gap-2">
-                        <span class="px-3 py-1 bg-emerald-800 rounded-2xl text-xs">ممتازة</span>
-                        <span class="px-3 py-1 bg-emerald-800 rounded-2xl text-xs">متعاونين</span>
-                    </div>
-                    
-                    <div class="font-semibold mt-4 mb-1">نقاط التحسين المقترحة:</div>
-                    <div class="text-amber-400">• تقليل وقت الانتظار</div>
-                </div>
-            `;
+            resultBox.innerHTML = `<div class="text-sm text-slate-300"><i class="fa-solid fa-spinner fa-spin"></i> جارٍ التحليل بالذكاء الاصطناعي…</div>`;
+
+            const sys = "أنت محرّك تحليل مشاعر عربي متخصص في تجربة العملاء لدى وزارة الصحة. حلّل النص المُعطى وصنّف مشاعره. أجب بالعربية الفصحى.";
+            const userContent = "حلّل مشاعر النص التالي وقدّم:\n1) التصنيف العام (إيجابي/محايد/سلبي).\n2) نسبة مئوية لكل من: إيجابي، محايد، سلبي (يجب أن يكون مجموعها 100%).\n3) سطر واحد يوضح المبرر.\n4) أبرز الكلمات المفتاحية ونقاط التحسين المقترحة.\n\nالنص:\n\"" + input + "\"";
+
+            try {
+                const out = await callAI(sys, userContent, 900);
+                resultBox.innerHTML = `
+                    <div class="text-lg font-bold mb-3">نتيجة تحليل المشاعر:</div>
+                    <div class="text-sm leading-loose">${aiMarkdown(out)}</div>
+                `;
+            } catch (e) {
+                resultBox.innerHTML = `<div class="text-sm text-red-400">${e.message}</div>`;
+            }
         }
 
-        function generateAISurvey() {
+        function renderSurveyResult(title, html) {
+            const box = document.getElementById('survey-result');
+            box.classList.remove('hidden');
+            box.innerHTML = `<div class="text-lg font-bold mb-4">${title}</div><div class="text-sm leading-loose">${html}</div>`;
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        async function generateAISurvey() {
             const type = prompt("ما نوع الاستبيان الذي تريده؟ (مثال: رضا المرضى، تجربة الطلاب، خدمة العملاء)");
             if (!type) return;
             
-            showToast("جاري إنشاء الاستبيان بالذكاء الاصطناعي...");
-            
-            setTimeout(() => {
-                alert(`تم إنشاء استبيان "${type}" بنجاح!\n\n- 12 سؤال ذكي\n- مقياس Likert + أسئلة مفتوحة\n- QR Code جاهز\n- رابط عام + توزيع عبر الواتساب والإيميل\n\n(في النسخة الكاملة سيتم فتح محرر الاستبيان)`);
-            }, 1600);
+            renderSurveyResult('إنشاء استبيان بالذكاء الاصطناعي', `<i class="fa-solid fa-spinner fa-spin"></i> جارٍ التحليل بالذكاء الاصطناعي…`);
+
+            const sys = "أنت خبير في تصميم استبيانات قياس رضا العملاء لدى وزارة الصحة. تصمّم استبيانات احترافية بالعربية الفصحى.";
+            const userContent = "صمّم استبياناً عربياً متكاملاً حول: \"" + type + "\". قدّم:\n- عنوان الاستبيان ووصفاً موجزاً.\n- من 6 إلى 8 أسئلة متنوعة الأنواع (مقياس ليكرت، اختيار من متعدد، نعم/لا، سؤال مفتوح)، مع توضيح نوع كل سؤال.\nنسّق الإجابة بعناوين ونقاط واضحة.";
+
+            try {
+                const out = await callAI(sys, userContent, 1600);
+                renderSurveyResult('استبيان: ' + type, aiMarkdown(out));
+            } catch (e) {
+                renderSurveyResult('إنشاء استبيان بالذكاء الاصطناعي', `<span class="text-red-400">${e.message}</span>`);
+            }
         }
 
-        function createSurveyType(type) {
+        async function createSurveyType(type) {
             const names = {
                 'csat': 'رضا العملاء (CSAT)',
                 'nps': 'صافي المروجين (NPS)',
                 'patient': 'تجربة المريض',
                 'employee': 'رضا الموظفين'
             };
+            const name = names[type] || type;
             
-            showToast(`جاري فتح استبيان ${names[type]}...`);
-            
-            setTimeout(() => {
-                alert(`تم فتح استبيان ${names[type]}.\n\nيمكنك الآن تعديل الأسئلة أو إنشاء QR Code أو توزيعه.`);
-            }, 700);
+            renderSurveyResult('استبيان ' + name, `<i class="fa-solid fa-spinner fa-spin"></i> جارٍ التحليل بالذكاء الاصطناعي…`);
+
+            const sys = "أنت خبير في تصميم استبيانات قياس تجربة العملاء لدى وزارة الصحة. تصمّم استبيانات قصيرة واحترافية بالعربية الفصحى.";
+            const userContent = "صمّم استبياناً عربياً قصيراً ومخصصاً من نوع \"" + name + "\". قدّم عنواناً ووصفاً موجزاً ثم 6-8 أسئلة مناسبة لهذا النوع مع توضيح نوع كل سؤال. نسّق الإجابة بعناوين ونقاط واضحة.";
+
+            try {
+                const out = await callAI(sys, userContent, 1400);
+                renderSurveyResult('استبيان ' + name, aiMarkdown(out));
+            } catch (e) {
+                renderSurveyResult('استبيان ' + name, `<span class="text-red-400">${e.message}</span>`);
+            }
         }
 
         function generateReport(type) {
