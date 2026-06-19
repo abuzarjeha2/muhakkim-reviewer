@@ -30,7 +30,8 @@ reversible. A full single-file code-merge would require deduping hundreds of sha
   ext entries). When an ext tool is active, محكّم renders `<MuqyasEmbedded embed initialTool=<key
   without mq_ prefix> dark=.../>` only (no double header/Card); the per-section "تقرير القسم"
   button is hidden for ext groups.
+- Muqyas calls root-relative `fetch("/api/ai")`, which works under any base path — no AI change needed when embedding.
 - The old external `/muqyas/` navbar link in محكّم was removed (real merge replaces it).
 
-**Keeping in sync:** because مُقياس is a vendored copy, changes to the standalone app must be
-re-copied into `MuqyasEmbedded.jsx` (a follow-up project task tracks this).
+**Keeping in sync (Re-sync):**
+Because مُقياس is a vendored copy, changes to the standalone app must be re-copied into `MuqyasEmbedded.jsx`. Never hand-merge the embedded copy. Run `pnpm --filter @workspace/scripts run revendor-muqyas` — it re-applies the fixed embed patches to the standalone source and overwrites `MuqyasEmbedded.jsx`. The patch list in `scripts/src/revendor-muqyas.ts` is the single source of truth for embed-mode edits; each patch asserts a unique anchor and aborts loudly if upstream drift breaks it, so fix the failing `find`/`replace` there rather than editing the generated file. See replit.md «Re-vendoring embedded Muqyas».

@@ -9,6 +9,7 @@ Bilingual (Arabic-first, RTL) academic peer-review and research platform. The li
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- `pnpm --filter @workspace/scripts run revendor-muqyas` — regenerate the embedded Muqyas copy from the standalone source (see «Re-vendoring embedded Muqyas» below)
 - Required env: `DATABASE_URL` — Postgres connection string
 
 ## Stack
@@ -44,6 +45,15 @@ Bilingual (Arabic-first, RTL) academic peer-review and research platform. The li
 - Communicate in Arabic, concise.
 - Preserve محكّم برو V4 behavior literally; do NOT change its Arabic UI text.
 - Brand accents: gold `#b45309`, navy `#1e293b`.
+
+## Re-vendoring embedded Muqyas
+
+`artifacts/muhakkim/src/MuqyasEmbedded.jsx` is a vendored copy of the standalone `artifacts/muqyas/src/MuqyasProV1.jsx`, plus a small fixed set of "embed-mode" patches (props `{embed, initialTool, dark}`, hidden header/footer, transparent root, host theme/tool sync effects, and an exported `MUQYAS_GROUPS`). When the standalone Muqyas app changes, do NOT hand-merge — re-vendor instead:
+
+1. Run `pnpm --filter @workspace/scripts run revendor-muqyas`. This reads the standalone source, re-applies every embed patch, and overwrites `MuqyasEmbedded.jsx`.
+2. If the script aborts (`anchor not found` / `matched N times`), an upstream change moved or duplicated a patched line. Open `scripts/src/revendor-muqyas.ts`, update the failing patch's `find`/`replace` to match the new upstream code, then re-run.
+3. The patch list in `scripts/src/revendor-muqyas.ts` is the single source of truth for what embed mode changes — keep new embed edits there, never only in the generated file (they would be lost on the next re-vendor).
+4. After re-vendoring, restart `artifacts/muhakkim: web` and sanity-check the embedded Muqyas inside Muhakkim's navbar.
 
 ## Gotchas
 
