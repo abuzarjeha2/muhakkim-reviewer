@@ -863,6 +863,7 @@ const GROUPS = [
     {key:"mohakam_cx", icon:"🤖", ar:"منصة تجربة العميل الذكية", en:"AI CX Platform", badge:"جديد"},
     {key:"mohakam_strategy", icon:"♟️", ar:"التخطيط الاستراتيجي الذكي", en:"Strategic Planning", badge:"جديد"},
     {key:"mohakam_os", icon:"♾️", ar:"نظام التشغيل الذكي الكامل", en:"Mohakam OS", badge:"جديد"},
+    {key:"mohakam_os_final", icon:"🧠", ar:"محكم OS — النسخة النهائية الكاملة", en:"Mohakam OS Ultimate", badge:"جديد"},
     {key:"qr", icon:"📷", ar:"مولّد QR", en:"QR Code"},
     {key:"about", icon:"👨‍🏫", ar:"عن المنصة", en:"About"},
     {key:"pricing", icon:"💎", ar:"الباقات والأسعار", en:"Pricing", badge:"جديد"},
@@ -953,6 +954,17 @@ function MohakamOs({ T }) {
     <iframe
       src={src}
       title="نظام التشغيل الذكي الكامل"
+      style={{ width: "100%", height: "calc(100vh - 200px)", minHeight: 680, border: "none", borderRadius: 12, background: T.bg, display: "block" }}
+    />
+  );
+}
+
+function MohakamOsFinal({ T }) {
+  const src = (import.meta.env.BASE_URL || "/") + "mohakam-os-final.html";
+  return (
+    <iframe
+      src={src}
+      title="محكم OS — النسخة النهائية الكاملة"
       style={{ width: "100%", height: "calc(100vh - 200px)", minHeight: 680, border: "none", borderRadius: 12, background: T.bg, display: "block" }}
     />
   );
@@ -16869,6 +16881,7 @@ export default function MuhakkimV4() {
     if(key==="mohakam_cx") return <MohakamCx T={T}/>;
     if(key==="mohakam_strategy") return <MohakamStrategy T={T}/>;
     if(key==="mohakam_os") return <MohakamOs T={T}/>;
+    if(key==="mohakam_os_final") return <MohakamOsFinal T={T}/>;
     if(key==="rev_roles") return <ToolHub T={T} hubKey="rev_roles"/>;
     if(key==="review_center") return <ToolHub T={T} hubKey="review_center"/>;
     if(key==="committee_hub") return <ToolHub T={T} hubKey="committee_hub"/>;

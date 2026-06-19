@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محكم OS • النسخة النهائية الكاملة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Noto+Sans+Arabic:wght@400;500;600&amp;display=swap');
+        body { font-family: 'Noto Sans Arabic', 'Inter', system-ui, sans-serif; }
+        .font-display { font-family: 'Noto Sans Arabic', 'Inter', system-ui, sans-serif; font-weight: 700; }
+        .nav-item { transition: all 0.2s ease; }
+        .nav-item.active { background-color: #0f172a; color: white; border-radius: 12px; }
+        .section-header { font-size: 1.9rem; line-height: 2.2rem; font-weight: 700; letter-spacing: -0.04em; }
+        .metric-card { transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .metric-card:hover { transform: translateY(-4px); }
+        .agent-card { transition: all 0.3s ease; }
+        .agent-card:hover { transform: translateY(-4px); border-color: #a855f7; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200">
+    <!-- Top Navigation -->
+    <nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-screen-2xl mx-auto px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-x-4">
+                <div class="flex items-center gap-x-3">
+                    <div class="w-11 h-11 bg-gradient-to-br from-violet-600 via-fuchsia-600 to-indigo-600 rounded-2xl flex items-center justify-center">
+                        <i class="fa-solid fa-infinity text-white text-3xl"></i>
+                    </div>
+                    <div>
+                        <span class="font-display text-3xl font-bold tracking-tighter">محكم</span>
+                        <span class="font-display text-3xl font-bold tracking-tighter bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">OS</span>
+                    </div>
+                </div>
+                <div class="px-4 py-1.5 text-xs font-bold bg-emerald-900/40 text-emerald-300 rounded-2xl border border-emerald-700">v5.0 • Ultimate Complete</div>
+            </div>
+
+            <!-- Language Toggle -->
+            <div class="flex items-center bg-slate-800 border border-slate-700 rounded-2xl p-1 text-xs">
+                <button onclick="switchLanguage('ar')" id="lang-ar" class="px-4 py-1.5 rounded-xl font-semibold bg-violet-600 text-white">عربي</button>
+                <button onclick="switchLanguage('en')" id="lang-en" class="px-4 py-1.5 rounded-xl font-semibold text-slate-300 hover:text-white">English</button>
+            </div>
+
+            <div class="flex items-center gap-x-3">
+                <div class="px-4 py-1.5 bg-slate-800 rounded-2xl text-xs font-medium">وزارة الصحة • Ministry of Health</div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-screen-2xl mx-auto flex">
+        
+        <!-- Sidebar -->
+        <div class="w-72 bg-slate-900 border-l border-slate-800 min-h-screen p-3 hidden lg:block">
+            <div class="px-4 mb-2 text-xs font-bold tracking-wider text-slate-400">نظام التشغيل الذكي الكامل</div>
+            
+            <div onclick="showModule('command')" class="nav-item flex items-center gap-x-3 px-4 py-3 mb-1 cursor-pointer active">
+                <i class="fa-solid fa-tachometer-alt w-5 text-sky-400"></i>
+                <span class="font-semibold">مركز القيادة الموحد</span>
+            </div>
+            
+            <div onclick="showModule('digital-twin')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-infinity w-5 text-fuchsia-400"></i>
+                <span>التوأم الرقمي + ماذا لو؟</span>
+            </div>
+            
+            <div onclick="showModule('strategy')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-chess-rook w-5 text-violet-400"></i>
+                <span>التخطيط الاستراتيجي</span>
+            </div>
+            
+            <div onclick="showModule('cx')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-smile w-5 text-emerald-400"></i>
+                <span>تجربة العميل (CX)</span>
+            </div>
+            
+            <div onclick="showModule('agents')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-robot w-5 text-amber-400"></i>
+                <span>120+ وكيل ذكي (M-CEO)</span>
+            </div>
+            
+            <div onclick="showModule('ai-lab')" class="nav-item flex items-center gap-x-3 px-4 py-2.5 mb-0.5 hover:bg-slate-800 rounded-2xl cursor-pointer text-sm">
+                <i class="fa-solid fa-flask w-5 text-teal-400"></i>
+                <span>مختبر الذكاء الاصطناعي</span>
+            </div>
+        </div>
+
+        <div class="flex-1 p-8">
+            
+            <!-- COMMAND CENTER -->
+            <div id="module-command">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h1 class="font-display text-5xl tracking-tighter">مركز القيادة المؤسسي الموحد</h1>
+                        <p class="text-xl text-slate-400 mt-2">التوأم الرقمي • الاستراتيجية • تجربة العميل • 120+ وكيل ذكي</p>
+                    </div>
+                    <button onclick="runFullSystemAnalysis()" class="px-8 h-12 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 rounded-2xl font-bold flex items-center gap-x-3">
+                        <i class="fa-solid fa-brain"></i>
+                        <span>تشغيل التحليل الشامل</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <div class="metric-card bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                        <div class="text-emerald-400 text-xs font-bold">تجربة العميل (CSAT)</div>
+                        <div class="text-6xl font-extrabold mt-1">87.4</div>
+                    </div>
+                    <div class="metric-card bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                        <div class="text-sky-400 text-xs font-bold">تنفيذ الاستراتيجية</div>
+                        <div class="text-6xl font-extrabold mt-1">87%</div>
+                    </div>
+                    <div class="metric-card bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                        <div class="text-fuchsia-400 text-xs font-bold">دقة التوأم الرقمي</div>
+                        <div class="text-6xl font-extrabold mt-1">96.4%</div>
+                    </div>
+                    <div class="metric-card bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                        <div class="text-amber-400 text-xs font-bold">الوكلاء النشطون</div>
+                        <div class="text-6xl font-extrabold mt-1">127</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DIGITAL TWIN -->
+            <div id="module-digital-twin" class="hidden">
+                <h2 class="section-header mb-6">التوأم الرقمي للمؤسسة</h2>
+                <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6">
+                    <div class="font-bold mb-4">محاكي "ماذا لو؟"</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        <button onclick="runWhatIf('staff')" class="px-5 py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl">زيادة الموظفين 20%</button>
+                        <button onclick="runWhatIf('budget')" class="px-5 py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl">خفض الميزانية 15%</button>
+                        <button onclick="runWhatIf('ai')" class="px-5 py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl">إطلاق مبادرة الذكاء الاصطناعي</button>
+                        <button onclick="runWhatIf('digital')" class="px-5 py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl">تسريع التحول الرقمي 40%</button>
+                    </div>
+                    <div id="twin-result" class="hidden p-5 bg-slate-800 rounded-2xl text-sm"></div>
+                </div>
+            </div>
+
+            <!-- STRATEGY -->
+            <div id="module-strategy" class="hidden">
+                <h2 class="section-header mb-6">التخطيط الاستراتيجي الذكي</h2>
+                <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6">
+                    <div class="font-bold">الخطة الاستراتيجية 2026-2030 — نسبة التنفيذ: 87%</div>
+                    <button onclick="generateStrategicPlan()" class="mt-4 px-6 h-11 bg-violet-600 hover:bg-violet-500 rounded-2xl font-bold">إعادة توليد الخطة بالذكاء الاصطناعي</button>
+                </div>
+            </div>
+
+            <!-- CX -->
+            <div id="module-cx" class="hidden">
+                <h2 class="section-header mb-6">تجربة العميل الذكية</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-900 border border-slate-700 p-5 rounded-3xl"><div class="text-emerald-400">CSAT</div><div class="text-5xl font-extrabold">87.4</div></div>
+                    <div class="bg-slate-900 border border-slate-700 p-5 rounded-3xl"><div class="text-sky-400">NPS</div><div class="text-5xl font-extrabold">72</div></div>
+                    <div class="bg-slate-900 border border-slate-700 p-5 rounded-3xl"><div class="text-violet-400">معدل الاحتفاظ</div><div class="text-5xl font-extrabold">94.8%</div></div>
+                </div>
+                <button onclick="analyzeCX()" class="mt-6 px-6 h-11 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-bold">تشغيل تحليل تجربة العميل</button>
+            </div>
+
+            <!-- AGENTS (120+) -->
+            <div id="module-agents" class="hidden">
+                <h2 class="section-header mb-6">الرئيس التنفيذي الرقمي + 127 وكيل ذكي</h2>
+                
+                <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 mb-6">
+                    <button onclick="runAgentOrchestration()" class="w-full h-14 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 rounded-2xl font-bold text-lg flex items-center justify-center gap-x-3">
+                        <i class="fa-solid fa-users"></i>
+                        <span>تشغيل تعاون كامل بين الوكلاء</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3" id="agents-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- AI LAB -->
+            <div id="module-ai-lab" class="hidden">
+                <h2 class="section-header mb-6">مختبر الذكاء الاصطناعي</h2>
+                <div class="max-w-md bg-slate-900 border border-slate-700 rounded-3xl p-6">
+                    <div class="font-bold mb-3">أنشئ وكيلك الخاص</div>
+                    <input id="lab-agent-name" type="text" placeholder="اسم الوكيل" class="w-full bg-slate-800 border border-slate-600 rounded-2xl px-4 py-3 mb-3">
+                    <button onclick="createCustomAgent()" class="w-full h-12 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-bold">إنشاء وتدريب الوكيل</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function showModule(module) {
+            document.querySelectorAll('[id^="module-"]').forEach(el => el.classList.add('hidden'));
+            document.getElementById('module-' + module).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => {
+                if (item.getAttribute('onclick') && item.getAttribute('onclick').includes(module)) {
+                    item.classList.add('active');
+                }
+            });
+            
+            if (module === 'agents') initAgentsGrid();
+        }
+
+        function runFullSystemAnalysis() {
+            showToast("جاري تشغيل التحليل الشامل باستخدام 127 وكيلاً...");
+            setTimeout(() => {
+                alert("تم إكمال التحليل الشامل!\n\nالنتائج الرئيسية:\n• تجربة العميل: 87.4\n• تنفيذ الاستراتيجية: 87%\n• دقة التوأم الرقمي: 96.4%\n• 127 وكيل نشط\n• 4 مخاطر حرجة\n• توصيات جاهزة للتنفيذ");
+            }, 2200);
+        }
+
+        function runWhatIf(type) {
+            const box = document.getElementById('twin-result');
+            box.classList.remove('hidden');
+            
+            let html = "";
+            if (type === 'staff') html = `<strong>زيادة الموظفين 20%:</strong><br>رضا العملاء +7.4 | زمن الخدمة -22%<br><span class="text-emerald-400">التوصية: تنفيذ مع تدريب مكثف.</span>`;
+            else if (type === 'budget') html = `<strong>خفض الميزانية 15%:</strong><br>تحقيق الأهداف -18%<br><span class="text-red-400">تحذير: تجنب الخفض في الجودة.</span>`;
+            else if (type === 'ai') html = `<strong>إطلاق مبادرة الذكاء الاصطناعي:</strong><br>دقة التشخيص +14% | زمن التشخيص -37%<br><span class="text-emerald-400">فرصة استراتيجية ممتازة.</span>`;
+            else html = `<strong>تسريع التحول الرقمي 40%:</strong><br>كفاءة العمليات +31%<br><span class="text-emerald-400">موصى به بشدة.</span>`;
+            
+            box.innerHTML = html;
+        }
+
+        function generateStrategicPlan() {
+            showToast("جاري توليد الخطة الاستراتيجية...");
+            setTimeout(() => alert("تم إنشاء الخطة الاستراتيجية 2026-2030 بنجاح."), 1400);
+        }
+
+        function analyzeCX() {
+            showToast("جاري تحليل تجربة العملاء...");
+            setTimeout(() => alert("تحليل تجربة العملاء مكتمل.\n\nأبرز النتائج:\n• 3 نقاط احتكاك رئيسية\n• زمن الانتظار هو السبب الأول"), 1500);
+        }
+
+        function initAgentsGrid() {
+            const container = document.getElementById('agents-grid');
+            container.innerHTML = '';
+            
+            const agents = [
+                "M-CEO (الرئيس التنفيذي الرقمي)", "Orchestrator المركزي", "مراقب الأنظمة", "وكيل الدردشة",
+                "مستشار التخطيط الاستراتيجي", "مستشار تجربة العميل", "مراجع الكود", "محسن الأداء",
+                "المدرب الذكي", "مدير الجودة", "مدير الأمن السيبراني", "مدير المعرفة",
+                "مستشار البحث العلمي", "مستشار الإحصاء", "مستشار الحكومة الرقمية", "مستشار التحول الرقمي",
+                "وكيل إدارة المخاطر", "وكيل التحليل المالي", "وكيل إدارة المشاريع", "وكيل الامتثال"
+            ];
+            
+            agents.forEach(agent => {
+                const div = document.createElement('div');
+                div.className = `agent-card bg-slate-800 border border-slate-700 p-3 rounded-2xl text-sm cursor-pointer`;
+                div.innerHTML = `<div class="flex items-center gap-x-2"><i class="fa-solid fa-robot text-violet-400"></i> <span>${agent}</span></div>`;
+                div.onclick = () => showAgentModal(agent);
+                container.appendChild(div);
+            });
+        }
+
+        function showAgentModal(name) {
+            const modal = document.createElement('div');
+            modal.className = `fixed inset-0 bg-black/70 z-[100] flex items-center justify-center`;
+            modal.innerHTML = `
+                <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-md p-6">
+                    <div class="font-bold text-xl mb-2">${name}</div>
+                    <div class="text-emerald-400 text-sm mb-4">نشط • يعمل ضمن فريق M-CEO</div>
+                    <div class="flex gap-x-3">
+                        <button onclick="activateAgent('${name}', this)" class="flex-1 h-11 bg-violet-600 hover:bg-violet-500 rounded-2xl font-bold">تفعيل الوكيل</button>
+                        <button onclick="this.closest('.fixed').remove()" class="flex-1 h-11 bg-slate-700 hover:bg-slate-600 rounded-2xl font-bold">إغلاق</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function activateAgent(name, btn) {
+            btn.outerHTML = `<div class="text-center py-2 text-emerald-400">تم تفعيل ${name}</div>`;
+            setTimeout(() => {
+                document.querySelector('.fixed').remove();
+                showToast(`الوكيل "${name}" نشط الآن`);
+            }, 1000);
+        }
+
+        function runAgentOrchestration() {
+            showToast("جاري تشغيل التعاون بين الوكلاء...");
+            setTimeout(() => {
+                alert("تم تعاون 20 وكيلاً بنجاح وإنتاج تقرير متكامل.");
+            }, 1800);
+        }
+
+        function createCustomAgent() {
+            const name = document.getElementById('lab-agent-name').value.trim();
+            if (!name) return alert("الرجاء إدخال اسم الوكيل");
+            showToast(`جاري إنشاء الوكيل "${name}"...`);
+            setTimeout(() => {
+                showToast(`تم إنشاء الوكيل "${name}" بنجاح!`);
+                document.getElementById('lab-agent-name').value = '';
+            }, 1500);
+        }
+
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 border border-slate-600 px-6 py-3 rounded-2xl flex items-center gap-x-3 z-[200]`;
+            toast.innerHTML = `<i class="fa-solid fa-check-circle text-emerald-400"></i> <span>${msg}</span>`;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.transition = 'all 0.3s'; toast.style.opacity = '0'; setTimeout(() => toast.remove(), 200); }, 2600);
+        }
+
+        let currentLang = 'ar';
+
+        function switchLanguage(lang) {
+            currentLang = lang;
+            
+            // Update active button
+            document.getElementById('lang-ar').classList.toggle('bg-violet-600', lang === 'ar');
+            document.getElementById('lang-ar').classList.toggle('text-white', lang === 'ar');
+            document.getElementById('lang-en').classList.toggle('bg-violet-600', lang === 'en');
+            document.getElementById('lang-en').classList.toggle('text-white', lang === 'en');
+            
+            // Simple bilingual support - update key texts
+            if (lang === 'en') {
+                document.querySelectorAll('.section-header').forEach(el => {
+                    if (el.innerText.includes('التوأم')) el.innerText = 'Digital Twin of the Organization';
+                    if (el.innerText.includes('التخطيط')) el.innerText = 'Strategic Planning';
+                    if (el.innerText.includes('تجربة العميل')) el.innerText = 'Smart Customer Experience (CX)';
+                    if (el.innerText.includes('الرئيس التنفيذي')) el.innerText = 'Chief AI Officer + 127 Agents';
+                });
+            } else {
+                // Reload original Arabic if needed (simplified for demo)
+                location.reload();
+            }
+        }
+
+        function initializeEverything() {
+            document.getElementById('module-command').classList.remove('hidden');
+            const firstNav = document.querySelector('.nav-item');
+            if (firstNav) firstNav.classList.add('active');
+            
+            // Set Arabic as default active
+            document.getElementById('lang-ar').classList.add('bg-violet-600', 'text-white');
+            
+            console.log('%c[Mohakam OS Final Ultimate] Bilingual system initialized.', 'color:#64748b');
+        }
+
+        window.onload = initializeEverything;
+    </script>
+</body>
+</html>
