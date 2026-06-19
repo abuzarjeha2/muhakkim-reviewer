@@ -12,7 +12,7 @@ version = "1.0.0"
 [[services]]
 name = "web"
 paths = [ "/stats-site/" ]
-localPort = 18423
+localPort = 8083
 
 [services.development]
 run = "pnpm --filter @workspace/stats-site run dev"
@@ -27,5 +27,5 @@ from = "/*"
 to = "/index.html"
 
 [services.env]
-PORT = "18423"
+PORT = "8083"
 BASE_PATH = "/stats-site/"

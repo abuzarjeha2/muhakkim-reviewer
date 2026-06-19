@@ -2,6 +2,7 @@
 - [Prod API 404 = domain points to Netlify](deploy-api-routing.md) — muhakkim.com served by Netlify (no backend), not the healthy Replit deploy; check `server:` header + DNS before blaming code.
 - [Vendored single-file JSX integration](vendored-jsx-integration.md) — big pre-built `.jsx` kept verbatim; `tsc` skips it (allowJs false), `.d.ts` shim types the import, Vite compiles it.
 - [Muhakkim icon system](icon-system.md) — emoji icons render via EmIcon+Lucide; never convert ${x.icon} template-literals (exports break).
+- [Artifact port registration](artifact-port-registration.md) — "DIDNT_OPEN_A_PORT" despite vite binding = artifact localPort not in .replit [[ports]]; move it to a declared pool slot.
 - [Vendored HTML iframe tool](vendored-html-iframe-tool.md) — embed standalone HTML tools via public/ + iframe(BASE_URL); patch their AI to /api/ai only; watch duplicate top-level let.
 - [File extraction libs](file-extraction-libs.md) — PDF/Excel parsing must use bundled npm (xlsx, pdfjs-dist), never runtime cdnjs imports; CDN silently fails on mobile/custom domain.
 - [Mobile file upload](mobile-file-upload.md) — use div+ref.click()+display:none input (not opacity-overlay-in-label); never reset input.value inside onChange; Playwright can't repro native-picker bugs.

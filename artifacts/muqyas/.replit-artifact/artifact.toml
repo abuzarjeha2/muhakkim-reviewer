@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/muqyas/"
+title = "مُقياس برو — منصة الجودة المؤسسية"
+version = "1.0.0"
+id = "artifacts/muqyas"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/muqyas/" ]
+localPort = 8082
+
+[services.development]
+run = "pnpm --filter @workspace/muqyas run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/muqyas", "run", "build" ]
+publicDir = "artifacts/muqyas/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "8082"
+BASE_PATH = "/muqyas/"
