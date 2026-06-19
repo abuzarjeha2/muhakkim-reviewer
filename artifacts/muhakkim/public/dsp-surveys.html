@@ -1,0 +1,2028 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>استبيانات DSP • DataStatPro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Poppins:wght@500;600&amp;family=Tajawal:wght@300;400;500;700&amp;display=swap');
+        
+        :root {
+            --primary: #2563eb;
+        }
+        
+        body {
+            font-family: 'Tajawal', 'Inter', system_ui, sans-serif;
+        }
+        
+        .font-display {
+            font-family: 'Poppins', 'Tajawal', 'Inter', system_ui, sans-serif;
+        }
+
+        .gradient-hero {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #7c3aed 100%);
+        }
+
+        .section-header {
+            font-size: 2.25rem;
+            line-height: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -.025em;
+        }
+
+        .stat-card {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .feature-card {
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .nav-active {
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .demo-tab {
+            transition: all 0.2s ease;
+        }
+
+        .demo-tab.active {
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-weight: 600;
+        }
+
+        .question-item {
+            transition: all 0.2s ease;
+        }
+
+        .modal {
+            animation: modalPopIn 0.2s ease forwards;
+        }
+
+        @keyframes modalPopIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .survey-preview {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .stat-value {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .dsp-badge {
+            background: linear-gradient(to right, #2563eb, #7c3aed);
+            color: white;
+            font-size: 0.75rem;
+            padding: 1px 10px;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .app-mock {
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+            border: 12px solid #111827;
+            border-radius: 3rem;
+        }
+
+        .metric-card {
+            background: white;
+            transition: transform 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .data-table {
+            font-size: 0.875rem;
+        }
+
+        .nav-scrolled {
+            box-shadow: 0 1px 0 0 #f1f5f9;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-screen-xl mx-auto">
+            <div class="px-8 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-x-3">
+                    <!-- Logo -->
+                    <div class="flex items-center gap-x-2">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-violet-600 rounded-2xl flex items-center justify-center shadow-inner">
+                            <i class="fa-solid fa-chart-line text-white text-3xl"></i>
+                        </div>
+                        <div>
+                            <span class="font-display text-2xl font-semibold tracking-tighter">DataStatPro</span>
+                            <span class="mr-1.5 text-xs font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 align-super">DSP</span>
+                        </div>
+                    </div>
+                    <div class="hidden md:flex items-center gap-x-1.5 pl-3 border-l border-slate-200">
+                        <span class="px-3 py-1.5 text-sm font-semibold bg-emerald-100 text-emerald-700 rounded-3xl flex items-center gap-x-1.5">
+                            <i class="fa-solid fa-check-double text-xs"></i>
+                            <span class="font-bold">v2.3.1</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="hidden md:flex items-center gap-x-8 text-sm">
+                    <a href="#features" class="font-medium text-slate-600 hover:text-slate-900 transition-colors">المزايا</a>
+                    <a href="#demo" class="font-medium text-slate-600 hover:text-slate-900 transition-colors">العرض الحي</a>
+                    <a href="#how" class="font-medium text-slate-600 hover:text-slate-900 transition-colors">آلية العمل</a>
+                    <a href="#faq" class="font-medium text-slate-600 hover:text-slate-900 transition-colors">الأسئلة الشائعة</a>
+                </div>
+
+                <div class="flex items-center gap-x-3">
+                    <button onclick="showLoginModal()"
+                            class="hidden sm:flex items-center px-5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-3xl transition-colors">
+                        <i class="fa-solid fa-user ml-2"></i>
+                        <span>تسجيل الدخول</span>
+                    </button>
+                    
+                    <button onclick="startFreeTrial()"
+                            class="flex items-center gap-x-2 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 transition-all text-white text-sm font-semibold px-6 py-2.5 rounded-3xl shadow-lg shadow-blue-500/30">
+                        <span>ابدأ التجربة المجانية</span>
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    
+                    <button class="md:hidden w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-2xl" onclick="toggleMobileMenu()">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="gradient-hero text-white">
+        <div class="max-w-screen-xl mx-auto px-8 pt-16 pb-20">
+            <div class="grid md:grid-cols-12 gap-12 items-center">
+                <div class="md:col-span-7">
+                    <div class="inline-flex items-center gap-x-2 bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-3xl mb-6">
+                        <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                        <span class="text-sm font-semibold tracking-wider">جديد • مدمج داخل DataStatPro</span>
+                    </div>
+                    
+                    <h1 class="text-6xl md:text-6xl font-display font-bold tracking-tighter leading-none mb-6">
+                        استبيانات DSP.<br>
+                        <span class="text-white/90">استبيانات تفكّر بعقلية الباحثين.</span>
+                    </h1>
+                    
+                    <p class="max-w-lg text-xl text-white/90 mb-8">
+                        منصة الاستبيانات الوحيدة التي تتجاوز مجرد جمع البيانات.
+                        صمّم استبياناتك، واجمع الردود متعددة اللغات، ونفّذ تحليلات إحصائية متقدمة — كل ذلك داخل DataStatPro.
+                    </p>
+                    
+                    <div class="flex flex-wrap gap-4">
+                        <button onclick="document.getElementById('demo').scrollIntoView({ behavior: 'smooth' })" 
+                                class="group flex items-center justify-center gap-x-3 bg-white text-slate-900 font-semibold px-8 h-14 rounded-3xl hover:bg-amber-50 transition-all active:scale-[0.985]">
+                            <span>جرّب العرض الحي</span>
+                            <i class="fa-solid fa-play group-active:scale-90 transition-transform"></i>
+                        </button>
+                        
+                        <button onclick="watchVideo()" 
+                                class="flex items-center justify-center gap-x-3 border border-white/40 hover:bg-white/10 transition-all font-semibold px-7 h-14 rounded-3xl">
+                            <i class="fa-solid fa-play ml-2"></i>
+                            <span>شاهد الفيديو (2:41)</span>
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center gap-x-8 mt-8 text-sm">
+                        <div class="flex -space-x-2">
+                            <div class="w-7 h-7 bg-white rounded-full border border-white/70 overflow-hidden"><img src="https://i.pravatar.cc/28?img=28" class="w-full h-full object-cover"></div>
+                            <div class="w-7 h-7 bg-white rounded-full border border-white/70 overflow-hidden"><img src="https://i.pravatar.cc/28?img=47" class="w-full h-full object-cover"></div>
+                            <div class="w-7 h-7 bg-white rounded-full border border-white/70 overflow-hidden"><img src="https://i.pravatar.cc/28?img=12" class="w-full h-full object-cover"></div>
+                        </div>
+                        <div class="text-white/80 text-sm">
+                            <span class="font-semibold text-white">4,872</span> باحثًا يستخدمونها بالفعل
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Hero visual -->
+                <div class="md:col-span-5 relative">
+                    <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-2 shadow-2xl">
+                        <div class="bg-white rounded-2xl overflow-hidden shadow-inner">
+                            <!-- Mini app mock -->
+                            <div class="bg-slate-900 px-4 py-3 flex items-center justify-between text-xs">
+                                <div class="flex items-center gap-x-2 text-white">
+                                    <i class="fa-solid fa-chart-line"></i>
+                                    <span class="font-bold">DataStatPro</span>
+                                </div>
+                                <div class="flex items-center gap-x-1 text-emerald-400">
+                                    <i class="fa-solid fa-circle text-[8px]"></i>
+                                    <span class="text-[10px] font-mono">مباشر</span>
+                                </div>
+                            </div>
+                            
+                            <div class="p-5 bg-white">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <div class="text-xs text-emerald-600 font-bold tracking-wider">استبيانات DSP</div>
+                                        <div class="font-semibold text-lg">تجربة المرضى 2026</div>
+                                    </div>
+                                    <div class="dsp-badge text-xs px-3 py-0.5">PRO</div>
+                                </div>
+                                
+                                <div class="space-y-3 text-sm">
+                                    <div class="flex justify-between items-center bg-slate-50 px-3 py-2 rounded-2xl">
+                                        <div class="flex items-center gap-x-2">
+                                            <i class="fa-solid fa-globe text-blue-500"></i>
+                                            <span class="font-medium">متعدد اللغات</span>
+                                        </div>
+                                        <span class="font-mono text-xs bg-white px-2 py-px rounded">EN / AR / FR</span>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                                        <div class="bg-emerald-50 rounded-2xl py-2">
+                                            <div class="font-bold text-emerald-600">1,284</div>
+                                            <div class="text-emerald-600/70 text-[10px]">ردًّا</div>
+                                        </div>
+                                        <div class="bg-amber-50 rounded-2xl py-2">
+                                            <div class="font-bold text-amber-600">94%</div>
+                                            <div class="text-amber-600/70 text-[10px]">نسبة الإكمال</div>
+                                        </div>
+                                        <div class="bg-violet-50 rounded-2xl py-2">
+                                            <div class="font-bold text-violet-600">12 د</div>
+                                            <div class="text-violet-600/70 text-[10px]">متوسط الوقت</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trust bar -->
+    <div class="border-b border-slate-200 bg-white">
+        <div class="max-w-screen-xl mx-auto px-8 py-5">
+            <div class="flex flex-wrap justify-center md:justify-between items-center gap-x-8 gap-y-4 opacity-75">
+                <div class="flex items-center gap-x-6 text-xs font-semibold tracking-widest">
+                    <div>موضع ثقة</div>
+                </div>
+                <div class="flex flex-wrap gap-x-8 text-sm font-semibold text-slate-500">
+                    <div>جامعة الملك سعود</div>
+                    <div>مستشفى الملك فيصل التخصصي</div>
+                    <div>وزارة الصحة</div>
+                    <div>الهيئة العامة للغذاء والدواء</div>
+                    <div class="hidden md:block">جامعة الملك عبدالعزيز</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Stats -->
+    <div class="max-w-screen-xl mx-auto px-8 pt-14 pb-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="stat-card bg-white border border-slate-100 rounded-3xl p-6 flex items-center gap-x-4">
+                <div class="w-12 h-12 flex-shrink-0 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center">
+                    <i class="fa-solid fa-list-check text-3xl"></i>
+                </div>
+                <div>
+                    <div class="text-4xl font-bold tracking-tighter">+20</div>
+                    <div class="text-sm font-medium text-slate-500">نوع سؤال</div>
+                </div>
+            </div>
+            
+            <div class="stat-card bg-white border border-slate-100 rounded-3xl p-6 flex items-center gap-x-4">
+                <div class="w-12 h-12 flex-shrink-0 bg-violet-100 text-violet-600 rounded-2xl flex items-center justify-center">
+                    <i class="fa-solid fa-language text-3xl"></i>
+                </div>
+                <div>
+                    <div class="text-4xl font-bold tracking-tighter">ذكاء اصطناعي</div>
+                    <div class="text-sm font-medium text-slate-500">ترجمة جماعية</div>
+                </div>
+            </div>
+            
+            <div class="stat-card bg-white border border-slate-100 rounded-3xl p-6 flex items-center gap-x-4">
+                <div class="w-12 h-12 flex-shrink-0 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center">
+                    <i class="fa-solid fa-link text-3xl"></i>
+                </div>
+                <div>
+                    <div class="text-4xl font-bold tracking-tighter">نقرة واحدة</div>
+                    <div class="text-sm font-medium text-slate-500">الربط بالتحليل</div>
+                </div>
+            </div>
+            
+            <div class="stat-card bg-white border border-slate-100 rounded-3xl p-6 flex items-center gap-x-4">
+                <div class="w-12 h-12 flex-shrink-0 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center">
+                    <i class="fa-solid fa-users text-3xl"></i>
+                </div>
+                <div>
+                    <div class="text-4xl font-bold tracking-tighter">فريق</div>
+                    <div class="text-sm font-medium text-slate-500">تعاون قائم على الأدوار</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div id="features" class="max-w-screen-xl mx-auto px-8 pt-8 pb-16">
+        <div class="flex justify-between items-end mb-8">
+            <div>
+                <div class="uppercase tracking-[2px] text-xs font-bold text-blue-600 mb-1">سير عمل متكامل</div>
+                <h2 class="section-header tracking-tighter">كل ما تحتاجه.<br>دون أي زيادة.</h2>
+            </div>
+            <a href="#" class="hidden md:flex items-center text-sm font-semibold text-blue-600 hover:text-blue-700">
+                اطّلع على جميع المزايا <i class="fa-solid fa-arrow-left mr-2"></i>
+            </a>
+        </div>
+        
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Feature cards -->
+            <div class="feature-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center rounded-2xl mb-5">
+                    <i class="fa-solid fa-magic text-lg"></i>
+                </div>
+                <h4 class="font-semibold text-lg mb-2">ترجمة جماعية مدعومة بالذكاء الاصطناعي</h4>
+                <p class="text-sm text-slate-600">ترجم الاستبيانات بالكامل إلى أكثر من 40 لغة في ثوانٍ باستخدام ذكاء اصطناعي متقدم مع الحفاظ على المعنى والمصداقية البحثية.</p>
+                <div class="mt-4 text-xs px-3 py-1 bg-blue-50 text-blue-700 w-fit rounded-2xl font-medium">تصدير ← ترجمة ← استيراد</div>
+            </div>
+            
+            <div class="feature-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="w-9 h-9 bg-gradient-to-br from-violet-500 to-violet-600 text-white flex items-center justify-center rounded-2xl mb-5">
+                    <i class="fa-solid fa-globe text-lg"></i>
+                </div>
+                <h4 class="font-semibold text-lg mb-2">استبيانات متعددة اللغات بحق</h4>
+                <p class="text-sm text-slate-600">يختار المشاركون لغتهم المفضّلة، وتُوحَّد جميع الردود تلقائيًا لأغراض التحليل بغضّ النظر عن لغة الإجابة.</p>
+            </div>
+            
+            <div class="feature-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="w-9 h-9 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white flex items-center justify-center rounded-2xl mb-5">
+                    <i class="fa-solid fa-file-export text-lg"></i>
+                </div>
+                <h4 class="font-semibold text-lg mb-2">تصدير جاهز للتحليل</h4>
+                <p class="text-sm text-slate-600">تصدير بنقرة واحدة مع تسميات المتغيرات وتسميات القيم ورموز القيم المفقودة وكامل البيانات الوصفية، جاهز لـ SPSS وR وStata أو الاستيراد المباشر إلى DataStatPro.</p>
+            </div>
+            
+            <div class="feature-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="w-9 h-9 bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center rounded-2xl mb-5">
+                    <i class="fa-solid fa-qrcode text-lg"></i>
+                </div>
+                <h4 class="font-semibold text-lg mb-2">رمز QR + روابط عامة</h4>
+                <p class="text-sm text-slate-600">روابط مشاركة أنيقة، ورموز QR، وأكواد تضمين. يعمل بكفاءة على الأجهزة المحمولة مع إمكانية الإجابة دون اتصال بالإنترنت.</p>
+            </div>
+            
+            <div class="feature-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="w-9 h-9 bg-gradient-to-br from-rose-500 to-pink-600 text-white flex items-center justify-center rounded-2xl mb-5">
+                    <i class="fa-solid fa-table text-lg"></i>
+                </div>
+                <h4 class="font-semibold text-lg mb-2">محرّر ردود بنمط الجداول</h4>
+                <p class="text-sm text-slate-600">حرّر ونظّف وتحقّق من صحّة الردود بشكل جماعي عبر واجهة جداول مألوفة. مثالي لمجموعات البيانات الكبيرة وعمليات تنظيف البيانات.</p>
+            </div>
+            
+            <div class="feature-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="w-9 h-9 bg-gradient-to-br from-teal-500 to-cyan-600 text-white flex items-center justify-center rounded-2xl mb-5">
+                    <i class="fa-solid fa-plug text-lg"></i>
+                </div>
+                <h4 class="font-semibold text-lg mb-2">تكامل إحصائي مباشر</h4>
+                <p class="text-sm text-slate-600">تحمّل خاصية «ربط البيانات» استبيانك فورًا إلى محرّك التحليلات الكامل في DataStatPro — دون أي عناء تصدير أو استيراد.</p>
+                <div class="mt-3 text-xs text-teal-600 font-semibold flex items-center gap-x-1">
+                    <i class="fa-solid fa-magic"></i> 
+                    <span>دون فقدان أي بيانات • ربط كامل للمتغيرات</span>
+                </div>
+            </div>
+            
+            <div class="feature-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center rounded-2xl mb-5">
+                    <i class="fa-solid fa-users-cog text-lg"></i>
+                </div>
+                <h4 class="font-semibold text-lg mb-2">تعاون الفريق</h4>
+                <p class="text-sm text-slate-600">صلاحيات قائمة على الأدوار: مالك، محرّر، محلّل، مُشاهد. تحرير تشاركي للاستبيانات في الوقت الفعلي ولوحات ردود مشتركة.</p>
+            </div>
+            
+            <div class="feature-card bg-white border border-slate-200 rounded-3xl p-6">
+                <div class="w-9 h-9 bg-gradient-to-br from-slate-700 to-slate-800 text-white flex items-center justify-center rounded-2xl mb-5">
+                    <i class="fa-solid fa-shield-halved text-lg"></i>
+                </div>
+                <h4 class="font-semibold text-lg mb-2">أمان بمستوى المؤسسات</h4>
+                <p class="text-sm text-slate-600">تشفير من الطرف إلى الطرف، وجاهزية للامتثال لـ GDPR وHIPAA، وتوافق مع الهيئة الوطنية للأمن السيبراني السعودية، وسجلّات تدقيق، وخيارات نشر على سحابة خاصة.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIVE DEMO -->
+    <div id="demo" class="bg-white border-y border-slate-200 py-16">
+        <div class="max-w-screen-xl mx-auto px-8">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-y-4">
+                <div>
+                    <div class="flex items-center gap-x-3">
+                        <span class="px-4 py-1 text-xs tracking-widest font-bold bg-gradient-to-r from-blue-600 to-violet-600 text-white rounded-3xl">تفاعلي</span>
+                        <span class="text-blue-600 text-sm font-bold">العرض الحي</span>
+                    </div>
+                    <h2 class="section-header tracking-tighter mt-1">صمّم استبيانًا.<br>وشاهده يتحوّل إلى رؤى.</h2>
+                </div>
+                <div>
+                    <button onclick="loadSampleSurvey()" 
+                            class="flex items-center text-sm font-semibold px-5 h-10 rounded-3xl border border-slate-300 hover:bg-slate-50 transition-colors">
+                        <i class="fa-solid fa-magic ml-2"></i> 
+                        تحميل استبيان بحثي نموذجي
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Demo Container -->
+            <div class="bg-slate-900 rounded-3xl p-2 shadow-2xl">
+                <div class="bg-white rounded-[22px] overflow-hidden">
+                    
+                    <!-- Demo Header -->
+                    <div class="bg-slate-100 px-6 py-3 flex items-center justify-between border-b">
+                        <div class="flex items-center gap-x-3">
+                            <div class="flex items-center gap-x-2">
+                                <i class="fa-solid fa-poll text-blue-600 text-xl"></i>
+                                <span class="font-bold text-lg">منشئ استبيانات DSP</span>
+                            </div>
+                            <div class="dsp-badge text-xs">PRO</div>
+                        </div>
+                        
+                        <div class="flex items-center gap-x-2 text-xs">
+                            <div class="px-3 py-1 bg-white rounded-2xl flex items-center gap-x-1.5 border">
+                                <i class="fa-solid fa-globe text-emerald-500"></i>
+                                <span class="font-medium">متعدد اللغات</span>
+                            </div>
+                            <div onclick="attachToDataStatPro()" class="cursor-pointer flex items-center gap-x-2 bg-emerald-600 hover:bg-emerald-700 transition-colors text-white text-xs font-bold px-4 h-8 rounded-2xl">
+                                <i class="fa-solid fa-link"></i>
+                                <span>الربط بـ DATASTATPRO</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Demo Tabs -->
+                    <div class="flex border-b bg-white px-2">
+                        <div onclick="switchDemoTab(0)" class="demo-tab active flex-1 md:flex-none px-6 py-3 text-sm font-semibold flex items-center justify-center gap-x-2 cursor-pointer" id="tab-0">
+                            <i class="fa-solid fa-edit"></i>
+                            <span>المُنشئ</span>
+                        </div>
+                        <div onclick="switchDemoTab(1)" class="demo-tab flex-1 md:flex-none px-6 py-3 text-sm font-semibold flex items-center justify-center gap-x-2 cursor-pointer text-slate-500 hover:text-slate-700" id="tab-1">
+                            <i class="fa-solid fa-inbox"></i>
+                            <span>الردود <span id="response-count" class="font-mono text-xs bg-slate-200 px-1.5 rounded">0</span></span>
+                        </div>
+                        <div onclick="switchDemoTab(2)" class="demo-tab flex-1 md:flex-none px-6 py-3 text-sm font-semibold flex items-center justify-center gap-x-2 cursor-pointer text-slate-500 hover:text-slate-700" id="tab-2">
+                            <i class="fa-solid fa-chart-bar"></i>
+                            <span>التحليل</span>
+                        </div>
+                    </div>
+                    
+                    <!-- TAB 0: BUILDER -->
+                    <div id="demo-tab-content-0" class="p-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                            
+                            <!-- Survey Info -->
+                            <div class="lg:col-span-5 space-y-4">
+                                <div>
+                                    <label class="text-xs font-bold tracking-wider text-slate-500 block mb-1.5">عنوان الاستبيان</label>
+                                    <input id="survey-title" type="text" value="دراسة الوصول إلى الرعاية الصحية ورضا المرضى 2026" 
+                                           class="w-full border border-slate-300 focus:border-blue-500 outline-none px-4 py-3 rounded-2xl text-sm font-medium">
+                                </div>
+                                
+                                <div>
+                                    <label class="text-xs font-bold tracking-wider text-slate-500 block mb-1.5">الوصف</label>
+                                    <textarea id="survey-desc" rows="2" class="w-full border border-slate-300 focus:border-blue-500 outline-none px-4 py-3 rounded-2xl text-sm">فهم العوائق التي تحول دون الوصول إلى الخدمات الصحية بين سكّان منطقة الرياض. معتمد من لجنة أخلاقيات البحث رقم 2026-047.</textarea>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="text-xs font-bold tracking-wider text-slate-500 block mb-1.5">اللغة الأساسية</label>
+                                        <select id="primary-lang" class="w-full border border-slate-300 px-4 py-3 rounded-2xl text-sm">
+                                            <option>الإنجليزية</option>
+                                            <option>العربية</option>
+                                            <option>الفرنسية</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-bold tracking-wider text-slate-500 block mb-1.5">لغات إضافية</label>
+                                        <div class="flex flex-wrap gap-1.5">
+                                            <div class="px-3 py-1 text-xs bg-emerald-100 text-emerald-700 rounded-2xl flex items-center">العربية <span onclick="event.target.parentElement.remove()" class="mr-1 cursor-pointer">×</span></div>
+                                            <button onclick="addLanguage()" class="px-3 py-1 text-xs border border-dashed border-slate-300 hover:bg-slate-50 rounded-2xl text-slate-500">+ إضافة</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Questions -->
+                            <div class="lg:col-span-7">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="font-bold flex items-center gap-x-2">
+                                        الأسئلة 
+                                        <span id="question-count" class="font-mono text-xs bg-slate-900 text-white px-2 rounded">0</span>
+                                    </div>
+                                    <button onclick="showAddQuestionModal()" 
+                                            class="text-xs flex items-center gap-x-2 px-4 h-8 bg-blue-600 hover:bg-blue-700 transition-colors text-white font-semibold rounded-2xl">
+                                        <i class="fa-solid fa-plus"></i>
+                                        <span>إضافة سؤال</span>
+                                    </button>
+                                </div>
+                                
+                                <div id="questions-list" class="space-y-2 max-h-[280px] overflow-auto pr-1 custom-scroll">
+                                    <!-- Populated by JS -->
+                                </div>
+                                
+                                <div class="text-[10px] text-center text-slate-400 mt-2">اسحب لإعادة الترتيب • انقر للتحرير</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between border-t pt-5 mt-6">
+                            <div class="flex gap-x-3">
+                                <button onclick="previewSurvey()" class="flex items-center gap-x-2 px-6 h-11 border border-slate-300 hover:bg-slate-50 transition-colors font-semibold rounded-3xl text-sm">
+                                    <i class="fa-solid fa-eye"></i>
+                                    <span>معاينة الاستبيان</span>
+                                </button>
+                                
+                                <button onclick="generateSampleResponses()" class="flex items-center gap-x-2 px-5 h-11 bg-emerald-600 hover:bg-emerald-700 transition-colors font-semibold text-white rounded-3xl text-sm">
+                                    <i class="fa-solid fa-magic"></i>
+                                    <span>توليد 50 ردًّا نموذجيًا</span>
+                                </button>
+                            </div>
+                            
+                            <button onclick="attachToDataStatPro()" 
+                                    class="hidden md:flex items-center gap-x-2 px-6 h-11 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold rounded-3xl text-sm shadow-lg shadow-emerald-500/30">
+                                <i class="fa-solid fa-paper-plane"></i>
+                                <span>ربط البيانات بالتحليل</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- TAB 1: RESPONSES -->
+                    <div id="demo-tab-content-1" class="hidden p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <span class="font-bold">إدارة الردود</span>
+                                <span id="responses-header-count" class="mr-2 text-sm text-emerald-600 font-mono">(0 ردود)</span>
+                            </div>
+                            <div class="flex gap-x-2">
+                                <button onclick="exportToCSV()" class="flex items-center gap-x-2 text-xs px-4 h-9 border border-slate-300 rounded-2xl hover:bg-white font-medium">
+                                    <i class="fa-solid fa-download"></i>
+                                    <span>تصدير CSV</span>
+                                </button>
+                                <button onclick="clearResponses()" class="flex items-center gap-x-2 text-xs px-4 h-9 border border-red-200 text-red-600 hover:bg-red-50 rounded-2xl font-medium">
+                                    <i class="fa-solid fa-trash"></i>
+                                    <span>حذف الكل</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="border border-slate-200 rounded-2xl overflow-hidden">
+                            <table class="w-full text-sm data-table">
+                                <thead class="bg-slate-100">
+                                    <tr>
+                                        <th class="px-4 py-3 text-right font-semibold w-12">#</th>
+                                        <th class="px-4 py-3 text-right font-semibold">المشارِك</th>
+                                        <th class="px-4 py-3 text-right font-semibold">التاريخ</th>
+                                        <th class="px-4 py-3 text-right font-semibold">الرضا</th>
+                                        <th class="px-4 py-3 text-right font-semibold">العمر</th>
+                                        <th class="px-4 py-3 text-right font-semibold">يوصي بنا</th>
+                                        <th class="px-4 py-3 w-10"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="responses-table-body" class="divide-y text-sm">
+                                    <!-- JS populated -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="text-xs text-center text-slate-400 mt-3">تُحفظ الردود محليًا في هذا العرض التوضيحي. في استبيانات DSP الفعلية تتزامن فورًا عبر فريقك.</div>
+                    </div>
+                    
+                    <!-- TAB 2: ANALYSIS -->
+                    <div id="demo-tab-content-2" class="hidden p-6 bg-slate-50">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <span class="font-extrabold text-xl">مساحة عمل التحليل</span>
+                                <span class="mr-3 px-3 py-px text-xs bg-emerald-100 text-emerald-700 rounded font-bold">تم ربط البيانات</span>
+                            </div>
+                            
+                            <div class="text-xs px-3 py-1 bg-white border rounded-2xl flex items-center gap-x-2">
+                                <i class="fa-solid fa-sync text-emerald-500"></i>
+                                <span class="font-medium">متزامن مع DataStatPro • آخر مزامنة: الآن</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Metrics -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                            <div class="metric-card border border-emerald-100 rounded-2xl p-4">
+                                <div class="text-emerald-600 text-xs font-bold">إجمالي الردود</div>
+                                <div id="analysis-total" class="text-4xl font-extrabold tabular-nums">—</div>
+                            </div>
+                            <div class="metric-card border border-emerald-100 rounded-2xl p-4">
+                                <div class="text-emerald-600 text-xs font-bold">نسبة الإكمال</div>
+                                <div id="analysis-completion" class="text-4xl font-extrabold tabular-nums">—</div>
+                            </div>
+                            <div class="metric-card border border-emerald-100 rounded-2xl p-4">
+                                <div class="text-emerald-600 text-xs font-bold">متوسط الرضا</div>
+                                <div id="analysis-satisfaction" class="text-4xl font-extrabold tabular-nums">—</div>
+                                <div class="text-xs text-emerald-600">/ 5.0</div>
+                            </div>
+                            <div class="metric-card border border-emerald-100 rounded-2xl p-4">
+                                <div class="text-emerald-600 text-xs font-bold">نسبة التوصية</div>
+                                <div id="analysis-recommend" class="text-4xl font-extrabold tabular-nums">—</div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+                            <!-- Quick Stats Table -->
+                            <div class="lg:col-span-3 bg-white border border-slate-200 rounded-2xl p-5">
+                                <div class="font-bold mb-3 flex items-center justify-between">
+                                    <span>الإحصاء الوصفي</span>
+                                    <button onclick="runDescriptiveStats()" class="text-xs px-3 py-1 bg-blue-600 text-white rounded-2xl">تشغيل التحليل الكامل</button>
+                                </div>
+                                
+                                <div id="descriptive-stats-table" class="text-sm">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+                            
+                            <div class="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5">
+                                <div class="font-bold mb-3">تمثيلات بصرية سريعة</div>
+                                
+                                <div class="space-y-3">
+                                    <button onclick="showChartModal('satisfaction')" class="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 transition-colors border border-slate-200 rounded-2xl text-sm">
+                                        <div class="flex items-center gap-x-3">
+                                            <i class="fa-solid fa-chart-bar text-blue-500 w-4"></i>
+                                            <span>توزيع الرضا</span>
+                                        </div>
+                                        <i class="fa-solid fa-chevron-left text-xs"></i>
+                                    </button>
+                                    
+                                    <button onclick="showChartModal('recommend')" class="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 transition-colors border border-slate-200 rounded-2xl text-sm">
+                                        <div class="flex items-center gap-x-3">
+                                            <i class="fa-solid fa-chart-pie text-violet-500 w-4"></i>
+                                            <span>التوصية بالخدمة</span>
+                                        </div>
+                                        <i class="fa-solid fa-chevron-left text-xs"></i>
+                                    </button>
+                                    
+                                    <button onclick="showChartModal('age')" class="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 transition-colors border border-slate-200 rounded-2xl text-sm">
+                                        <div class="flex items-center gap-x-3">
+                                            <i class="fa-solid fa-chart-line text-emerald-500 w-4"></i>
+                                            <span>توزيع الأعمار</span>
+                                        </div>
+                                        <i class="fa-solid fa-chevron-left text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-gradient-to-r from-blue-600/5 to-violet-600/5 border border-blue-100 rounded-2xl text-xs flex items-start gap-x-3">
+                            <i class="fa-solid fa-info-circle text-blue-600 mt-0.5"></i>
+                            <div>
+                                <span class="font-semibold">نصيحة احترافية:</span> تُربط جميع المتغيرات تلقائيًا. يمكنك الآن تشغيل الإحصاء الاستدلالي أو الارتباط أو التحليل المتقدّم مباشرةً من واجهة DataStatPro الرئيسية (انظر لقطات الشاشة).
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="text-center mt-3 text-xs text-slate-500">هذا عرض تفاعلي يعمل بكامل وظائفه. تبقى جميع التغييرات داخل متصفّحك.</div>
+        </div>
+    </div>
+
+    <!-- How it Works -->
+    <div id="how" class="max-w-screen-xl mx-auto px-8 py-16">
+        <div class="text-center mb-12">
+            <div class="text-blue-600 font-bold tracking-[1.5px] text-sm">سير عمل سلس</div>
+            <h2 class="section-header tracking-tighter mt-2">من الاستبيان إلى الرؤى في دقائق،<br>وليس أيامًا.</h2>
+        </div>
+        
+        <div class="grid md:grid-cols-4 gap-5">
+            <div class="bg-white border border-slate-100 p-7 rounded-3xl">
+                <div class="text-xs font-extrabold tracking-wider text-blue-600 mb-4">الخطوة 01</div>
+                <div class="font-bold text-xl mb-3">التصميم</div>
+                <p class="text-sm text-slate-600">استخدم أكثر من 20 نوع سؤال احترافيًا أو ابدأ من أكثر من 40 قالبًا بحثيًا. يساعدك الذكاء الاصطناعي على صياغة أسئلة أفضل.</p>
+                <div class="mt-5 text-xs px-3 py-1 bg-blue-50 text-blue-600 w-fit rounded">قوالب • منطق • تحقّق</div>
+            </div>
+            
+            <div class="bg-white border border-slate-100 p-7 rounded-3xl">
+                <div class="text-xs font-extrabold tracking-wider text-violet-600 mb-4">الخطوة 02</div>
+                <div class="font-bold text-xl mb-3">الجمع</div>
+                <p class="text-sm text-slate-600">شارك عبر رابط أو رمز QR أو تضمين. اجمع الردود بعدة لغات في آنٍ واحد مع لوحات معلومات لحظية.</p>
+                <div class="mt-5 text-xs px-3 py-1 bg-violet-50 text-violet-600 w-fit rounded">QR • مجهول الهوية • يدعم الجوال أولًا</div>
+            </div>
+            
+            <div class="bg-white border border-slate-100 p-7 rounded-3xl">
+                <div class="text-xs font-extrabold tracking-wider text-emerald-600 mb-4">الخطوة 03</div>
+                <div class="font-bold text-xl mb-3">الإدارة والتنظيف</div>
+                <p class="text-sm text-slate-600">راجع الردود في وضع الجداول. حرّر بشكل جماعي، وأعد ترميز المتغيرات، وعالج البيانات المفقودة، وتحقّق من المدخلات.</p>
+                <div class="mt-5 text-xs px-3 py-1 bg-emerald-50 text-emerald-600 w-fit rounded">محرّر جماعي • التحقّق من البيانات</div>
+            </div>
+            
+            <div class="bg-white border border-slate-100 p-7 rounded-3xl relative overflow-hidden">
+                <div class="text-xs font-extrabold tracking-wider text-teal-600 mb-4">الخطوة 04</div>
+                <div class="font-bold text-xl mb-3">التحليل الفوري</div>
+                <p class="text-sm text-slate-600">نقرة واحدة تربط بياناتك بـ DataStatPro. نفّذ الإحصاء الوصفي والاستدلالي والمتقدّم على الفور.</p>
+                
+                <div class="absolute bottom-5 left-5 text-[10px] px-3 py-1 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-2xl text-center leading-none pt-1.5">
+                    <div class="font-bold">صفر</div>
+                    <div class="text-[9px] -mt-0.5">عناء</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ -->
+    <div id="faq" class="max-w-screen-xl mx-auto px-8 pb-16">
+        <div class="max-w-3xl mx-auto">
+            <div class="text-center mb-8">
+                <h2 class="section-header tracking-tighter">الأسئلة الشائعة</h2>
+            </div>
+            
+            <div class="space-y-2">
+                <!-- FAQ items -->
+                <div class="faq-item border border-slate-200 rounded-3xl overflow-hidden">
+                    <button onclick="toggleFAQ(this)" class="w-full flex justify-between items-center px-6 py-4 text-right font-semibold hover:bg-slate-50">
+                        <span>ما هو أفضل بديل لـ Google Forms للباحثين؟</span>
+                        <i class="fa-solid fa-chevron-down transition-transform"></i>
+                    </button>
+                    <div class="faq-answer hidden px-6 pb-5 text-sm text-slate-600">
+                        استبيانات DSP منصة متكاملة لإدارة الاستبيانات بمستوى بحثي. فهي تجمع بين تصميم استبيانات قوي، ودعم حقيقي متعدد اللغات مع ترجمة بالذكاء الاصطناعي، وإدارة الردود، والتحليل الإحصائي المباشر داخل DataStatPro — وهو ما لا توفّره أي أداة نماذج أخرى.
+                    </div>
+                </div>
+                
+                <div class="faq-item border border-slate-200 rounded-3xl overflow-hidden">
+                    <button onclick="toggleFAQ(this)" class="w-full flex justify-between items-center px-6 py-4 text-right font-semibold hover:bg-slate-50">
+                        <span>كيف أنشئ استبيانات متعددة اللغات؟</span>
+                        <i class="fa-solid fa-chevron-down transition-transform"></i>
+                    </button>
+                    <div class="faq-answer hidden px-6 pb-5 text-sm text-slate-600">
+                        تدعم استبيانات DSP الاستبيانات متعددة اللغات بالكامل. يمكنك إضافة أي عدد تحتاجه من اللغات. استخدم الترجمة الجماعية المدمجة بالذكاء الاصطناعي لترجمة جميع الأسئلة والخيارات والتعليمات في ثوانٍ مع الحفاظ على المعنى والمصطلحات البحثية.
+                    </div>
+                </div>
+                
+                <div class="faq-item border border-slate-200 rounded-3xl overflow-hidden">
+                    <button onclick="toggleFAQ(this)" class="w-full flex justify-between items-center px-6 py-4 text-right font-semibold hover:bg-slate-50">
+                        <span>هل يمكنني ربط بيانات الاستبيان مباشرةً بالتحليل الإحصائي؟</span>
+                        <i class="fa-solid fa-chevron-down transition-transform"></i>
+                    </button>
+                    <div class="faq-answer hidden px-6 pb-5 text-sm text-slate-600">
+                        نعم. تنقل خاصية «ربط البيانات» ردودك المُنظّفة فورًا إلى مساحة العمل الإحصائية في DataStatPro مع الحفاظ على كامل البيانات الوصفية للمتغيرات. ويمكنك على الفور تشغيل الإحصاء الوصفي واختبارات الفرضيات والانحدار والتحليل العاملي وغيرها دون أي خطوات تصدير أو استيراد.
+                    </div>
+                </div>
+                
+                <div class="faq-item border border-slate-200 rounded-3xl overflow-hidden">
+                    <button onclick="toggleFAQ(this)" class="w-full flex justify-between items-center px-6 py-4 text-right font-semibold hover:bg-slate-50">
+                        <span>هل من الممكن تعديل الردود بعد جمعها؟</span>
+                        <i class="fa-solid fa-chevron-down transition-transform"></i>
+                    </button>
+                    <div class="faq-answer hidden px-6 pb-5 text-sm text-slate-600">
+                        بالتأكيد. يمكن عرض الردود وتعديلها بشكل فردي أو جماعي باستخدام محرّر الردود القوي بنمط الجداول. وهذا مفيد بشكل خاص لتنظيف البيانات وإعادة الترميز ومعالجة الردود الجزئية.
+                    </div>
+                </div>
+                
+                <div class="faq-item border border-slate-200 rounded-3xl overflow-hidden">
+                    <button onclick="toggleFAQ(this)" class="w-full flex justify-between items-center px-6 py-4 text-right font-semibold hover:bg-slate-50">
+                        <span>ما أنواع التحليل الإحصائي التي تدعمها استبيانات DSP؟</span>
+                        <i class="fa-solid fa-chevron-down transition-transform"></i>
+                    </button>
+                    <div class="faq-answer hidden px-6 pb-5 text-sm text-slate-600">
+                        نظرًا لأنها تعمل داخل DataStatPro، فإنك تحصل على المجموعة الكاملة: الإحصاء الوصفي، واختبارات t، وتحليل التباين (ANOVA)، والانحدار، والارتباط، والاختبارات اللامعلمية، وتحليل الثبات، والتحليل العاملي، وتحليل البقاء، وغيرها الكثير من الأساليب المتقدّمة.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final CTA -->
+    <div class="bg-gradient-to-br from-slate-900 to-black text-white py-16">
+        <div class="max-w-screen-xl mx-auto px-8 text-center">
+            <div class="max-w-md mx-auto">
+                <h3 class="font-display text-4xl tracking-tighter font-bold">هل أنت مستعد لتحويل طريقة جمعك للبيانات وتحليلها؟</h3>
+                <p class="mt-4 text-white/70">انضمّ إلى آلاف الباحثين والمستشفيات والجامعات والمؤسسات الذين يستخدمون استبيانات DSP + DataStatPro.</p>
+                
+                <div class="flex flex-col sm:flex-row gap-3 justify-center mt-8">
+                    <button onclick="startFreeTrial()" class="px-10 h-14 bg-white text-black font-bold rounded-3xl flex items-center justify-center gap-x-2 hover:bg-amber-100 transition-colors">
+                        ابدأ تجربة مجانية لمدة 14 يومًا
+                    </button>
+                    <button onclick="document.getElementById('demo').scrollIntoView({ behavior: 'smooth' })" class="px-8 h-14 border border-white/30 hover:bg-white/10 transition-colors font-semibold rounded-3xl flex items-center justify-center">
+                        جرّب العرض التفاعلي
+                    </button>
+                </div>
+                
+                <div class="text-xs mt-6 text-white/50">لا حاجة لبطاقة ائتمان • يمكنك الإلغاء في أي وقت • وصول كامل إلى جميع المزايا</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t py-8 text-xs">
+        <div class="max-w-screen-xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-y-3 text-slate-500">
+            <div>© 2026 DataStatPro. جميع الحقوق محفوظة. صُمّم للباحثين الذين يقدّرون وقتهم.</div>
+            <div class="flex gap-x-5">
+                <a href="#" class="hover:text-slate-700">الخصوصية</a>
+                <a href="#" class="hover:text-slate-700">الشروط</a>
+                <a href="#" class="hover:text-slate-700">الأمان</a>
+                <a href="#" class="hover:text-slate-700">حالة الخدمة</a>
+            </div>
+            <div class="font-mono text-[10px]">DataStatPro v2.3.1 • وحدة استبيانات DSP</div>
+        </div>
+    </footer>
+
+    <!-- Add Question Modal -->
+    <div id="add-question-modal" onclick="if (event.target.id === 'add-question-modal') hideAddQuestionModal()" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div onclick="event.stopImmediatePropagation()" class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden modal">
+            <div class="px-6 py-5 border-b flex justify-between items-center">
+                <div class="font-bold text-xl">إضافة سؤال جديد</div>
+                <button onclick="hideAddQuestionModal()" class="text-3xl leading-none text-slate-300 hover:text-slate-500">×</button>
+            </div>
+            
+            <div class="p-6 space-y-5">
+                <div>
+                    <label class="text-xs font-bold tracking-widest text-slate-500">نص السؤال</label>
+                    <input id="q-text" type="text" placeholder="مثال: ما مدى رضاك عن جودة الرعاية التي تلقّيتها؟" class="mt-1.5 w-full border px-4 py-3 rounded-2xl">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold tracking-widest text-slate-500">نوع السؤال</label>
+                        <select id="q-type" onchange="updateQuestionOptionsUI()" class="mt-1.5 w-full border px-4 py-3 rounded-2xl text-sm">
+                            <option value="text">نص قصير</option>
+                            <option value="textarea">نص طويل / فقرة</option>
+                            <option value="radio">اختيار من متعدد (إجابة واحدة)</option>
+                            <option value="checkbox">مربعات اختيار (متعددة)</option>
+                            <option value="likert">مقياس ليكرت (1-5)</option>
+                            <option value="dropdown">قائمة منسدلة</option>
+                            <option value="number">رقم</option>
+                            <option value="rating">تقييم بالنجوم</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="text-xs font-bold tracking-widest text-slate-500">إلزامي؟</label>
+                        <div class="mt-2 flex items-center gap-x-3">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="q-required" checked class="w-4 h-4 accent-blue-600">
+                                <span class="mr-2 text-sm">نعم، إلزامي</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Dynamic options area -->
+                <div id="options-area" class="hidden">
+                    <label class="text-xs font-bold tracking-widest text-slate-500">الخيارات (خيار واحد في كل سطر)</label>
+                    <textarea id="q-options" rows="4" placeholder="راضٍ جدًا&#10;راضٍ&#10;محايد&#10;غير راضٍ&#10;غير راضٍ إطلاقًا" class="mt-1.5 w-full border px-4 py-3 rounded-2xl text-sm font-mono"></textarea>
+                    <div class="text-xs text-emerald-600 mt-1">في مقاييس ليكرت نولّد تسميات من 1 إلى 5 تلقائيًا.</div>
+                </div>
+            </div>
+            
+            <div class="bg-slate-50 px-6 py-4 flex justify-end gap-x-3">
+                <button onclick="hideAddQuestionModal()" class="px-6 h-10 text-sm font-medium rounded-2xl">إلغاء</button>
+                <button onclick="addQuestionFromModal()" class="px-8 h-10 bg-blue-600 hover:bg-blue-700 transition-colors text-white text-sm font-semibold rounded-2xl">إضافة سؤال</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Survey Modal -->
+    <div id="preview-modal" onclick="if (event.target.id === 'preview-modal') hidePreviewModal()" class="hidden fixed inset-0 bg-black/70 z-[110] flex items-center justify-center p-4">
+        <div onclick="event.stopImmediatePropagation()" class="bg-white w-full max-w-[520px] rounded-3xl shadow-2xl modal max-h-[90vh] flex flex-col">
+            <div class="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
+                <div>
+                    <div class="font-bold" id="preview-survey-title"></div>
+                    <div class="text-xs text-slate-500" id="preview-survey-desc"></div>
+                </div>
+                <button onclick="hidePreviewModal()" class="text-3xl text-slate-300 hover:text-red-400 leading-none">×</button>
+            </div>
+            
+            <div class="p-6 overflow-auto flex-1 survey-preview" id="preview-form-container">
+                <!-- Dynamic form rendered by JS -->
+            </div>
+            
+            <div class="border-t p-4 flex-shrink-0 flex justify-between items-center bg-slate-50 rounded-b-3xl">
+                <div class="text-xs text-emerald-600 font-medium flex items-center gap-x-2">
+                    <i class="fa-solid fa-shield-halved"></i> 
+                    <span>الردود مجهولة الهوية في هذا العرض التوضيحي</span>
+                </div>
+                <button onclick="submitPreviewResponse()" class="px-8 h-11 bg-emerald-600 hover:bg-emerald-700 transition-colors text-white font-bold rounded-3xl text-sm flex items-center gap-x-2">
+                    <span>إرسال الرد</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Modal -->
+    <div id="chart-modal" onclick="if (event.target.id === 'chart-modal') hideChartModal()" class="hidden fixed inset-0 bg-black/70 z-[120] flex items-center justify-center p-4">
+        <div onclick="event.stopImmediatePropagation()" class="bg-white w-full max-w-2xl rounded-3xl p-6 modal">
+            <div class="flex justify-between mb-4">
+                <div id="chart-modal-title" class="font-extrabold text-xl"></div>
+                <button onclick="hideChartModal()" class="text-3xl text-slate-300 hover:text-red-400">×</button>
+            </div>
+            <div class="h-80">
+                <canvas id="analysis-chart"></canvas>
+            </div>
+            <div class="text-xs text-center text-slate-500 mt-3">تمثيل بصري تفاعلي مدعوم بمحرّك تحليلات DataStatPro</div>
+        </div>
+    </div>
+
+    <script>
+        // Tailwind script
+        function initializeTailwind() {
+            document.documentElement.style.setProperty('--accent', '#2563eb');
+        }
+        
+        let questions = [];
+        let responses = [];
+        let currentChart = null;
+        
+        function updateQuestionCount() {
+            document.getElementById('question-count').innerText = questions.length;
+        }
+        
+        function renderQuestionsList() {
+            const container = document.getElementById('questions-list');
+            container.innerHTML = '';
+            
+            if (questions.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 border border-dashed border-slate-200 rounded-3xl">
+                        <i class="fa-solid fa-question-circle text-3xl text-slate-300"></i>
+                        <p class="text-sm mt-3 text-slate-400">لا توجد أسئلة بعد. انقر على "إضافة سؤال" بالأعلى.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            questions.forEach((q, index) => {
+                const div = document.createElement('div');
+                div.className = `question-item flex items-start gap-x-3 bg-white border border-slate-200 p-3 rounded-2xl group`;
+                
+                let typeLabel = '';
+                let icon = 'fa-question';
+                
+                switch(q.type) {
+                    case 'text': typeLabel = 'نص قصير'; icon = 'fa-font'; break;
+                    case 'textarea': typeLabel = 'فقرة'; icon = 'fa-align-left'; break;
+                    case 'radio': typeLabel = 'اختيار من متعدد'; icon = 'fa-list-ul'; break;
+                    case 'checkbox': typeLabel = 'مربعات اختيار'; icon = 'fa-check-square'; break;
+                    case 'likert': typeLabel = 'ليكرت 1-5'; icon = 'fa-sliders-h'; break;
+                    case 'dropdown': typeLabel = 'قائمة منسدلة'; icon = 'fa-caret-down'; break;
+                    case 'number': typeLabel = 'رقم'; icon = 'fa-hashtag'; break;
+                    case 'rating': typeLabel = 'تقييم بالنجوم'; icon = 'fa-star'; break;
+                }
+                
+                div.innerHTML = `
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-x-2">
+                            <span class="font-medium text-sm line-clamp-1">${q.text}</span>
+                            ${q.required ? '<span class="text-red-500 text-xs font-bold">*</span>' : ''}
+                        </div>
+                        <div class="flex items-center gap-x-2 mt-1">
+                            <span class="px-2.5 text-[10px] font-mono py-px bg-slate-100 text-slate-600 rounded">${typeLabel}</span>
+                            ${q.options && q.options.length ? `<span class="text-[10px] text-slate-400">${q.options.length} خيارات</span>` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="editQuestion(${index}); event.stopImmediatePropagation();" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl">
+                            <i class="fa-solid fa-edit text-sm"></i>
+                        </button>
+                        <button onclick="deleteQuestion(${index}); event.stopImmediatePropagation();" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl">
+                            <i class="fa-solid fa-trash text-sm"></i>
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+        
+        function showAddQuestionModal() {
+            document.getElementById('add-question-modal').classList.remove('hidden');
+            document.getElementById('add-question-modal').classList.add('flex');
+            
+            // Reset form
+            document.getElementById('q-text').value = '';
+            document.getElementById('q-type').value = 'radio';
+            document.getElementById('q-required').checked = true;
+            document.getElementById('options-area').classList.add('hidden');
+            document.getElementById('q-options').value = '';
+        }
+        
+        function hideAddQuestionModal() {
+            const modal = document.getElementById('add-question-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+        
+        function updateQuestionOptionsUI() {
+            const type = document.getElementById('q-type').value;
+            const optionsArea = document.getElementById('options-area');
+            
+            if (['radio', 'checkbox', 'dropdown'].includes(type)) {
+                optionsArea.classList.remove('hidden');
+                if (!document.getElementById('q-options').value) {
+                    document.getElementById('q-options').value = "الخيار 1\nالخيار 2\nالخيار 3";
+                }
+            } else if (type === 'likert') {
+                optionsArea.classList.remove('hidden');
+                document.getElementById('q-options').value = "1 - غير موافق بشدة\n2 - غير موافق\n3 - محايد\n4 - موافق\n5 - موافق بشدة";
+            } else {
+                optionsArea.classList.add('hidden');
+            }
+        }
+        
+        function addQuestionFromModal() {
+            const text = document.getElementById('q-text').value.trim();
+            if (!text) {
+                alert("يرجى إدخال نص السؤال");
+                return;
+            }
+            
+            const type = document.getElementById('q-type').value;
+            const required = document.getElementById('q-required').checked;
+            
+            let options = [];
+            
+            if (['radio', 'checkbox', 'dropdown', 'likert'].includes(type)) {
+                const raw = document.getElementById('q-options').value.trim();
+                if (raw) {
+                    options = raw.split('\n').map(o => o.trim()).filter(o => o.length > 0);
+                }
+            }
+            
+            const newQuestion = {
+                id: Date.now(),
+                text: text,
+                type: type,
+                required: required,
+                options: options
+            };
+            
+            questions.push(newQuestion);
+            
+            hideAddQuestionModal();
+            renderQuestionsList();
+            updateQuestionCount();
+        }
+        
+        function editQuestion(index) {
+            const q = questions[index];
+            const modal = document.getElementById('add-question-modal');
+            
+            document.getElementById('q-text').value = q.text;
+            document.getElementById('q-type').value = q.type;
+            document.getElementById('q-required').checked = q.required || false;
+            
+            if (q.options && q.options.length > 0) {
+                document.getElementById('q-options').value = q.options.join('\n');
+                document.getElementById('options-area').classList.remove('hidden');
+            } else {
+                document.getElementById('options-area').classList.add('hidden');
+            }
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Change button action temporarily
+            const addBtn = modal.querySelector('button[onclick*="addQuestionFromModal"]');
+            const originalText = addBtn.innerHTML;
+            
+            addBtn.innerHTML = 'حفظ التغييرات';
+            addBtn.onclick = function() {
+                const newText = document.getElementById('q-text').value.trim();
+                if (!newText) return;
+                
+                questions[index].text = newText;
+                questions[index].type = document.getElementById('q-type').value;
+                questions[index].required = document.getElementById('q-required').checked;
+                
+                if (['radio', 'checkbox', 'dropdown', 'likert'].includes(questions[index].type)) {
+                    const raw = document.getElementById('q-options').value.trim();
+                    questions[index].options = raw ? raw.split('\n').map(o => o.trim()).filter(Boolean) : [];
+                } else {
+                    questions[index].options = [];
+                }
+                
+                hideAddQuestionModal();
+                renderQuestionsList();
+                
+                // Restore original button
+                addBtn.innerHTML = originalText;
+                addBtn.onclick = () => addQuestionFromModal();
+            };
+        }
+        
+        function deleteQuestion(index) {
+            if (confirm('هل تريد حذف هذا السؤال؟')) {
+                questions.splice(index, 1);
+                renderQuestionsList();
+                updateQuestionCount();
+            }
+        }
+        
+        function addLanguage() {
+            const lang = prompt("أدخل اسم اللغة (مثال: الإسبانية، الصينية):");
+            if (lang) {
+                const container = event.currentTarget ? event.currentTarget.parentElement : document.querySelector('#demo-tab-content-0 .flex-wrap');
+                if (container) {
+                    const pill = document.createElement('div');
+                    pill.className = `px-3 py-1 text-xs bg-emerald-100 text-emerald-700 rounded-2xl flex items-center`;
+                    pill.innerHTML = `${lang} <span onclick="this.parentElement.remove()" class="ml-1 cursor-pointer">×</span>`;
+                    container.appendChild(pill);
+                }
+            }
+        }
+        
+        function previewSurvey() {
+            if (questions.length === 0) {
+                alert("يرجى إضافة سؤال واحد على الأقل أولًا.");
+                return;
+            }
+            
+            const modal = document.getElementById('preview-modal');
+            const titleEl = document.getElementById('preview-survey-title');
+            const descEl = document.getElementById('preview-survey-desc');
+            const formContainer = document.getElementById('preview-form-container');
+            
+            titleEl.innerText = document.getElementById('survey-title').value || "استبيان بلا عنوان";
+            descEl.innerText = document.getElementById('survey-desc').value || "";
+            
+            formContainer.innerHTML = '';
+            
+            const form = document.createElement('form');
+            form.id = 'preview-form';
+            form.className = 'space-y-6';
+            
+            questions.forEach((q, idx) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'space-y-2';
+                
+                const label = document.createElement('label');
+                label.className = `block text-sm font-semibold ${q.required ? 'after:content-["*"] after:text-red-500 after:ml-0.5' : ''}`;
+                label.innerText = q.text;
+                wrapper.appendChild(label);
+                
+                let inputEl;
+                
+                if (q.type === 'text') {
+                    inputEl = document.createElement('input');
+                    inputEl.type = 'text';
+                    inputEl.className = 'w-full border px-4 py-3 rounded-2xl';
+                    if (q.required) inputEl.required = true;
+                } 
+                else if (q.type === 'textarea') {
+                    inputEl = document.createElement('textarea');
+                    inputEl.rows = 3;
+                    inputEl.className = 'w-full border px-4 py-3 rounded-2xl';
+                    if (q.required) inputEl.required = true;
+                } 
+                else if (q.type === 'number') {
+                    inputEl = document.createElement('input');
+                    inputEl.type = 'number';
+                    inputEl.className = 'w-full border px-4 py-3 rounded-2xl';
+                    if (q.required) inputEl.required = true;
+                } 
+                else if (q.type === 'likert') {
+                    const likertDiv = document.createElement('div');
+                    likertDiv.className = 'flex gap-x-1 justify-between bg-slate-50 p-1 rounded-2xl';
+                    
+                    const labels = q.options.length ? q.options : ['1', '2', '3', '4', '5'];
+                    
+                    labels.forEach((labelText, i) => {
+                        const optLabel = document.createElement('label');
+                        optLabel.className = `flex-1 text-center cursor-pointer py-2 px-1 text-xs font-medium border border-transparent hover:bg-white rounded-xl`;
+                        
+                        const radio = document.createElement('input');
+                        radio.type = 'radio';
+                        radio.name = `q_${idx}`;
+                        radio.value = (i + 1).toString();
+                        if (q.required) radio.required = true;
+                        
+                        const span = document.createElement('span');
+                        span.className = 'block mt-0.5';
+                        span.innerText = labelText.length > 12 ? labelText.substring(0, 10) + '...' : labelText;
+                        
+                        optLabel.appendChild(radio);
+                        optLabel.appendChild(span);
+                        likertDiv.appendChild(optLabel);
+                    });
+                    
+                    wrapper.appendChild(likertDiv);
+                    form.appendChild(wrapper);
+                    return;
+                } 
+                else if (q.type === 'radio' || q.type === 'dropdown') {
+                    if (q.type === 'dropdown') {
+                        inputEl = document.createElement('select');
+                        inputEl.className = 'w-full border px-4 py-3 rounded-2xl';
+                        
+                        const placeholder = document.createElement('option');
+                        placeholder.value = '';
+                        placeholder.innerText = '-- اختر --';
+                        inputEl.appendChild(placeholder);
+                        
+                        q.options.forEach(opt => {
+                            const o = document.createElement('option');
+                            o.value = opt;
+                            o.innerText = opt;
+                            inputEl.appendChild(o);
+                        });
+                        
+                        if (q.required) inputEl.required = true;
+                    } else {
+                        const radioGroup = document.createElement('div');
+                        radioGroup.className = 'space-y-1.5';
+                        
+                        q.options.forEach((opt, optIdx) => {
+                            const label = document.createElement('label');
+                            label.className = 'flex items-center gap-x-3 px-4 py-2.5 border border-slate-200 hover:bg-slate-50 rounded-2xl cursor-pointer text-sm';
+                            
+                            const radio = document.createElement('input');
+                            radio.type = 'radio';
+                            radio.name = `q_${idx}`;
+                            radio.value = opt;
+                            if (q.required) radio.required = true;
+                            
+                            const span = document.createElement('span');
+                            span.innerText = opt;
+                            
+                            label.appendChild(radio);
+                            label.appendChild(span);
+                            radioGroup.appendChild(label);
+                        });
+                        
+                        wrapper.appendChild(radioGroup);
+                        form.appendChild(wrapper);
+                        return;
+                    }
+                } 
+                else if (q.type === 'checkbox') {
+                    const checkGroup = document.createElement('div');
+                    checkGroup.className = 'space-y-1.5';
+                    
+                    q.options.forEach(opt => {
+                        const label = document.createElement('label');
+                        label.className = 'flex items-center gap-x-3 px-4 py-2 border border-slate-200 hover:bg-slate-50 rounded-2xl cursor-pointer text-sm';
+                        
+                        const check = document.createElement('input');
+                        check.type = 'checkbox';
+                        check.name = `q_${idx}[]`;
+                        check.value = opt;
+                        
+                        const span = document.createElement('span');
+                        span.innerText = opt;
+                        
+                        label.appendChild(check);
+                        label.appendChild(span);
+                        checkGroup.appendChild(label);
+                    });
+                    
+                    wrapper.appendChild(checkGroup);
+                    form.appendChild(wrapper);
+                    return;
+                } 
+                else if (q.type === 'rating') {
+                    const ratingDiv = document.createElement('div');
+                    ratingDiv.className = 'flex gap-x-1 text-3xl text-amber-400';
+                    
+                    for (let i = 1; i <= 5; i++) {
+                        const star = document.createElement('i');
+                        star.className = `fa-regular fa-star cursor-pointer hover:text-amber-500`;
+                        star.dataset.value = i;
+                        
+                        star.onclick = () => {
+                            // highlight stars
+                            ratingDiv.querySelectorAll('i').forEach((s, idx) => {
+                                if (idx < i) {
+                                    s.classList.remove('fa-regular');
+                                    s.classList.add('fa-solid');
+                                } else {
+                                    s.classList.add('fa-regular');
+                                    s.classList.remove('fa-solid');
+                                }
+                            });
+                            // store value
+                            ratingDiv.dataset.selected = i;
+                        };
+                        
+                        ratingDiv.appendChild(star);
+                    }
+                    
+                    wrapper.appendChild(ratingDiv);
+                    form.appendChild(wrapper);
+                    return;
+                }
+                
+                if (inputEl) {
+                    wrapper.appendChild(inputEl);
+                    form.appendChild(wrapper);
+                }
+            });
+            
+            formContainer.appendChild(form);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        
+        function hidePreviewModal() {
+            const modal = document.getElementById('preview-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+        
+        function submitPreviewResponse() {
+            const form = document.getElementById('preview-form');
+            if (!form) return;
+            
+            // Collect form data
+            const formData = new FormData(form);
+            const responseData = {
+                id: Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                respondent: "المستجيب رقم " + (responses.length + 1),
+                answers: {}
+            };
+            
+            // Simple extraction for demo
+            questions.forEach((q, idx) => {
+                const key = `q_${idx}`;
+                
+                if (q.type === 'checkbox') {
+                    const checked = form.querySelectorAll(`input[name="${key}[]"]:checked`);
+                    responseData.answers[q.text] = Array.from(checked).map(c => c.value).join(', ');
+                } else if (q.type === 'likert' || q.type === 'radio') {
+                    const selected = form.querySelector(`input[name="${key}"]:checked`);
+                    responseData.answers[q.text] = selected ? selected.value : '';
+                } else if (q.type === 'rating') {
+                    const ratingContainer = form.querySelector(`[data-selected]`);
+                    responseData.answers[q.text] = ratingContainer ? ratingContainer.dataset.selected : '';
+                } else {
+                    const input = form.querySelector(`[name="${key}"]`) || form.querySelector(`input[name="${key}"]`) || form.querySelector(`textarea[name="${key}"]`) || form.querySelector(`select[name="${key}"]`);
+                    responseData.answers[q.text] = input ? input.value : '';
+                }
+            });
+            
+            responses.push(responseData);
+            
+            hidePreviewModal();
+            
+            // Update UI
+            updateResponseCount();
+            renderResponsesTable();
+            
+            // Show success toast
+            showToast("تم إرسال الرد بنجاح! يمكنك الآن عرضه في تبويب الردود أو إرفاقه بالتحليل.");
+            
+            // Auto switch to responses tab after 800ms
+            setTimeout(() => {
+                switchDemoTab(1);
+            }, 800);
+        }
+        
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-6 py-3 rounded-3xl shadow-xl flex items-center gap-x-3 z-[200]`;
+            toast.innerHTML = `
+                <i class="fa-solid fa-check-circle"></i>
+                <span>${msg}</span>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.transition = 'all 0.3s';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3200);
+        }
+        
+        function updateResponseCount() {
+            const countEl = document.getElementById('response-count');
+            if (countEl) countEl.innerText = responses.length;
+            
+            const headerCount = document.getElementById('responses-header-count');
+            if (headerCount) headerCount.innerText = `(${responses.length} رد)`;
+        }
+        
+        function renderResponsesTable() {
+            const tbody = document.getElementById('responses-table-body');
+            tbody.innerHTML = '';
+            
+            if (responses.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="7" class="px-6 py-12 text-center text-slate-400">لا توجد ردود بعد. أرسِل ردودًا من المعاينة أو ولّد بيانات تجريبية.</td>`;
+                tbody.appendChild(row);
+                return;
+            }
+            
+            responses.forEach((resp, idx) => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-slate-50';
+                
+                // Get some key values if exist
+                let satisfaction = '—';
+                let age = '—';
+                let recommend = '—';
+                
+                Object.keys(resp.answers).forEach(key => {
+                    const val = resp.answers[key];
+                    if ((key.toLowerCase().includes('satisf') || key.includes('رضا')) && val) satisfaction = val;
+                    if ((key.toLowerCase().includes('age') || key.includes('عمر')) && val) age = val;
+                    if ((key.toLowerCase().includes('recommend') || key.includes('توصي')) && val) recommend = val;
+                });
+                
+                row.innerHTML = `
+                    <td class="px-4 py-3 font-mono text-xs text-slate-400">${idx + 1}</td>
+                    <td class="px-4 py-3 font-medium">${resp.respondent}</td>
+                    <td class="px-4 py-3 text-xs text-slate-500">${resp.date}</td>
+                    <td class="px-4 py-3"><span class="px-2.5 py-px text-xs rounded bg-amber-100 text-amber-700 font-medium">${satisfaction}</span></td>
+                    <td class="px-4 py-3 font-mono text-xs">${age}</td>
+                    <td class="px-4 py-3"><span class="px-2.5 py-px text-xs rounded ${(recommend.toLowerCase().includes('yes') || recommend.includes('نعم')) ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100'}">${recommend}</span></td>
+                    <td class="px-2 py-3">
+                        <button onclick="deleteResponse(${idx})" class="text-red-400 hover:text-red-600 p-1"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        function deleteResponse(index) {
+            if (confirm('هل تريد حذف هذا الرد؟')) {
+                responses.splice(index, 1);
+                renderResponsesTable();
+                updateResponseCount();
+            }
+        }
+        
+        function clearResponses() {
+            if (responses.length === 0) return;
+            if (confirm('هل تريد حذف جميع الردود؟')) {
+                responses = [];
+                renderResponsesTable();
+                updateResponseCount();
+            }
+        }
+        
+        function exportToCSV() {
+            if (responses.length === 0) {
+                alert("لا توجد ردود للتصدير.");
+                return;
+            }
+            
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            // Headers
+            const headers = ['المعرّف', 'المستجيب', 'التاريخ'];
+            questions.forEach(q => headers.push(q.text));
+            csvContent += headers.join(',') + '\r\n';
+            
+            // Rows
+            responses.forEach(resp => {
+                const row = [resp.id, resp.respondent, resp.date];
+                questions.forEach(q => {
+                    const val = resp.answers[q.text] || '';
+                    row.push(`"${val.toString().replace(/"/g, '""')}"`);
+                });
+                csvContent += row.join(',') + '\r\n';
+            });
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "dsp_survey_responses.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast("تم تصدير ملف CSV بنجاح!");
+        }
+        
+        function generateSampleResponses() {
+            if (questions.length === 0) {
+                // Load a default survey if empty
+                loadSampleSurvey();
+            }
+            
+            const sampleCount = 50;
+            const newResponses = [];
+            
+            for (let i = 0; i < sampleCount; i++) {
+                const resp = {
+                    id: Date.now() + i,
+                    date: `2026-0${Math.floor(Math.random()*3)+1}-${String(Math.floor(Math.random()*28)+1).padStart(2, '0')}`,
+                    respondent: `المستجيب رقم ${responses.length + i + 1}`,
+                    answers: {}
+                };
+                
+                questions.forEach(q => {
+                    let val = '';
+                    
+                    if (q.type === 'likert' || q.type === 'rating') {
+                        val = (Math.floor(Math.random() * 5) + 1).toString();
+                    } 
+                    else if (q.type === 'radio' && q.options.length) {
+                        val = q.options[Math.floor(Math.random() * q.options.length)];
+                    } 
+                    else if (q.type === 'checkbox' && q.options.length) {
+                        const selected = [];
+                        const num = Math.floor(Math.random() * 3) + 1;
+                        for (let k = 0; k < num; k++) {
+                            const choice = q.options[Math.floor(Math.random() * q.options.length)];
+                            if (!selected.includes(choice)) selected.push(choice);
+                        }
+                        val = selected.join(', ');
+                    } 
+                    else if (q.type === 'number') {
+                        if (q.text.toLowerCase().includes('age') || q.text.includes('عمر')) val = (Math.floor(Math.random() * 55) + 18).toString();
+                        else val = (Math.random() * 100).toFixed(1);
+                    } 
+                    else if (q.type === 'text' || q.type === 'textarea') {
+                        const comments = ["تجربة جيدة جدًا", "كان الموظفون متعاونين", "وقت انتظار طويل", "خدمة ممتازة", "يمكن تحسين التواصل", "أوصي به بشدة", "تجربة محايدة"];
+                        val = comments[Math.floor(Math.random() * comments.length)];
+                    } 
+                    else {
+                        val = q.options && q.options.length ? q.options[Math.floor(Math.random() * q.options.length)] : 'إجابة تجريبية';
+                    }
+                    
+                    resp.answers[q.text] = val;
+                });
+                
+                newResponses.push(resp);
+            }
+            
+            responses = responses.concat(newResponses);
+            
+            updateResponseCount();
+            renderResponsesTable();
+            
+            showToast(`تم توليد ${sampleCount} رد تجريبي! انتقل إلى تبويب الردود للعرض.`);
+            
+            // Switch to responses
+            setTimeout(() => switchDemoTab(1), 600);
+        }
+        
+        function switchDemoTab(tabIndex) {
+            // Hide all
+            document.querySelectorAll('[id^="demo-tab-content-"]').forEach(el => el.classList.add('hidden'));
+            
+            // Show selected
+            document.getElementById(`demo-tab-content-${tabIndex}`).classList.remove('hidden');
+            
+            // Update tab styles
+            document.querySelectorAll('[id^="tab-"]').forEach((el, i) => {
+                if (i === tabIndex) {
+                    el.classList.add('active', 'bg-white', 'shadow-sm');
+                    el.classList.remove('text-slate-500');
+                } else {
+                    el.classList.remove('active', 'bg-white', 'shadow-sm');
+                    el.classList.add('text-slate-500');
+                }
+            });
+            
+            // Refresh content when switching
+            if (tabIndex === 1) {
+                renderResponsesTable();
+            }
+            
+            if (tabIndex === 2) {
+                updateAnalysisMetrics();
+            }
+        }
+        
+        function updateAnalysisMetrics() {
+            if (responses.length === 0) {
+                document.getElementById('analysis-total').innerText = '0';
+                document.getElementById('analysis-completion').innerText = '—';
+                document.getElementById('analysis-satisfaction').innerText = '—';
+                document.getElementById('analysis-recommend').innerText = '—';
+                document.getElementById('descriptive-stats-table').innerHTML = `<div class="text-sm text-slate-400 py-4">ولّد ردودًا أو أرسلها لعرض التحليل.</div>`;
+                return;
+            }
+            
+            document.getElementById('analysis-total').innerText = responses.length;
+            document.getElementById('analysis-completion').innerText = '94%';
+            
+            // Calculate average satisfaction if exists
+            let satSum = 0;
+            let satCount = 0;
+            let recYes = 0;
+            let recTotal = 0;
+            
+            responses.forEach(r => {
+                Object.keys(r.answers).forEach(key => {
+                    const val = r.answers[key];
+                    
+                    if (key.toLowerCase().includes('satisf') || key.includes('رضا')) {
+                        const num = parseFloat(val);
+                        if (!isNaN(num)) {
+                            satSum += num;
+                            satCount++;
+                        }
+                    }
+                    
+                    if (key.toLowerCase().includes('recommend') || key.includes('توصي')) {
+                        recTotal++;
+                        if (val.toString().toLowerCase().includes('yes') || val.toString().includes('نعم')) recYes++;
+                    }
+                });
+            });
+            
+            const avgSat = satCount > 0 ? (satSum / satCount).toFixed(1) : '4.2';
+            document.getElementById('analysis-satisfaction').innerText = avgSat;
+            
+            const recPct = recTotal > 0 ? Math.round((recYes / recTotal) * 100) : 78;
+            document.getElementById('analysis-recommend').innerText = recPct + '%';
+            
+            // Render quick descriptive table
+            renderDescriptiveStats();
+        }
+        
+        function renderDescriptiveStats() {
+            const container = document.getElementById('descriptive-stats-table');
+            
+            if (responses.length === 0) {
+                container.innerHTML = `<div class="text-sm text-slate-400">لا توجد بيانات بعد.</div>`;
+                return;
+            }
+            
+            // Find numeric and categorical fields
+            let html = `<table class="w-full text-xs"><thead><tr class="border-b"><th class="text-right py-2 font-semibold">المتغيّر</th><th class="text-center py-2 font-semibold">المتوسط / %</th><th class="text-center py-2 font-semibold">الانحراف المعياري / n</th></tr></thead><tbody>`;
+            
+            // Simple extraction for demo (in real app this would be much smarter)
+            const sampleVars = [
+                {name: "الرضا العام", mean: "4.3", sd: "0.8"},
+                {name: "العمر (بالسنوات)", mean: "41.2", sd: "14.7"},
+                {name: "سيوصي به (نعم %)", mean: "78%", sd: "—"},
+                {name: "تقييم وقت الانتظار", mean: "3.9", sd: "1.1"}
+            ];
+            
+            sampleVars.forEach(v => {
+                html += `<tr class="border-b last:border-none"><td class="py-2.5">${v.name}</td><td class="text-center font-mono">${v.mean}</td><td class="text-center font-mono text-slate-500">${v.sd}</td></tr>`;
+            });
+            
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+        
+        function runDescriptiveStats() {
+            const container = document.getElementById('descriptive-stats-table');
+            container.innerHTML = `
+                <div class="py-4">
+                    <div class="flex justify-between text-xs mb-3 px-1">
+                        <div class="font-bold">التقرير الوصفي الكامل</div>
+                        <div class="text-emerald-600 cursor-pointer" onclick="attachToDataStatPro()">افتح في DataStatPro ←</div>
+                    </div>
+                    
+                    <div class="text-xs grid grid-cols-3 gap-x-2 text-center mb-4">
+                        <div class="bg-slate-100 rounded p-2">
+                            <div class="font-mono text-lg font-bold">4.31</div>
+                            <div class="text-[10px]">متوسط الرضا</div>
+                        </div>
+                        <div class="bg-slate-100 rounded p-2">
+                            <div class="font-mono text-lg font-bold">0.82</div>
+                            <div class="text-[10px]">الانحراف المعياري</div>
+                        </div>
+                        <div class="bg-slate-100 rounded p-2">
+                            <div class="font-mono text-lg font-bold">1,284</div>
+                            <div class="text-[10px]">العدد الصالح N</div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-[10px] text-emerald-600 font-medium">✓ تم ربط جميع المتغيرات بنجاح • جاهز للاختبارات الاستدلالية</div>
+                </div>
+            `;
+            
+            showToast("تم حساب الإحصاءات الوصفية. التحليل الكامل متاح في DataStatPro.");
+        }
+        
+        let chartInstance = null;
+        
+        function showChartModal(type) {
+            const modal = document.getElementById('chart-modal');
+            const title = document.getElementById('chart-modal-title');
+            const canvas = document.getElementById('analysis-chart');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+                chartInstance = null;
+            }
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            let chartConfig = {};
+            
+            if (type === 'satisfaction') {
+                title.innerText = "توزيع درجات الرضا";
+                chartConfig = {
+                    type: 'bar',
+                    data: {
+                        labels: ['1 - غير راضٍ إطلاقًا', '2', '3', '4', '5 - راضٍ جدًا'],
+                        datasets: [{
+                            label: 'الردود',
+                            data: [42, 87, 312, 521, 322],
+                            backgroundColor: '#2563eb'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                };
+            } else if (type === 'recommend') {
+                title.innerText = "هل توصي بنا؟";
+                chartConfig = {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['نعم', 'لا', 'ربما'],
+                        datasets: [{
+                            data: [78, 9, 13],
+                            backgroundColor: ['#10b981', '#ef4444', '#f59e0b']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                };
+            } else if (type === 'age') {
+                title.innerText = "التوزيع العمري للمشاركين";
+                chartConfig = {
+                    type: 'line',
+                    data: {
+                        labels: ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'],
+                        datasets: [{
+                            label: 'المشاركون',
+                            data: [128, 341, 289, 267, 178, 81],
+                            borderColor: '#10b981',
+                            tension: 0.3,
+                            fill: true,
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
+                };
+            }
+            
+            chartInstance = new Chart(canvas, chartConfig);
+        }
+        
+        function hideChartModal() {
+            const modal = document.getElementById('chart-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+                chartInstance = null;
+            }
+        }
+        
+        function attachToDataStatPro() {
+            if (responses.length === 0) {
+                if (!confirm("لا توجد لديك ردود بعد. هل تريد توليد ردود تجريبية أولًا؟")) {
+                    return;
+                }
+                generateSampleResponses();
+                return;
+            }
+            
+            // Switch to analysis tab
+            switchDemoTab(2);
+            updateAnalysisMetrics();
+            
+            // Show nice success state
+            setTimeout(() => {
+                const analysisSection = document.getElementById('demo-tab-content-2');
+                
+                const banner = document.createElement('div');
+                banner.className = `mt-4 px-5 py-3 bg-emerald-600 text-white text-sm rounded-2xl flex items-center gap-x-3`;
+                banner.innerHTML = `
+                    <i class="fa-solid fa-check-double text-xl"></i>
+                    <div class="flex-1">
+                        <span class="font-bold">تم إرفاق البيانات بنجاح بـ DataStatPro!</span><br>
+                        <span class="text-emerald-100 text-xs">يمكنك الآن تشغيل أي اختبار إحصائي من الواجهة الرئيسية (وصفي، استدلالي، ارتباط، إلخ).</span>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="px-4 py-1 text-xs border border-white/40 rounded-2xl">إغلاق</button>
+                `;
+                
+                analysisSection.appendChild(banner);
+                
+                setTimeout(() => {
+                    if (banner && banner.parentElement) banner.parentElement.removeChild(banner);
+                }, 6500);
+            }, 900);
+        }
+        
+        function loadSampleSurvey() {
+            // Reset
+            questions = [];
+            responses = [];
+            
+            // Sample healthcare survey questions
+            questions = [
+                {
+                    id: Date.now(),
+                    text: "كم عمرك؟",
+                    type: "number",
+                    required: true,
+                    options: []
+                },
+                {
+                    id: Date.now() + 1,
+                    text: "ما جنسك؟",
+                    type: "radio",
+                    required: true,
+                    options: ["ذكر", "أنثى", "أفضّل عدم الإفصاح"]
+                },
+                {
+                    id: Date.now() + 2,
+                    text: "كيف تقيّم رضاك العام عن الخدمات الصحية التي تلقّيتها؟",
+                    type: "likert",
+                    required: true,
+                    options: ["1 - غير راضٍ إطلاقًا", "2 - غير راضٍ", "3 - محايد", "4 - راضٍ", "5 - راضٍ جدًا"]
+                },
+                {
+                    id: Date.now() + 3,
+                    text: "كم انتظرت قبل أن يستقبلك مقدّم الرعاية الصحية؟",
+                    type: "radio",
+                    required: false,
+                    options: ["أقل من 15 دقيقة", "15-30 دقيقة", "30-60 دقيقة", "أكثر من ساعة"]
+                },
+                {
+                    id: Date.now() + 4,
+                    text: "هل توصي بمنشأتنا للعائلة والأصدقاء؟",
+                    type: "radio",
+                    required: true,
+                    options: ["نعم، بالتأكيد", "نعم، غالبًا", "لا، غالبًا لا", "لا، إطلاقًا"]
+                },
+                {
+                    id: Date.now() + 5,
+                    text: "يُرجى مشاركة أي ملاحظات أو اقتراحات إضافية للتحسين.",
+                    type: "textarea",
+                    required: false,
+                    options: []
+                }
+            ];
+            
+            document.getElementById('survey-title').value = "دراسة الوصول إلى الرعاية الصحية ورضا المرضى 2026";
+            document.getElementById('survey-desc').value = "فهم العوائق أمام الخدمات الصحية بين سكان منطقة الرياض. مُعتمدة من لجنة أخلاقيات البحث رقم 2026-047.";
+            
+            renderQuestionsList();
+            updateQuestionCount();
+            updateResponseCount();
+            renderResponsesTable();
+            
+            showToast("تم تحميل استبيان بحثي تجريبي. يمكنك الآن المعاينة أو إضافة ردود أو توليد بيانات تجريبية.");
+        }
+        
+        function updateQuestionCountOnLoad() {
+            // Initial empty state handled in render
+        }
+        
+        function initializeDemo() {
+            // Start with empty or pre-load sample
+            renderQuestionsList();
+            updateQuestionCount();
+            updateResponseCount();
+            renderResponsesTable();
+            
+            // Make first tab active
+            document.getElementById('tab-0').classList.add('active', 'bg-white', 'shadow-sm');
+            
+            // Keyboard support
+            document.addEventListener('keydown', function(e) {
+                if (e.key === "?" && document.activeElement.tagName === "BODY") {
+                    e.preventDefault();
+                    document.getElementById('demo').scrollIntoView({behavior: 'smooth'});
+                }
+            });
+            
+            // Easter egg: press "s" to load sample
+            document.addEventListener('keypress', function(e) {
+                if (e.key.toLowerCase() === 's' && document.getElementById('demo-tab-content-0').classList.contains('hidden') === false) {
+                    if (questions.length === 0) loadSampleSurvey();
+                }
+            });
+            
+            console.log('%c[DSP Surveys Demo] Interactive demo initialized successfully.', 'color:#64748b');
+        }
+        
+        function watchVideo() {
+            const modal = document.createElement('div');
+            modal.className = `fixed inset-0 bg-black/80 z-[130] flex items-center justify-center p-6`;
+            modal.innerHTML = `
+                <div class="bg-white rounded-3xl w-full max-w-4xl overflow-hidden">
+                    <div class="px-6 py-4 flex justify-between items-center border-b">
+                        <div class="font-bold">استبيانات DSP — جولة في المنتج (2:41)</div>
+                        <button class="text-3xl text-slate-300 hover:text-red-500" onclick="this.closest('.fixed').remove()">×</button>
+                    </div>
+                    
+                    <div class="aspect-video bg-gradient-to-br from-slate-900 to-black flex items-center justify-center relative">
+                        <div class="text-center">
+                            <div class="mx-auto w-20 h-20 bg-white/10 backdrop-blur rounded-full flex items-center justify-center mb-4 cursor-pointer" onclick="this.closest('.fixed').remove(); document.getElementById('demo').scrollIntoView({behavior:'smooth'})">
+                                <i class="fa-solid fa-play text-white text-4xl ml-1"></i>
+                            </div>
+                            <div class="text-white/70 text-sm">عنصر فيديو نائب • اضغط لفتح العرض الحي بدلًا منه</div>
+                        </div>
+                        
+                        <div class="absolute bottom-4 right-4 text-xs px-3 py-1 bg-black/60 text-white rounded">DataStatPro 2026</div>
+                    </div>
+                    
+                    <div class="p-4 text-xs text-center text-slate-500">في النسخة الفعلية سيكون هذا فيديو شرح حقيقي للمنتج.</div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        function startFreeTrial() {
+            const modal = document.createElement('div');
+            modal.className = `fixed inset-0 bg-black/60 z-[130] flex items-center justify-center`;
+            modal.innerHTML = `
+                <div class="bg-white w-full max-w-md mx-4 rounded-3xl p-8 modal">
+                    <div class="text-center">
+                        <i class="fa-solid fa-rocket text-5xl text-blue-600 mb-4"></i>
+                        <h3 class="font-display text-3xl font-bold tracking-tight">ابدأ تجربتك المجانية</h3>
+                        <p class="text-slate-600 mt-2">وصول كامل إلى استبيانات DSP ومنصة DataStatPro بأكملها. لا حاجة لبطاقة ائتمان.</p>
+                        
+                        <div class="mt-8 space-y-3 text-left text-sm">
+                            <div class="flex items-center gap-x-3"><i class="fa-solid fa-check text-emerald-500 w-4"></i> استبيانات وردود غير محدودة</div>
+                            <div class="flex items-center gap-x-3"><i class="fa-solid fa-check text-emerald-500 w-4"></i> ترجمة جماعية بالذكاء الاصطناعي (أكثر من 40 لغة)</div>
+                            <div class="flex items-center gap-x-3"><i class="fa-solid fa-check text-emerald-500 w-4"></i> مجموعة تحليل إحصائي كاملة</div>
+                            <div class="flex items-center gap-x-3"><i class="fa-solid fa-check text-emerald-500 w-4"></i> تعاون الفريق والأدوار</div>
+                        </div>
+                        
+                        <button onclick="this.closest('.fixed').remove(); alert('شكرًا لك! في التطبيق الفعلي ستُحوَّل إلى صفحة التسجيل.');" 
+                                class="mt-8 w-full h-12 bg-gradient-to-r from-blue-600 to-violet-600 text-white font-bold rounded-3xl">إنشاء حساب مجاني</button>
+                        
+                        <div onclick="this.closest('.fixed').remove()" class="mt-4 text-xs cursor-pointer text-slate-400 hover:text-slate-600">ربما لاحقًا</div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        function showLoginModal() {
+            alert("ستُفتح نافذة تسجيل الدخول هنا. (عرض تجريبي فقط)");
+        }
+        
+        function toggleFAQ(element) {
+            const answer = element.nextElementSibling;
+            const icon = element.querySelector('i');
+            
+            answer.classList.toggle('hidden');
+            
+            if (!answer.classList.contains('hidden')) {
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+        
+        function toggleMobileMenu() {
+            const nav = document.querySelector('nav');
+            alert("ستُفتح قائمة الجوال هنا في النسخة الفعلية.");
+        }
+        
+        function initializeEverything() {
+            initializeTailwind();
+            initializeDemo();
+            
+            // Preload a nice sample on first load (optional - comment out if you want completely empty start)
+            setTimeout(() => {
+                // Uncomment the next line if you want the demo to start with a preloaded survey
+                // loadSampleSurvey();
+            }, 1200);
+            
+            // Bonus: Make the whole demo area more discoverable
+            console.log('%c[DSP Surveys] Demo ready. All features fully interactive.', 'color:#64748b; font-size: 9px');
+        }
+        
+        // Boot app
+        window.onload = initializeEverything;
+    </script>
+</body>
+</html>
