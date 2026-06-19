@@ -1,17 +1,36 @@
 ---
-name: Muqyas embedded inside Muhakkim
-description: How the Muqyas Pro quality platform is vendored and routed inside the Muhakkim app's single navbar.
+name: Muqyas → Muhakkim merge
+description: How the Muqyas tool suite is embedded inside Muhakkim as one unified platform.
 ---
 
-Muqyas Pro is vendored as a self-contained copy inside the Muhakkim artifact and exposed through Muhakkim's own navbar — there are NO cross-artifact imports and the two apps stay independent modules (identical component/const names like GROUPS, useTheme, Card live in separate file scopes, no collision).
+# Muqyas embedded inside Muhakkim
 
-**Rule:** Muqyas's groups appear in Muhakkim's GROUPS with `mq_`-prefixed tool keys and an `ext:true` group marker. The prefix prevents key collisions (both apps reuse keys like qa_platform, supervision, smart_orch) AND auto-excludes them from Muhakkim's batch/global reports (those are TC-gated: `TC[t.key]`, and prefixed keys aren't in Muhakkim's TC).
+محكّم and مُقياس are **forks of the same base codebase** (identical `renderTool`, helper
+components, inline-style theme `T`, `GROUPS`/`TC`/`openTool` patterns, both call server `/api/ai`).
+They differ only in their tool sets. They are now ONE platform: محكّم is the host.
 
-**Why:** Task required one unified app with a single navbar, literal Arabic preserved, no giant merged file, and Muqyas tools excluded from Muhakkim-specific collective reports.
+**Rule:** artifacts cannot import across each other. So مُقياس is **vendored as a copy**
+inside the host: `artifacts/muhakkim/src/MuqyasEmbedded.jsx` (+ `.d.ts` shim). The standalone
+`artifacts/muqyas` app still exists and is NOT modified by the merge.
 
-**How to apply:**
-- The embedded copy exports `MUQYAS_GROUPS` (its GROUPS) so Muhakkim builds nav entries programmatically — never hand-transcribe the Arabic group/tool labels.
-- The embedded default component takes `{embed, initialTool, dark}`. When `embed` it hides its own header/footer/home (renders only the requested tool view), starts at `initialTool`, and syncs theme via an effect that calls `toggleTheme()` when `dark` prop != its own dark. Both apps already share the `mhk_theme` localStorage key, so theme is mostly synced anyway.
-- Muhakkim routes ext tools in its TOOL VIEW: `curGroup?.ext ? <MuqyasEmbedded embed initialTool={curTool.ek} dark={dark}/> : <normal header+ToolGuide+Card>`. `curTool.ek` is the original (unprefixed) key. Rendering ONLY the embed avoids a duplicate tool header/Card.
-- Muqyas calls root-relative `fetch("/api/ai")`, which works under any base path — no AI change needed when embedding.
-- The standalone `artifacts/muqyas` app must NOT be modified; it's the source of the vendored copy only.
+**Why this approach:** mounting مُقياس as a self-contained sibling component (its own module
+scope) avoids all symbol-collision risk between the two large forks, and keeps the change
+reversible. A full single-file code-merge would require deduping hundreds of shared helpers.
+
+**How it works:**
+- The embedded component takes props `{embed, initialTool, dark}`: in embed mode it hides its
+  own navbar/footer/home, jumps straight to `initialTool`, and syncs dark theme from محكّم.
+- It also exports `MUQYAS_GROUPS` so the host builds nav groups programmatically (keeps Arabic
+  text verbatim — never hand-retype it).
+- In محكّم, مُقياس's 3 groups (quality 🏆 / education 🎓 / erp 🏢) are inserted into محكّم's own
+  `GROUPS` with **`mq_`-prefixed keys** and an `ext:true` flag. The prefix is essential: the two
+  forks SHARE tool keys (`academic_journey`, `math_solver`, `supervision`, `grad_vision`, …), so
+  without namespacing `findGroup`/`openTool` would collide.
+- `ext` groups are auto-excluded from محكّم batch/global reports (those rely on `TC`, which has no
+  ext entries). When an ext tool is active, محكّم renders `<MuqyasEmbedded embed initialTool=<key
+  without mq_ prefix> dark=.../>` only (no double header/Card); the per-section "تقرير القسم"
+  button is hidden for ext groups.
+- The old external `/muqyas/` navbar link in محكّم was removed (real merge replaces it).
+
+**Keeping in sync:** because مُقياس is a vendored copy, changes to the standalone app must be
+re-copied into `MuqyasEmbedded.jsx` (a follow-up project task tracks this).
