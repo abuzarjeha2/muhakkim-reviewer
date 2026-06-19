@@ -858,6 +858,7 @@ const GROUPS = [
   { id:"tools", icon:"🛠️", ar:"أدوات وخدمات", color:"#be123c", desc:"أدوات وخدمات مساندة تيسّر عمل الباحث.", tools:[
     {key:"guide", icon:"📖", ar:"الدليل التفاعلي", en:"Interactive Guide", badge:"جديد"},
     {key:"prof_writer", icon:"💼", ar:"الكتابة المهنية", en:"Professional Writer", badge:"جديد"},
+    {key:"gov_platform", icon:"🏛️", ar:"منصة محكّم الحكومية الذكية", en:"Smart Government Platform", badge:"جديد"},
     {key:"qr", icon:"📷", ar:"مولّد QR", en:"QR Code"},
     {key:"about", icon:"👨‍🏫", ar:"عن المنصة", en:"About"},
     {key:"pricing", icon:"💎", ar:"الباقات والأسعار", en:"Pricing", badge:"جديد"},
@@ -893,6 +894,17 @@ function CourseQualitySystem({ T }) {
     <iframe
       src={src}
       title="نظام جودة المقرر الأكاديمي"
+      style={{ width: "100%", height: "calc(100vh - 200px)", minHeight: 680, border: "none", borderRadius: 12, background: T.bg, display: "block" }}
+    />
+  );
+}
+
+function GovPlatform({ T }) {
+  const src = (import.meta.env.BASE_URL || "/") + "gov-platform.html";
+  return (
+    <iframe
+      src={src}
+      title="منصة محكّم الحكومية الذكية"
       style={{ width: "100%", height: "calc(100vh - 200px)", minHeight: 680, border: "none", borderRadius: 12, background: T.bg, display: "block" }}
     />
   );
@@ -16804,6 +16816,7 @@ export default function MuhakkimV4() {
     if(key==="verify_lab") return <VerificationLabSystem T={T}/>;
     if(key==="free_verify") return <FreeVerifyCostSystem T={T}/>;
     if(key==="course_quality") return <CourseQualitySystem T={T}/>;
+    if(key==="gov_platform") return <GovPlatform T={T}/>;
     if(key==="rev_roles") return <ToolHub T={T} hubKey="rev_roles"/>;
     if(key==="review_center") return <ToolHub T={T} hubKey="review_center"/>;
     if(key==="committee_hub") return <ToolHub T={T} hubKey="committee_hub"/>;

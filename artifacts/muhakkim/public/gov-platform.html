@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>منصة محكّم AI الموحدة</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{
+  --navy:#0a1128;--navy2:#0f1b3d;--navy3:#16264f;
+  --gold:#d4af37;--gold2:#f0d77b;--gold-dim:rgba(212,175,55,.15);
+  --txt:#e8ecf5;--txt-dim:#9aa6c4;--line:rgba(212,175,55,.18);
+  --glass:rgba(255,255,255,.04);--glass2:rgba(255,255,255,.07);
+  --ok:#4ade80;--warn:#fbbf24;--err:#f87171;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Tajawal',sans-serif;background:var(--navy);color:var(--txt);min-height:100vh;line-height:1.7}
+body::before{content:'';position:fixed;inset:0;z-index:-1;
+  background:radial-gradient(circle at 12% 15%,rgba(212,175,55,.07),transparent 40%),
+  radial-gradient(circle at 88% 85%,rgba(22,38,79,.5),transparent 45%),linear-gradient(160deg,var(--navy),var(--navy2));}
+header{padding:18px 4vw;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--line);background:rgba(10,17,40,.6);backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:50;flex-wrap:wrap;gap:12px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);font-weight:800;font-size:22px}
+.brand h1{font-size:18px;font-weight:800}
+.brand p{font-size:11px;color:var(--gold2)}
+.lang-btn{padding:8px 16px;border:1px solid var(--line);border-radius:30px;background:var(--glass);
+  color:var(--gold2);font-family:inherit;font-weight:700;cursor:pointer;font-size:13px}
+.layout{display:grid;grid-template-columns:250px 1fr;min-height:calc(100vh - 82px)}
+.sidebar{border-left:1px solid var(--line);padding:22px 14px;background:rgba(10,17,40,.4)}
+.sidebar h4{font-size:11px;color:var(--txt-dim);text-transform:uppercase;letter-spacing:1px;margin:16px 0 9px}
+.tab{display:flex;align-items:center;gap:11px;padding:12px 13px;border-radius:12px;cursor:pointer;
+  transition:.2s;font-weight:500;font-size:14px;margin-bottom:4px;border:1px solid transparent}
+.tab:hover{background:var(--glass)}
+.tab.active{background:var(--gold-dim);border-color:var(--line);color:var(--gold2);font-weight:700}
+.tab .ti{font-size:18px}
+.main{padding:28px 4vw;overflow-y:auto}
+.page{display:none}.page.active{display:block;animation:fade .3s}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+.page-head{margin-bottom:22px}
+.page-head h2{font-size:24px;font-weight:800;display:flex;align-items:center;gap:10px}
+.page-head p{color:var(--txt-dim);font-size:14px;margin-top:6px}
+.panel{background:var(--glass);border:1px solid var(--line);border-radius:18px;padding:24px;margin-bottom:20px}
+.panel h3{font-size:16px;font-weight:700;margin-bottom:14px;color:var(--gold2);display:flex;align-items:center;gap:8px}
+.panel-sub{color:var(--txt-dim);font-size:13px;margin-bottom:16px;margin-top:-6px}
+label.fl{display:block;font-size:13px;font-weight:600;margin-bottom:7px;color:var(--gold2)}
+textarea,input,select{width:100%;padding:13px 15px;border-radius:12px;background:var(--glass);
+  border:1px solid var(--line);color:var(--txt);font-family:inherit;font-size:14px;resize:vertical}
+textarea{min-height:100px}
+textarea:focus,input:focus,select:focus{outline:none;border-color:var(--gold)}
+select option{background:var(--navy2)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.btn{padding:13px 26px;border:none;border-radius:12px;font-family:inherit;font-weight:700;font-size:14px;
+  cursor:pointer;transition:.25s;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(212,175,55,.3)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-ghost{background:var(--glass);border:1px solid var(--line);color:var(--gold2)}
+.btn-ghost:hover{background:var(--gold-dim);box-shadow:none}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.quick{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.quick button{padding:7px 14px;border-radius:20px;background:var(--glass);border:1px solid var(--line);
+  color:var(--txt-dim);font-family:inherit;font-size:12px;cursor:pointer;transition:.2s}
+.quick button:hover{background:var(--gold-dim);color:var(--gold2)}
+.hidden{display:none}.fade{animation:fade .4s}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--gold-dim);
+  border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-box{padding:18px;border-radius:14px;background:var(--glass);border:1px solid var(--line);
+  display:none;align-items:center;gap:12px;margin-bottom:18px}
+.loading-box.show{display:flex}
+/* dropzone */
+.dropzone{border:2px dashed var(--line);border-radius:16px;padding:36px 20px;text-align:center;cursor:pointer;transition:.25s;background:var(--glass)}
+.dropzone:hover,.dropzone.drag{border-color:var(--gold);background:var(--gold-dim)}
+.dropzone .dz-ico{font-size:40px;margin-bottom:10px}
+.dropzone h4{font-size:15px;margin-bottom:6px}
+.dropzone p{color:var(--txt-dim);font-size:13px}
+.dropzone .types{margin-top:9px;font-size:11px;color:var(--txt-dim)}
+.filelist{margin-top:16px;display:flex;flex-direction:column;gap:10px}
+.fileitem{display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:12px;background:var(--glass2);border:1px solid var(--line)}
+.fileitem .fi-ico{font-size:21px}
+.fileitem .fi-info{flex:1;min-width:0}
+.fileitem .fi-info b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fileitem .fi-info span{font-size:12px;color:var(--txt-dim)}
+.fi-status{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600}
+.fi-status.ok{background:rgba(74,222,128,.15);color:var(--ok)}
+.fi-status.load{background:var(--gold-dim);color:var(--gold2)}
+.fi-status.err{background:rgba(248,113,113,.15);color:var(--err)}
+.fi-x{background:none;border:none;color:var(--txt-dim);cursor:pointer;font-size:16px}
+.fi-x:hover{color:var(--err)}
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+.tpl{padding:18px;border-radius:14px;background:var(--glass);border:1px solid var(--line);cursor:pointer;transition:.25s}
+.tpl:hover{border-color:var(--gold);background:var(--glass2);transform:translateY(-4px)}
+.tpl.sel{border-color:var(--gold);background:var(--gold-dim)}
+.tpl .te{font-size:26px;margin-bottom:8px}
+.tpl b{display:block;font-size:14px;margin-bottom:3px}
+.tpl span{font-size:12px;color:var(--txt-dim)}
+.result{margin-top:18px;padding:24px;border-radius:16px;background:#fff;color:#1a1a2e;
+  font-size:14px;line-height:2;white-space:pre-wrap;display:none;font-family:'Tajawal',sans-serif}
+.result.show{display:block;animation:fade .3s}
+.result-white{margin-top:16px;padding:22px;border-radius:16px;background:#fff;color:#1a1a2e;font-size:14px;line-height:2;white-space:pre-wrap;font-family:'Tajawal',sans-serif}
+.result-bar{justify-content:space-between;align-items:center;margin-top:16px;display:none}
+.result-bar.show{display:flex}
+.context-note{font-size:12px;color:var(--txt-dim);margin-top:8px;padding:10px;border-radius:10px;background:var(--glass);border:1px solid var(--line)}
+/* stepper + flow + dashboard (advisor) */
+.stepper{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.step{flex:1;min-width:120px;padding:12px;border-radius:14px;background:var(--glass);border:1px solid var(--line);text-align:center;transition:.3s;opacity:.5}
+.step.active{opacity:1;border-color:var(--gold);background:var(--gold-dim)}
+.step.done{opacity:1;border-color:var(--ok)}
+.step .sn{width:28px;height:28px;border-radius:50%;background:var(--navy3);display:grid;place-items:center;margin:0 auto 7px;font-weight:800;font-size:13px}
+.step.active .sn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy)}
+.step.done .sn{background:var(--ok);color:var(--navy)}
+.step b{font-size:12px;display:block}.step span{font-size:10px;color:var(--txt-dim)}
+.flow{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+.flow-step{display:flex;gap:14px;padding:15px;border-radius:14px;background:var(--glass2);border:1px solid var(--line);transition:.3s}
+.flow-step .fs-num{width:32px;height:32px;border-radius:10px;background:var(--gold-dim);border:1px solid var(--line);display:grid;place-items:center;font-weight:800;color:var(--gold2);flex-shrink:0}
+.flow-step.running{border-color:var(--gold);background:var(--gold-dim)}
+.flow-step.done{border-color:var(--ok)}
+.flow-step.done .fs-num{background:var(--ok);color:var(--navy);border-color:var(--ok)}
+.flow-step .fs-body{flex:1;min-width:0}
+.flow-step .fs-body b{display:block;font-size:14px;margin-bottom:3px}
+.flow-step .fs-body p{font-size:12px;color:var(--txt-dim)}
+.fs-state{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;height:fit-content;white-space:nowrap}
+.fs-state.wait{background:var(--glass);color:var(--txt-dim)}
+.fs-state.run{background:var(--gold-dim);color:var(--gold2)}
+.fs-state.ok{background:rgba(74,222,128,.15);color:var(--ok)}
+.fs-output{margin-top:10px;padding:12px;border-radius:10px;background:var(--navy);border:1px solid var(--line);font-size:13px;line-height:1.8;white-space:pre-wrap;display:none}
+.fs-output.show{display:block}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:20px}
+.kpi{padding:18px;border-radius:16px;background:linear-gradient(150deg,var(--navy3),var(--navy2));border:1px solid var(--line);position:relative;overflow:hidden}
+.kpi::after{content:'';position:absolute;top:-30%;right:-10%;width:60%;height:160%;background:radial-gradient(circle,rgba(212,175,55,.1),transparent 70%)}
+.kpi .kv{font-size:30px;font-weight:800;color:var(--gold)}
+.kpi .kl{font-size:13px;color:var(--txt-dim);margin-top:4px}
+.kpi .kt{font-size:11px;margin-top:8px;font-weight:600}
+.kt.up{color:var(--ok)}.kt.down{color:var(--err)}.kt.flat{color:var(--txt-dim)}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.chart-card{padding:18px;border-radius:16px;background:var(--glass);border:1px solid var(--line)}
+.chart-card h4{font-size:14px;font-weight:700;margin-bottom:12px;color:var(--gold2)}
+.chart-card canvas{width:100%!important;height:210px!important}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:12px}
+.legend span{display:flex;align-items:center;gap:6px;color:var(--txt-dim)}
+.legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.analysis-box{padding:20px;border-radius:16px;background:var(--glass);border:1px solid var(--line);margin-top:18px;font-size:14px;line-height:2;white-space:pre-wrap}
+.analysis-box h4{color:var(--gold2);margin-bottom:12px}
+@media(max-width:840px){.layout{grid-template-columns:1fr}.sidebar{display:flex;flex-wrap:wrap;gap:6px;border-left:none;border-bottom:1px solid var(--line)}
+  .sidebar h4{width:100%}.tab{flex:1;min-width:120px;justify-content:center}.row{grid-template-columns:1fr}.dash-grid{grid-template-columns:1fr}.stepper{display:none}}
+@media print{header,.sidebar,.btn-row,.result-bar,.quick,.stepper,.loading-box{display:none!important}body::before{display:none}.main{padding:0}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">م</div>
+    <div><h1 id="t-brand">محكّم AI</h1><p id="t-tag">المنصة الحكومية الذكية الموحدة</p></div></div>
+  <button class="lang-btn" onclick="toggleLang()" id="langBtn">English</button>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <h4 id="t-nav">الأدوات</h4>
+    <div class="tab active" data-page="advisor" onclick="goPage('advisor',this)"><span class="ti">🧭</span><span id="t-tab0">المرشد الذكي</span></div>
+    <div class="tab" data-page="analyze" onclick="goPage('analyze',this)"><span class="ti">📊</span><span id="t-tab1">تحليل الملفات</span></div>
+    <div class="tab" data-page="command" onclick="goPage('command',this)"><span class="ti">⌨️</span><span id="t-tab2">محرّك الأوامر</span></div>
+    <div class="tab" data-page="templates" onclick="goPage('templates',this)"><span class="ti">📋</span><span id="t-tab3">النماذج الجاهزة</span></div>
+    <div class="tab" data-page="report" onclick="goPage('report',this)"><span class="ti">📑</span><span id="t-tab4">التقارير الاحترافية</span></div>
+  </aside>
+  <main class="main">
+
+    <!-- ADVISOR -->
+    <section class="page active" id="page-advisor">
+      <div class="page-head"><h2>🧭 <span id="t-adv-h">المرشد الذكي وبناء الإجراءات</span></h2>
+        <p id="t-adv-p">يحدّد الإجراء الصحيح، يبنيه كسير عمل، ينفّذه، ويعطيك النتائج والمؤشرات والداشبورد التفاعلي.</p></div>
+      <div class="stepper" id="stepper">
+        <div class="step active" data-s="1"><div class="sn">1</div><b id="t-s1">الطلب</b><span id="t-s1s">صف ما تريد</span></div>
+        <div class="step" data-s="2"><div class="sn">2</div><b id="t-s2">الإرشاد</b><span id="t-s2s">الإجراء الصحيح</span></div>
+        <div class="step" data-s="3"><div class="sn">3</div><b id="t-s3">البناء</b><span id="t-s3s">سير العمل</span></div>
+        <div class="step" data-s="4"><div class="sn">4</div><b id="t-s4">التنفيذ</b><span id="t-s4s">بالذكاء الاصطناعي</span></div>
+        <div class="step" data-s="5"><div class="sn">5</div><b id="t-s5">النتائج</b><span id="t-s5s">داشبورد ومؤشرات</span></div>
+      </div>
+      <div class="panel" id="ap1">
+        <h3>🎯 <span id="t-ap1">صف الإجراء أو الهدف</span></h3>
+        <div class="quick" id="reqQuick"></div>
+        <label class="fl" id="t-ap1l">طلبك</label>
+        <textarea id="reqInput" placeholder="مثال: أريد أتمتة خدمة إصدار التراخيص في البلدية..."></textarea>
+        <div class="row" style="margin-top:14px">
+          <div><label class="fl" id="t-ap1sec">القطاع</label><select id="reqSector"></select></div>
+          <div><label class="fl" id="t-ap1scl">النطاق</label><select id="reqScale"></select></div>
+        </div>
+        <div class="btn-row"><button class="btn" onclick="runAdvisor()" id="t-ap1btn">حدّد الإجراء الصحيح ✦</button></div>
+      </div>
+      <div class="loading-box" id="advLoading"><span class="spinner"></span><span id="advLoadingText">جارٍ المعالجة...</span></div>
+      <div class="panel hidden" id="ap2"><h3>🧭 <span id="t-ap2">الإجراء الموصى به</span></h3>
+        <div class="result-white" id="adviceBox"></div>
+        <div class="btn-row"><button class="btn" onclick="buildWorkflow()" id="t-ap2btn">ابنِ سير العمل ✦</button></div></div>
+      <div class="panel hidden" id="ap3"><h3>⚙️ <span id="t-ap3">سير العمل المُنشأ</span></h3>
+        <p class="panel-sub" id="t-ap3s">بناه الذكاء الاصطناعي. اضغط لتنفيذ كل الخطوات فعلياً.</p>
+        <div class="flow" id="flowList"></div>
+        <div class="btn-row"><button class="btn" onclick="executeAll()" id="t-ap3btn">نفّذ جميع الخطوات ✦</button></div></div>
+      <div class="panel hidden" id="ap5"><h3>📊 <span id="t-ap5">النتائج والمؤشرات والداشبورد</span></h3>
+        <div class="kpi-grid" id="kpiGrid"></div>
+        <div class="dash-grid">
+          <div class="chart-card"><h4 id="t-ch1">الإنجاز عبر المراحل</h4><canvas id="chartLine"></canvas></div>
+          <div class="chart-card"><h4 id="t-ch2">توزيع الموارد</h4><canvas id="chartBar"></canvas></div>
+          <div class="chart-card"><h4 id="t-ch3">حالة المهام</h4><canvas id="chartDonut"></canvas><div class="legend" id="donutLegend"></div></div>
+          <div class="chart-card"><h4 id="t-ch4">تقييم المخاطر</h4><canvas id="chartRadar"></canvas></div>
+        </div>
+        <div class="analysis-box"><h4 id="t-an">✦ تحليل البيانات والتوصيات</h4><div id="analysisText"></div></div>
+        <div class="btn-row"><button class="btn btn-ghost" onclick="window.print()" id="t-ap5print">طباعة / PDF</button>
+          <button class="btn btn-ghost" onclick="resetAdvisor()" id="t-ap5reset">طلب جديد</button></div></div>
+    </section>
+
+    <!-- ANALYZE -->
+    <section class="page" id="page-analyze">
+      <div class="page-head"><h2>📊 <span id="t-a-h">تحليل الملفات بالذكاء الاصطناعي</span></h2>
+        <p id="t-a-p">ارفع ملفاتك (Word / Excel / PDF / صور) ليستخرج النظام المحتوى ويحلّله.</p></div>
+      <div class="panel"><h3 id="t-a-up">رفع الملفات</h3>
+        <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+          <div class="dz-ico">📁</div><h4 id="t-dz-h">اسحب الملفات هنا أو اضغط للاختيار</h4>
+          <p id="t-dz-p">استخراج تلقائي للنص</p>
+          <div class="types">Word · Excel · PDF · صور · نص</div></div>
+        <input type="file" id="fileInput" multiple accept=".docx,.xlsx,.xls,.csv,.pdf,.png,.jpg,.jpeg,.txt" style="display:none" onchange="handleFiles(this.files)">
+        <div class="filelist" id="filelist"></div></div>
+      <div class="panel"><h3 id="t-a-task">نوع التحليل</h3>
+        <div class="quick" id="analyzeQuick"></div>
+        <label class="fl" id="t-a-custom">أو تعليماتك الخاصة</label>
+        <textarea id="analyzePrompt" placeholder="مثال: لخّص الوثيقة واستخرج التوصيات..."></textarea>
+        <div class="btn-row"><button class="btn" onclick="runAnalyze()" id="t-a-run">تحليل ✦</button></div></div>
+      <div class="loading-box" id="analyzeLoading"><span class="spinner"></span><span>جارٍ التحليل...</span></div>
+      <div class="result" id="analyzeResult"></div>
+      <div class="result-bar" id="analyzeBar"><span style="font-size:12px;color:var(--txt-dim)">✦ محكّم AI</span>
+        <div style="display:flex;gap:8px"><button class="btn btn-ghost" onclick="copyResult('analyzeResult')" id="t-copy1">نسخ</button>
+          <button class="btn btn-ghost" onclick="window.print()" id="t-print1">طباعة</button></div></div>
+    </section>
+
+    <!-- COMMAND -->
+    <section class="page" id="page-command">
+      <div class="page-head"><h2>⌨️ <span id="t-c-h">محرّك الأوامر الذكي</span></h2>
+        <p id="t-c-p">اكتب أي مهمة حكومية لينفّذها الذكاء الاصطناعي ويعطيك مخرجاً احترافياً.</p></div>
+      <div class="panel"><div class="quick" id="commandQuick"></div>
+        <label class="fl" id="t-c-l">الأمر / المهمة</label>
+        <textarea id="commandPrompt" style="min-height:140px" placeholder="مثال: اكتب خطة تنفيذية لتحول رقمي خلال 6 أشهر..."></textarea>
+        <div class="btn-row"><button class="btn" onclick="runCommand()" id="t-c-run">تنفيذ ✦</button></div></div>
+      <div class="loading-box" id="commandLoading"><span class="spinner"></span><span>جارٍ التنفيذ...</span></div>
+      <div class="result" id="commandResult"></div>
+      <div class="result-bar" id="commandBar"><span style="font-size:12px;color:var(--txt-dim)">✦ محكّم AI</span>
+        <div style="display:flex;gap:8px"><button class="btn btn-ghost" onclick="copyResult('commandResult')" id="t-copy2">نسخ</button>
+          <button class="btn btn-ghost" onclick="window.print()" id="t-print2">طباعة</button></div></div>
+    </section>
+
+    <!-- TEMPLATES -->
+    <section class="page" id="page-templates">
+      <div class="page-head"><h2>📋 <span id="t-t-h">النماذج الجاهزة</span></h2>
+        <p id="t-t-p">اختر نموذجاً وعبّئ بياناته ليولّده الذكاء الاصطناعي بالأسلوب الرسمي.</p></div>
+      <div class="panel"><h3 id="t-t-pick">اختر النموذج</h3><div class="tpl-grid" id="tplGrid"></div></div>
+      <div class="panel" id="tplForm" style="display:none"><h3 id="tplFormTitle"></h3><div id="tplFields"></div>
+        <div class="btn-row"><button class="btn" onclick="runTemplate()" id="t-t-gen">توليد ✦</button></div></div>
+      <div class="loading-box" id="tplLoading"><span class="spinner"></span><span>جارٍ التوليد...</span></div>
+      <div class="result" id="tplResult"></div>
+      <div class="result-bar" id="tplBar"><span style="font-size:12px;color:var(--txt-dim)">✦ محكّم AI</span>
+        <div style="display:flex;gap:8px"><button class="btn btn-ghost" onclick="copyResult('tplResult')" id="t-copy3">نسخ</button>
+          <button class="btn btn-ghost" onclick="window.print()" id="t-print3">طباعة</button></div></div>
+    </section>
+
+    <!-- REPORT -->
+    <section class="page" id="page-report">
+      <div class="page-head"><h2>📑 <span id="t-r-h">التقارير الاحترافية</span></h2>
+        <p id="t-r-p">أنشئ تقريراً تنفيذياً متكاملاً من بياناتك أو ملفاتك المرفوعة.</p></div>
+      <div class="panel"><div class="row">
+          <div><label class="fl" id="t-r-type">نوع التقرير</label><select id="reportType"></select></div>
+          <div><label class="fl" id="t-r-aud">الجهة المستهدفة</label><select id="reportAud"></select></div></div>
+        <label class="fl" style="margin-top:14px" id="t-r-topic">موضوع التقرير / البيانات</label>
+        <textarea id="reportTopic" placeholder="صف الموضوع والبيانات، أو اعتمد على الملفات المرفوعة..."></textarea>
+        <div class="context-note" id="reportCtx">لم يتم رفع ملفات بعد.</div>
+        <div class="btn-row"><button class="btn" onclick="runReport()" id="t-r-gen">إنشاء التقرير ✦</button></div></div>
+      <div class="loading-box" id="reportLoading"><span class="spinner"></span><span>جارٍ الإنشاء...</span></div>
+      <div class="result" id="reportResult"></div>
+      <div class="result-bar" id="reportBar"><span style="font-size:12px;color:var(--txt-dim)">✦ محكّم AI</span>
+        <div style="display:flex;gap:8px"><button class="btn btn-ghost" onclick="copyResult('reportResult')" id="t-copy4">نسخ</button>
+          <button class="btn btn-ghost" onclick="window.print()" id="t-print4">طباعة</button></div></div>
+    </section>
+  </main>
+</div>
+
+<script>
+if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+var lang="ar",uploadedFiles=[],selectedTpl=null;
+var advisorOutput="",workflow=[],kpiData=null;
+
+/* ===== AI ===== */
+async function callAI(systemPrompt,userContent,maxTokens){
+  var body={model:"claude-sonnet-4-6",max_tokens:maxTokens||1500,system:systemPrompt,messages:[{role:"user",content:userContent}]};
+  var r;
+  try{r=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});}
+  catch(e){throw new Error(lang==="ar"?"تعذّر الاتصال بالخادم.":"Connection failed.");}
+  if(!r.ok)throw new Error(lang==="ar"?("تعذّر الاتصال بالذكاء الاصطناعي (رمز "+r.status+")."):("AI request failed ("+r.status+")."));
+  return extractText(await r.json());
+}
+function extractText(d){if(!d||!d.content)return "";return d.content.map(function(b){return b.type==="text"?b.text:"";}).filter(Boolean).join("\n");}
+async function callAIJson(systemPrompt,userPrompt){
+  var raw=await callAI(systemPrompt+"\n\nأجب بصيغة JSON صالحة فقط دون أي نص إضافي أو Markdown.",userPrompt,2000);
+  var clean=raw.replace(/```json/gi,"").replace(/```/g,"").trim();
+  var s=clean.indexOf("{"),a=clean.indexOf("[");var start=(a>=0&&(a<s||s<0))?a:s;if(start>=0)clean=clean.slice(start);
+  var endC=clean.lastIndexOf("}"),endB=clean.lastIndexOf("]");var end=Math.max(endC,endB);if(end>=0)clean=clean.slice(0,end+1);
+  return JSON.parse(clean);
+}
+
+/* ===== FILES ===== */
+function handleFiles(files){Array.prototype.forEach.call(files,function(file){
+  var entry={name:file.name,type:file.type,text:"",image:null,status:"load"};uploadedFiles.push(entry);renderFiles();
+  var ext=file.name.split(".").pop().toLowerCase();
+  if(ext==="docx")readWord(file,entry);else if(["xlsx","xls","csv"].indexOf(ext)>=0)readExcel(file,entry);
+  else if(ext==="pdf")readPDF(file,entry);else if(["png","jpg","jpeg"].indexOf(ext)>=0)readImage(file,entry);
+  else if(ext==="txt")readText(file,entry);else{entry.status="err";renderFiles();}});}
+function readWord(f,e){var r=new FileReader();r.onload=function(ev){mammoth.extractRawText({arrayBuffer:ev.target.result}).then(function(res){e.text=res.value;e.status="ok";renderFiles();}).catch(function(){e.status="err";renderFiles();});};r.readAsArrayBuffer(f);}
+function readExcel(f,e){var r=new FileReader();r.onload=function(ev){try{var wb=XLSX.read(new Uint8Array(ev.target.result),{type:"array"});var out="";wb.SheetNames.forEach(function(sn){out+="=== "+sn+" ===\n"+XLSX.utils.sheet_to_csv(wb.Sheets[sn])+"\n\n";});e.text=out;e.status="ok";renderFiles();}catch(err){e.status="err";renderFiles();}};r.readAsArrayBuffer(f);}
+function readPDF(f,e){var r=new FileReader();r.onload=function(ev){pdfjsLib.getDocument({data:ev.target.result}).promise.then(function(pdf){var pages=[];for(var i=1;i<=pdf.numPages;i++)pages.push(pdf.getPage(i).then(function(p){return p.getTextContent().then(function(tc){return tc.items.map(function(it){return it.str;}).join(" ");});}));Promise.all(pages).then(function(tx){e.text=tx.join("\n");e.status="ok";renderFiles();});}).catch(function(){e.status="err";renderFiles();});};r.readAsArrayBuffer(f);}
+function readImage(f,e){var r=new FileReader();r.onload=function(ev){e.image={media_type:f.type,data:ev.target.result.split(",")[1]};e.status="ok";renderFiles();};r.readAsDataURL(f);}
+function readText(f,e){var r=new FileReader();r.onload=function(ev){e.text=ev.target.result;e.status="ok";renderFiles();};r.readAsText(f);}
+function fileIcon(n){var x=n.split(".").pop().toLowerCase();if(x==="docx")return "📝";if(["xlsx","xls","csv"].indexOf(x)>=0)return "📊";if(x==="pdf")return "📕";if(["png","jpg","jpeg"].indexOf(x)>=0)return "🖼️";return "📄";}
+function renderFiles(){var t=TXT[lang];document.getElementById("filelist").innerHTML=uploadedFiles.map(function(f,i){
+  var st=f.status==="ok"?'<span class="fi-status ok">'+t.ready+'</span>':f.status==="err"?'<span class="fi-status err">'+t.failed+'</span>':'<span class="fi-status load">'+t.reading+'</span>';
+  var sz=f.image?t.imageFile:(f.text?f.text.length+" "+t.chars:"...");
+  return '<div class="fileitem"><span class="fi-ico">'+fileIcon(f.name)+'</span><div class="fi-info"><b>'+f.name+'</b><span>'+sz+'</span></div>'+st+'<button class="fi-x" onclick="removeFile('+i+')">✕</button></div>';}).join("");updateReportCtx();}
+function removeFile(i){uploadedFiles.splice(i,1);renderFiles();}
+function getFilesContext(){return uploadedFiles.filter(function(f){return f.status==="ok"&&f.text;}).map(function(f){return "📄 "+f.name+":\n"+f.text;}).join("\n\n---\n\n");}
+function getImageBlocks(){return uploadedFiles.filter(function(f){return f.status==="ok"&&f.image;}).map(function(f){return {type:"image",source:{type:"base64",media_type:f.image.media_type,data:f.image.data}};});}
+var dz=document.getElementById("dropzone");
+["dragenter","dragover"].forEach(function(ev){dz.addEventListener(ev,function(e){e.preventDefault();dz.classList.add("drag");});});
+["dragleave","drop"].forEach(function(ev){dz.addEventListener(ev,function(e){e.preventDefault();dz.classList.remove("drag");});});
+dz.addEventListener("drop",function(e){if(e.dataTransfer.files)handleFiles(e.dataTransfer.files);});
+
+/* ===== DATA ===== */
+var DATA={
+  ar:{
+    sectors:["حكومي / وزارة","بلدية","جامعة","مستشفى / صحة","شركة حكومية","قطاع خاص","منظمة دولية"],
+    scales:["مبادرة صغيرة","مشروع متوسط","برنامج كبير","تحول مؤسسي شامل"],
+    reqQuick:["أتمتة خدمة إصدار التراخيص","تحسين تجربة المستفيدين","تطوير نظام إدارة الأداء","مبادرة تحول رقمي شاملة","إعادة هندسة إجراء التوظيف","بناء مركز اتخاذ قرار"],
+    advisorSys:"أنت مستشار حوكمة وتحول رقمي خبير في القطاع الحكومي العربي. لطلب المستخدم، حدّد الإجراء الصحيح الأمثل. اعرض بالعربية منظّماً: 1) تشخيص الوضع والهدف 2) الإجراء الموصى به ولماذا 3) المتطلبات والممكّنات 4) المخاطر وكيفية تفاديها 5) عوامل النجاح الحرجة. كن عملياً ومحدّداً.",
+    buildSys:"أنت مهندس إجراءات ومصمم سير عمل. صمّم سير عمل تنفيذياً من 4-6 خطوات متسلسلة. لكل خطوة: عنوان مختصر، وصف موجز، و prompt دقيق ينفّذ الخطوة فعلياً. أعد JSON: {\"steps\":[{\"title\":\"...\",\"desc\":\"...\",\"prompt\":\"...\"}]}",
+    execSys:"أنت منفّذ مهام حكومي خبير. نفّذ الخطوة بدقة وأعطِ مخرجاً عملياً احترافياً جاهزاً للاستخدام بالعربية. كن محدّداً ومنظّماً.",
+    kpiSys:"أنت محلل بيانات أداء. ولّد مؤشرات وبيانات داشبورد واقعية. أعد JSON فقط: {\"kpis\":[{\"label\":\"...\",\"value\":\"...\",\"trend\":\"up|down|flat\",\"change\":\"...\"}](4),\"progress\":[{\"stage\":\"...\",\"value\":0-100}](5),\"resources\":[{\"name\":\"...\",\"value\":رقم}](4),\"tasks\":{\"completed\":رقم,\"inProgress\":رقم,\"pending\":رقم},\"risks\":[{\"name\":\"...\",\"level\":0-100}](5),\"analysis\":\"فقرة تحليل وتوصيات\"}",
+    analyzeQuick:[{l:"تلخيص احترافي",p:"لخّص هذه الوثيقة في نقاط واضحة منظّمة مع أهم الأفكار."},{l:"استخراج التوصيات",p:"استخرج جميع التوصيات والإجراءات ورتّبها حسب الأولوية."},{l:"تحليل البيانات",p:"حلّل البيانات واستخرج الأنماط والمؤشرات والملاحظات مع جداول إن لزم."},{l:"اكتشاف المخاطر",p:"اكتشف المخاطر والثغرات والنقاط التي تحتاج انتباهاً."},{l:"مراجعة لغوية",p:"راجع الوثيقة لغوياً وإملائياً وأسلوبياً واقترح تحسينات."},{l:"ملخص تنفيذي",p:"أعدّ ملخصاً تنفيذياً للإدارة العليا."}],
+    commandQuick:[{l:"خطة تنفيذية",p:"اكتب خطة تنفيذية متكاملة لـ "},{l:"خطاب رسمي",p:"اكتب خطاباً رسمياً بخصوص "},{l:"محضر اجتماع",p:"أعدّ محضر اجتماع حول "},{l:"دراسة جدوى",p:"أعدّ إطار دراسة جدوى لـ "},{l:"مؤشرات أداء",p:"اقترح مؤشرات أداء KPI لـ "}],
+    templates:[
+      {id:"letter",e:"✉️",t:"خطاب رسمي",d:"خطاب إداري حكومي",fields:[{k:"type",type:"select",l:"النوع",opts:["خطاب طلب","تعميم","شكر","دعوة اجتماع","موافقة","اعتذار"]},{k:"to",type:"input",l:"المرسل إليه",ph:"مدير عام..."},{k:"subject",type:"input",l:"الموضوع",ph:"..."},{k:"details",type:"textarea",l:"التفاصيل",ph:"النقاط الأساسية..."}],sys:"أنت كاتب إداري حكومي محترف. اكتب خطاباً رسمياً عربياً كاملاً يبدأ بالبسملة والتحية ويتضمن الموضوع والمحتوى المنظّم والخاتمة والتوقيع بالأسلوب الإداري الرصين.",build:function(v){return "اكتب "+v.type+" إلى: "+v.to+"\nالموضوع: "+v.subject+"\nالتفاصيل: "+v.details;}},
+      {id:"minutes",e:"📅",t:"محضر اجتماع",d:"محضر رسمي بالقرارات",fields:[{k:"title",type:"input",l:"عنوان الاجتماع",ph:"..."},{k:"attendees",type:"input",l:"الحضور",ph:"الأسماء..."},{k:"agenda",type:"textarea",l:"النقاش والقرارات",ph:"..."}],sys:"أنت أمين سر اجتماعات محترف. أعدّ محضراً رسمياً يشمل: العنوان، التاريخ، الحضور، جدول الأعمال، ملخص النقاش، القرارات، المهام ومسؤولوها وتواريخها.",build:function(v){return "أعد محضر اجتماع:\nالعنوان: "+v.title+"\nالحضور: "+v.attendees+"\nالنقاش: "+v.agenda;}},
+      {id:"contract",e:"📜",t:"مسودة عقد",d:"عقد حكومي/إداري",fields:[{k:"ctype",type:"input",l:"نوع العقد",ph:"توريد / خدمات..."},{k:"parties",type:"input",l:"الأطراف",ph:"..."},{k:"scope",type:"textarea",l:"نطاق العمل والشروط",ph:"..."}],sys:"أنت مستشار قانوني. اكتب مسودة عقد منظّمة بالبنود (تعريفات، نطاق، التزامات، مدة، قيمة، دفع، إنهاء، تسوية) مع تنبيه أنها مسودة استرشادية تحتاج مراجعة قانونية معتمدة.",build:function(v){return "اكتب مسودة "+v.ctype+"\nالأطراف: "+v.parties+"\nالنطاق والشروط: "+v.scope;}},
+      {id:"memo",e:"📋",t:"مذكرة إدارية",d:"مذكرة داخلية",fields:[{k:"subject",type:"input",l:"الموضوع",ph:"..."},{k:"content",type:"textarea",l:"المحتوى",ph:"..."}],sys:"أنت كاتب إداري. أعدّ مذكرة داخلية رسمية تتضمن: الموضوع، الخلفية، التحليل، التوصية، الإجراء المطلوب.",build:function(v){return "أعد مذكرة إدارية بالموضوع: "+v.subject+"\nالمحتوى: "+v.content;}},
+      {id:"study",e:"📉",t:"إطار دراسة",d:"دراسة اقتصادية/اجتماعية",fields:[{k:"topic",type:"textarea",l:"موضوع الدراسة",ph:"..."}],sys:"أنت خبير دراسات. أعدّ إطاراً منهجياً يشمل: الأهداف، المنهجية، المؤشرات، مصادر البيانات، أبعاد التحليل، التوصيات الأولية.",build:function(v){return "أعد إطار دراسة حول: "+v.topic;}}],
+    reportTypes:["تقرير تنفيذي","تقرير أداء","تقرير متابعة مشروع","تقرير تحليلي","تقرير إنجاز","تقرير مخاطر"],
+    reportAuds:["الإدارة العليا","مجلس الإدارة","الجهة الإشرافية","فريق العمل","عام"],
+    reportSys:"أنت خبير إعداد تقارير حكومية تنفيذية. أعدّ تقريراً احترافياً يشمل: العنوان، الملخص التنفيذي، المقدمة، التحليل بالمؤشرات، النتائج، التوصيات، الخطوات التالية. عناوين وترقيم واضح وجداول نصية عند الحاجة."
+  },
+  en:{
+    sectors:["Government","Municipality","University","Health","State company","Private","International org"],
+    scales:["Small initiative","Medium project","Large program","Full transformation"],
+    reqQuick:["Automate licensing","Improve beneficiary experience","Performance management system","Full digital transformation","Reengineer hiring","Build decision center"],
+    advisorSys:"You are an expert governance & digital transformation advisor. Determine the optimal correct procedure. Present in English: 1) diagnosis 2) recommended procedure & why 3) requirements 4) risks & mitigation 5) success factors.",
+    buildSys:"You are a workflow designer. Design a 4-6 step executable workflow. Each step: title, description, precise prompt. Return JSON: {\"steps\":[{\"title\":\"...\",\"desc\":\"...\",\"prompt\":\"...\"}]}",
+    execSys:"You are an expert government task executor. Execute precisely and give a professional ready output in English.",
+    kpiSys:"You are a performance analyst. Generate realistic dashboard data. Return JSON only: {\"kpis\":[{\"label\":\"...\",\"value\":\"...\",\"trend\":\"up|down|flat\",\"change\":\"...\"}](4),\"progress\":[{\"stage\":\"...\",\"value\":0-100}](5),\"resources\":[{\"name\":\"...\",\"value\":num}](4),\"tasks\":{\"completed\":num,\"inProgress\":num,\"pending\":num},\"risks\":[{\"name\":\"...\",\"level\":0-100}](5),\"analysis\":\"paragraph\"}",
+    analyzeQuick:[{l:"Summary",p:"Summarize in clear organized points."},{l:"Recommendations",p:"Extract all recommendations by priority."},{l:"Data analysis",p:"Analyze data, extract patterns & indicators with tables."},{l:"Risk detection",p:"Detect risks, gaps and points needing attention."},{l:"Language review",p:"Review grammar, spelling, style and suggest improvements."},{l:"Executive summary",p:"Prepare an executive summary for management."}],
+    commandQuick:[{l:"Action plan",p:"Write a complete action plan for "},{l:"Official letter",p:"Write an official letter regarding "},{l:"Minutes",p:"Prepare meeting minutes about "},{l:"Feasibility",p:"Prepare a feasibility framework for "},{l:"KPIs",p:"Suggest KPIs for "}],
+    templates:[
+      {id:"letter",e:"✉️",t:"Official Letter",d:"Government letter",fields:[{k:"type",type:"select",l:"Type",opts:["Request","Circular","Thank-you","Meeting invite","Approval","Apology"]},{k:"to",type:"input",l:"Recipient",ph:"..."},{k:"subject",type:"input",l:"Subject",ph:"..."},{k:"details",type:"textarea",l:"Details",ph:"..."}],sys:"You are a professional government writer. Write a complete formal English letter with greeting, subject, organized body, closing and signature.",build:function(v){return "Write a "+v.type+" letter to: "+v.to+"\nSubject: "+v.subject+"\nDetails: "+v.details;}},
+      {id:"minutes",e:"📅",t:"Meeting Minutes",d:"Formal minutes",fields:[{k:"title",type:"input",l:"Title",ph:"..."},{k:"attendees",type:"input",l:"Attendees",ph:"..."},{k:"agenda",type:"textarea",l:"Discussion & decisions",ph:"..."}],sys:"You are a meeting secretary. Prepare organized minutes: title, date, attendees, agenda, discussion, decisions, tasks with owners.",build:function(v){return "Prepare minutes:\nTitle: "+v.title+"\nAttendees: "+v.attendees+"\nDiscussion: "+v.agenda;}},
+      {id:"contract",e:"📜",t:"Contract Draft",d:"Gov/admin contract",fields:[{k:"ctype",type:"input",l:"Type",ph:"..."},{k:"parties",type:"input",l:"Parties",ph:"..."},{k:"scope",type:"textarea",l:"Scope & terms",ph:"..."}],sys:"You are a legal advisor. Write a structured contract draft with clauses, noting it needs certified legal review.",build:function(v){return "Draft a "+v.ctype+"\nParties: "+v.parties+"\nScope: "+v.scope;}},
+      {id:"memo",e:"📋",t:"Admin Memo",d:"Internal memo",fields:[{k:"subject",type:"input",l:"Subject",ph:"..."},{k:"content",type:"textarea",l:"Content",ph:"..."}],sys:"Prepare a formal internal memo: subject, background, analysis, recommendation, required action.",build:function(v){return "Memo on: "+v.subject+"\nContent: "+v.content;}},
+      {id:"study",e:"📉",t:"Study Framework",d:"Economic/social",fields:[{k:"topic",type:"textarea",l:"Topic",ph:"..."}],sys:"Prepare a methodological framework: objectives, methodology, indicators, data sources, analysis, recommendations.",build:function(v){return "Study framework on: "+v.topic;}}],
+    reportTypes:["Executive","Performance","Project tracking","Analytical","Achievement","Risk"],
+    reportAuds:["Senior management","Board","Supervisory body","Team","General"],
+    reportSys:"You are an executive report expert. Prepare: title, executive summary, introduction, analysis, findings, recommendations, next steps."
+  }
+};
+var TXT={
+  ar:{brand:"محكّم AI",tag:"المنصة الحكومية الذكية الموحدة",lang:"English",nav:"الأدوات",
+    tab0:"المرشد الذكي",tab1:"تحليل الملفات",tab2:"محرّك الأوامر",tab3:"النماذج الجاهزة",tab4:"التقارير الاحترافية",
+    ready:"جاهز",reading:"قراءة...",failed:"فشل",chars:"حرف",imageFile:"صورة جاهزة",
+    advH:"المرشد الذكي وبناء الإجراءات",advP:"يحدّد الإجراء الصحيح، يبنيه، ينفّذه، ويعطيك النتائج والمؤشرات والداشبورد.",
+    s1:"الطلب",s1s:"صف ما تريد",s2:"الإرشاد",s2s:"الإجراء الصحيح",s3:"البناء",s3s:"سير العمل",s4:"التنفيذ",s4s:"بالذكاء الاصطناعي",s5:"النتائج",s5s:"داشبورد ومؤشرات",
+    ap1:"صف الإجراء أو الهدف",ap1l:"طلبك",ap1sec:"القطاع",ap1scl:"النطاق",ap1btn:"حدّد الإجراء الصحيح ✦",
+    ap2:"الإجراء الموصى به",ap2btn:"ابنِ سير العمل ✦",ap3:"سير العمل المُنشأ",ap3s:"بناه الذكاء الاصطناعي. اضغط لتنفيذ كل الخطوات فعلياً.",ap3btn:"نفّذ جميع الخطوات ✦",
+    ap5:"النتائج والمؤشرات والداشبورد",ch1:"الإنجاز عبر المراحل",ch2:"توزيع الموارد",ch3:"حالة المهام",ch4:"تقييم المخاطر",an:"✦ تحليل البيانات والتوصيات",ap5print:"طباعة / PDF",ap5reset:"طلب جديد",
+    aH:"تحليل الملفات بالذكاء الاصطناعي",aP:"ارفع ملفاتك ليستخرج النظام المحتوى ويحلّله.",aUp:"رفع الملفات",dzH:"اسحب الملفات هنا أو اضغط",dzP:"استخراج تلقائي للنص",aTask:"نوع التحليل",aCustom:"أو تعليماتك الخاصة",aRun:"تحليل ✦",
+    cH:"محرّك الأوامر الذكي",cP:"اكتب أي مهمة حكومية لينفّذها الذكاء الاصطناعي.",cL:"الأمر / المهمة",cRun:"تنفيذ ✦",
+    tH:"النماذج الجاهزة",tP:"اختر نموذجاً وعبّئ بياناته ليولّده الذكاء الاصطناعي.",tPick:"اختر النموذج",tGen:"توليد ✦",
+    rH:"التقارير الاحترافية",rP:"أنشئ تقريراً تنفيذياً من بياناتك أو ملفاتك.",rType:"نوع التقرير",rAud:"الجهة المستهدفة",rTopic:"موضوع التقرير / البيانات",rGen:"إنشاء التقرير ✦",
+    copy:"نسخ",print:"طباعة",copied:"تم النسخ ✓",noInput:"الرجاء إدخال البيانات أو رفع ملف أولاً.",noReq:"الرجاء وصف طلبك أولاً.",
+    completed:"مكتملة",inProgress:"قيد التنفيذ",pending:"معلّقة",exec:"نفّذ",wait:"بانتظار",run:"جارٍ",ok:"تم",
+    loadAdvisor:"المرشد يحدّد الإجراء الصحيح...",loadBuild:"يبني سير العمل...",loadKpi:"يولّد المؤشرات والداشبورد...",
+    ctxNone:"لم يتم رفع ملفات بعد.",ctxSome:function(n){return "✓ سيتم تضمين "+n+" ملف مرفوع.";}},
+  en:{brand:"Muhakkim AI",tag:"Unified Government Smart Platform",lang:"العربية",nav:"Tools",
+    tab0:"Smart Advisor",tab1:"File Analysis",tab2:"Command Engine",tab3:"Templates",tab4:"Pro Reports",
+    ready:"Ready",reading:"Reading...",failed:"Failed",chars:"chars",imageFile:"Image ready",
+    advH:"Smart Advisor & Process Builder",advP:"Determines the right procedure, builds, executes it, and gives results, KPIs and dashboard.",
+    s1:"Request",s1s:"Describe",s2:"Advice",s2s:"Right procedure",s3:"Build",s3s:"Workflow",s4:"Execute",s4s:"With AI",s5:"Results",s5s:"Dashboard",
+    ap1:"Describe the procedure or goal",ap1l:"Your request",ap1sec:"Sector",ap1scl:"Scale",ap1btn:"Determine procedure ✦",
+    ap2:"Recommended procedure",ap2btn:"Build workflow ✦",ap3:"Generated workflow",ap3s:"Built by AI. Click to execute all steps.",ap3btn:"Execute all ✦",
+    ap5:"Results, KPIs & Dashboard",ch1:"Progress across stages",ch2:"Resource distribution",ch3:"Task status",ch4:"Risk assessment",an:"✦ Data analysis & recommendations",ap5print:"Print / PDF",ap5reset:"New request",
+    aH:"AI File Analysis",aP:"Upload files; the system extracts and analyzes content.",aUp:"Upload Files",dzH:"Drag files or click",dzP:"Auto text extraction",aTask:"Analysis type",aCustom:"Or your instructions",aRun:"Analyze ✦",
+    cH:"Smart Command Engine",cP:"Write any government task for AI to execute.",cL:"Command / task",cRun:"Run ✦",
+    tH:"Templates",tP:"Pick a template and fill data for AI to generate.",tPick:"Pick template",tGen:"Generate ✦",
+    rH:"Professional Reports",rP:"Create an executive report from your data or files.",rType:"Report type",rAud:"Audience",rTopic:"Report topic / data",rGen:"Create report ✦",
+    copy:"Copy",print:"Print",copied:"Copied ✓",noInput:"Please enter data or upload a file first.",noReq:"Please describe your request first.",
+    completed:"Completed",inProgress:"In progress",pending:"Pending",exec:"Execute",wait:"Waiting",run:"Running",ok:"Done",
+    loadAdvisor:"Determining right procedure...",loadBuild:"Building workflow...",loadKpi:"Generating dashboard...",
+    ctxNone:"No files uploaded yet.",ctxSome:function(n){return "✓ "+n+" file(s) will be included.";}}
+};
+
+/* ===== RENDER ===== */
+function render(){
+  var d=DATA[lang],t=TXT[lang];
+  document.documentElement.lang=lang;document.documentElement.dir=lang==="ar"?"rtl":"ltr";
+  document.getElementById("langBtn").textContent=t.lang;
+  ["brand","tag","nav","tab0","tab1","tab2","tab3","tab4",
+   "adv-h","adv-p","s1","s1s","s2","s2s","s3","s3s","s4","s4s","s5","s5s",
+   "ap1","ap1l","ap1sec","ap1scl","ap1btn","ap2","ap2btn","ap3","ap3s","ap3btn","ap5",
+   "ch1","ch2","ch3","ch4","an","ap5print","ap5reset",
+   "a-h","a-p","a-up","dz-h","dz-p","a-task","a-custom","a-run",
+   "c-h","c-p","c-l","c-run","t-h","t-p","t-pick","t-gen",
+   "r-h","r-p","r-type","r-aud","r-topic","r-gen","copy1","copy2","copy3","copy4","print1","print2","print3","print4"].forEach(function(k){
+     var key=k.replace(/-/g,"").replace("adv","adv");
+     // map ids to TXT keys
+  });
+  // explicit mapping (clear & safe)
+  setT("t-brand",t.brand);setT("t-tag",t.tag);setT("t-nav",t.nav);
+  setT("t-tab0",t.tab0);setT("t-tab1",t.tab1);setT("t-tab2",t.tab2);setT("t-tab3",t.tab3);setT("t-tab4",t.tab4);
+  setT("t-adv-h",t.advH);setT("t-adv-p",t.advP);
+  setT("t-s1",t.s1);setT("t-s1s",t.s1s);setT("t-s2",t.s2);setT("t-s2s",t.s2s);setT("t-s3",t.s3);setT("t-s3s",t.s3s);setT("t-s4",t.s4);setT("t-s4s",t.s4s);setT("t-s5",t.s5);setT("t-s5s",t.s5s);
+  setT("t-ap1",t.ap1);setT("t-ap1l",t.ap1l);setT("t-ap1sec",t.ap1sec);setT("t-ap1scl",t.ap1scl);setT("t-ap1btn",t.ap1btn);
+  setT("t-ap2",t.ap2);setT("t-ap2btn",t.ap2btn);setT("t-ap3",t.ap3);setT("t-ap3s",t.ap3s);setT("t-ap3btn",t.ap3btn);
+  setT("t-ap5",t.ap5);setT("t-ch1",t.ch1);setT("t-ch2",t.ch2);setT("t-ch3",t.ch3);setT("t-ch4",t.ch4);setT("t-an",t.an);setT("t-ap5print",t.ap5print);setT("t-ap5reset",t.ap5reset);
+  setT("t-a-h",t.aH);setT("t-a-p",t.aP);setT("t-a-up",t.aUp);setT("t-dz-h",t.dzH);setT("t-dz-p",t.dzP);setT("t-a-task",t.aTask);setT("t-a-custom",t.aCustom);setT("t-a-run",t.aRun);
+  setT("t-c-h",t.cH);setT("t-c-p",t.cP);setT("t-c-l",t.cL);setT("t-c-run",t.cRun);
+  setT("t-t-h",t.tH);setT("t-t-p",t.tP);setT("t-t-pick",t.tPick);setT("t-t-gen",t.tGen);
+  setT("t-r-h",t.rH);setT("t-r-p",t.rP);setT("t-r-type",t.rType);setT("t-r-aud",t.rAud);setT("t-r-topic",t.rTopic);setT("t-r-gen",t.rGen);
+  setT("t-copy1",t.copy);setT("t-copy2",t.copy);setT("t-copy3",t.copy);setT("t-copy4",t.copy);
+  setT("t-print1",t.print);setT("t-print2",t.print);setT("t-print3",t.print);setT("t-print4",t.print);
+  // quick + selects + templates
+  document.getElementById("reqQuick").innerHTML=d.reqQuick.map(function(q){return '<button onclick="document.getElementById(\'reqInput\').value=this.textContent">'+q+'</button>';}).join("");
+  document.getElementById("reqSector").innerHTML=d.sectors.map(function(x){return '<option>'+x+'</option>';}).join("");
+  document.getElementById("reqScale").innerHTML=d.scales.map(function(x){return '<option>'+x+'</option>';}).join("");
+  document.getElementById("analyzeQuick").innerHTML=d.analyzeQuick.map(function(q){return '<button onclick="setPrompt(\'analyzePrompt\',this.dataset.p)" data-p="'+esc(q.p)+'">'+q.l+'</button>';}).join("");
+  document.getElementById("commandQuick").innerHTML=d.commandQuick.map(function(q){return '<button onclick="setPrompt(\'commandPrompt\',this.dataset.p)" data-p="'+esc(q.p)+'">'+q.l+'</button>';}).join("");
+  document.getElementById("tplGrid").innerHTML=d.templates.map(function(tp,i){return '<div class="tpl" onclick="pickTpl('+i+',this)"><div class="te">'+tp.e+'</div><b>'+tp.t+'</b><span>'+tp.d+'</span></div>';}).join("");
+  document.getElementById("tplForm").style.display="none";
+  document.getElementById("reportType").innerHTML=d.reportTypes.map(function(x){return '<option>'+x+'</option>';}).join("");
+  document.getElementById("reportAud").innerHTML=d.reportAuds.map(function(x){return '<option>'+x+'</option>';}).join("");
+  renderFiles();
+}
+function setT(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+function esc(s){return String(s).replace(/"/g,"&quot;");}
+function setPrompt(id,v){document.getElementById(id).value=v;}
+function updateReportCtx(){var n=uploadedFiles.filter(function(f){return f.status==="ok";}).length;var el=document.getElementById("reportCtx");if(el)el.textContent=n>0?TXT[lang].ctxSome(n):TXT[lang].ctxNone;}
+
+/* ===== NAV ===== */
+function goPage(p,el){document.querySelectorAll(".page").forEach(function(x){x.classList.remove("active");});
+  document.getElementById("page-"+p).classList.add("active");
+  document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("active");});el.classList.add("active");}
+function toggleLang(){lang=lang==="ar"?"en":"ar";selectedTpl=null;render();}
+
+/* ===== ADVISOR ===== */
+function setStep(n){document.querySelectorAll("#stepper .step").forEach(function(s){var sn=+s.dataset.s;s.classList.remove("active","done");if(sn<n)s.classList.add("done");else if(sn===n)s.classList.add("active");});}
+function advLoad(txt){var b=document.getElementById("advLoading");b.classList.add("show");document.getElementById("advLoadingText").textContent=txt;}
+function advHide(){document.getElementById("advLoading").classList.remove("show");}
+async function runAdvisor(){
+  var req=document.getElementById("reqInput").value.trim();if(!req){alert(TXT[lang].noReq);return;}
+  advLoad(TXT[lang].loadAdvisor);document.getElementById("t-ap1btn").disabled=true;
+  try{var prompt=(lang==="ar"?"الطلب: ":"Request: ")+req+"\n"+(lang==="ar"?"القطاع: ":"Sector: ")+document.getElementById("reqSector").value+"\n"+(lang==="ar"?"النطاق: ":"Scale: ")+document.getElementById("reqScale").value;
+    advisorOutput=await callAI(DATA[lang].advisorSys,prompt,1800);
+    document.getElementById("adviceBox").textContent=advisorOutput;
+    document.getElementById("ap2").classList.remove("hidden");document.getElementById("ap2").classList.add("fade");setStep(2);
+    document.getElementById("ap2").scrollIntoView({behavior:"smooth"});
+  }catch(e){alert(e.message);}finally{advHide();document.getElementById("t-ap1btn").disabled=false;}
+}
+async function buildWorkflow(){
+  advLoad(TXT[lang].loadBuild);document.getElementById("t-ap2btn").disabled=true;
+  try{var data=await callAIJson(DATA[lang].buildSys,(lang==="ar"?"الإجراء الموصى به:\n":"Recommended:\n")+advisorOutput);
+    workflow=(data.steps||[]).map(function(s){return {title:s.title,desc:s.desc,prompt:s.prompt,output:"",done:false};});
+    renderFlow();document.getElementById("ap3").classList.remove("hidden");document.getElementById("ap3").classList.add("fade");setStep(3);
+    document.getElementById("ap3").scrollIntoView({behavior:"smooth"});
+  }catch(e){alert(e.message);}finally{advHide();document.getElementById("t-ap2btn").disabled=false;}
+}
+function renderFlow(){var t=TXT[lang];document.getElementById("flowList").innerHTML=workflow.map(function(s,i){
+  var state=s.done?'<span class="fs-state ok">'+t.ok+'</span>':'<span class="fs-state wait" id="state-'+i+'">'+t.wait+'</span>';
+  return '<div class="flow-step'+(s.done?' done':'')+'" id="flow-'+i+'"><div class="fs-num">'+(i+1)+'</div><div class="fs-body"><b>'+s.title+'</b><p>'+s.desc+'</p><div class="fs-output'+(s.output?' show':'')+'" id="out-'+i+'">'+(s.output||"")+'</div></div>'+state+'</div>';}).join("");}
+async function executeAll(){document.getElementById("t-ap3btn").disabled=true;setStep(4);
+  for(var i=0;i<workflow.length;i++){if(!workflow[i].done)await executeStep(i);}
+  document.getElementById("t-ap3btn").disabled=false;await generateDashboard();}
+async function executeStep(i){var step=workflow[i],el=document.getElementById("flow-"+i),stateEl=document.getElementById("state-"+i);
+  el.classList.add("running");if(stateEl){stateEl.className="fs-state run";stateEl.textContent=TXT[lang].run;}
+  try{var ctx=i>0?("\n\n"+(lang==="ar"?"مخرجات سابقة:\n":"Previous outputs:\n")+workflow.slice(0,i).map(function(s,idx){return (idx+1)+". "+s.title+": "+s.output;}).join("\n")):"";
+    var out=await callAI(DATA[lang].execSys,step.prompt+ctx,1200);step.output=out;step.done=true;
+    var o=document.getElementById("out-"+i);o.textContent=out;o.classList.add("show");
+    el.classList.remove("running");el.classList.add("done");if(stateEl){stateEl.className="fs-state ok";stateEl.textContent=TXT[lang].ok;}
+  }catch(e){el.classList.remove("running");if(stateEl){stateEl.className="fs-state wait";stateEl.textContent="⚠";}
+    var o=document.getElementById("out-"+i);o.textContent="⚠ "+e.message;o.classList.add("show");throw e;}}
+async function generateDashboard(){advLoad(TXT[lang].loadKpi);
+  try{var summary=workflow.map(function(s){return s.title+": "+s.output.slice(0,300);}).join("\n");
+    kpiData=await callAIJson(DATA[lang].kpiSys,(lang==="ar"?"الإجراء والنتائج:\n":"Procedure & results:\n")+advisorOutput.slice(0,500)+"\n\n"+summary);
+    renderDashboard();document.getElementById("ap5").classList.remove("hidden");document.getElementById("ap5").classList.add("fade");setStep(5);
+    document.getElementById("ap5").scrollIntoView({behavior:"smooth"});
+  }catch(e){kpiData=fallbackKpi();renderDashboard();document.getElementById("ap5").classList.remove("hidden");setStep(5);}finally{advHide();}}
+function fallbackKpi(){return {kpis:[{label:lang==="ar"?"نسبة الإنجاز":"Completion",value:"87%",trend:"up",change:"+12%"},{label:lang==="ar"?"الكفاءة":"Efficiency",value:"92%",trend:"up",change:"+8%"},{label:lang==="ar"?"زمن التنفيذ":"Time",value:lang==="ar"?"6 أسابيع":"6 wks",trend:"down",change:"-20%"},{label:lang==="ar"?"رضا المستفيدين":"Satisfaction",value:"4.5/5",trend:"up",change:"+0.6"}],progress:[{stage:"S1",value:100},{stage:"S2",value:90},{stage:"S3",value:75},{stage:"S4",value:60},{stage:"S5",value:45}],resources:[{name:lang==="ar"?"بشرية":"Human",value:40},{name:lang==="ar"?"تقنية":"Tech",value:30},{name:lang==="ar"?"مالية":"Financial",value:20},{name:lang==="ar"?"زمنية":"Time",value:10}],tasks:{completed:8,inProgress:3,pending:2},risks:[{name:lang==="ar"?"تشغيلي":"Operational",level:30},{name:lang==="ar"?"مالي":"Financial",level:45},{name:lang==="ar"?"تقني":"Technical",level:60},{name:lang==="ar"?"قانوني":"Legal",level:25},{name:lang==="ar"?"سمعة":"Reputation",level:20}],analysis:lang==="ar"?"تقدّم جيد بكفاءة عالية. يُوصى بتعزيز إدارة المخاطر التقنية ومتابعة المهام المعلّقة.":"Good progress with high efficiency. Strengthen technical risk management."};}
+function renderDashboard(){var k=kpiData;
+  document.getElementById("kpiGrid").innerHTML=k.kpis.map(function(c){var ar=c.trend==="up"?"▲":c.trend==="down"?"▼":"▬";return '<div class="kpi"><div class="kv">'+c.value+'</div><div class="kl">'+c.label+'</div><div class="kt '+c.trend+'">'+ar+' '+(c.change||"")+'</div></div>';}).join("");
+  drawLine("chartLine",k.progress.map(function(p){return p.value;}),k.progress.map(function(p){return p.stage;}));
+  drawBar("chartBar",k.resources.map(function(r){return r.value;}),k.resources.map(function(r){return r.name;}));
+  drawDonut("chartDonut",k.tasks);drawRadar("chartRadar",k.risks);
+  document.getElementById("analysisText").textContent=k.analysis;}
+/* canvas charts */
+function dpi(cv){var d=window.devicePixelRatio||1,r=cv.getBoundingClientRect();cv.width=r.width*d;cv.height=r.height*d;var c=cv.getContext("2d");c.scale(d,d);return {c:c,w:r.width,h:r.height};}
+var GOLD="#d4af37",GOLD2="#f0d77b",GRID="rgba(212,175,55,.12)",TXTC="#9aa6c4";
+function drawLine(id,vals,labels){var cv=document.getElementById(id),o=dpi(cv),c=o.c,w=o.w,h=o.h,pad=34;var max=Math.max.apply(null,vals.concat([100]));c.strokeStyle=GRID;for(var g=0;g<=4;g++){var y=pad+(h-2*pad)*g/4;c.beginPath();c.moveTo(pad,y);c.lineTo(w-pad,y);c.stroke();}var pts=vals.map(function(v,i){return {x:pad+(w-2*pad)*i/(vals.length-1||1),y:h-pad-(h-2*pad)*v/max};});var grad=c.createLinearGradient(0,pad,0,h-pad);grad.addColorStop(0,"rgba(212,175,55,.4)");grad.addColorStop(1,"rgba(212,175,55,0)");c.beginPath();c.moveTo(pts[0].x,h-pad);pts.forEach(function(p){c.lineTo(p.x,p.y);});c.lineTo(pts[pts.length-1].x,h-pad);c.closePath();c.fillStyle=grad;c.fill();c.beginPath();pts.forEach(function(p,i){i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y);});c.strokeStyle=GOLD;c.lineWidth=2.5;c.stroke();pts.forEach(function(p,i){c.beginPath();c.arc(p.x,p.y,4,0,7);c.fillStyle=GOLD2;c.fill();c.fillStyle=TXTC;c.font="10px Tajawal";c.textAlign="center";c.fillText(labels[i],p.x,h-pad+16);});}
+function drawBar(id,vals,labels){var cv=document.getElementById(id),o=dpi(cv),c=o.c,w=o.w,h=o.h,pad=34;var max=Math.max.apply(null,vals)*1.15||1,bw=(w-2*pad)/vals.length*.55;c.strokeStyle=GRID;for(var g=0;g<=4;g++){var y=pad+(h-2*pad)*g/4;c.beginPath();c.moveTo(pad,y);c.lineTo(w-pad,y);c.stroke();}vals.forEach(function(v,i){var x=pad+(w-2*pad)*(i+.5)/vals.length-bw/2,bh=(h-2*pad)*v/max,y=h-pad-bh;var grad=c.createLinearGradient(0,y,0,h-pad);grad.addColorStop(0,GOLD2);grad.addColorStop(1,GOLD);c.fillStyle=grad;roundRect(c,x,y,bw,bh,6);c.fill();c.fillStyle=GOLD2;c.font="bold 11px Tajawal";c.textAlign="center";c.fillText(v,x+bw/2,y-6);c.fillStyle=TXTC;c.font="10px Tajawal";c.fillText(labels[i],x+bw/2,h-pad+16);});}
+function drawDonut(id,tasks){var cv=document.getElementById(id),o=dpi(cv),c=o.c,w=o.w,h=o.h,cx=w/2,cy=h/2,rad=Math.min(w,h)/2-20,inner=rad*.6,t=TXT[lang];var data=[{l:t.completed,v:tasks.completed,col:"#4ade80"},{l:t.inProgress,v:tasks.inProgress,col:GOLD},{l:t.pending,v:tasks.pending,col:"#f87171"}];var total=data.reduce(function(a,b){return a+b.v;},0)||1,ang=-Math.PI/2;data.forEach(function(d){var slice=d.v/total*Math.PI*2;c.beginPath();c.moveTo(cx,cy);c.arc(cx,cy,rad,ang,ang+slice);c.closePath();c.fillStyle=d.col;c.fill();ang+=slice;});c.beginPath();c.arc(cx,cy,inner,0,7);c.fillStyle="#0a1128";c.fill();c.fillStyle=GOLD2;c.font="bold 22px Tajawal";c.textAlign="center";c.textBaseline="middle";c.fillText(total,cx,cy);document.getElementById("donutLegend").innerHTML=data.map(function(d){return '<span><i style="background:'+d.col+'"></i>'+d.l+' ('+d.v+')</span>';}).join("");}
+function drawRadar(id,risks){var cv=document.getElementById(id),o=dpi(cv),c=o.c,w=o.w,h=o.h,cx=w/2,cy=h/2+6,rad=Math.min(w,h)/2-30,n=risks.length;for(var ring=1;ring<=3;ring++){c.beginPath();for(var i=0;i<=n;i++){var a=-Math.PI/2+i/n*Math.PI*2,x=cx+Math.cos(a)*rad*ring/3,y=cy+Math.sin(a)*rad*ring/3;i?c.lineTo(x,y):c.moveTo(x,y);}c.strokeStyle=GRID;c.stroke();}c.beginPath();risks.forEach(function(r,i){var a=-Math.PI/2+i/n*Math.PI*2,rr=rad*r.level/100,x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;i?c.lineTo(x,y):c.moveTo(x,y);});c.closePath();c.fillStyle="rgba(212,175,55,.25)";c.fill();c.strokeStyle=GOLD;c.lineWidth=2;c.stroke();risks.forEach(function(r,i){var a=-Math.PI/2+i/n*Math.PI*2,x=cx+Math.cos(a)*(rad+14),y=cy+Math.sin(a)*(rad+14);c.fillStyle=TXTC;c.font="9px Tajawal";c.textAlign="center";c.textBaseline="middle";c.fillText(r.name,x,y);});}
+function roundRect(c,x,y,w,h,r){if(h<r)r=h/2;c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);c.lineTo(x+w,y+h);c.lineTo(x,y+h);c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);c.closePath();}
+function resetAdvisor(){advisorOutput="";workflow=[];kpiData=null;["ap2","ap3","ap5"].forEach(function(p){document.getElementById(p).classList.add("hidden");});document.getElementById("reqInput").value="";setStep(1);document.getElementById("page-advisor").scrollIntoView({behavior:"smooth"});}
+
+/* ===== ANALYZE / COMMAND / TEMPLATES / REPORT ===== */
+function showLoading(box,res,bar){document.getElementById(box).classList.add("show");document.getElementById(res).classList.remove("show");document.getElementById(bar).classList.remove("show");}
+function showResult(box,res,bar,text){document.getElementById(box).classList.remove("show");var r=document.getElementById(res);r.style.color="#1a1a2e";r.textContent=text;r.classList.add("show");document.getElementById(bar).classList.add("show");}
+function showErr(box,res,bar,msg){document.getElementById(box).classList.remove("show");var r=document.getElementById(res);r.style.color="#c0392b";r.textContent="⚠ "+msg;r.classList.add("show");document.getElementById(bar).classList.remove("show");}
+async function runAnalyze(){var ctx=getFilesContext(),imgs=getImageBlocks();var instr=document.getElementById("analyzePrompt").value.trim()||(lang==="ar"?"لخّص وحلّل المحتوى المرفوع احترافياً.":"Summarize and analyze the uploaded content.");if(!ctx&&imgs.length===0){alert(TXT[lang].noInput);return;}showLoading("analyzeLoading","analyzeResult","analyzeBar");try{var sys=lang==="ar"?"أنت محلّل وثائق حكومي خبير. قدّم تحليلاً احترافياً منظّماً بعناوين وترقيم واضح بالعربية.":"You are an expert government document analyst. Provide an organized professional analysis in English.";var content;if(imgs.length>0)content=imgs.concat([{type:"text",text:instr+(ctx?"\n\nالمحتوى:\n"+ctx:"")}]);else content=instr+"\n\n=== المحتوى ===\n"+ctx;var out=await callAI(sys,content,2000);showResult("analyzeLoading","analyzeResult","analyzeBar",out);}catch(e){showErr("analyzeLoading","analyzeResult","analyzeBar",e.message);}}
+async function runCommand(){var cmd=document.getElementById("commandPrompt").value.trim();if(!cmd){alert(TXT[lang].noInput);return;}var ctx=getFilesContext();showLoading("commandLoading","commandResult","commandBar");try{var sys=lang==="ar"?"أنت مساعد حكومي تنفيذي خبير. نفّذ الأمر بدقة وقدّم مخرجاً احترافياً كاملاً منظّماً بالعربية.":"You are an expert executive government assistant. Execute precisely with a complete organized output in English.";var out=await callAI(sys,cmd+(ctx?"\n\n=== ملفات مرفقة ===\n"+ctx:""),2000);showResult("commandLoading","commandResult","commandBar",out);}catch(e){showErr("commandLoading","commandResult","commandBar",e.message);}}
+function pickTpl(i,el){selectedTpl=DATA[lang].templates[i];document.querySelectorAll(".tpl").forEach(function(x){x.classList.remove("sel");});el.classList.add("sel");document.getElementById("tplFormTitle").textContent=selectedTpl.e+" "+selectedTpl.t;document.getElementById("tplFields").innerHTML=selectedTpl.fields.map(function(f){if(f.type==="textarea")return '<label class="fl">'+f.l+'</label><textarea id="tf-'+f.k+'" placeholder="'+(f.ph||"")+'"></textarea>';if(f.type==="select")return '<label class="fl">'+f.l+'</label><select id="tf-'+f.k+'">'+f.opts.map(function(opt){return '<option>'+opt+'</option>';}).join("")+'</select>';return '<label class="fl">'+f.l+'</label><input id="tf-'+f.k+'" placeholder="'+(f.ph||"")+'">';}).join("");document.getElementById("tplForm").style.display="block";document.getElementById("tplForm").scrollIntoView({behavior:"smooth"});}
+async function runTemplate(){if(!selectedTpl)return;var v={};selectedTpl.fields.forEach(function(f){var el=document.getElementById("tf-"+f.k);v[f.k]=el?el.value.trim():"";});if(!Object.keys(v).some(function(k){return v[k];})){alert(TXT[lang].noInput);return;}showLoading("tplLoading","tplResult","tplBar");try{var out=await callAI(selectedTpl.sys,selectedTpl.build(v),2000);showResult("tplLoading","tplResult","tplBar",out);}catch(e){showErr("tplLoading","tplResult","tplBar",e.message);}}
+async function runReport(){var topic=document.getElementById("reportTopic").value.trim(),ctx=getFilesContext();if(!topic&&!ctx){alert(TXT[lang].noInput);return;}var type=document.getElementById("reportType").value,aud=document.getElementById("reportAud").value;showLoading("reportLoading","reportResult","reportBar");try{var prompt=(lang==="ar"?"أعدّ "+type+" موجّهاً إلى: "+aud+"\nالموضوع/البيانات: "+topic:"Prepare a "+type+" for: "+aud+"\nTopic/data: "+topic)+(ctx?"\n\n=== بيانات الملفات ===\n"+ctx:"");var out=await callAI(DATA[lang].reportSys,prompt,2200);showResult("reportLoading","reportResult","reportBar",out);}catch(e){showErr("reportLoading","reportResult","reportBar",e.message);}}
+function copyResult(id){var txt=document.getElementById(id).textContent;navigator.clipboard.writeText(txt).then(function(){alert(TXT[lang].copied);}).catch(function(){var ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");alert(TXT[lang].copied);}catch(e){}document.body.removeChild(ta);});}
+
+/* register */
+["handleFiles","removeFile","goPage","toggleLang","setPrompt","runAnalyze","runCommand","pickTpl","runTemplate","runReport","copyResult","runAdvisor","buildWorkflow","executeAll","resetAdvisor"].forEach(function(fn){window[fn]=eval(fn);});
+window.addEventListener("resize",function(){if(kpiData)renderDashboard();});
+function init(){try{render();}catch(e){console.error(e);}}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+</script>
+</body>
+</html>
