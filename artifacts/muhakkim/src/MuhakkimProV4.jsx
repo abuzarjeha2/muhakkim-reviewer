@@ -864,6 +864,7 @@ const GROUPS = [
     {key:"mohakam_strategy", icon:"♟️", ar:"التخطيط الاستراتيجي الذكي", en:"Strategic Planning", badge:"جديد"},
     {key:"mohakam_os", icon:"♾️", ar:"نظام التشغيل الذكي الكامل", en:"Mohakam OS", badge:"جديد"},
     {key:"mohakam_os_final", icon:"🧠", ar:"محكم OS — النسخة النهائية الكاملة", en:"Mohakam OS Ultimate", badge:"جديد"},
+    {key:"agents_system", icon:"🧩", ar:"نظام الوكلاء الأذكياء", en:"Smart Agents System", badge:"جديد"},
     {key:"qr", icon:"📷", ar:"مولّد QR", en:"QR Code"},
     {key:"about", icon:"👨‍🏫", ar:"عن المنصة", en:"About"},
     {key:"pricing", icon:"💎", ar:"الباقات والأسعار", en:"Pricing", badge:"جديد"},
@@ -965,6 +966,17 @@ function MohakamOsFinal({ T }) {
     <iframe
       src={src}
       title="محكم OS — النسخة النهائية الكاملة"
+      style={{ width: "100%", height: "calc(100vh - 200px)", minHeight: 680, border: "none", borderRadius: 12, background: T.bg, display: "block" }}
+    />
+  );
+}
+
+function AgentsSystem({ T }) {
+  const src = (import.meta.env.BASE_URL || "/") + "agents-system.html";
+  return (
+    <iframe
+      src={src}
+      title="نظام الوكلاء الأذكياء"
       style={{ width: "100%", height: "calc(100vh - 200px)", minHeight: 680, border: "none", borderRadius: 12, background: T.bg, display: "block" }}
     />
   );
@@ -16882,6 +16894,7 @@ export default function MuhakkimV4() {
     if(key==="mohakam_strategy") return <MohakamStrategy T={T}/>;
     if(key==="mohakam_os") return <MohakamOs T={T}/>;
     if(key==="mohakam_os_final") return <MohakamOsFinal T={T}/>;
+    if(key==="agents_system") return <AgentsSystem T={T}/>;
     if(key==="rev_roles") return <ToolHub T={T} hubKey="rev_roles"/>;
     if(key==="review_center") return <ToolHub T={T} hubKey="review_center"/>;
     if(key==="committee_hub") return <ToolHub T={T} hubKey="committee_hub"/>;

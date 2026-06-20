@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>محكم AI — نظام الوكلاء</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
+body{font-family:'Tajawal',system-ui,sans-serif}
+.nav-item{transition:all .2s ease}
+.nav-item.active{background:linear-gradient(135deg,#7c3aed,#c026d3);color:#fff;border-radius:14px}
+.agent-card{transition:all .25s ease}
+.agent-card:hover{transform:translateY(-4px);border-color:#a855f7}
+.spin{animation:sp 1s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+.fade{animation:fd .4s ease}@keyframes fd{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+.prose-out{white-space:pre-wrap;line-height:2}
+.prose-out h3{font-weight:800;color:#c4b5fd;margin:14px 0 6px;font-size:1.1rem}
+.prose-out strong{color:#f0abfc}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:#475569;border-radius:8px}
+</style>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen">
+
+<nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
+  <div class="max-w-screen-2xl mx-auto px-5 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-x-3">
+      <div class="w-10 h-10 bg-gradient-to-br from-violet-600 via-fuchsia-600 to-indigo-600 rounded-2xl flex items-center justify-center">
+        <i class="fa-solid fa-infinity text-white text-xl"></i>
+      </div>
+      <div>
+        <span class="text-2xl font-extrabold tracking-tight">محكم</span>
+        <span class="text-2xl font-extrabold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">AI</span>
+      </div>
+      <div class="px-3 py-1 text-[11px] font-bold bg-emerald-900/40 text-emerald-300 rounded-xl border border-emerald-700">وكلاء حقيقيون • متصل بـ Claude</div>
+    </div>
+    <div id="status" class="text-xs text-slate-400 flex items-center gap-x-2">
+      <span class="w-2 h-2 bg-emerald-400 rounded-full"></span> جاهز
+    </div>
+  </div>
+</nav>
+
+<div class="max-w-screen-2xl mx-auto flex">
+  <aside class="w-64 bg-slate-900 border-l border-slate-800 min-h-screen p-3 hidden lg:block shrink-0">
+    <div class="px-3 mb-3 text-[11px] font-bold tracking-wider text-slate-500">الوكلاء المتخصصون</div>
+    <div id="agent-nav"></div>
+    <div class="mt-6 px-3 py-3 bg-slate-800/50 rounded-2xl text-[11px] text-slate-400 leading-relaxed">
+      <i class="fa-solid fa-shield-halved text-amber-400"></i> كل وكيل ينفّذ مهمته فعلياً عبر Claude. العمليات الحساسة تبقى تحت إشرافك.
+    </div>
+  </aside>
+
+  <main class="flex-1 p-5 md:p-8">
+    <div id="agent-views"></div>
+  </main>
+</div>
+
+<script>
+/* ============ تعريف الوكلاء ============ */
+const AGENTS = [
+  { id:'research', name:'مستشار البحث العلمي', icon:'fa-microscope', color:'sky',
+    desc:'يحلّل موضوع البحث، يقترح أسئلة بحثية، فجوات، ومنهجية مناسبة.',
+    placeholder:'اكتب عنوان بحثك أو فكرته، أو الصق الملخص...',
+    inputLabel:'موضوع البحث / الملخص',
+    system:'أنت مستشار بحث علمي خبير في المنهجية الأكاديمية. حلّل موضوع البحث المقدّم وقدّم: (1) تقييم وضوح المشكلة البحثية، (2) ثلاثة أسئلة بحثية مقترحة، (3) الفجوة البحثية المحتملة، (4) المنهجية الأنسب مع التبرير، (5) تحذيرات أو نقاط ضعف. استخدم عناوين فرعية واضحة بصيغة ### وكن عملياً ومحدداً.' },
+  { id:'stats', name:'مستشار الإحصاء', icon:'fa-chart-simple', color:'teal',
+    desc:'يوصي بالاختبار الإحصائي المناسب ويفسّر بياناتك.',
+    placeholder:'صف بياناتك وسؤالك: نوع المتغيرات، حجم العينة، ما تريد قياسه...',
+    inputLabel:'وصف البيانات والسؤال الإحصائي',
+    system:'أنت مستشار إحصائي خبير. بناءً على وصف البيانات قدّم: (1) نوع المتغيرات وتصنيفها، (2) الاختبار الإحصائي الأنسب مع سبب الاختيار، (3) الافتراضات الواجب تحققها، (4) بدائل إن لم تتحقق الافتراضات، (5) كيفية تفسير النتيجة. استخدم عناوين ### وكن دقيقاً.' },
+  { id:'quality', name:'مدير الجودة', icon:'fa-clipboard-check', color:'emerald',
+    desc:'يراجع جودة وثيقة أو محتوى ويصدر تقرير جودة بنقاط.',
+    placeholder:'الصق المحتوى أو الوثيقة المراد فحص جودتها...',
+    inputLabel:'المحتوى المراد فحصه',
+    system:'أنت مدير جودة دقيق. افحص المحتوى وأصدر تقرير جودة يشمل: (1) درجة جودة من 100 مع تبرير، (2) نقاط القوة، (3) المشكلات مصنّفة (حرجة/متوسطة/بسيطة)، (4) توصيات تحسين محددة قابلة للتنفيذ. استخدم عناوين ###.' },
+  { id:'code', name:'مراجع الكود', icon:'fa-code', color:'violet',
+    desc:'يراجع الكود، يكتشف الأخطاء والثغرات، ويقترح تحسينات.',
+    placeholder:'الصق الكود هنا (أي لغة)...',
+    inputLabel:'الكود المراد مراجعته',
+    system:'أنت مراجع كود خبير. راجع الكود وقدّم: (1) ملخص ما يفعله، (2) أخطاء أو ثغرات (أمنية/منطقية) مع رقم السطر إن أمكن، (3) مشكلات الأداء، (4) تحسينات مقترحة مع أمثلة كود مختصرة، (5) تقييم عام. استخدم عناوين ### ولا تنفّذ أي تعديل إنتاجي — اقتراحات فقط.' },
+  { id:'support', name:'خدمة العملاء', icon:'fa-headset', color:'rose',
+    desc:'يردّ على استفسارات العملاء بحلول عملية ومهنية.',
+    placeholder:'اكتب استفسار العميل أو شكواه...',
+    inputLabel:'استفسار العميل',
+    system:'أنت وكيل خدمة عملاء محترف لمنصة محكم (منصة أكاديمية/حكومية). ردّ بأسلوب ودود ومهني: (1) تفهّم المشكلة، (2) الحل خطوة بخطوة، (3) خطوات بديلة إن لزم، (4) متى يتم التصعيد لموظف بشري. كن موجزاً وعملياً.' },
+  { id:'reception', name:'موظف الاستقبال الذكي', icon:'fa-door-open', color:'amber',
+    desc:'يرحّب، يتعرّف على احتياج العميل، ويوجّهه للخدمة المناسبة.',
+    placeholder:'اكتب ما يريده الزائر: "أنا طالب دراسات عليا أحتاج مراجعة رسالتي"...',
+    inputLabel:'ما يريده الزائر',
+    system:'أنت موظف استقبال ذكي لمنصة محكم. رحّب بإيجاز ثم: (1) حدّد نوع العميل (باحث/طالب/جهة/محكّم)، (2) اقترح الخدمات الأنسب له من المنصة، (3) اقترح أول خطوة عملية، (4) وجّهه للوكيل المتخصص المناسب. كن مرحّباً وموجزاً.' },
+  { id:'strategy', name:'المستشار الاستراتيجي', icon:'fa-chess-rook', color:'indigo',
+    desc:'يحلّل وضعاً مؤسسياً ويقترح خطة استراتيجية.',
+    placeholder:'صف وضع المؤسسة، الأهداف، والتحديات...',
+    inputLabel:'الوضع المؤسسي والأهداف',
+    system:'أنت مستشار استراتيجي خبير. قدّم: (1) تحليل SWOT موجز، (2) 3 أهداف استراتيجية ذكية (SMART)، (3) مبادرات تنفيذية لكل هدف، (4) مؤشرات أداء KPIs، (5) أبرز المخاطر. استخدم عناوين ###.' },
+  { id:'data', name:'محلل البيانات', icon:'fa-chart-pie', color:'fuchsia',
+    desc:'يحلّل بيانات أو أرقاماً ويستخرج رؤى وتوصيات.',
+    placeholder:'الصق بياناتك (أرقام، جدول، نسب) واذكر ما تريد فهمه...',
+    inputLabel:'البيانات والسؤال',
+    system:'أنت محلل بيانات خبير. حلّل البيانات وقدّم: (1) أبرز الأنماط والاتجاهات، (2) رؤى رئيسية (insights)، (3) أرقام لافتة أو شاذة، (4) توصيات قابلة للتنفيذ مبنية على البيانات. استخدم عناوين ###.' }
+];
+
+const COLORS={sky:'text-sky-400',teal:'text-teal-400',emerald:'text-emerald-400',violet:'text-violet-400',rose:'text-rose-400',amber:'text-amber-400',indigo:'text-indigo-400',fuchsia:'text-fuchsia-400'};
+let activeAgent='research';
+
+/* ============ بناء الواجهة ============ */
+function buildNav(){
+  const nav=document.getElementById('agent-nav');
+  nav.innerHTML=AGENTS.map(a=>`
+    <div onclick="selectAgent('${a.id}')" data-nav="${a.id}"
+      class="nav-item flex items-center gap-x-3 px-3 py-2.5 mb-1 cursor-pointer rounded-2xl hover:bg-slate-800 text-sm ${a.id===activeAgent?'active':''}">
+      <i class="fa-solid ${a.icon} w-5 ${a.id===activeAgent?'text-white':COLORS[a.color]}"></i>
+      <span class="font-medium">${a.name}</span>
+    </div>`).join('');
+}
+
+function buildViews(){
+  const v=document.getElementById('agent-views');
+  v.innerHTML=AGENTS.map(a=>`
+    <div id="view-${a.id}" class="${a.id===activeAgent?'':'hidden'} fade">
+      <div class="flex items-center gap-x-4 mb-2">
+        <div class="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center">
+          <i class="fa-solid ${a.icon} text-2xl ${COLORS[a.color]}"></i>
+        </div>
+        <div>
+          <h1 class="text-3xl font-extrabold tracking-tight">${a.name}</h1>
+          <p class="text-slate-400">${a.desc}</p>
+        </div>
+      </div>
+
+      <div class="grid lg:grid-cols-2 gap-5 mt-5">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5">
+          <label class="text-sm font-bold text-slate-300 mb-2 block">${a.inputLabel}</label>
+          <textarea id="in-${a.id}" rows="10" placeholder="${a.placeholder}"
+            class="w-full bg-slate-800 border border-slate-600 rounded-2xl px-4 py-3 text-sm leading-relaxed focus:border-violet-500 focus:outline-none resize-none"></textarea>
+          <button onclick="runAgent('${a.id}')" id="btn-${a.id}"
+            class="mt-3 w-full h-12 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 rounded-2xl font-bold flex items-center justify-center gap-x-2">
+            <i class="fa-solid fa-bolt"></i><span>تشغيل الوكيل</span>
+          </button>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5 flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm font-bold text-slate-300">المخرجات</span>
+            <button onclick="copyOut('${a.id}')" class="text-xs text-slate-400 hover:text-white"><i class="fa-regular fa-copy"></i> نسخ</button>
+          </div>
+          <div id="out-${a.id}" class="prose-out flex-1 text-sm text-slate-300 overflow-y-auto min-h-[260px] max-h-[440px]">
+            <div class="text-slate-600 text-center pt-20"><i class="fa-solid ${a.icon} text-4xl mb-3 block opacity-30"></i>أدخل بياناتك واضغط "تشغيل الوكيل"</div>
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function selectAgent(id){
+  activeAgent=id;
+  AGENTS.forEach(a=>{
+    document.getElementById('view-'+a.id).classList.toggle('hidden',a.id!==id);
+    const n=document.querySelector(`[data-nav="${a.id}"]`);
+    n.classList.toggle('active',a.id===id);
+    const ic=n.querySelector('i');
+    ic.className=`fa-solid ${a.icon} w-5 ${a.id===id?'text-white':COLORS[a.color]}`;
+  });
+}
+
+/* ============ الاتصال بـ Claude (مسار مزدوج) ============ */
+async function callClaude(system,user){
+  const body={
+    model:"claude-sonnet-4-6",
+    max_tokens:1000,
+    system:system,
+    messages:[{role:"user",content:user}]
+  };
+  // المسار 1: proxy محلي (Replit) — المسار 2: مدمج هنا
+  let res;
+  try{
+    res=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    if(!res.ok) throw new Error("no proxy");
+  }catch(e){
+    res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)
+    });
+  }
+  const data=await res.json();
+  return (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join("\n").trim();
+}
+
+function fmt(t){
+  return t.replace(/^### (.*)$/gm,'<h3>$1</h3>')
+          .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+}
+
+async function runAgent(id){
+  const agent=AGENTS.find(a=>a.id===id);
+  const input=document.getElementById('in-'+id).value.trim();
+  const out=document.getElementById('out-'+id);
+  const btn=document.getElementById('btn-'+id);
+  if(!input){ out.innerHTML='<div class="text-amber-400 text-center pt-20">الرجاء إدخال البيانات أولاً</div>'; return; }
+
+  btn.disabled=true;
+  btn.innerHTML='<i class="fa-solid fa-spinner spin"></i><span>الوكيل يعمل...</span>';
+  out.innerHTML='<div class="text-slate-400 text-center pt-20"><i class="fa-solid fa-spinner spin text-3xl mb-3 block"></i>'+agent.name+' يحلّل ويولّد النتيجة...</div>';
+  setStatus('الوكيل "'+agent.name+'" يعمل...',true);
+
+  try{
+    const result=await callClaude(agent.system,input);
+    out.innerHTML=fmt(result||'لم يصل رد. حاول مجدداً.');
+    setStatus('اكتمل بنجاح');
+  }catch(e){
+    out.innerHTML='<div class="text-rose-400 text-center pt-16">حدث خطأ في الاتصال.<br><span class="text-xs text-slate-500">'+(e.message||e)+'</span><br><span class="text-xs text-slate-500 mt-2 block">عند النشر على Replit، تأكد من تشغيل proxy على /api/ai</span></div>';
+    setStatus('خطأ في الاتصال');
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML='<i class="fa-solid fa-bolt"></i><span>تشغيل الوكيل</span>';
+  }
+}
+
+function copyOut(id){
+  const t=document.getElementById('out-'+id).innerText;
+  navigator.clipboard.writeText(t).then(()=>setStatus('تم النسخ'));
+}
+
+function setStatus(msg,busy){
+  document.getElementById('status').innerHTML=
+    `<span class="w-2 h-2 ${busy?'bg-amber-400 spin':'bg-emerald-400'} rounded-full"></span> ${msg}`;
+}
+
+buildNav();buildViews();
+</script>
+</body>
+</html>
