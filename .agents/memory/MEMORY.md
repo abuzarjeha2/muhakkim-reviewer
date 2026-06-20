@@ -11,4 +11,5 @@
 - [Muhakkim hero design](muhakkim-hero-design.md) — brand word uses solid gold, not gradient-clip text (transparent-fill can make text invisible on partial-support mobile browsers).
 - [Tool catalog architecture](tool-catalog.md) — GROUPS + ToolHub/HUBS + StdTool fallback + TOOL_GUIDE; «أجنحة التميّز» are UNIQUE not duplicates; only `report` was redundant (→master_report). Rich guide shows only for top-level GROUPS tools.
 - [Muqyas embedded in Muhakkim](muqyas-muhakkim-merge.md) — Muqyas vendored as self-contained copy, surfaced via Muhakkim navbar with `mq_`-prefixed keys + `ext:true`; embed component takes {embed,initialTool,dark}.
+- [AccreditationOS vendoring](accreditation-os-vendoring.md) — fresh handoff = same tool upgraded; 3 mandatory patches (localStorage, /api/ai, named export) + re-apply «دليل المتطلب» guides feature each time.
 - [Embedded full-app React tool](embedded-react-overlay.md) — direct-import a standalone screen as a Muhakkim tool (like MuqyasEmbedded); root MUST be position:relative so absolute loading overlays stay scoped, not viewport-anchored.

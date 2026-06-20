@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { LayoutDashboard, FileText, Upload, CheckCircle2, BarChart3, Search, FolderTree, PenLine, Sparkles, AlertTriangle, Download, Trash2, Plus, Loader2, X, ChevronRight, Languages, ClipboardCheck, TrendingUp, FileCheck2, Save, Cloud, CloudOff, UserCheck, MessageSquare, Award, Target, Gauge, ShieldAlert, ArrowUp, BadgeCheck, ShieldCheck, BookOpen } from "lucide-react";
+import { LayoutDashboard, FileText, Upload, CheckCircle2, BarChart3, Search, FolderTree, PenLine, Sparkles, AlertTriangle, Download, Trash2, Plus, Loader2, X, ChevronRight, Languages, ClipboardCheck, TrendingUp, FileCheck2, Save, Cloud, CloudOff, UserCheck, MessageSquare, Award, Target, Gauge, ShieldAlert, ArrowUp, BadgeCheck, ShieldCheck } from "lucide-react";
 
 // ============= نظام الحفظ الدائم =============
 async function storeGet(key, fallback) {
-  try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; }
+  try { const r = await window.storage.get(key); return r ? JSON.parse(r.value) : fallback; }
   catch { return fallback; }
 }
 async function storeSet(key, value) {
-  try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+  try { await window.storage.set(key, JSON.stringify(value)); return true; }
   catch { return false; }
 }
 
@@ -29,23 +29,20 @@ const COMPLIANCE_COLORS = { 0: "#64748b", 1: "#dc2626", 2: "#f59e0b", 3: "#3b82f
 // ألوان الهوية
 const C = { navy: "#0f1f3d", navy2: "#1a3057", gold: "#c9a227", goldL: "#e3c659", bg: "#f4f6fb", card: "#ffffff" };
 
-// ============= استدعاء الذكاء الاصطناعي (عبر بروكسي الخادم فقط) =============
-const AI_ENDPOINT = (import.meta.env.BASE_URL || "/") + "api/ai";
+// ============= استدعاء الذكاء الاصطناعي =============
 async function callAI(prompt, system = "") {
   try {
-    const res = await fetch(AI_ENDPOINT, {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 2000,
-        system: system || undefined,
-        messages: [{ role: "user", content: prompt }],
+        max_tokens: 1000,
+        messages: [{ role: "user", content: (system ? system + "\n\n" : "") + prompt }],
       }),
     });
-    if (!res.ok) throw new Error("رمز " + res.status);
     const data = await res.json();
-    return (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
+    return data.content.filter(b => b.type === "text").map(b => b.text).join("\n");
   } catch (e) {
     return "حدث خطأ في الاتصال بالذكاء الاصطناعي: " + e.message;
   }
@@ -66,7 +63,7 @@ async function callAIJson(prompt, system = "") {
   }
 }
 
-export function AccreditationOS() {
+export default function App() {
   const [tab, setTab] = useState("dashboard");
   const [loaded, setLoaded] = useState(false);
   const [saveStatus, setSaveStatus] = useState("saved"); // saved | saving | error
@@ -83,7 +80,6 @@ export function AccreditationOS() {
   ]);
   const [ssrSections, setSsrSections] = useState({});
   const [mockResults, setMockResults] = useState({});
-  const [guides, setGuides] = useState({});
   const [collegeInfo, setCollegeInfo] = useState({ name: "كلية الغد للعلوم الطبية التطبيقية", program: "", date: new Date().toLocaleDateString("ar-SA") });
 
   // تحميل البيانات المحفوظة عند بدء التشغيل
@@ -96,7 +92,6 @@ export function AccreditationOS() {
         if (data.kpis) setKpis(data.kpis);
         if (data.ssrSections) setSsrSections(data.ssrSections);
         if (data.mockResults) setMockResults(data.mockResults);
-        if (data.guides) setGuides(data.guides);
         if (data.collegeInfo) setCollegeInfo(data.collegeInfo);
       }
       setLoaded(true);
@@ -110,11 +105,11 @@ export function AccreditationOS() {
     setSaveStatus("saving");
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(async () => {
-      const ok = await storeSet("mohakam_data", { evaluations, evidence, kpis, ssrSections, mockResults, guides, collegeInfo });
+      const ok = await storeSet("mohakam_data", { evaluations, evidence, kpis, ssrSections, mockResults, collegeInfo });
       setSaveStatus(ok ? "saved" : "error");
     }, 800);
     return () => clearTimeout(saveTimer.current);
-  }, [evaluations, evidence, kpis, ssrSections, mockResults, guides, collegeInfo, loaded]);
+  }, [evaluations, evidence, kpis, ssrSections, mockResults, collegeInfo, loaded]);
 
   // إحصائيات لوحة القيادة
   const stats = useMemo(() => {
@@ -204,7 +199,7 @@ export function AccreditationOS() {
       <main style={{ flex: 1, padding: "24px 32px", overflowX: "hidden" }}>
         {tab === "dashboard" && <Dashboard stats={stats} collegeInfo={collegeInfo} setCollegeInfo={setCollegeInfo} evaluations={evaluations} evidence={evidence} kpis={kpis} ssrSections={ssrSections} mockResults={mockResults} setTab={setTab} />}
         {tab === "predictor" && <Predictor stats={stats} evaluations={evaluations} evidence={evidence} kpis={kpis} collegeInfo={collegeInfo} setTab={setTab} />}
-        {tab === "standards" && <Standards evaluations={evaluations} setEvaluations={setEvaluations} evidence={evidence} guides={guides} setGuides={setGuides} />}
+        {tab === "standards" && <Standards evaluations={evaluations} setEvaluations={setEvaluations} evidence={evidence} />}
         {tab === "evidence" && <Evidence evidence={evidence} setEvidence={setEvidence} />}
         {tab === "review" && <Review evidence={evidence} setEvidence={setEvidence} />}
         {tab === "kpis" && <KPIs kpis={kpis} setKpis={setKpis} />}
@@ -320,20 +315,10 @@ function Dashboard({ stats, collegeInfo, setCollegeInfo, evaluations, evidence, 
 }
 
 // ============= 2. إدارة المعايير =============
-function Standards({ evaluations, setEvaluations, evidence, guides, setGuides }) {
+function Standards({ evaluations, setEvaluations, evidence }) {
   const [open, setOpen] = useState(1);
-  const [loadingGuide, setLoadingGuide] = useState("");
   const setScore = (c, score) => setEvaluations(p => ({ ...p, [c]: { ...p[c], score } }));
   const setComment = (c, comment) => setEvaluations(p => ({ ...p, [c]: { ...p[c], comment } }));
-  const genGuide = async (c, stdName) => {
-    setLoadingGuide(c);
-    const txt = await callAI(
-      `المعيار الفرعي رقم "${c}" ضمن معيار الاعتماد المؤسسي "${stdName}" (هيئة NCAAA السعودية). اكتب دليلاً عملياً موجزاً يوضّح: 1) المقصود بالمتطلب. 2) الأدلة والشواهد المطلوبة لإثباته. 3) معايير الالتزام الكامل (درجة 4). 4) أخطاء شائعة يجب تجنّبها.`,
-      "أنت خبير اعتماد أكاديمي مؤسسي وفق معايير الهيئة الوطنية للتقويم والاعتماد الأكاديمي (NCAAA). أجب بالعربية بإيجاز ووضوح وتنظيم بنقاط."
-    );
-    setGuides(p => ({ ...p, [c]: txt }));
-    setLoadingGuide("");
-  };
   return (
     <div>
       <Header icon={FolderTree} title="إدارة المعايير" sub="تقييم جميع المعايير الفرعية وعناصر التقييم حسب معايير الاعتماد NCAAA" />
@@ -357,22 +342,12 @@ function Standards({ evaluations, setEvaluations, evidence, guides, setGuides })
                       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
                         <span style={{ fontWeight: 800, color: C.navy, background: "#fff", padding: "4px 10px", borderRadius: 8, fontSize: 13 }}>{c}</span>
                         {evCount > 0 && <span style={{ fontSize: 11, color: "#16a34a", background: "#dcfce7", padding: "3px 8px", borderRadius: 6 }}>{evCount} دليل</span>}
-                        <div style={{ display: "flex", gap: 6, marginRight: "auto", alignItems: "center" }}>
-                          <button onClick={() => genGuide(c, s.name)} disabled={loadingGuide === c} title="دليل المتطلب" style={{ display: "flex", alignItems: "center", gap: 5, height: 34, padding: "0 10px", borderRadius: 8, border: `1px solid ${C.gold}`, cursor: loadingGuide === c ? "wait" : "pointer", fontWeight: 700, fontSize: 12, background: "#fff", color: C.gold, fontFamily: "inherit" }}>
-                            {loadingGuide === c ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <BookOpen size={14} />} دليل المتطلب
-                          </button>
+                        <div style={{ display: "flex", gap: 6, marginRight: "auto" }}>
                           {[1, 2, 3, 4].map(n => (
                             <button key={n} onClick={() => setScore(c, n)} style={{ width: 34, height: 34, borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 800, fontSize: 14, background: evaluations[c]?.score === n ? COMPLIANCE_COLORS[n] : "#fff", color: evaluations[c]?.score === n ? "#fff" : "#94a3b8", boxShadow: "0 1px 4px rgba(0,0,0,.08)", transition: ".2s" }}>{n}</button>
                           ))}
                         </div>
                       </div>
-                      {guides[c] && (
-                        <div style={{ background: "#fffbeb", border: `1px solid ${C.goldL}`, borderRadius: 10, padding: 12, marginBottom: 10, fontSize: 13, lineHeight: 1.8, whiteSpace: "pre-wrap", position: "relative" }}>
-                          <button onClick={() => setGuides(p => { const n = { ...p }; delete n[c]; return n; })} style={{ position: "absolute", top: 8, left: 8, border: "none", background: "transparent", cursor: "pointer", color: "#94a3b8" }}><X size={15} /></button>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 800, color: C.gold, marginBottom: 6 }}><BookOpen size={15} /> دليل المتطلب</div>
-                          {guides[c]}
-                        </div>
-                      )}
                       <textarea value={evaluations[c]?.comment || ""} onChange={e => setComment(c, e.target.value)} placeholder="التعليق على نتائج التقييم بناءً على الأدلة..." style={{ ...inp, minHeight: 60, resize: "vertical" }} />
                     </div>
                   );
