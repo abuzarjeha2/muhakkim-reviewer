@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { LayoutDashboard, FileText, Upload, CheckCircle2, BarChart3, Search, FolderTree, PenLine, Sparkles, AlertTriangle, Download, Trash2, Plus, Loader2, X, ChevronRight, Languages, ClipboardCheck, TrendingUp, FileCheck2, Save, Cloud, CloudOff, UserCheck, MessageSquare, Award } from "lucide-react";
+import { LayoutDashboard, FileText, Upload, CheckCircle2, BarChart3, Search, FolderTree, PenLine, Sparkles, AlertTriangle, Download, Trash2, Plus, Loader2, X, ChevronRight, Languages, ClipboardCheck, TrendingUp, FileCheck2, Save, Cloud, CloudOff, UserCheck, MessageSquare, Award, BookOpen } from "lucide-react";
 
 // ============= نظام الحفظ الدائم =============
 async function storeGet(key, fallback) {
@@ -83,6 +83,7 @@ export function AccreditationOS() {
   ]);
   const [ssrSections, setSsrSections] = useState({});
   const [mockResults, setMockResults] = useState({});
+  const [guides, setGuides] = useState({});
   const [collegeInfo, setCollegeInfo] = useState({ name: "كلية الغد للعلوم الطبية التطبيقية", program: "", date: new Date().toLocaleDateString("ar-SA") });
 
   // تحميل البيانات المحفوظة عند بدء التشغيل
@@ -95,6 +96,7 @@ export function AccreditationOS() {
         if (data.kpis) setKpis(data.kpis);
         if (data.ssrSections) setSsrSections(data.ssrSections);
         if (data.mockResults) setMockResults(data.mockResults);
+        if (data.guides) setGuides(data.guides);
         if (data.collegeInfo) setCollegeInfo(data.collegeInfo);
       }
       setLoaded(true);
@@ -108,11 +110,11 @@ export function AccreditationOS() {
     setSaveStatus("saving");
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(async () => {
-      const ok = await storeSet("mohakam_data", { evaluations, evidence, kpis, ssrSections, mockResults, collegeInfo });
+      const ok = await storeSet("mohakam_data", { evaluations, evidence, kpis, ssrSections, mockResults, guides, collegeInfo });
       setSaveStatus(ok ? "saved" : "error");
     }, 800);
     return () => clearTimeout(saveTimer.current);
-  }, [evaluations, evidence, kpis, ssrSections, mockResults, collegeInfo, loaded]);
+  }, [evaluations, evidence, kpis, ssrSections, mockResults, guides, collegeInfo, loaded]);
 
   // إحصائيات لوحة القيادة
   const stats = useMemo(() => {
@@ -200,7 +202,7 @@ export function AccreditationOS() {
       {/* المحتوى */}
       <main style={{ flex: 1, padding: "24px 32px", overflowX: "hidden", overflowY: "auto", maxHeight: "calc(100vh - 120px)" }}>
         {tab === "dashboard" && <Dashboard stats={stats} collegeInfo={collegeInfo} setCollegeInfo={setCollegeInfo} />}
-        {tab === "standards" && <Standards evaluations={evaluations} setEvaluations={setEvaluations} evidence={evidence} />}
+        {tab === "standards" && <Standards evaluations={evaluations} setEvaluations={setEvaluations} evidence={evidence} guides={guides} setGuides={setGuides} />}
         {tab === "evidence" && <Evidence evidence={evidence} setEvidence={setEvidence} />}
         {tab === "review" && <Review evidence={evidence} setEvidence={setEvidence} />}
         {tab === "kpis" && <KPIs kpis={kpis} setKpis={setKpis} />}
@@ -285,13 +287,23 @@ function Dashboard({ stats, collegeInfo, setCollegeInfo }) {
 }
 
 // ============= 2. إدارة المعايير =============
-function Standards({ evaluations, setEvaluations, evidence }) {
+function Standards({ evaluations, setEvaluations, evidence, guides, setGuides }) {
   const [open, setOpen] = useState(1);
+  const [loadingGuide, setLoadingGuide] = useState(null);
   const setScore = (c, score) => setEvaluations(p => ({ ...p, [c]: { ...p[c], score } }));
   const setComment = (c, comment) => setEvaluations(p => ({ ...p, [c]: { ...p[c], comment } }));
+  const genGuide = async (c, sName) => {
+    setLoadingGuide(c);
+    const res = await callAIJson(
+      `أنت خبير اعتماد أكاديمي وفق معايير الهيئة الوطنية (NCAAA). قدّم دليلًا مرجعيًا واضحًا وعمليًا للمتطلب رقم ${c} ضمن معيار "${sName}"، يصلح مرجعًا للممارس عند تطبيق هذا المتطلب وجمع أدلته.`,
+      `أرجع JSON بالشكل: {"meaning":"المقصود بالمتطلب بإيجاز ووضوح","required":"ما المطلوب تحقيقه عمليًا داخل المؤسسة","evidence":["دليل أو شاهد مقترح يثبت تحقق المتطلب"],"indicators":["مؤشر يوضح متى يُعدّ الالتزام كاملًا (درجة 4) ومتى يكون جزئيًا"]}`
+    );
+    setGuides(p => ({ ...p, [c]: res || { meaning: "تعذّر توليد الدليل حاليًا، يرجى المحاولة مرة أخرى." } }));
+    setLoadingGuide(null);
+  };
   return (
     <div>
-      <Header icon={FolderTree} title="إدارة المعايير" sub="تقييم جميع المعايير الفرعية وعناصر التقييم حسب معايير الاعتماد NCAAA" />
+      <Header icon={FolderTree} title="إدارة المعايير" sub="تقييم جميع المعايير الفرعية مع دليل مرجعي واضح لكل متطلب حسب معايير الاعتماد NCAAA" />
       {STANDARDS.map(s => {
         const scores = s.criteria.map(c => evaluations[c]?.score || 0).filter(x => x > 0);
         const avg = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2) : "—";
@@ -319,6 +331,23 @@ function Standards({ evaluations, setEvaluations, evidence }) {
                         </div>
                       </div>
                       <textarea value={evaluations[c]?.comment || ""} onChange={e => setComment(c, e.target.value)} placeholder="التعليق على نتائج التقييم بناءً على الأدلة..." style={{ ...inp, minHeight: 60, resize: "vertical" }} />
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+                        <Btn variant="ghost" onClick={() => genGuide(c, s.name)} disabled={loadingGuide === c} style={{ padding: "6px 12px", fontSize: 13 }}>{loadingGuide === c ? <Loader2 size={15} style={{ animation: "accspin 1s linear infinite" }} /> : <BookOpen size={15} />} {guides[c] ? "إعادة توليد الدليل" : "دليل المتطلب"}</Btn>
+                        {guides[c] && <span style={{ fontSize: 11, color: "#16a34a", display: "inline-flex", alignItems: "center", gap: 4 }}><CheckCircle2 size={13} /> الدليل المرجعي جاهز</span>}
+                      </div>
+                      {guides[c] && (
+                        <div style={{ marginTop: 10, background: "#fff", border: `1px solid rgba(201,162,39,.35)`, borderRadius: 12, padding: 14, fontSize: 13, lineHeight: 1.85 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 800, color: C.gold, marginBottom: 8 }}><BookOpen size={16} /> الدليل المرجعي للمتطلب {c}</div>
+                          {guides[c].meaning && <div style={{ marginBottom: 8 }}><strong style={{ color: C.navy }}>المقصود بالمتطلب: </strong>{guides[c].meaning}</div>}
+                          {guides[c].required && <div style={{ marginBottom: 8 }}><strong style={{ color: C.navy }}>المطلوب تحقيقه: </strong>{guides[c].required}</div>}
+                          {Array.isArray(guides[c].evidence) && guides[c].evidence.length > 0 && (
+                            <div style={{ marginBottom: 8 }}><strong style={{ color: C.gold }}>الأدلة والشواهد المقترحة:</strong><ul style={{ margin: "4px 0 0", paddingRight: 18 }}>{guides[c].evidence.map((x, i) => <li key={i}>{x}</li>)}</ul></div>
+                          )}
+                          {Array.isArray(guides[c].indicators) && guides[c].indicators.length > 0 && (
+                            <div><strong style={{ color: C.gold }}>مؤشرات التقييم:</strong><ul style={{ margin: "4px 0 0", paddingRight: 18 }}>{guides[c].indicators.map((x, i) => <li key={i}>{x}</li>)}</ul></div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
