@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import * as Lucide from "lucide-react";
 import MuqyasEmbedded, { MUQYAS_GROUPS } from "./MuqyasEmbedded.jsx";
+import { AccreditationOS } from "./AccreditationOS.jsx";
 const AI_ENDPOINT = (import.meta.env.BASE_URL || "/") + "api/ai";
 
 // ── نظام الأيقونات الاحترافية (Lucide) — يستبدل الإيموجي في واجهة الاستخدام ──
@@ -865,6 +866,7 @@ const GROUPS = [
     {key:"mohakam_os", icon:"♾️", ar:"نظام التشغيل الذكي الكامل", en:"Mohakam OS", badge:"جديد"},
     {key:"mohakam_os_final", icon:"🧠", ar:"محكم OS — النسخة النهائية الكاملة", en:"Mohakam OS Ultimate", badge:"جديد"},
     {key:"agents_system", icon:"🧩", ar:"نظام الوكلاء الأذكياء", en:"Smart Agents System", badge:"جديد"},
+    {key:"accreditation_os", icon:"🎓", ar:"نظام الدراسة الذاتية للاعتماد", en:"Accreditation Self-Study OS", badge:"جديد"},
     {key:"qr", icon:"📷", ar:"مولّد QR", en:"QR Code"},
     {key:"about", icon:"👨‍🏫", ar:"عن المنصة", en:"About"},
     {key:"pricing", icon:"💎", ar:"الباقات والأسعار", en:"Pricing", badge:"جديد"},
@@ -16895,6 +16897,7 @@ export default function MuhakkimV4() {
     if(key==="mohakam_os") return <MohakamOs T={T}/>;
     if(key==="mohakam_os_final") return <MohakamOsFinal T={T}/>;
     if(key==="agents_system") return <AgentsSystem T={T}/>;
+    if(key==="accreditation_os") return <AccreditationOS/>;
     if(key==="rev_roles") return <ToolHub T={T} hubKey="rev_roles"/>;
     if(key==="review_center") return <ToolHub T={T} hubKey="review_center"/>;
     if(key==="committee_hub") return <ToolHub T={T} hubKey="committee_hub"/>;
