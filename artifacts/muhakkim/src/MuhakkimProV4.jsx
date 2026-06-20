@@ -866,6 +866,7 @@ const GROUPS = [
     {key:"mohakam_os", icon:"♾️", ar:"نظام التشغيل الذكي الكامل", en:"Mohakam OS", badge:"جديد"},
     {key:"mohakam_os_final", icon:"🧠", ar:"محكم OS — النسخة النهائية الكاملة", en:"Mohakam OS Ultimate", badge:"جديد"},
     {key:"agents_system", icon:"🧩", ar:"نظام الوكلاء الأذكياء", en:"Smart Agents System", badge:"جديد"},
+    {key:"mohakam_committee", icon:"⚖️", ar:"لجنة التحكيم متعددة الطبقات", en:"Multi-Layer Review Committee", badge:"جديد"},
     {key:"accreditation_os", icon:"🎓", ar:"نظام الدراسة الذاتية للاعتماد", en:"Accreditation Self-Study OS", badge:"جديد"},
     {key:"qr", icon:"📷", ar:"مولّد QR", en:"QR Code"},
     {key:"about", icon:"👨‍🏫", ar:"عن المنصة", en:"About"},
@@ -979,6 +980,17 @@ function AgentsSystem({ T }) {
     <iframe
       src={src}
       title="نظام الوكلاء الأذكياء"
+      style={{ width: "100%", height: "calc(100vh - 200px)", minHeight: 680, border: "none", borderRadius: 12, background: T.bg, display: "block" }}
+    />
+  );
+}
+
+function MohakamCommittee({ T }) {
+  const src = (import.meta.env.BASE_URL || "/") + "mohakam-committee.html";
+  return (
+    <iframe
+      src={src}
+      title="لجنة التحكيم متعددة الطبقات"
       style={{ width: "100%", height: "calc(100vh - 200px)", minHeight: 680, border: "none", borderRadius: 12, background: T.bg, display: "block" }}
     />
   );
@@ -16897,6 +16909,7 @@ export default function MuhakkimV4() {
     if(key==="mohakam_os") return <MohakamOs T={T}/>;
     if(key==="mohakam_os_final") return <MohakamOsFinal T={T}/>;
     if(key==="agents_system") return <AgentsSystem T={T}/>;
+    if(key==="mohakam_committee") return <MohakamCommittee T={T}/>;
     if(key==="accreditation_os") return <AccreditationOS/>;
     if(key==="rev_roles") return <ToolHub T={T} hubKey="rev_roles"/>;
     if(key==="review_center") return <ToolHub T={T} hubKey="review_center"/>;

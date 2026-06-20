@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>محكم AI — لجنة التحكيم</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
+body{font-family:'Tajawal',system-ui,sans-serif}
+.spin{animation:sp 1s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+.fade{animation:fd .4s ease}@keyframes fd{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+.pulse{animation:pl 1.5s ease infinite}@keyframes pl{0%,100%{opacity:1}50%{opacity:.4}}
+.bar{transition:width .8s cubic-bezier(.4,0,.2,1)}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:#475569;border-radius:8px}
+@media print{.no-print{display:none}body{background:#fff;color:#000}}
+</style>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen">
+
+<nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 no-print">
+  <div class="max-w-screen-xl mx-auto px-5 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-x-3">
+      <div class="w-10 h-10 bg-gradient-to-br from-violet-600 via-fuchsia-600 to-indigo-600 rounded-2xl flex items-center justify-center">
+        <i class="fa-solid fa-scale-balanced text-white text-xl"></i>
+      </div>
+      <div>
+        <span class="text-2xl font-extrabold tracking-tight">محكم</span>
+        <span class="text-2xl font-extrabold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent"> AI</span>
+        <span class="text-sm text-slate-400 block -mt-1">لجنة التحكيم متعددة الطبقات</span>
+      </div>
+    </div>
+    <div id="status" class="text-xs text-slate-400 flex items-center gap-x-2">
+      <span class="w-2 h-2 bg-emerald-400 rounded-full"></span> جاهز
+    </div>
+  </div>
+</nav>
+
+<main class="max-w-screen-xl mx-auto p-5 md:p-8">
+
+  <!-- إدخال -->
+  <div id="input-stage" class="fade">
+    <div class="text-center mb-6">
+      <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">لجنة تحكيم ذكية — لا رأي واحد</h1>
+      <p class="text-slate-400 mt-2 max-w-2xl mx-auto">يُراجَع عملك من عدة محكّمين متخصصين، ثم يوازن بينهم محكّم رئيس ويُصدر تقريراً موقّعاً برقم مرجعي ودرجة ثقة لكل ملاحظة.</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-4 mb-6">
+      <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5">
+        <i class="fa-solid fa-users-viewfinder text-2xl text-violet-400 mb-2"></i>
+        <div class="font-bold">٤ محكّمين متخصصين</div>
+        <div class="text-xs text-slate-400 mt-1">منهجية • إحصاء • لغة وأسلوب • أصالة وبنية</div>
+      </div>
+      <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5">
+        <i class="fa-solid fa-gauge-high text-2xl text-emerald-400 mb-2"></i>
+        <div class="font-bold">درجة ثقة لكل ملاحظة</div>
+        <div class="text-xs text-slate-400 mt-1">شفافية صريحة + تمييز ما يحتاج مراجعة بشرية</div>
+      </div>
+      <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5">
+        <i class="fa-solid fa-file-shield text-2xl text-amber-400 mb-2"></i>
+        <div class="font-bold">تقرير موقّع بمرجع</div>
+        <div class="text-xs text-slate-400 mt-1">رقم مرجعي + طابع زمني + قابل للطباعة</div>
+      </div>
+    </div>
+
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5">
+      <div class="flex flex-wrap gap-2 mb-4">
+        <span class="text-sm font-bold text-slate-300 ml-2">نوع العمل:</span>
+        <button onclick="setType('بحث علمي')" data-type="بحث علمي" class="type-btn px-4 py-1.5 rounded-xl text-sm bg-violet-600 text-white">بحث علمي</button>
+        <button onclick="setType('فصل من رسالة')" data-type="فصل من رسالة" class="type-btn px-4 py-1.5 rounded-xl text-sm bg-slate-800 hover:bg-slate-700">فصل من رسالة</button>
+        <button onclick="setType('مقال أكاديمي')" data-type="مقال أكاديمي" class="type-btn px-4 py-1.5 rounded-xl text-sm bg-slate-800 hover:bg-slate-700">مقال أكاديمي</button>
+        <button onclick="setType('مقترح بحثي')" data-type="مقترح بحثي" class="type-btn px-4 py-1.5 rounded-xl text-sm bg-slate-800 hover:bg-slate-700">مقترح بحثي</button>
+      </div>
+      <textarea id="content" rows="11" placeholder="الصق النص المراد تحكيمه هنا (ملخص بحث، فصل، مقدمة، منهجية...)"
+        class="w-full bg-slate-800 border border-slate-600 rounded-2xl px-4 py-3 text-sm leading-loose focus:border-violet-500 focus:outline-none resize-none"></textarea>
+      <button onclick="startReview()" id="start-btn"
+        class="mt-4 w-full h-14 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 rounded-2xl font-bold text-lg flex items-center justify-center gap-x-3">
+        <i class="fa-solid fa-gavel"></i><span>عرض على لجنة التحكيم</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- مرحلة المعالجة -->
+  <div id="process-stage" class="hidden">
+    <h2 class="text-2xl font-extrabold mb-5 text-center">اللجنة تُحكّم عملك الآن...</h2>
+    <div id="reviewers-progress" class="grid md:grid-cols-2 gap-4 mb-5"></div>
+    <div id="chair-status" class="hidden bg-slate-900 border border-amber-700/50 rounded-3xl p-5 text-center">
+      <i class="fa-solid fa-scale-balanced text-2xl text-amber-400 pulse"></i>
+      <div class="font-bold mt-2">المحكّم الرئيس يوازن بين آراء اللجنة ويصدر التقرير النهائي...</div>
+    </div>
+  </div>
+
+  <!-- التقرير -->
+  <div id="report-stage" class="hidden fade"></div>
+
+</main>
+
+<script>
+let docType='بحث علمي';
+function setType(t){
+  docType=t;
+  document.querySelectorAll('.type-btn').forEach(b=>{
+    const on=b.dataset.type===t;
+    b.className='type-btn px-4 py-1.5 rounded-xl text-sm '+(on?'bg-violet-600 text-white':'bg-slate-800 hover:bg-slate-700');
+  });
+}
+
+const REVIEWERS=[
+  {id:'method',name:'محكّم المنهجية',icon:'fa-flask',color:'sky',
+   sys:'أنت محكّم متخصص في المنهجية البحثية فقط. راجع النص من زاوية المنهجية: وضوح المشكلة، ملاءمة المنهج، التصميم، أدوات جمع البيانات، الصلاحية الداخلية والخارجية.'},
+  {id:'stats',name:'محكّم الإحصاء',icon:'fa-chart-simple',color:'teal',
+   sys:'أنت محكّم متخصص في الإحصاء والتحليل الكمي فقط. راجع: ملاءمة الاختبارات الإحصائية، حجم العينة، الافتراضات، تفسير النتائج، أي ادعاءات رقمية غير مدعومة. إن لم يكن هناك محتوى إحصائي، اذكر ذلك بإيجاز.'},
+  {id:'language',name:'محكّم اللغة والأسلوب',icon:'fa-pen-nib',color:'rose',
+   sys:'أنت محكّم متخصص في اللغة والأسلوب الأكاديمي فقط. راجع: الركاكة، الجمل الطويلة، المبني للمجهول المفرط، التكرار، الدقة المصطلحية، الترقيم.'},
+  {id:'integrity',name:'محكّم الأصالة والبنية',icon:'fa-fingerprint',color:'amber',
+   sys:'أنت محكّم متخصص في الأصالة والبنية فقط. راجع: تماسك البنية، المنطق، الادعاءات بلا استشهاد، علامات الاقتباس غير الموثّق، الفجوات في الحجة.'}
+];
+const RC={sky:'text-sky-400',teal:'text-teal-400',rose:'text-rose-400',amber:'text-amber-400'};
+
+async function callClaude(system,user,json){
+  const body={model:"claude-sonnet-4-6",max_tokens:1200,
+    system:system+(json?' أعِد ردك بصيغة JSON صالحة فقط دون أي نص إضافي أو علامات Markdown.':''),
+    messages:[{role:"user",content:user}]};
+  const res=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(!res.ok)throw new Error("AI request failed");
+  const data=await res.json();
+  return (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join("\n").trim();
+}
+function safeJSON(t){
+  try{const a=t.indexOf('{'),b=t.lastIndexOf('}');return JSON.parse(t.slice(a,b+1));}catch(e){return null;}
+}
+
+function refNo(){
+  const d=new Date();
+  return 'MHK-'+d.getFullYear()+(''+(d.getMonth()+1)).padStart(2,'0')+(''+d.getDate()).padStart(2,'0')+'-'+Math.random().toString(36).slice(2,7).toUpperCase();
+}
+
+async function startReview(){
+  const content=document.getElementById('content').value.trim();
+  if(content.length<40){alert('الرجاء لصق نص كافٍ للتحكيم (40 حرفاً على الأقل).');return;}
+
+  document.getElementById('input-stage').classList.add('hidden');
+  document.getElementById('process-stage').classList.remove('hidden');
+  document.getElementById('report-stage').classList.add('hidden');
+  setStatus('اللجنة تعمل...',true);
+
+  // بطاقات المحكّمين
+  const pg=document.getElementById('reviewers-progress');
+  pg.innerHTML=REVIEWERS.map(r=>`
+    <div id="rv-${r.id}" class="bg-slate-900 border border-slate-700 rounded-3xl p-5 flex items-center gap-x-4">
+      <div class="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center shrink-0">
+        <i class="fa-solid ${r.icon} text-xl ${RC[r.color]}"></i>
+      </div>
+      <div class="flex-1">
+        <div class="font-bold">${r.name}</div>
+        <div id="rv-st-${r.id}" class="text-xs text-amber-400 pulse"><i class="fa-solid fa-spinner spin"></i> يراجع الآن...</div>
+      </div>
+    </div>`).join('');
+
+  const prompt=`نوع العمل: ${docType}\n\nالنص:\n"""${content}"""\n\nقدّم 2-4 ملاحظات تحكيم من تخصصك فقط. لكل ملاحظة: الحقول note (نص الملاحظة)، severity (حرجة/متوسطة/بسيطة)، confidence (رقم 0-100 يمثل ثقتك في صحة الملاحظة). الصيغة: {"observations":[{"note":"...","severity":"...","confidence":75}]}`;
+
+  // تشغيل المحكّمين بالتوازي
+  const results=await Promise.all(REVIEWERS.map(async r=>{
+    try{
+      const raw=await callClaude(r.sys,prompt,true);
+      const parsed=safeJSON(raw)||{observations:[]};
+      const st=document.getElementById('rv-st-'+r.id);
+      st.className='text-xs text-emerald-400';
+      st.innerHTML='<i class="fa-solid fa-check-circle"></i> اكتمل — '+(parsed.observations||[]).length+' ملاحظة';
+      return {reviewer:r,observations:parsed.observations||[]};
+    }catch(e){
+      const st=document.getElementById('rv-st-'+r.id);
+      st.className='text-xs text-rose-400';st.innerHTML='<i class="fa-solid fa-triangle-exclamation"></i> تعذّر';
+      return {reviewer:r,observations:[]};
+    }
+  }));
+
+  // المحكّم الرئيس
+  document.getElementById('chair-status').classList.remove('hidden');
+  const allObs=results.flatMap(x=>x.observations.map(o=>({...o,from:x.reviewer.name})));
+  const chairPrompt=`أنت المحكّم الرئيس. هذه ملاحظات اللجنة على عمل من نوع "${docType}":\n${JSON.stringify(allObs,null,2)}\n\nأصدر حكماً نهائياً بصيغة JSON: {"verdict":"مقبول/مقبول بتعديلات طفيفة/يحتاج تعديلات جوهرية/مرفوض","score":رقم0-100,"summary":"ملخص تنفيذي من جملتين","priority_actions":["إجراء1","إجراء2","إجراء3"]}`;
+  let chair={verdict:'يحتاج مراجعة',score:0,summary:'تعذّر توليد الملخص.',priority_actions:[]};
+  try{const cr=await callClaude('أنت محكّم رئيس خبير يوازن بين آراء اللجنة بحياد.',chairPrompt,true);chair=safeJSON(cr)||chair;}catch(e){}
+
+  renderReport(content,results,allObs,chair);
+}
+
+function confColor(c){return c>=80?'emerald':c>=60?'amber':'rose';}
+function sevBadge(s){
+  const m={'حرجة':'bg-rose-900/40 text-rose-300 border-rose-700','متوسطة':'bg-amber-900/40 text-amber-300 border-amber-700','بسيطة':'bg-sky-900/40 text-sky-300 border-sky-700'};
+  return `<span class="text-[11px] px-2 py-0.5 rounded-lg border ${m[s]||m['بسيطة']}">${s||'بسيطة'}</span>`;
+}
+function verdictColor(v){
+  if(v.includes('مقبول') && !v.includes('جوهري'))return'emerald';
+  if(v.includes('طفيف'))return'sky';
+  if(v.includes('جوهري'))return'amber';
+  return'rose';
+}
+
+function renderReport(content,results,allObs,chair){
+  const ref=refNo();
+  const now=new Date().toLocaleString('ar-SA',{dateStyle:'long',timeStyle:'short'});
+  const needHuman=allObs.filter(o=>o.confidence<60).length;
+  const vc=verdictColor(chair.verdict||'');
+  const avgConf=allObs.length?Math.round(allObs.reduce((s,o)=>s+(+o.confidence||0),0)/allObs.length):0;
+
+  document.getElementById('process-stage').classList.add('hidden');
+  const stage=document.getElementById('report-stage');
+  stage.classList.remove('hidden');
+
+  stage.innerHTML=`
+  <div class="flex justify-between items-center mb-5 no-print">
+    <button onclick="reset()" class="text-sm text-slate-400 hover:text-white"><i class="fa-solid fa-arrow-right"></i> تحكيم جديد</button>
+    <button onclick="window.print()" class="px-5 h-11 bg-slate-800 hover:bg-slate-700 rounded-2xl font-bold text-sm"><i class="fa-solid fa-print"></i> طباعة / حفظ PDF</button>
+  </div>
+
+  <div class="bg-white text-slate-900 rounded-3xl p-7 shadow-2xl">
+    <!-- ترويسة -->
+    <div class="flex justify-between items-start border-b-2 border-slate-200 pb-4 mb-5">
+      <div>
+        <div class="flex items-center gap-x-2">
+          <div class="w-9 h-9 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl flex items-center justify-center"><i class="fa-solid fa-scale-balanced text-white"></i></div>
+          <span class="text-2xl font-extrabold">محكم <span class="text-violet-600">AI</span></span>
+        </div>
+        <div class="text-sm text-slate-500 mt-1">تقرير تحكيم رسمي — لجنة متعددة التخصصات</div>
+      </div>
+      <div class="text-left text-xs text-slate-500 leading-relaxed">
+        <div><strong class="text-slate-700">رقم المرجع:</strong> ${ref}</div>
+        <div><strong class="text-slate-700">التاريخ:</strong> ${now}</div>
+        <div><strong class="text-slate-700">نوع العمل:</strong> ${docType}</div>
+      </div>
+    </div>
+
+    <!-- الحكم -->
+    <div class="grid md:grid-cols-3 gap-4 mb-6">
+      <div class="md:col-span-2 rounded-2xl p-5 bg-${vc}-50 border border-${vc}-200">
+        <div class="text-xs font-bold text-${vc}-700">الحكم النهائي</div>
+        <div class="text-2xl font-extrabold text-${vc}-800 mt-1">${chair.verdict||'—'}</div>
+        <div class="text-sm text-slate-600 mt-2">${chair.summary||''}</div>
+      </div>
+      <div class="rounded-2xl p-5 bg-slate-50 border border-slate-200 flex flex-col justify-center items-center">
+        <div class="text-xs font-bold text-slate-500">الدرجة الكلية</div>
+        <div class="text-5xl font-extrabold text-slate-800">${chair.score??'—'}</div>
+        <div class="text-xs text-slate-400">من 100</div>
+      </div>
+    </div>
+
+    <!-- مؤشرات الثقة -->
+    <div class="grid grid-cols-3 gap-3 mb-6 text-center">
+      <div class="bg-slate-50 rounded-xl p-3 border border-slate-200"><div class="text-2xl font-extrabold text-slate-800">${allObs.length}</div><div class="text-xs text-slate-500">إجمالي الملاحظات</div></div>
+      <div class="bg-slate-50 rounded-xl p-3 border border-slate-200"><div class="text-2xl font-extrabold text-slate-800">${avgConf}%</div><div class="text-xs text-slate-500">متوسط الثقة</div></div>
+      <div class="bg-amber-50 rounded-xl p-3 border border-amber-200"><div class="text-2xl font-extrabold text-amber-700">${needHuman}</div><div class="text-xs text-amber-600">تحتاج مراجعة بشرية</div></div>
+    </div>
+
+    <!-- الإجراءات ذات الأولوية -->
+    ${(chair.priority_actions&&chair.priority_actions.length)?`
+    <div class="mb-6">
+      <div class="font-extrabold text-lg mb-2 text-slate-800">الإجراءات ذات الأولوية</div>
+      <div class="space-y-2">${chair.priority_actions.map((a,i)=>`
+        <div class="flex items-start gap-x-3 bg-violet-50 border border-violet-100 rounded-xl p-3">
+          <span class="w-6 h-6 bg-violet-600 text-white rounded-lg flex items-center justify-center text-xs font-bold shrink-0">${i+1}</span>
+          <span class="text-sm text-slate-700">${a}</span>
+        </div>`).join('')}</div>
+    </div>`:''}
+
+    <!-- ملاحظات المحكّمين -->
+    <div class="font-extrabold text-lg mb-3 text-slate-800">ملاحظات اللجنة بالتفصيل</div>
+    <div class="space-y-4">
+      ${results.map(x=>x.observations.length?`
+      <div>
+        <div class="flex items-center gap-x-2 mb-2">
+          <i class="fa-solid ${x.reviewer.icon} text-violet-600"></i>
+          <span class="font-bold text-slate-800">${x.reviewer.name}</span>
+        </div>
+        <div class="space-y-2">
+          ${x.observations.map(o=>{const cc=confColor(o.confidence);return`
+          <div class="border border-slate-200 rounded-xl p-3">
+            <div class="flex justify-between items-start gap-x-3 mb-2">
+              <span class="text-sm text-slate-700 flex-1">${o.note}</span>
+              ${sevBadge(o.severity)}
+            </div>
+            <div class="flex items-center gap-x-2">
+              <span class="text-[11px] text-slate-500 shrink-0">الثقة ${o.confidence}%</span>
+              <div class="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="bar h-full bg-${cc}-500" style="width:${o.confidence}%"></div></div>
+              ${o.confidence<60?'<span class="text-[10px] text-amber-600 font-bold shrink-0"><i class="fa-solid fa-user-check"></i> مراجعة بشرية</span>':''}
+            </div>
+          </div>`;}).join('')}
+        </div>
+      </div>`:'').join('')}
+    </div>
+
+    <!-- تذييل -->
+    <div class="mt-7 pt-4 border-t-2 border-slate-200 text-xs text-slate-400 leading-relaxed">
+      <p><strong class="text-slate-600">إفصاح:</strong> هذا التقرير وُلّد بمساعدة الذكاء الاصطناعي عبر لجنة تحكيم متعددة الطبقات. درجات الثقة تعكس تقدير النظام لقوة كل ملاحظة. الملاحظات ذات الثقة المنخفضة موسومة لمراجعة محكّم بشري معتمد قبل الاعتماد النهائي.</p>
+      <p class="mt-2">رقم المرجع ${ref} • محكم AI • وثيقة قابلة للتتبع</p>
+    </div>
+  </div>`;
+  setStatus('اكتمل التقرير — مرجع '+ref);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function reset(){
+  document.getElementById('report-stage').classList.add('hidden');
+  document.getElementById('process-stage').classList.add('hidden');
+  document.getElementById('input-stage').classList.remove('hidden');
+  document.getElementById('content').value='';
+  setStatus('جاهز');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function setStatus(m,b){document.getElementById('status').innerHTML=`<span class="w-2 h-2 ${b?'bg-amber-400 spin':'bg-emerald-400'} rounded-full"></span> ${m}`;}
+</script>
+</body>
+</html>
