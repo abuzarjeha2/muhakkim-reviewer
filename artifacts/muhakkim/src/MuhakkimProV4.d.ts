@@ -1,3 +1,3 @@
-import type { ComponentType } from "react";
-declare const MuhakkimProV4: ComponentType;
+import type { ReactNode, ReactElement } from "react";
+declare function MuhakkimProV4(props?: { authSlot?: ReactNode }): ReactElement;
 export default MuhakkimProV4;

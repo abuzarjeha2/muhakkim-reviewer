@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import meRouter from "./me";
 import aiCommentRouter from "./ai/comment";
 import aiDetectRouter from "./ai/detect";
 import aiHumanizeRouter from "./ai/humanize";
@@ -23,10 +24,12 @@ import researchSearchRouter from "./research/search";
 import thesisRolesRouter from "./thesis/roles";
 import citationFormatRouter from "./citation/format";
 import citationPlagiarismRouter from "./citation/plagiarism";
+import stripeRouter from "./stripe";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(meRouter);
 router.use(aiCommentRouter);
 router.use(aiDetectRouter);
 router.use(aiHumanizeRouter);
@@ -50,5 +53,6 @@ router.use(researchSearchRouter);
 router.use(thesisRolesRouter);
 router.use(citationFormatRouter);
 router.use(citationPlagiarismRouter);
+router.use(stripeRouter);
 
 export default router;

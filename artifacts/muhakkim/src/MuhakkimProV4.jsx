@@ -16770,7 +16770,7 @@ function FreeVerifyCostSystem({ T }){
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────
-export default function MuhakkimV4() {
+export default function MuhakkimV4({ authSlot = null } = {}) {
   const [T, dark, toggleTheme] = useTheme();
   const [activeGroup, setActiveGroup] = useState(null);
   const [activeBatch, setActiveBatch] = useState(false);
@@ -17035,6 +17035,7 @@ export default function MuhakkimV4() {
           {(activeGroup||activeTool)&&<button onClick={goBack} style={{background:T.bgSec,border:`1px solid ${T.border}`,borderRadius:8,color:T.text,padding:"5px 11px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{UI.back}</button>}
           <button onClick={()=>setLang(en?"ar":"en")} style={{background:T.bgSec,border:`1px solid ${T.border}`,borderRadius:8,color:T.textSec,padding:"5px 10px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}} title={en?"العربية":"English"}>{en?"ع":"EN"}</button>
           <button onClick={toggleTheme} style={{background:T.bgSec,border:`1px solid ${T.border}`,borderRadius:8,color:T.textSec,padding:"5px 9px",fontSize:14,cursor:"pointer"}} title={dark?UI.lightMode:UI.darkMode}>{dark?"☀️":"🌙"}</button>
+          {authSlot}
         </div>
       </nav>
 

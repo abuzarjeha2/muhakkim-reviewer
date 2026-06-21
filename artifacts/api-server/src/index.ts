@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { initStripe } from "./lib/stripeInit";
 
 const rawPort = process.env["PORT"];
 
@@ -22,4 +23,8 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+
+  // Initialize Stripe in the background; guarded so a missing/unconnected
+  // integration never blocks the server from serving requests.
+  void initStripe();
 });

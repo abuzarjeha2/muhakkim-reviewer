@@ -1,5 +1,6 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { quotaGuard } from "../../middlewares/quota";
 
 const router = Router();
 
@@ -92,7 +93,7 @@ type AnthropicBody = {
   messages?: unknown;
 };
 
-router.post("/ai", originGuard, rateLimit, async (req, res) => {
+router.post("/ai", originGuard, rateLimit, quotaGuard, async (req, res) => {
   const body = (req.body ?? {}) as AnthropicBody;
   const messages = body.messages;
 
