@@ -29,6 +29,10 @@ async function buildAll() {
     // - use path traversal to read files (e.g. @google-cloud/secret-manager loads sibling .proto files)
     external: [
       "*.node",
+      // Resolves its SQL migrations via a path relative to its own module
+      // location (__dirname/migrations). Bundling breaks that path, so the
+      // stripe.* tables silently never get created. Keep it external.
+      "stripe-replit-sync",
       "sharp",
       "better-sqlite3",
       "sqlite3",

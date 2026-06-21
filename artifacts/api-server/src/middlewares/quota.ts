@@ -1,7 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
 import { getAuth } from "@clerk/express";
 import { ensureUser, incrementUsage } from "../lib/userStore";
-import { getLimit, currentPeriod } from "../lib/plans";
+import { getLimit, currentPeriod, isOwnerEmail } from "../lib/plans";
+import { resolveEffectivePlan } from "../lib/effectivePlan";
 
 // Gate paid AI calls behind authentication + per-user monthly quota.
 // Responds with structured JSON the frontend can act on:
@@ -28,7 +29,15 @@ export async function quotaGuard(
       (sessionClaims?.["email_address"] as string | undefined) ??
       null;
     const user = await ensureUser(userId, email);
-    const limit = getLimit(user.plan);
+
+    // Platform owner: never metered.
+    if (isOwnerEmail(user.email ?? email)) {
+      next();
+      return;
+    }
+
+    const plan = await resolveEffectivePlan(userId);
+    const limit = getLimit(plan);
     const period = currentPeriod();
     const used = await incrementUsage(userId, period);
 
@@ -37,7 +46,7 @@ export async function quotaGuard(
         error:
           "لقد بلغت الحد المجاني الشهري لاستخدام الذكاء الاصطناعي. الرجاء ترقية باقتك للمتابعة.",
         code: "quota_exceeded",
-        plan: user.plan,
+        plan,
         limit,
         used,
       });

@@ -28,6 +28,13 @@ export function getLimit(plan: string | null | undefined): number {
   return PLAN_LIMITS[plan] ?? PLAN_LIMITS.free;
 }
 
+// Platform owner(s): unlimited AI usage regardless of subscription.
+const OWNER_EMAILS = new Set(["abuzarjha@gmail.com"]);
+
+export function isOwnerEmail(email: string | null | undefined): boolean {
+  return !!email && OWNER_EMAILS.has(email.trim().toLowerCase());
+}
+
 // Current billing period key, "YYYY-MM" in UTC.
 export function currentPeriod(): string {
   return new Date().toISOString().slice(0, 7);

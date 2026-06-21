@@ -27,8 +27,10 @@ export async function initStripe(): Promise<void> {
       logger.warn("REPLIT_DOMAINS not set; skipping managed webhook setup");
     }
 
+    // Must pass { object: "all" }; calling syncBackfill() with no params
+    // leaves `object` undefined and nothing gets synced.
     sync
-      .syncBackfill()
+      .syncBackfill({ object: "all" })
       .then(() => logger.info("Stripe data synced"))
       .catch((err) => logger.error({ err }, "Stripe backfill failed"));
   } catch (err) {

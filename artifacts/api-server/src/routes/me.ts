@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { ensureUser, getUsageCount } from "../lib/userStore";
-import { getLimit, currentPeriod } from "../lib/plans";
+import { getLimit, currentPeriod, isOwnerEmail } from "../lib/plans";
+import { resolveEffectivePlan } from "../lib/effectivePlan";
 
 const router = Router();
 
@@ -22,13 +23,16 @@ router.get("/me", async (req, res) => {
     const user = await ensureUser(userId, email);
     const period = currentPeriod();
     const used = await getUsageCount(userId, period);
-    const limit = getLimit(user.plan);
+
+    const owner = isOwnerEmail(user.email ?? email);
+    const plan = owner ? "owner" : await resolveEffectivePlan(userId);
+    const limit = owner ? Number.POSITIVE_INFINITY : getLimit(plan);
 
     res.json({
       authenticated: true,
       userId,
       email: user.email,
-      plan: user.plan,
+      plan,
       period,
       used,
       limit: Number.isFinite(limit) ? limit : null,

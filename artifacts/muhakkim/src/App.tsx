@@ -13,6 +13,19 @@ import { Switch, Route, useLocation, Router as WouterRouter } from "wouter";
 import { useState, useEffect } from "react";
 import MuhakkimProV4 from "./MuhakkimProV4";
 import { QUOTA_EVENT } from "./lib/aiQuota";
+import {
+  CHECKOUT_EVENT,
+  CONTACT_PLANS,
+  PLAN_AR,
+  fetchProducts,
+  findPriceId,
+  startCheckout,
+  fetchAccount,
+  fetchSubscription,
+  openBillingPortal,
+  type AccountInfo,
+  type SubscriptionInfo,
+} from "./lib/billing";
 
 // REQUIRED — resolves the key from window.location.hostname so the same build
 // serves multiple Clerk custom domains.
@@ -145,6 +158,7 @@ function AuthControl() {
   const [, setLocation] = useLocation();
   const { user } = useUser();
   const { signOut } = useClerk();
+  const [billingOpen, setBillingOpen] = useState(false);
 
   const btnBase: React.CSSProperties = {
     fontFamily: "inherit",
@@ -197,6 +211,18 @@ function AuthControl() {
             {initial}
           </div>
           <button
+            onClick={() => setBillingOpen(true)}
+            style={{
+              ...btnBase,
+              background: "transparent",
+              color: NAVY,
+              border: `1px solid ${NAVY}33`,
+              padding: "5px 10px",
+            }}
+          >
+            حسابي
+          </button>
+          <button
             onClick={() => signOut({ redirectUrl: basePath || "/" })}
             style={{
               ...btnBase,
@@ -209,8 +235,369 @@ function AuthControl() {
             خروج
           </button>
         </div>
+        {billingOpen && <BillingModal onClose={() => setBillingOpen(false)} />}
       </Show>
     </>
+  );
+}
+
+const OWNER_EMAIL = "abuzarjha@gmail.com";
+
+// Lightweight toast used for billing feedback (success/cancel/errors).
+function Toast({
+  text,
+  kind,
+  onClose,
+}: {
+  text: string;
+  kind: "success" | "error" | "info";
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 5000);
+    return () => clearTimeout(t);
+  }, [onClose]);
+  const bg =
+    kind === "success" ? "#047857" : kind === "error" ? "#b91c1c" : NAVY;
+  return (
+    <div
+      dir="rtl"
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        bottom: 20,
+        right: 20,
+        zIndex: 100000,
+        background: bg,
+        color: "#fff",
+        padding: "12px 18px",
+        borderRadius: 12,
+        fontFamily: "Tajawal, sans-serif",
+        fontSize: 13.5,
+        fontWeight: 700,
+        maxWidth: 360,
+        boxShadow: "0 12px 30px rgba(15,23,42,0.35)",
+        cursor: "pointer",
+      }}
+    >
+      {text}
+    </div>
+  );
+}
+
+// Handles checkout requests dispatched from the pricing page, the
+// post-checkout success/cancel redirect, and shows feedback toasts.
+function BillingManager() {
+  const [, setLocation] = useLocation();
+  const { isSignedIn } = useUser();
+  const [busy, setBusy] = useState(false);
+  const [toast, setToast] = useState<{
+    text: string;
+    kind: "success" | "error" | "info";
+  } | null>(null);
+
+  // Post-checkout redirect feedback (?checkout=success|cancel).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const c = params.get("checkout");
+    if (c === "success") {
+      setToast({
+        text: "تم تفعيل اشتراكك بنجاح. شكرًا لاشتراكك في محكّم برو!",
+        kind: "success",
+      });
+    } else if (c === "cancel") {
+      setToast({ text: "تم إلغاء عملية الدفع.", kind: "info" });
+    }
+    if (c) {
+      params.delete("checkout");
+      const qs = params.toString();
+      window.history.replaceState(
+        {},
+        "",
+        window.location.pathname + (qs ? `?${qs}` : ""),
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    async function onCheckout(e: Event) {
+      const { plan, cycle } = (
+        e as CustomEvent<{ plan: string; cycle: "monthly" | "yearly" }>
+      ).detail;
+
+      // Free plan: just prompt sign-in or confirm.
+      if (plan === "free") {
+        if (!isSignedIn) {
+          setLocation("/sign-up");
+        } else {
+          setToast({
+            text: "أنت تستخدم الباقة المجانية بالفعل.",
+            kind: "info",
+          });
+        }
+        return;
+      }
+
+      // Enterprise / government: contact sales.
+      if (CONTACT_PLANS.has(plan)) {
+        window.location.href = `mailto:${OWNER_EMAIL}?subject=${encodeURIComponent(
+          "طلب عرض — باقة " + (PLAN_AR[plan] || plan),
+        )}`;
+        return;
+      }
+
+      if (!isSignedIn) {
+        setLocation("/sign-in");
+        return;
+      }
+
+      setBusy(true);
+      try {
+        const products = await fetchProducts();
+        const priceId = findPriceId(products, plan, cycle);
+        if (!priceId) {
+          setToast({ text: "تعذّر العثور على سعر هذه الباقة.", kind: "error" });
+          return;
+        }
+        const res = await startCheckout(priceId);
+        if (res.url) {
+          window.location.href = res.url;
+          return;
+        }
+        if (res.status === 401) {
+          setLocation("/sign-in");
+          return;
+        }
+        setToast({
+          text: "تعذّر بدء عملية الدفع. حاول مرة أخرى.",
+          kind: "error",
+        });
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    window.addEventListener(CHECKOUT_EVENT, onCheckout as EventListener);
+    return () =>
+      window.removeEventListener(CHECKOUT_EVENT, onCheckout as EventListener);
+  }, [isSignedIn, setLocation]);
+
+  return (
+    <>
+      {busy && (
+        <div
+          dir="rtl"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 99998,
+            background: "rgba(15,23,42,0.45)",
+            backdropFilter: "blur(2px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "Tajawal, sans-serif",
+            color: "#fff",
+            fontWeight: 800,
+            fontSize: 16,
+          }}
+        >
+          جارٍ تجهيز صفحة الدفع…
+        </div>
+      )}
+      {toast && (
+        <Toast
+          text={toast.text}
+          kind={toast.kind}
+          onClose={() => setToast(null)}
+        />
+      )}
+    </>
+  );
+}
+
+// Account & billing modal: current plan, usage, and manage/cancel via portal.
+function BillingModal({ onClose }: { onClose: () => void }) {
+  const [account, setAccount] = useState<AccountInfo | null>(null);
+  const [sub, setSub] = useState<SubscriptionInfo>(null);
+  const [loading, setLoading] = useState(true);
+  const [portalBusy, setPortalBusy] = useState(false);
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const [a, s] = await Promise.all([fetchAccount(), fetchSubscription()]);
+      if (!alive) return;
+      setAccount(a);
+      setSub(s);
+      setLoading(false);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  async function manage() {
+    setPortalBusy(true);
+    const res = await openBillingPortal();
+    if (res.url) {
+      window.location.href = res.url;
+      return;
+    }
+    setPortalBusy(false);
+  }
+
+  const planId = account?.plan || "free";
+  const planName = PLAN_AR[planId] || planId;
+  const used = account?.used ?? 0;
+  const limit = account?.limit;
+  const unlimited = limit === null || limit === undefined;
+
+  const row: React.CSSProperties = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "10px 0",
+    borderBottom: "1px solid #f1f5f9",
+    fontSize: 13.5,
+  };
+
+  return (
+    <div
+      dir="rtl"
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 99999,
+        background: "rgba(15,23,42,0.55)",
+        backdropFilter: "blur(3px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+        fontFamily: "Tajawal, sans-serif",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#fff",
+          borderRadius: 18,
+          width: 440,
+          maxWidth: "100%",
+          padding: "24px 24px",
+          boxShadow: "0 24px 60px rgba(15,23,42,0.35)",
+          border: "1px solid #e2e8f0",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 14,
+          }}
+        >
+          <h3 style={{ margin: 0, color: NAVY, fontWeight: 800, fontSize: 19 }}>
+            حسابي والفوترة
+          </h3>
+          <button
+            onClick={onClose}
+            style={{
+              background: "transparent",
+              border: "none",
+              fontSize: 20,
+              cursor: "pointer",
+              color: "#94a3b8",
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        {loading ? (
+          <p style={{ color: "#64748b", fontSize: 14, textAlign: "center" }}>
+            جارٍ التحميل…
+          </p>
+        ) : (
+          <>
+            <div style={{ marginBottom: 16 }}>
+              <div style={row}>
+                <span style={{ color: "#64748b" }}>البريد</span>
+                <span style={{ color: NAVY, fontWeight: 700 }}>
+                  {account?.email || "—"}
+                </span>
+              </div>
+              <div style={row}>
+                <span style={{ color: "#64748b" }}>الباقة الحالية</span>
+                <span style={{ color: GOLD, fontWeight: 800 }}>{planName}</span>
+              </div>
+              <div style={row}>
+                <span style={{ color: "#64748b" }}>
+                  استهلاك الذكاء الاصطناعي (هذا الشهر)
+                </span>
+                <span style={{ color: NAVY, fontWeight: 700 }}>
+                  {unlimited ? `${used} (غير محدود)` : `${used} / ${limit}`}
+                </span>
+              </div>
+              {sub && (
+                <div style={{ ...row, borderBottom: "none" }}>
+                  <span style={{ color: "#64748b" }}>حالة الاشتراك</span>
+                  <span style={{ color: NAVY, fontWeight: 700 }}>
+                    {sub.cancel_at_period_end
+                      ? "سيُلغى في نهاية الفترة"
+                      : "نشِط"}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              {sub ? (
+                <button
+                  onClick={manage}
+                  disabled={portalBusy}
+                  style={{
+                    flex: 1,
+                    background: NAVY,
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 10,
+                    padding: "11px 16px",
+                    fontWeight: 800,
+                    fontSize: 13.5,
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  {portalBusy ? "جارٍ الفتح…" : "إدارة الاشتراك"}
+                </button>
+              ) : (
+                <button
+                  onClick={onClose}
+                  style={{
+                    flex: 1,
+                    background: GOLD,
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 10,
+                    padding: "11px 16px",
+                    fontWeight: 800,
+                    fontSize: 13.5,
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  اختر باقة من صفحة الأسعار
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -387,6 +774,7 @@ function ClerkProviderWithRoutes() {
         <Route component={HomeApp} />
       </Switch>
       <QuotaGate />
+      <BillingManager />
     </ClerkProvider>
   );
 }

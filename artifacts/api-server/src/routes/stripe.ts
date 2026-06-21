@@ -72,6 +72,14 @@ router.post("/stripe/checkout", async (req: Request, res: Response) => {
     return;
   }
 
+  // Only allow prices that belong to our active subscription catalog.
+  const catalog = await listProductsWithPrices();
+  const known = catalog.some((p) => p.prices.some((pr) => pr.id === priceId));
+  if (!known) {
+    res.status(400).json({ error: "unknown_price" });
+    return;
+  }
+
   try {
     const email = await userEmail(userId);
     await ensureUser(userId, email ?? null);

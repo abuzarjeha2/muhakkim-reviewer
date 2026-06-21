@@ -10325,7 +10325,7 @@ function PricingSystem({ T }) {
             <div style={{marginBottom:14}}>
               {p.features.map((f,i)=><div key={i} style={{display:"flex",gap:7,alignItems:"flex-start",marginBottom:7}}><span style={{color:p.color,fontSize:13,flexShrink:0}}>✓</span><span style={{fontSize:12,color:T.text,lineHeight:1.5}}>{f}</span></div>)}
             </div>
-            <button style={{width:"100%",padding:"10px",borderRadius:10,border:`1.5px solid ${p.color}`,background:p.popular?p.color:"transparent",color:p.popular?"#fff":p.color,cursor:"pointer",fontFamily:"inherit",fontWeight:800,fontSize:13}}>{p.cta}</button>
+            <button onClick={()=>window.dispatchEvent(new CustomEvent("muhakkim:checkout",{detail:{plan:p.id,cycle}}))} style={{width:"100%",padding:"10px",borderRadius:10,border:`1.5px solid ${p.color}`,background:p.popular?p.color:"transparent",color:p.popular?"#fff":p.color,cursor:"pointer",fontFamily:"inherit",fontWeight:800,fontSize:13}}>{p.cta}</button>
           </div>
         </div>; })}
     </div>
@@ -10343,7 +10343,7 @@ function PricingSystem({ T }) {
     </Card>
 
     <Card T={T} style={{background:T.bgS,textAlign:"center"}}>
-      <p style={{margin:0,fontSize:12,color:T.textD,lineHeight:1.7}}>💡 هذه صفحة عرض للباقات والنموذج التجاري. تفعيل الاشتراكات والدفع الفعلي يتطلب ربط بوابة دفع ونظام حسابات (مرحلة لاحقة). الأسعار توضيحية قابلة للتعديل.</p>
+      <p style={{margin:0,fontSize:12,color:T.textD,lineHeight:1.7}}>💡 الاشتراكات مفعّلة عبر بوابة دفع آمنة. اختر باقتك لإتمام الدفع، ويمكنك إدارة اشتراكك أو إلغاؤه من «حسابي» في أي وقت.</p>
     </Card>
   </div>;
 }

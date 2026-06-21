@@ -31,18 +31,18 @@ async function getStripeCredentials(): Promise<{ secretKey: string }> {
   }
 
   const data = (await resp.json()) as {
-    items?: Array<{ settings?: { secret_key?: string } }>;
+    items?: Array<{ settings?: { secret?: string } }>;
   };
   const settings = data.items?.[0]?.settings;
 
-  if (!settings?.secret_key) {
+  if (!settings?.secret) {
     throw new Error(
       "Stripe integration not connected or missing secret key. " +
         "Connect Stripe via the Integrations tab first.",
     );
   }
 
-  return { secretKey: settings.secret_key };
+  return { secretKey: settings.secret };
 }
 
 export async function getUncachableStripeClient(): Promise<Stripe> {

@@ -1,4 +1,5 @@
 - [AI proxy hardening](ai-proxy-hardening.md) — /api/ai paid LLM relay is guarded by Origin allowlist + per-IP rate limit (needs trust proxy), NOT auth; auth/quota deferred.
+- [Subscription plan gating](subscription-gating.md) — effective plan derived live from active Stripe sub (not cached); owner email = unlimited; checkout validates priceId vs catalog; pricing CTA dispatches muhakkim:checkout, logic in App.tsx.
 - [Prod API 404 = domain points to Netlify](deploy-api-routing.md) — muhakkim.com served by Netlify (no backend), not the healthy Replit deploy; check `server:` header + DNS before blaming code.
 - [Vendored single-file JSX integration](vendored-jsx-integration.md) — big pre-built `.jsx` kept verbatim; `tsc` skips it (allowJs false), `.d.ts` shim types the import, Vite compiles it.
 - [Muhakkim icon system](icon-system.md) — emoji icons render via EmIcon+Lucide; never convert ${x.icon} template-literals (exports break).

@@ -45,6 +45,7 @@ Bilingual (Arabic-first, RTL) academic peer-review and research platform. The li
 - Communicate in Arabic, concise.
 - Preserve محكّم برو V4 behavior literally; do NOT change its Arabic UI text.
 - Brand accents: gold `#b45309`, navy `#1e293b`.
+- Platform owner: `abuzarjha@gmail.com` (the account owner / super-admin).
 
 ## Re-vendoring embedded Muqyas
 

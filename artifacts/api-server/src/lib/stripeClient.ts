@@ -37,20 +37,22 @@ async function getStripeCredentials(): Promise<{
 
   const data = (await resp.json()) as {
     items?: Array<{
-      settings?: { secret_key?: string; webhook_secret?: string };
+      settings?: { secret?: string; webhook_secret?: string };
     }>;
   };
   const settings = data.items?.[0]?.settings;
 
-  if (!settings?.secret_key) {
+  if (!settings?.secret) {
     throw new Error(
       "Stripe integration not connected or missing secret key. " +
         "Connect Stripe via the Integrations tab first.",
     );
   }
 
+  // The managed webhook (findOrCreateManagedWebhook) handles signature
+  // verification, so webhook_secret is not required from the connector.
   return {
-    secretKey: settings.secret_key,
+    secretKey: settings.secret,
     webhookSecret: settings.webhook_secret,
   };
 }
